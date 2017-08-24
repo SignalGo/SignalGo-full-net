@@ -1,0 +1,117 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>netstandard1.6;net45;net40;netcoreapp1.1;net35</TargetFrameworks>
+    <ProjectGuid>{78D8601B-E331-47B7-A4A8-46B7460D82A4}</ProjectGuid>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>SignalGo.Shared</RootNamespace>
+    <AssemblyName>SignalGo.Shared</AssemblyName>
+    <Version>2.0</Version>
+    <Copyright>Copyright © ali.visual.studio@gmail.com 2016</Copyright>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net35'">
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+    <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
+    <PackageReference Include="TaskParallelLibrary" Version="1.0.2856"/>
+    
+  </ItemGroup>
+  <!-- Need to conditionally bring in references for the .NET Framework 4.0 target -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net40'">
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+    <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net45'">
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+    <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard1.6'">
+    <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
+    <PackageReference Include="System.Diagnostics.StackTrace" Version="4.3.0" />
+    <PackageReference Include="System.Xml.XmlSerializer" Version="4.3.0" />
+    <PackageReference Include="System.Threading.Thread" Version="4.3.0" />
+    <PackageReference Include="System.Reflection.TypeExtensions" Version="4.4.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyModel" Version="2.0.0" />
+    
+  </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp1.1'">
+    <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
+    <PackageReference Include="System.Diagnostics.StackTrace" Version="4.3.0" />
+    <PackageReference Include="System.Xml.XmlSerializer" Version="4.3.0" />
+    <PackageReference Include="System.Threading.Thread" Version="4.3.0" />
+    <PackageReference Include="System.Reflection.TypeExtensions" Version="4.4.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyModel" Version="2.0.0" />
+  </ItemGroup>
+  <!-- <ItemGroup>
+    <Compile Include="Converters\DataExchangeConverter.cs" />
+    <Compile Include="DataTypes\Enums.cs" />
+    <Compile Include="DataTypes\IgnoreContract.cs" />
+    <Compile Include="DataTypes\ServiceContractAttribute.cs" />
+    <Compile Include="DataTypes\HttpSupportAttribute.cs" />
+    <Compile Include="DataTypes\SkipDataExchangeAttribute.cs" />
+    <Compile Include="DataTypes\SkipIncomingCallAttribute.cs" />
+    <Compile Include="DataTypes\SkipOutgoingCallAttribute.cs" />
+    <Compile Include="Helpers\AsyncActions.cs" />
+    <Compile Include="Helpers\AttributeHelper.cs" />
+    <Compile Include="Helpers\ConcurrentList.cs" />
+    <Compile Include="Helpers\CSCodeInjection.cs" />
+    <Compile Include="Helpers\JsonSettingHelper.cs" />
+    <Compile Include="Helpers\RuntimeTypeHelper.cs" />
+    <Compile Include="Helpers\SerializeHelper.cs" />
+    <Compile Include="Helpers\XmlCommentLoader.cs" />
+    <Compile Include="Http\ActionResult.cs" />
+    <Compile Include="Http\FileActionResult.cs" />
+    <Compile Include="Http\HttpPostedFileInfo.cs" />
+    <Compile Include="IO\CustomStreamReader.cs" />
+    <Compile Include="IO\GoStream.cs" />
+    <Compile Include="IO\GoStreamReader.cs" />
+    <Compile Include="IO\GoStreamWriter.cs" />
+    <Compile Include="Log\AutoLogger.cs" />
+    <Compile Include="Log\MethodCallsLogger.cs" />
+    <Compile Include="Managers\SegmentManager.cs" />
+    <Compile Include="Http\HttpRequestController.cs" />
+    <Compile Include="Models\CustomContentDisposition.cs" />
+    <Compile Include="Models\HttpControllerDetailsInfo.cs" />
+    <Compile Include="Models\ISegment.cs" />
+    <Compile Include="Models\ProviderDetailsInfo.cs" />
+    <Compile Include="Models\ServiceDetailsInfo.cs" />
+    <Compile Include="Models\ServiceDetailsParameterInfo.cs" />
+    <Compile Include="Models\ServiceDetailsMethod.cs" />
+    <Compile Include="Models\ServiceDetailsInterface.cs" />
+    <Compile Include="Models\SettingsInfo.cs" />
+    <Compile Include="Models\StreamInfo.cs" />
+    <Compile Include="Models\KeyValue.cs" />
+    <Compile Include="Models\MethodCallbackInfo.cs" />
+    <Compile Include="Models\MethodCallInfo.cs" />
+    <Compile Include="Models\ParameterInfo.cs" />
+    <Compile Include="Models\ProviderSetting.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Security\AESSecurity.cs" />
+    <Compile Include="Security\ISecurityAlgoritm.cs" />
+    <Compile Include="Security\RSAAESSecurity.cs" />
+    <Compile Include="Security\RSASecurity.cs" />
+  </ItemGroup>-->
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
