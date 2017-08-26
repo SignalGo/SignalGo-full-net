@@ -8,6 +8,38 @@
     <AssemblyName>SignalGo.Shared</AssemblyName>
     <Version>2.0</Version>
     <Copyright>Copyright © ali.visual.studio@gmail.com 2016</Copyright>
+    <Description>SignalGo is a library for Cross-Platform developers that makes it incredibly simple to add real-time web functionality to your applications. What is "real-time web" functionality? It's the ability to have your server-side code push content to the connected clients as it happens, in real-time. like WCF and SignalR
+Features:
+
+1.Send and receive any data like class,object,parameters,methods,return types
+
+2.Send(upload) and receive(download) stream like file stream
+
+3.Send and receive data with UDP connection for sound and video streamming
+
+4.Return data from a method (client and server)
+
+5.Linq query to Clients for send or receive data
+
+6.Setting for maximum and minimum and timeout data transport
+
+7.Using best security algoritm for send or receive data
+
+8.call methods from http (GET and Post) protocol(like browser) with support upload files and manage Controllers like asp.net MVC
+
+and other features...</Description>
+    <PackageProjectUrl>https://github.com/SignalGo/SignalGo-full-net</PackageProjectUrl>
+    <PackageReleaseNotes>1.fix bugs and more improvement
+
+2.support upload files with POST
+
+3.support for .net 3.5 , .net 4.0 , .net 4.5, .net core 1.1 , .net standard 1.6</PackageReleaseNotes>
+    <PackageTags>SignalGo SignalR WCF Server Client Signal Sig RealTime Real-Time</PackageTags>
+    <PackageLicenseUrl>https://github.com/SignalGo/SignalGo-full-net/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageIconUrl>http://cdn.persiangig.com/preview/v14ukL88fq/SignalGo.png</PackageIconUrl>
+  </PropertyGroup>
+  <PropertyGroup>
+    <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\SignalGo.Shared.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net35'">
     <Reference Include="System" />
@@ -17,7 +49,7 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
     <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
-    <PackageReference Include="TaskParallelLibrary" Version="1.0.2856"/>
+    <PackageReference Include="TaskParallelLibrary" Version="1.0.2856" />
     
   </ItemGroup>
   <!-- Need to conditionally bring in references for the .NET Framework 4.0 target -->

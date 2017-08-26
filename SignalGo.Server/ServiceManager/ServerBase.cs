@@ -413,7 +413,7 @@ namespace SignalGo.Server.ServiceManager
         /// </summary>
         public InternalSetting InternalSetting { get; set; } = new InternalSetting();
 
-#region Http request supports
+        #region Http request supports
         /// <summary>
         /// Http protocol and response request settings 
         /// </summary>
@@ -1158,7 +1158,7 @@ namespace SignalGo.Server.ServiceManager
             }
         }
 
-#endregion
+        #endregion
 
 
         /// <summary>
@@ -1864,7 +1864,7 @@ namespace SignalGo.Server.ServiceManager
       typeof(DefaultGenerator<>).MakeGenericType(t);
 #if (NETSTANDARD1_6 || NETCOREAPP1_1)
                 MethodInfo method = defaultGeneratorType.GetTypeInfo().GetDeclaredMethod("GetDefault");
-               return method.Invoke(null, null);
+                return method.Invoke(null, null);
 #else
              return defaultGeneratorType.InvokeMember(
                   "GetDefault",
@@ -2227,7 +2227,7 @@ namespace SignalGo.Server.ServiceManager
                             {
                                 Url = httpServiceType.Value.GetCustomAttributes<HttpSupportAttribute>(true)[0].Addresses.FirstOrDefault(),
                             };
-                            result.HttpControllers.Add(controller);
+                            result.WebApiDetailsInfo.HttpControllers.Add(controller);
                             var methods = httpServiceType.Value.GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance).Where(x => !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_")))).ToList();
                             if (methods.Count == 0)
                                 continue;
@@ -2371,7 +2371,7 @@ namespace SignalGo.Server.ServiceManager
                         {
                             var parameterType = method.GetParameters()[detail.ParameterIndex].ParameterType;
 
-                            json = TypeToJsonString(parameterType);
+                            json = SimpleTypeToJsonString(parameterType);
                             break;
                         }
                     }
@@ -2393,6 +2393,11 @@ namespace SignalGo.Server.ServiceManager
                     SignalGo.Shared.Log.AutoLogger.LogError(ex, $"{client.IPAddress} {client.SessionId} ServerBase CallMethod");
                 }
             });
+        }
+
+        string SimpleTypeToJsonString(Type type)
+        {
+            return ServerSerializationHelper.SerializeObject(Activator.CreateInstance(type), null, NullValueHandling.Include);
         }
 
         string TypeToJsonString(Type type)

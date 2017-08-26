@@ -200,12 +200,39 @@ namespace SignalGo.Shared.Helpers
             {
                 if (!string.IsNullOrEmpty(parameters))
                     parameters += ",";
-                parameters += parameterInfo.ParameterType.FullName;
+                parameters += GetParameterFullName(parameterInfo.ParameterType);
             }
 
             return GetElementFromName(methodInfo.DeclaringType, 'M', string.IsNullOrEmpty(parameters) ? methodInfo.Name : methodInfo.Name + "(" + parameters + ")");
         }
 
+        string GetParameterFullName(Type type)
+        {
+#if (NETSTANDARD1_6 || NETCOREAPP1_1)
+            if (type.GetTypeInfo().IsGenericType)
+#else
+            if (type.IsGenericType)
+#endif
+            {
+                string generics = "";
+                foreach (var item in type.GetGenericArguments())
+                {
+                    if (!string.IsNullOrEmpty(generics))
+                    {
+                        generics += ",";
+                    }
+                    generics += GetParameterFullName(item);
+                }
+                string name = "";
+                if (type.Name.IndexOf("`") != -1)
+                {
+                    name = type.Name.Substring(0, type.Name.IndexOf("`"));
+                }
+                return $"{type.Namespace}.{name}{{{generics}}}";
+            }
+            else
+                return type.FullName;
+        }
         private XmlElement GetElementFromName(Type type, char prefix, string name)
         {
             string nodeName;

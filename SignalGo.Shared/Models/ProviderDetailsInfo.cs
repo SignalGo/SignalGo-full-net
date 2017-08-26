@@ -8,6 +8,7 @@ namespace SignalGo.Shared.Models
     public class ProviderDetailsInfo
     {
         public List<ServiceDetailsInfo> Services { get; set; } = new List<ServiceDetailsInfo>();
-        public List<HttpControllerDetailsInfo> HttpControllers { get; set; } = new List<HttpControllerDetailsInfo>();
+        public WebApiDetailsInfo WebApiDetailsInfo { get; set; } = new WebApiDetailsInfo();
+        public ProjectDomainDetailsInfo ProjectDomainDetailsInfo { get; set; } = new ProjectDomainDetailsInfo();
     }
 }
