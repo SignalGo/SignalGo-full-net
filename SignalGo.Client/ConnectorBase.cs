@@ -689,17 +689,22 @@ namespace SignalGo.Client
         ProviderDetailsInfo getServiceDetialResult = null;
         Exception getServiceDetialExceptionResult = null;
 
-        public ProviderDetailsInfo GetListOfServicesWithDetials()
+        public ProviderDetailsInfo GetListOfServicesWithDetials(string hostUrl)
         {
             AsyncActions.Run(() =>
             {
-                //byte[] len = BitConverter.GetBytes(0);
+                string json = JsonConvert.SerializeObject(hostUrl);
+                byte[] bytes = Encoding.UTF8.GetBytes(json);
+                if (SecuritySettings != null)
+                    bytes = EncryptBytes(bytes);
+                byte[] len = BitConverter.GetBytes(bytes.Length);
                 List<byte> data = new List<byte>
                 {
                     (byte)DataType.GetServiceDetails,
                     (byte)CompressMode.None
                 };
-                //data.AddRange(len);
+                data.AddRange(len);
+                data.AddRange(bytes);
                 if (data.Count > ProviderSetting.MaximumSendDataBlock)
                     throw new Exception("SendCallbackData data length is upper than MaximumSendDataBlock");
 

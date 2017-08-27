@@ -1383,7 +1383,12 @@ namespace SignalGo.Server.ServiceManager
                         }
                         else if (dataType == DataType.GetServiceDetails)
                         {
-                            SendServiceDetail(client);
+                            var bytes = GoStreamReader.ReadBlockToEnd(stream, compressMode, ProviderSetting.MaximumReceiveDataBlock, client.IsWebSocket);
+                            if (ClientsSettings.ContainsKey(client))
+                                bytes = DecryptBytes(bytes, client);
+                            var json = Encoding.UTF8.GetString(bytes);
+                            var hostUrl = ServerSerializationHelper.Deserialize<string>(json, this);
+                            SendServiceDetail(client, hostUrl);
                         }
                         else if (dataType == DataType.GetMethodParameterDetails)
                         {
@@ -2111,15 +2116,18 @@ namespace SignalGo.Server.ServiceManager
         /// send detail of service
         /// </summary>
         /// <param name="client"></param>
-        /// <param name="serviceName">service name</param>
-        internal void SendServiceDetail(ClientInfo client)
+        /// <param name="hostUrl">host url that client connected</param>
+        internal void SendServiceDetail(ClientInfo client, string hostUrl)
         {
             AsyncActions.Run(() =>
             {
                 try
                 {
+                    var url = new Uri(hostUrl);
+                    hostUrl = url.Host + ":" + url.Port;
                     using (var xmlCommentLoader = new XmlCommentLoader())
                     {
+                        List<Type> modelTypes = new List<Type>();
                         ProviderDetailsInfo result = new ProviderDetailsInfo();
                         foreach (var service in RegisteredServiceTypes)
                         {
@@ -2200,6 +2208,7 @@ namespace SignalGo.Server.ServiceManager
                                         ReturnComment = methodComment?.Returns,
                                         ExceptionsComment = exceptions
                                     };
+                                    RuntimeTypeHelper.GetListOfUsedTypes(method.ReturnType, ref modelTypes);
                                     foreach (var paramInfo in method.GetParameters())
                                     {
                                         string parameterComment = "";
@@ -2213,6 +2222,7 @@ namespace SignalGo.Server.ServiceManager
                                             Comment = parameterComment
                                         };
                                         info.Parameters.Add(p);
+                                        RuntimeTypeHelper.GetListOfUsedTypes(paramInfo.ParameterType, ref modelTypes);
                                     }
                                     serviceMethods.Add(info);
                                 }
@@ -2275,8 +2285,11 @@ namespace SignalGo.Server.ServiceManager
                                     ReturnType = method.ReturnType.FullName,
                                     Comment = methodComment?.Summery,
                                     ReturnComment = methodComment?.Returns,
-                                    ExceptionsComment = exceptions
+                                    ExceptionsComment = exceptions,
+                                    TestExample = hostUrl + "/" + controller.Url + "/" + method.Name
                                 };
+
+                                string testExampleParams = "";
                                 foreach (var paramInfo in method.GetParameters())
                                 {
                                     string parameterComment = "";
@@ -2290,10 +2303,56 @@ namespace SignalGo.Server.ServiceManager
                                         Comment = parameterComment
                                     };
                                     info.Parameters.Add(p);
+                                    if (string.IsNullOrEmpty(testExampleParams))
+                                        testExampleParams += "?";
+                                    else
+                                        testExampleParams += "&";
+                                    testExampleParams += paramInfo.Name + "=" + GetDefault(paramInfo.ParameterType) ?? "null";
+                                    RuntimeTypeHelper.GetListOfUsedTypes(paramInfo.ParameterType, ref modelTypes);
                                 }
+                                info.TestExample += testExampleParams;
                                 serviceMethods.Add(info);
                             }
                             controller.Methods = serviceMethods;
+                        }
+
+                        foreach (var type in modelTypes)
+                        {
+                            try
+                            {
+                                var mode = SerializeHelper.GetTypeCodeOfObject(type);
+                                if (mode == SerializeObjectType.Object)
+                                {
+                                    if (type.Name.Contains("`") || type == typeof(CustomAttributeTypedArgument) || type == typeof(CustomAttributeNamedArgument) ||
+#if (NETSTANDARD1_6 || NETCOREAPP1_1)
+                                        type.GetTypeInfo().BaseType == typeof(Attribute))
+#else
+                                    type.BaseType == typeof(Attribute))
+#endif
+                                        continue;
+
+                                    var instance = Activator.CreateInstance(type);
+                                    string jsonResult = JsonConvert.SerializeObject(instance, Formatting.None,new JsonSerializerSettings() { NullValueHandling = NullValueHandling.Include });
+                                    if (jsonResult == "{}" || jsonResult == "[]")
+                                        continue;
+                                    var comment = xmlCommentLoader.GetCommment(type);
+                                    result.ProjectDomainDetailsInfo.Models.Add(new ModelDetailsInfo()
+                                    {
+                                        Comment = comment?.Summery,
+                                        Name = type.Name,
+                                        FullNameSpace = type.FullName,
+                                        JsonTemplate = jsonResult
+                                    });
+                                }
+                                else if (mode == SerializeObjectType.Enum)
+                                {
+                                    //Enum.GetValues(type);
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                AutoLogger.LogError(ex, "add model type error: " + ex.ToString());
+                            }
                         }
 
                         var json = ServerSerializationHelper.SerializeObject(result, this);
@@ -2331,6 +2390,8 @@ namespace SignalGo.Server.ServiceManager
                 }
             });
         }
+
+
 
         internal static Type GetEnumType(string enumName)
         {

@@ -56,7 +56,9 @@ namespace SignalGo.Shared.Helpers
         String = 39,
         Bytes = 40,
         DBNull = 41,
-        Enum = 42
+        Enum = 42,
+        Void = 43,
+        IntPtr = 44
     }
 
     /// <summary>
@@ -101,6 +103,8 @@ namespace SignalGo.Shared.Helpers
                 { typeof(TimeSpan), SerializeObjectType.TimeSpan },
                 { typeof(TimeSpan?), SerializeObjectType.TimeSpanNullable },
                 { typeof(string), SerializeObjectType.String },
+                { typeof(void), SerializeObjectType.Void },
+                { typeof(IntPtr), SerializeObjectType.IntPtr },
 #if (!NETSTANDARD1_6 && !NETCOREAPP1_1)
                 { typeof(DBNull), SerializeObjectType.DBNull }
 #endif

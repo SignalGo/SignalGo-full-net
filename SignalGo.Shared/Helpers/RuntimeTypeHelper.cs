@@ -7,7 +7,9 @@ using System.Text;
 
 namespace SignalGo.Shared.Helpers
 {
-    
+    /// <summary>
+    /// helper of types
+    /// </summary>
     public static class RuntimeTypeHelper
     {
         /// <summary>
@@ -38,6 +40,37 @@ namespace SignalGo.Shared.Helpers
                 }
             }
             return methodParameterTypes;
+        }
+
+        /// <summary>
+        /// get full types of one type that types is in properteis
+        /// </summary>
+        /// <param name="type">your type</param>
+        /// <param name="findedTypes">list of types you want</param>
+        public static void GetListOfUsedTypes(Type type, ref List<Type> findedTypes)
+        {
+            if (!findedTypes.Contains(type))
+                findedTypes.Add(type);
+            else
+                return;
+#if (NETSTANDARD1_6 || NETCOREAPP1_1)
+            if (type.GetTypeInfo().IsGenericType)
+#else
+            if (type.IsGenericType)
+#endif
+            {
+                foreach (var item in type.GetGenericArguments())
+                {
+                    GetListOfUsedTypes(item, ref findedTypes);
+                }
+            }
+            else
+            {
+                foreach (var item in type.GetProperties())
+                {
+                    GetListOfUsedTypes(item.PropertyType, ref findedTypes);
+                }
+            }
         }
     }
 }
