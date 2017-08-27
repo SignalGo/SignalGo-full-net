@@ -87,10 +87,10 @@ and other fetures...
     public class SignalGoServerMethods
     {
         public ISignalGoClientMethods callback = null;
-        OprationContext currentContext = null;
+        OperationContext currentContext = null;
         public SignalGoServerMethods()
         {
-            currentContext = OprationContext.Current;
+            currentContext = OperationContext.Current;
             callback = currentContext.GetClientCallback<ISignalGoClientMethods>();
         }
 
@@ -170,11 +170,11 @@ for upload a file to server you must add a method that not have return type (is 
 ## How to use security setting (just C# .net version is currently available)?
 
 ```csharp
-ClientProvider connector = new ClientProvider();
+            ClientProvider connector = new ClientProvider();
             connector.Connect("http://localhost:1199/SignalGoTestServicesProject");
             var callbacks = connector.RegisterServerCallback<ClientCallback>();
             var service = connector.RegisterClientServiceInterface<ISignalGoServerMethods>();
-            connector.SetSettings(new SignalGo.Shared.Models.SettingsInfo() { SecurityMode = SignalGo.SecurityMode.RSA_AESSecurity });
+            connector.SetSecuritySettings(new SignalGo.Shared.Models.SecuritySettingsInfo() { SecurityMode = SignalGo.SecurityMode.RSA_AESSecurity });
                 
 ```
 
@@ -198,7 +198,7 @@ ClientProvider connector = new ClientProvider();
         connector.SendUdpData(new byte[] { 1, 2, 3, 40 });
 ```
 
-## How to usage http calls and manage controllers?
+## How to usage http calls and manage controllers (download or upload files and methods)?
 
 
 #### server-side:
@@ -209,6 +209,11 @@ ClientProvider connector = new ClientProvider();
     {
         public FileActionResult DownloadImage(string name, int num)
         {
+            if (num <= 0)
+            {
+                Status = System.Net.HttpStatusCode.Forbidden;
+                return Content("num is not true!");
+            }
             ResponseHeaders.Add("Content-Type", "image/jpeg");
             return new FileActionResult(@"D:\photo_2017-03-08_00-45-04.jpg");
         }
@@ -216,6 +221,29 @@ ClientProvider connector = new ClientProvider();
         public ActionResult Hello(string name)
         {
             return Content("hello:" + name);
+        }
+        
+        public ActionResult TestUploadFile(Guid token, int profileId)
+        {
+            var fileInfo = TakeNextFile();
+            if (fileInfo == null)
+            {
+                Status = System.Net.HttpStatusCode.NotFound;
+                return Content("file not found!");
+            }
+            using (var streamWriter = new FileStream("D:\\testfileName.txt", FileMode.OpenOrCreate, FileAccess.ReadWrite))
+            {
+                var bytes = new byte[1024 * 10];
+                while (true)
+                {
+                    var readCount = fileInfo.InputStream.Read(bytes, 0, bytes.Length);
+                    if (readCount <= 0)
+                        break;
+                    streamWriter.Write(bytes, 0, readCount);
+                }
+                long fileLen = streamWriter.Length;
+            }
+            return Content("success!");
         }
     }
 ```
@@ -245,9 +273,13 @@ http://localhost:1199/AddressTest/Hello?ali
 ## [Sample-Source](https://github.com/SignalGo/csharp-sample)
 ## [SignalGo-Test Methods (like wcf test)](https://github.com/SignalGo/SignalGoTest)
 
+![ScreenShot](https://github.com/SignalGo/SignalGoTest/blob/master/image2.png "signal go test image")
+
 ## Install package from nuget:
 
 Install-Package SignalGo.Net.Server
+Install-Package SignalGo.Net.Client
+Install-Package SignalGo.JavaScript.Client
 
 # Pull Requests
 I welcome all pull requests from you guys.Here are 3 basic rules of your request:
@@ -257,12 +289,11 @@ I welcome all pull requests from you guys.Here are 3 basic rules of your request
 
   
 ## Other source on github
-  1. [.Net Framework Client Side](https://github.com/SignalGo/client-net)
-  2. [Java Script Client](https://github.com/SignalGo/client-js)
-  3. [Java Client](https://github.com/SignalGo/client-java)
+  1. [Java Script Client](https://github.com/SignalGo/client-js)
+  2. [Java Client](https://github.com/SignalGo/client-java)
   
 
 # Maintained By
-[Ali Yousefi](https://github.com/hamishebahar)
+[Ali Yousefi](https://github.com/Ali-YousefiTelori)
 
 [Blog](http://framesoft.ir)
