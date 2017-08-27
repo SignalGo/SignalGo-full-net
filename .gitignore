@@ -71,7 +71,7 @@ artifacts/
 *.scc
 nuget.exe
 *.nuspec
-
+*.rar
 
 # Chutzpah Test files
 _Chutzpah*
