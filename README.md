@@ -19,7 +19,7 @@ SignalGo is a library for Cross-Platform developers that makes it incredibly sim
 
 7.Using best security algoritm for send or receive data
 
-8.call methods from http GET protocol(like browser) and manage Controllers like asp.net MVC
+8.call methods from http GET and POST protocol (like call from browser) or upload and download files and manage Controllers like asp.net MVC
 
 and other fetures...
 
