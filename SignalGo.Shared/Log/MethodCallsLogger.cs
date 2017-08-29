@@ -17,13 +17,14 @@ namespace SignalGo.Shared.Log
         public DateTime DateTime { get; set; }
         public DateTime ResultDateTime { get; set; }
         /// <summary>
-        /// after set call method result is is going to true and write to log file
+        /// after set call method result is going to true and write to log file
         /// </summary>
         public bool CanWriteToFile { get; set; }
         public string SessionId { get; set; }
         public DateTime ConnectedDateTime { get; set; }
         public string IPAddress { get; set; }
         public object Result { get; set; }
+        public string MethodName { get; set; }
     }
 
     public class CallMethodLogInformation : BaseLogInformation
@@ -36,7 +37,6 @@ namespace SignalGo.Shared.Log
     public class CallClientMethodLogInformation : BaseLogInformation
     {
         public string ServiceName { get; set; }
-        public string MethodName { get; set; }
         public List<Models.ParameterInfo> Parameters { get; set; }
     }
 
