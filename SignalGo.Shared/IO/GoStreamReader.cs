@@ -83,7 +83,12 @@ namespace SignalGo.Shared.IO
             if (isWebSocket)
                 dataBytes = ReadBlockToEnd(stream, compress, maximum, isWebSocket);
             else
-                return (byte)stream.ReadByte();
+            {
+                var data = stream.ReadByte();
+                if (data < 0)
+                    throw new Exception($"read one byte is correct or disconnected client! {data}");
+                return (byte)data;
+            }
             return dataBytes[0];
         }
 

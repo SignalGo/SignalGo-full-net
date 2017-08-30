@@ -1062,7 +1062,7 @@ namespace SignalGo.Server.ServiceManager
             //    response += item + ": " + headers[item] + newLine;
             //}
 
-            if (result is FileActionResult)
+            if (result is FileActionResult && controller.Status == HttpStatusCode.OK)
             {
                 response += controller.ResponseHeaders.ToString();
                 var file = (FileActionResult)result;
