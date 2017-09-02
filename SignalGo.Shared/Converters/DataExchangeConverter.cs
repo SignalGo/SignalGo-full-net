@@ -155,6 +155,18 @@ namespace SignalGo.Shared.Converters
                 }
                 var type = value.GetType();
 #if (NETSTANDARD1_6 || NETCOREAPP1_1)
+                if (type.GetTypeInfo().BaseType != null && type.Namespace == "System.Data.Entity.DynamicProxies")
+                {
+                    type = type.GetTypeInfo().BaseType;
+                }
+#else
+                 if (type.BaseType != null && type.Namespace == "System.Data.Entity.DynamicProxies")
+                {
+                    type = type.BaseType;
+                }
+#endif
+
+#if (NETSTANDARD1_6 || NETCOREAPP1_1)
                 var implementICollection = (SkipDataExchangeAttribute)type.GetTypeInfo().GetCustomAttributes(typeof(SkipDataExchangeAttribute), true).FirstOrDefault();
 #else
                 var implementICollection = (SkipDataExchangeAttribute)type.GetCustomAttributes(typeof(SkipDataExchangeAttribute), true).FirstOrDefault();
