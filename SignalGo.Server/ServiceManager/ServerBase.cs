@@ -1277,8 +1277,9 @@ namespace SignalGo.Server.ServiceManager
                     client.IsVerification = true;
                     while (client.TcpClient.Connected)
                     {
+                        var oneByteOfDataType = GoStreamReader.ReadOneByte(stream, CompressMode.None, ProviderSetting.MaximumReceiveDataBlock, client.IsWebSocket);
                         //بایت اول نوع دیتا
-                        var dataType = (DataType)GoStreamReader.ReadOneByte(stream, CompressMode.None, ProviderSetting.MaximumReceiveDataBlock, client.IsWebSocket);
+                        var dataType = (DataType)oneByteOfDataType;
                         if (dataType == DataType.PingPong)
                         {
                             //AutoLogger.LogText($"PingPong {client.IsWebSocket} {client.SessionId} {client.IPAddress}");
@@ -1402,7 +1403,7 @@ namespace SignalGo.Server.ServiceManager
                         else
                         {
                             //throw new Exception($"Correct DataType Data {dataType}");
-                            AutoLogger.LogText($"Correct DataType Data {dataType} {client.SessionId} {client.IPAddress}");
+                            AutoLogger.LogText($"Correct DataType Data {oneByteOfDataType} {client.SessionId} {client.IPAddress}");
                             break;
                         }
                     }
@@ -2332,7 +2333,7 @@ namespace SignalGo.Server.ServiceManager
                                         continue;
 
                                     var instance = Activator.CreateInstance(type);
-                                    string jsonResult = JsonConvert.SerializeObject(instance, Formatting.None,new JsonSerializerSettings() { NullValueHandling = NullValueHandling.Include });
+                                    string jsonResult = JsonConvert.SerializeObject(instance, Formatting.None, new JsonSerializerSettings() { NullValueHandling = NullValueHandling.Include });
                                     if (jsonResult == "{}" || jsonResult == "[]")
                                         continue;
                                     var comment = xmlCommentLoader.GetCommment(type);
