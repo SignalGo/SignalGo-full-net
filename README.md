@@ -207,7 +207,7 @@ for upload a file to server you must add a method that not have return type (is 
     [HttpSupport("AddressTest")]
     public class SimpleHttpRequest : HttpRequestController
     {
-        public FileActionResult DownloadImage(string name, int num)
+        public ActionResult DownloadImage(string name, int num)
         {
             if (num <= 0)
             {
