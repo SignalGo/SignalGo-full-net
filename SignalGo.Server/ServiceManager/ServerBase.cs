@@ -627,6 +627,7 @@ namespace SignalGo.Server.ServiceManager
 
                         var service = (HttpRequestController)Activator.CreateInstance(RegisteredHttpServiceTypes[address]);
                         service.RequestHeaders = headers;
+                        service.ClientIpAddress = client.IPAddress;
                         if (HttpProtocolSetting != null)
                         {
                             if (HttpProtocolSetting.HandleCrossOriginAccess)
@@ -933,6 +934,7 @@ namespace SignalGo.Server.ServiceManager
 
                         var service = (HttpRequestController)Activator.CreateInstance(RegisteredHttpServiceTypes[address]);
                         service.RequestHeaders = headers;
+                        service.ClientIpAddress = client.IPAddress;
                         service.SetFirstFile(fileInfo);
                         if (HttpProtocolSetting != null)
                         {
