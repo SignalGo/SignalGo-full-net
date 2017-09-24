@@ -36,7 +36,10 @@ namespace SignalGo.Shared.Http
             }
             return string.Empty;
         }
-
+        /// <summary>
+        /// ip address of client
+        /// </summary>
+        public string ClientIpAddress { get; set; }
         public System.Net.HttpStatusCode Status { get; set; } = System.Net.HttpStatusCode.OK;
         public WebHeaderCollection RequestHeaders { get; set; }
         public WebHeaderCollection ResponseHeaders { get; set; } = new WebHeaderCollection();
