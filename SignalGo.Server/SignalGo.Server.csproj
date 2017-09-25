@@ -4,7 +4,7 @@
     <TargetFrameworks>netstandard1.6;net45;net40;netcoreapp1.1;net35</TargetFrameworks>
     <ProjectGuid>{8170E507-F79C-49C4-9EC2-9112C565A98B}</ProjectGuid>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <Version>2.0</Version>
+    <Version>2.1</Version>
     <Copyright>Copyright © ali.visual.studio@gmail.com 2016</Copyright>
     <Description>SignalGo is a library for Cross-Platform developers that makes it incredibly simple to add real-time web functionality to your applications. What is "real-time web" functionality? It's the ability to have your server-side code push content to the connected clients as it happens, in real-time. like WCF and SignalR
 Features:
