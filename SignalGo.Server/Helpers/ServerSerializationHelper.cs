@@ -1,6 +1,9 @@
 ﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
+using SignalGo.Server.Models;
 using SignalGo.Server.ServiceManager;
 using SignalGo.Shared.Converters;
+using SignalGo.Shared.DataTypes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,12 +13,12 @@ namespace SignalGo.Server.Helpers
 {
     public static class ServerSerializationHelper
     {
-        public static string SerializeObject(this object obj, ServerBase serverBase = null, NullValueHandling nullValueHandling = NullValueHandling.Ignore)
+        public static string SerializeObject(this object obj, ServerBase serverBase = null, NullValueHandling nullValueHandling = NullValueHandling.Ignore, CustomDataExchanger[] customDataExchanger = null, ClientInfo client = null)
         {
             if (obj == null)
                 return "";
             if (serverBase != null && serverBase.InternalSetting.IsEnabledDataExchanger)
-                return JsonConvert.SerializeObject(obj, Formatting.None, new JsonSerializerSettings() { ReferenceLoopHandling = ReferenceLoopHandling.Ignore, Converters = new List<JsonConverter>() { new DataExchangeConverter(SkipExchangeType.OutgoingCall) }, Formatting = Formatting.None, NullValueHandling = nullValueHandling });
+                return JsonConvert.SerializeObject(obj, Formatting.None, new JsonSerializerSettings() { ReferenceLoopHandling = ReferenceLoopHandling.Ignore, Converters = new List<JsonConverter>() { new DataExchangeConverter(LimitExchangeType.OutgoingCall, customDataExchanger) { Server = serverBase, Client = client } }, Formatting = Formatting.None, NullValueHandling = nullValueHandling });
             return JsonConvert.SerializeObject(obj, new JsonSerializerSettings() { Formatting = Formatting.None, NullValueHandling = nullValueHandling, ReferenceLoopHandling = ReferenceLoopHandling.Ignore });
         }
 
@@ -34,7 +37,7 @@ namespace SignalGo.Server.Helpers
             if (string.IsNullOrEmpty(json))
                 return null;
             if (serverBase != null && serverBase.InternalSetting.IsEnabledDataExchanger)
-                return JsonConvert.DeserializeObject(json, type, new JsonSerializerSettings() { ReferenceLoopHandling = ReferenceLoopHandling.Ignore, Converters = new List<JsonConverter>() { new DataExchangeConverter(SkipExchangeType.IncomingCall) }, Formatting = Formatting.None, NullValueHandling = nullValueHandling });
+                return JsonConvert.DeserializeObject(json, type, new JsonSerializerSettings() { ReferenceLoopHandling = ReferenceLoopHandling.Ignore, Converters = new List<JsonConverter>() { new DataExchangeConverter(LimitExchangeType.IncomingCall) }, Formatting = Formatting.None, NullValueHandling = nullValueHandling });
             return JsonConvert.DeserializeObject(json, type, new JsonSerializerSettings() { Formatting = Formatting.None, NullValueHandling = nullValueHandling, ReferenceLoopHandling = ReferenceLoopHandling.Ignore });
         }
     }

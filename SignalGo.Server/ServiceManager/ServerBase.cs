@@ -1757,6 +1757,9 @@ namespace SignalGo.Server.ServiceManager
                     }
 
                     var securityAttributes = serviceMethod.GetCustomAttributes(typeof(SecurityContractAttribute), true).ToList();
+                    var customDataExchanger = serviceMethod.GetCustomAttributes(typeof(CustomDataExchanger), true).Cast<CustomDataExchanger>().ToList();
+
+                    customDataExchanger.AddRange(method.GetCustomAttributes(typeof(CustomDataExchanger), true).Cast<CustomDataExchanger>().ToList());
                     securityAttributes.AddRange(method.GetCustomAttributes(typeof(SecurityContractAttribute), true));
                     //securityAttributes.AddRange(service.GetType().GetCustomAttributes(typeof(SecurityContractAttribute), true));
                     //securityAttributes.AddRange(serviceType.GetCustomAttributes(typeof(SecurityContractAttribute), true));
@@ -1781,7 +1784,7 @@ namespace SignalGo.Server.ServiceManager
                             {
                                 object data = null;
                                 data = attrib.GetValueWhenDenyPermission(client, service, method);
-                                callback.Data = data == null ? null : ServerSerializationHelper.SerializeObject(data, this);
+                                callback.Data = data == null ? null : ServerSerializationHelper.SerializeObject(data, this, customDataExchanger: customDataExchanger.ToArray(), client: client);
                             }
                             break;
                         }
@@ -1830,7 +1833,7 @@ namespace SignalGo.Server.ServiceManager
                                     data = method.Invoke(service, parameters.ToArray());
                             }
 
-                            callback.Data = data == null ? null : ServerSerializationHelper.SerializeObject(data, this);
+                            callback.Data = data == null ? null : ServerSerializationHelper.SerializeObject(data, this, customDataExchanger: customDataExchanger.ToArray(), client: client);
                         }
                     }
                 }

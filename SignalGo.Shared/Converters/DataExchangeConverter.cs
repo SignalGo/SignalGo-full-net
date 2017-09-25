@@ -18,17 +18,31 @@ namespace SignalGo.Shared.Converters
     public class DataExchangeConverter : JsonConverter
     {
         /// <summary>
+        /// server of signalGo that called exchanger
+        /// </summary>
+        public object Server { get; set; }
+        /// <summary>
+        /// client of signalGo that called exchanger
+        /// </summary>
+        public object Client { get; set; }
+        /// <summary>
+        /// exchange types
+        /// </summary>
+        private CustomDataExchanger[] ExchangerTypes { get; set; }
+        /// <summary>
         /// constructor of this attrib neeed your strategy mode
         /// </summary>
         /// <param name="mode">strategy mode</param>
-        public DataExchangeConverter(SkipExchangeType mode)
+        /// <param name="exchangerTypes">exchange types</param>
+        public DataExchangeConverter(LimitExchangeType mode, params CustomDataExchanger[] exchangerTypes)
         {
             Mode = mode;
+            ExchangerTypes = exchangerTypes;
         }
         /// <summary>
         /// your strategy mode for serialize and deserialize
         /// </summary>
-        public SkipExchangeType Mode { get; set; }
+        public LimitExchangeType Mode { get; set; }
 
         /// <summary>
         /// can convert or not
@@ -64,7 +78,7 @@ namespace SignalGo.Shared.Converters
                     return null;
                 }
             }
-            else if (implementICollection != null && (implementICollection.Mode == SkipExchangeType.Both || implementICollection.Mode == Mode))
+            else if (implementICollection != null && (implementICollection.Mode == LimitExchangeType.Both || implementICollection.Mode == Mode))
             {
                 return null;
             }
@@ -94,19 +108,39 @@ namespace SignalGo.Shared.Converters
                 {
                     var implementICollection = (SkipDataExchangeAttribute)property.GetCustomAttributes(typeof(SkipDataExchangeAttribute), true).FirstOrDefault();
                     var canIgnore = implementICollection == null ? (bool?)null : implementICollection.CanIgnore(instance, property, type, implementICollection);
-                    bool isIgnore = false;
+                    bool isIgnored = false;
                     if (canIgnore.HasValue)
                     {
                         if (canIgnore.Value)
                         {
-                            isIgnore = true;
+                            isIgnored = true;
                         }
                     }
-                    else if (implementICollection != null && (implementICollection.Mode == SkipExchangeType.Both || implementICollection.Mode == Mode))
+                    else if (implementICollection != null && (implementICollection.Mode == LimitExchangeType.Both || implementICollection.Mode == Mode))
                     {
-                        isIgnore = true;
+                        isIgnored = true;
                     }
-                    if (isIgnore)
+                    if (!isIgnored)
+                    {
+                        if (ExchangerTypes != null)
+                        {
+                            var find = ExchangerTypes.FirstOrDefault(x => x.Type == type && (x.LimitationMode == LimitExchangeType.Both || x.LimitationMode == LimitExchangeType.IncomingCall));
+                            if (find != null)
+                            {
+                                if (find.CustomDataExchangerType == CustomDataExchangerType.Take)
+                                {
+                                    if (find.Properties != null && !find.Properties.Contains(property.Name) && find.IsEnabled(Client, Server, property.Name, type))
+                                        isIgnored = true;
+                                }
+                                else
+                                {
+                                    if (find.Properties != null && find.Properties.Contains(property.Name) && find.IsEnabled(Client, Server, property.Name, type))
+                                        isIgnored = true;
+                                }
+                            }
+                        }
+                    }
+                    if (isIgnored)
                     {
                         property.SetValue(instance, null, null);
                     }
@@ -179,7 +213,7 @@ namespace SignalGo.Shared.Converters
                         return;
                     }
                 }
-                else if (implementICollection != null && (implementICollection.Mode == SkipExchangeType.Both || implementICollection.Mode == Mode))
+                else if (implementICollection != null && (implementICollection.Mode == LimitExchangeType.Both || implementICollection.Mode == Mode))
                 {
                     return;
                 }
@@ -279,11 +313,30 @@ namespace SignalGo.Shared.Converters
                                 isIgnored = true;
                             }
                         }
-                        else if (implementICollection != null && (implementICollection.Mode == SkipExchangeType.Both || implementICollection.Mode == Mode))
+                        else if (implementICollection != null && (implementICollection.Mode == LimitExchangeType.Both || implementICollection.Mode == Mode))
                         {
                             isIgnored = true;
                         }
-
+                        if (!isIgnored)
+                        {
+                            if (ExchangerTypes != null)
+                            {
+                                var find = ExchangerTypes.FirstOrDefault(x => x.Type == baseType && (x.LimitationMode == LimitExchangeType.Both || x.LimitationMode == LimitExchangeType.OutgoingCall));
+                                if (find != null)
+                                {
+                                    if (find.CustomDataExchangerType == CustomDataExchangerType.Take)
+                                    {
+                                        if (find.Properties != null && !find.Properties.Contains(property.Name) && find.IsEnabled(Client, Server, property.Name, baseType))
+                                            isIgnored = true;
+                                    }
+                                    else
+                                    {
+                                        if (find.Properties != null && find.Properties.Contains(property.Name) && find.IsEnabled(Client, Server, property.Name, baseType))
+                                            isIgnored = true;
+                                    }
+                                }
+                            }
+                        }
                         if (!isIgnored)
                         {
                             bool isPropertyArray = typeof(IEnumerable).IsAssignableFrom(property.PropertyType) && property.PropertyType != typeof(string);

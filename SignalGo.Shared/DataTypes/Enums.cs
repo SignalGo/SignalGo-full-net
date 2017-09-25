@@ -77,21 +77,36 @@ namespace SignalGo
     /// <summary>
     /// ignore a property or class in call or receive method
     /// </summary>
-    public enum SkipExchangeType : byte
+    public enum LimitExchangeType : byte
     {
         /// <summary>
-        /// skip this in all incoming calls
-        /// for example: you calling server method from client,if client sent value server skip this and set to null
+        /// Limit this in all incoming calls
+        /// for example: you calling server method from client, if client sent value server skip this and set to null
         /// </summary>
         IncomingCall = 0,
         /// <summary>
-        /// skip this in all outgoing call
+        /// Limit this in all outgoing call
         /// for example: you calling client method from server this is one outgoig call
         /// </summary>
         OutgoingCall = 1,
         /// <summary>
-        /// skill all incoming and outgoing call
+        /// Limit all incoming and outgoing call
         /// </summary>
         Both = 2
+    }
+
+    /// <summary>
+    /// type of custom data exchanger
+    /// </summary>
+    public enum CustomDataExchangerType
+    {
+        /// <summary>
+        /// if use take system will take properties for serialize
+        /// </summary>
+        Take,
+        /// <summary>
+        /// if use ignore system ignore properties for serialize
+        /// </summary>
+        Ignore
     }
 }
