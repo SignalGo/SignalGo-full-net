@@ -486,12 +486,14 @@ namespace SignalGo.Server.ServiceManager
                             settingHeaders = "Access-Control-Allow-Origin: " + headers["origin"] + newLine;
                         }
                     }
-                    var response = $"HTTP/1.1 200 OK" + newLine
+                    string message = newLine + $"Internal Server Error: {data}" + newLine;
+                    var response = $"HTTP/1.1 {(int)HttpStatusCode.InternalServerError} {HttpRequestController.GetStatusDescription((int)HttpStatusCode.InternalServerError)}" + newLine
                         + "Content-Type: text/html; charset=utf-8" + newLine
-                        + settingHeaders
+                        + settingHeaders+
+                        "Content-Length: " + (message.Length - 2) + newLine
                         + "Connection: Close" + newLine;
                     client.TcpClient.Client.Send(System.Text.Encoding.UTF8.GetBytes(response));
-                    client.TcpClient.Client.Send(System.Text.Encoding.UTF8.GetBytes(newLine + $"Internal Server Error: {data}" + newLine));
+                    client.TcpClient.Client.Send(System.Text.Encoding.UTF8.GetBytes(message));
                 }
                 catch (Exception ex)
                 {
@@ -731,12 +733,15 @@ namespace SignalGo.Server.ServiceManager
                             settingHeaders = "Access-Control-Allow-Origin: " + headers["origin"] + newLine;
                         }
                     }
-                    var response = $"HTTP/1.1 200 OK" + newLine
-                        + "Content-Type: text/html; charset=utf-8" + newLine
-                        + settingHeaders
-                        + "Connection: Close" + newLine;
+                    string message = newLine + $"Internal Server Error: {data}" + newLine;
+
+                    var response = $"HTTP/1.1 {(int)HttpStatusCode.InternalServerError} {HttpRequestController.GetStatusDescription((int)HttpStatusCode.InternalServerError)}" + newLine
+                                    + "Content-Type: text/html; charset=utf-8" + newLine
+                                    + settingHeaders +
+                                    "Content-Length: " + (message.Length - 2) + newLine
+                                    + "Connection: Close" + newLine;
                     client.TcpClient.Client.Send(System.Text.Encoding.UTF8.GetBytes(response));
-                    client.TcpClient.Client.Send(System.Text.Encoding.UTF8.GetBytes(newLine + $"Internal Server Error: {data}" + newLine));
+                    client.TcpClient.Client.Send(System.Text.Encoding.UTF8.GetBytes(message));
                 }
                 catch (Exception ex)
                 {
