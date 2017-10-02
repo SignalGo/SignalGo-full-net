@@ -376,8 +376,7 @@ namespace SignalGo.Server.ServiceManager
                                 var response = "HTTP/1.1 200 OK" + newLine
                                      + "Content-Type: text/html" + newLine
                                      + "Connection: Close" + newLine;
-                                tcpClient.Client.Send(System.Text.Encoding.ASCII.GetBytes(response));
-                                tcpClient.Client.Send(System.Text.Encoding.ASCII.GetBytes(newLine + "SignalGo Server OK" + newLine));
+                                tcpClient.Client.Send(System.Text.Encoding.ASCII.GetBytes(response+ newLine + "SignalGo Server OK" + newLine));
                                 DisposeClient(client);
                                 return;
                             }
@@ -492,8 +491,7 @@ namespace SignalGo.Server.ServiceManager
                         + settingHeaders+
                         "Content-Length: " + (message.Length - 2) + newLine
                         + "Connection: Close" + newLine;
-                    client.TcpClient.Client.Send(System.Text.Encoding.UTF8.GetBytes(response));
-                    client.TcpClient.Client.Send(System.Text.Encoding.UTF8.GetBytes(message));
+                    client.TcpClient.Client.Send(System.Text.Encoding.UTF8.GetBytes(response+ message));
                 }
                 catch (Exception ex)
                 {
@@ -534,6 +532,12 @@ namespace SignalGo.Server.ServiceManager
 
                     methodName = lines.Last();
                     parameters = content;
+                    if (methodName.Contains("?"))
+                    {
+                        var sp = methodName.Split(new[] { '?' }, 2);
+                        methodName = sp.First();
+                        parameters = sp.Last();
+                    }
                 }
 
 
@@ -740,8 +744,7 @@ namespace SignalGo.Server.ServiceManager
                                     + settingHeaders +
                                     "Content-Length: " + (message.Length - 2) + newLine
                                     + "Connection: Close" + newLine;
-                    client.TcpClient.Client.Send(System.Text.Encoding.UTF8.GetBytes(response));
-                    client.TcpClient.Client.Send(System.Text.Encoding.UTF8.GetBytes(message));
+                    client.TcpClient.Client.Send(System.Text.Encoding.UTF8.GetBytes(response + message));
                 }
                 catch (Exception ex)
                 {
@@ -1041,7 +1044,7 @@ namespace SignalGo.Server.ServiceManager
                     else if (findNextlvl == 3 && singleByte == 10)
                     {
                         var data = Encoding.UTF8.GetString(bytes.ToArray());
-                        if (data.Replace(" ", "").Contains(";filename="))
+                        if (data.Replace(" ", "").ToLower().Contains("content-disposition:"))
                             break;
                         findNextlvl = 0;
                     }
