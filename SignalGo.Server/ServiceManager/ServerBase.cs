@@ -146,6 +146,7 @@ namespace SignalGo.Server.ServiceManager
                 }
                 catch (Exception ex)
                 {
+                    Console.WriteLine("Server Disposed! : " + ex);
                     ServerInternalExceptionAction?.Invoke(ex);
                     SignalGo.Shared.Log.AutoLogger.LogError(ex, "Connect Server");
                     exception = ex;
@@ -376,7 +377,7 @@ namespace SignalGo.Server.ServiceManager
                                 var response = "HTTP/1.1 200 OK" + newLine
                                      + "Content-Type: text/html" + newLine
                                      + "Connection: Close" + newLine;
-                                tcpClient.Client.Send(System.Text.Encoding.ASCII.GetBytes(response+ newLine + "SignalGo Server OK" + newLine));
+                                tcpClient.Client.Send(System.Text.Encoding.ASCII.GetBytes(response + newLine + "SignalGo Server OK" + newLine));
                                 DisposeClient(client);
                                 return;
                             }
@@ -488,10 +489,10 @@ namespace SignalGo.Server.ServiceManager
                     string message = newLine + $"Internal Server Error: {data}" + newLine;
                     var response = $"HTTP/1.1 {(int)HttpStatusCode.InternalServerError} {HttpRequestController.GetStatusDescription((int)HttpStatusCode.InternalServerError)}" + newLine
                         + "Content-Type: text/html; charset=utf-8" + newLine
-                        + settingHeaders+
+                        + settingHeaders +
                         "Content-Length: " + (message.Length - 2) + newLine
                         + "Connection: Close" + newLine;
-                    client.TcpClient.Client.Send(System.Text.Encoding.UTF8.GetBytes(response+ message));
+                    client.TcpClient.Client.Send(System.Text.Encoding.UTF8.GetBytes(response + message));
                 }
                 catch (Exception ex)
                 {
@@ -745,6 +746,7 @@ namespace SignalGo.Server.ServiceManager
                                     "Content-Length: " + (message.Length - 2) + newLine
                                     + "Connection: Close" + newLine;
                     client.TcpClient.Client.Send(System.Text.Encoding.UTF8.GetBytes(response + message));
+                    Thread.Sleep(100);
                 }
                 catch (Exception ex)
                 {
