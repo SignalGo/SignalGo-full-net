@@ -31,6 +31,8 @@ namespace SignalGo.Server.ServiceManager
 {
     public abstract class ServerBase : IDisposable
     {
+        private Func<object> _serviceCreator;
+
         /// <summary>
         /// calling method count if this is going to zero server can stop
         /// </summary>
@@ -187,6 +189,12 @@ namespace SignalGo.Server.ServiceManager
         public void InitializeService<T>()
         {
             InitializeService(typeof(T));
+        }
+
+        public void InitializeService<T>(Func<object> serviceCreator)
+        {
+            _serviceCreator = serviceCreator;
+            InitializeService<T>();
         }
 
         internal object FindClientServiceByType(ClientInfo client, Type serviceType)
@@ -1555,7 +1563,9 @@ namespace SignalGo.Server.ServiceManager
                 {
                     throw new Exception($"{client.IPAddress} {client.SessionId} this service for this client exist, type: {serviceType.FullName} : serviceName:{callInfo.ServiceName}");
                 }
-                var objectInstance = Activator.CreateInstance(serviceType);//
+                
+                var objectInstance = _serviceCreator == null ? Activator.CreateInstance(serviceType) : _serviceCreator();
+
                 //objectInstance.CurrentClient = client;
                 //objectInstance.ServerBase = this;
                 this.Services[client].Add(objectInstance);
