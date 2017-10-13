@@ -98,6 +98,10 @@ namespace SignalGo.Server.ServiceManager
         /// کلاس های توابع کلاینت که سرور انها را صدا میزند و به دست کاربر میرسد.
         /// </summary>
         internal ConcurrentDictionary<ClientInfo, ConcurrentList<object>> Services { get; set; } = new ConcurrentDictionary<ClientInfo, ConcurrentList<object>>();
+        /// <summary>
+        /// signle instance services
+        /// </summary>
+        internal ConcurrentDictionary<string, object> SingleInstanceServices { get; set; } = new ConcurrentDictionary<string, object>();
         internal ConcurrentDictionary<ClientInfo, ConcurrentList<object>> Callbacks { get; set; } = new ConcurrentDictionary<ClientInfo, ConcurrentList<object>>();
 
         /// <summary>
@@ -190,9 +194,21 @@ namespace SignalGo.Server.ServiceManager
             InitializeService(typeof(T));
         }
 
-        internal object FindClientServiceByType(ClientInfo client, Type serviceType)
+        internal object FindClientServiceByType(ClientInfo client, Type serviceType, ServiceContractAttribute attribute)
         {
-            var serviceName = serviceType.GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault().Name;
+            if (attribute == null)
+            {
+                attribute = serviceType.GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault();
+            }
+
+            if (attribute.InstanceType == InstanceType.SingleInstance)
+            {
+                SingleInstanceServices.TryGetValue(attribute.Name, out object result);
+                return result;
+            }
+            if (!Services.ContainsKey(client))
+                return null;
+            var serviceName = attribute.Name;
             foreach (var item in Services[client])
             {
                 if (serviceName == item.GetType().GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault().Name)
@@ -289,7 +305,7 @@ namespace SignalGo.Server.ServiceManager
                         ClientsByIp[client.IPAddress].Add(client);
                     else
                         ClientsByIp.TryAdd(client.IPAddress, new List<Models.ClientInfo>() { client });
-                    Services.TryAdd(client, new ConcurrentList<object>());
+                    //Services.TryAdd(client, new ConcurrentList<object>());
                     WaitedMethodsForResponse.TryAdd(client, new ConcurrentDictionary<string, KeyValue<AutoResetEvent, MethodCallbackInfo>>());
                     ClientRegistredMethods.TryAdd(client, new ConcurrentDictionary<string, ConcurrentList<string>>());
 
@@ -1540,6 +1556,11 @@ namespace SignalGo.Server.ServiceManager
             return null;
         }
 
+        /// <summary>
+        /// register an inastance of service class for client to call server methods
+        /// </summary>
+        /// <param name="callInfo"></param>
+        /// <param name="client"></param>
         public void RegisterClassForClient(MethodCallInfo callInfo, ClientInfo client)
         {
             MethodCallbackInfo callback = new MethodCallbackInfo()
@@ -1552,15 +1573,26 @@ namespace SignalGo.Server.ServiceManager
                 if (!RegisteredServiceTypes.ContainsKey(callInfo.ServiceName))
                     throw new Exception($"Service name {callInfo.ServiceName} not found or not registered!");
                 var serviceType = RegisteredServiceTypes[callInfo.ServiceName];
-                var service = FindClientServiceByType(client, serviceType);
-                if (service != null)
+                var serviceTypeAttribute = serviceType.GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault();
+
+                var service = FindClientServiceByType(client, serviceType, serviceTypeAttribute);
+                if (service != null && serviceTypeAttribute.InstanceType == InstanceType.MultipeInstance)
                 {
                     throw new Exception($"{client.IPAddress} {client.SessionId} this service for this client exist, type: {serviceType.FullName} : serviceName:{callInfo.ServiceName}");
                 }
-                var objectInstance = Activator.CreateInstance(serviceType);//
-                //objectInstance.CurrentClient = client;
-                //objectInstance.ServerBase = this;
-                this.Services[client].Add(objectInstance);
+                else if (service == null)
+                {
+                    var objectInstance = Activator.CreateInstance(serviceType);
+                    if (serviceTypeAttribute.InstanceType == InstanceType.MultipeInstance)
+                    {
+                        if (!Services.ContainsKey(client))
+                            Services.TryAdd(client, new ConcurrentList<object>());
+                        this.Services[client].Add(objectInstance);
+                    }
+                    else
+                        SingleInstanceServices.TryAdd(serviceTypeAttribute.Name, objectInstance);
+                }
+
                 //جلوگیری از هنگ
                 //AsyncActions.Run(objectInstance.OnInitialized);
                 AddedClient?.Invoke(client);
@@ -1703,7 +1735,7 @@ namespace SignalGo.Server.ServiceManager
                     var serviceType = RegisteredServiceTypes[callInfo.ServiceName];
                     if (serviceType == null)
                         throw new Exception($"{client.IPAddress} {client.SessionId} serviceType {callInfo.ServiceName} not found");
-                    var service = FindClientServiceByType(client, serviceType);
+                    var service = FindClientServiceByType(client, serviceType, null);
                     if (service == null)
                         throw new Exception($"{client.IPAddress} {client.SessionId} service {callInfo.ServiceName} not found");
 

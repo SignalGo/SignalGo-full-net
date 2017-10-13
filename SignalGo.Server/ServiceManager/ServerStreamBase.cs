@@ -29,10 +29,10 @@ namespace SignalGo.Server.ServiceManager
 
             var serviceType = RegisteredServiceTypes[callInfo.ServiceName];
             var sessionId = callInfo.Data.ToString();
-            var clientInfo = (from x in Services.ToArray() where x.Key.SessionId == sessionId select x.Key).FirstOrDefault();
+            var clientInfo = (from x in Clients.ToArray() where x.SessionId == sessionId select x).FirstOrDefault();
             if (clientInfo == null)
                 throw new Exception("RegisterFile client not found!");
-            var service = FindClientServiceByType(clientInfo, serviceType);
+            var service = FindClientServiceByType(clientInfo, serviceType, null);
 
 #if (NETSTANDARD1_6 || NETCOREAPP1_1)
             var method = serviceType.GetTypeInfo().GetMethod(callInfo.MethodName, RuntimeTypeHelper.GetMethodTypes(serviceType, callInfo).ToArray());
@@ -90,10 +90,10 @@ namespace SignalGo.Server.ServiceManager
 
             var serviceType = RegisteredServiceTypes[callInfo.ServiceName];
             var sessionId = callInfo.Data.ToString();
-            var clientInfo = (from x in Services.ToArray() where x.Key.SessionId == sessionId select x.Key).FirstOrDefault();
+            var clientInfo = (from x in Clients.ToArray() where x.SessionId == sessionId select x).FirstOrDefault();
             if (clientInfo == null)
                 throw new Exception("RegisterFile client not found!");
-            var service = FindClientServiceByType(clientInfo, serviceType);
+            var service = FindClientServiceByType(clientInfo, serviceType, null);
 
 #if (NETSTANDARD1_6 || NETCOREAPP1_1)
             var method = serviceType.GetTypeInfo().GetMethod(callInfo.MethodName, RuntimeTypeHelper.GetMethodTypes(serviceType, callInfo).ToArray());
