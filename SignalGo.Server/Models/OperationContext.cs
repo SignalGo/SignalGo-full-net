@@ -17,7 +17,7 @@ namespace SignalGo.Server.Models
         {
             get
             {
-                if (ServerBase.AllDispatchers.ContainsKey(SynchronizationContext.Current))
+                if (SynchronizationContext.Current != null && ServerBase.AllDispatchers.ContainsKey(SynchronizationContext.Current))
                     return new OperationContext() { Client = ServerBase.AllDispatchers[SynchronizationContext.Current], ServerBase = ServerBase.AllDispatchers[SynchronizationContext.Current].ServerBase };
                 return null;
             }
