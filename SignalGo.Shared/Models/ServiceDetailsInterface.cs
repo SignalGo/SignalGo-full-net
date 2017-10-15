@@ -11,6 +11,10 @@ namespace SignalGo.Shared.Models
     public class ServiceDetailsInterface
     {
         /// <summary>
+        /// id of class
+        /// </summary>
+        public int Id { get; set; }
+        /// <summary>
         /// name of class
         /// </summary>
         public string NameSpace { get; set; }

@@ -2176,14 +2176,17 @@ namespace SignalGo.Server.ServiceManager
                     using (var xmlCommentLoader = new XmlCommentLoader())
                     {
                         List<Type> modelTypes = new List<Type>();
-                        ProviderDetailsInfo result = new ProviderDetailsInfo();
+                        int id = 1;
+                        ProviderDetailsInfo result = new ProviderDetailsInfo() { Id = id };
                         foreach (var service in RegisteredServiceTypes)
                         {
+                            id++;
                             var serviceDetail = new ServiceDetailsInfo()
                             {
                                 ServiceName = service.Key,
                                 FullNameSpace = service.Value.FullName,
                                 NameSpace = service.Value.Name,
+                                Id = id
                             };
                             result.Services.Add(serviceDetail);
                             List<Type> types = new List<Type>();
@@ -2204,11 +2207,13 @@ namespace SignalGo.Server.ServiceManager
                                 if (methods.Count == 0)
                                     continue;
                                 var comment = xmlCommentLoader.GetCommment(serviceType);
+                                id++;
                                 var interfaceInfo = new ServiceDetailsInterface()
                                 {
                                     NameSpace = serviceType.Name,
                                     FullNameSpace = serviceType.FullName,
-                                    Comment = comment?.Summery
+                                    Comment = comment?.Summery,
+                                    Id = id
                                 };
                                 serviceDetail.Services.Add(interfaceInfo);
                                 List<ServiceDetailsMethod> serviceMethods = new List<ServiceDetailsMethod>();
@@ -2247,6 +2252,7 @@ namespace SignalGo.Server.ServiceManager
                                             exceptions += ex.RefrenceType + ":" + ex.Comment + Environment.NewLine;
                                         }
                                     }
+                                    id++;
                                     ServiceDetailsMethod info = new ServiceDetailsMethod()
                                     {
                                         MethodName = method.Name,
@@ -2254,7 +2260,8 @@ namespace SignalGo.Server.ServiceManager
                                         ReturnType = method.ReturnType.FullName,
                                         Comment = methodComment?.Summery,
                                         ReturnComment = methodComment?.Returns,
-                                        ExceptionsComment = exceptions
+                                        ExceptionsComment = exceptions,
+                                        Id = id
                                     };
                                     RuntimeTypeHelper.GetListOfUsedTypes(method.ReturnType, ref modelTypes);
                                     foreach (var paramInfo in method.GetParameters())
@@ -2262,12 +2269,14 @@ namespace SignalGo.Server.ServiceManager
                                         string parameterComment = "";
                                         if (methodComment != null)
                                             parameterComment = (from x in methodComment.Parameters where x.Name == paramInfo.Name select x.Comment).FirstOrDefault();
+                                        id++;
                                         ServiceDetailsParameterInfo p = new ServiceDetailsParameterInfo()
                                         {
                                             Name = paramInfo.Name,
                                             Type = paramInfo.ParameterType.Name,
                                             FullTypeName = paramInfo.ParameterType.FullName,
-                                            Comment = parameterComment
+                                            Comment = parameterComment,
+                                            Id = id
                                         };
                                         info.Parameters.Add(p);
                                         RuntimeTypeHelper.GetListOfUsedTypes(paramInfo.ParameterType, ref modelTypes);
@@ -2281,10 +2290,14 @@ namespace SignalGo.Server.ServiceManager
 
                         foreach (var httpServiceType in RegisteredHttpServiceTypes)
                         {
+                            id++;
                             var controller = new HttpControllerDetailsInfo()
                             {
+                                Id = id,
                                 Url = httpServiceType.Value.GetCustomAttributes<HttpSupportAttribute>(true)[0].Addresses.FirstOrDefault(),
                             };
+                            id++;
+                            result.WebApiDetailsInfo.Id = id;
                             result.WebApiDetailsInfo.HttpControllers.Add(controller);
                             var methods = httpServiceType.Value.GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance).Where(x => !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_")))).ToList();
                             if (methods.Count == 0)
@@ -2326,8 +2339,10 @@ namespace SignalGo.Server.ServiceManager
                                         exceptions += ex.RefrenceType + ":" + ex.Comment + Environment.NewLine;
                                     }
                                 }
+                                id++;
                                 ServiceDetailsMethod info = new ServiceDetailsMethod()
                                 {
+                                    Id = id,
                                     MethodName = method.Name,
                                     Parameters = new List<ServiceDetailsParameterInfo>(),
                                     ReturnType = method.ReturnType.FullName,
@@ -2343,8 +2358,10 @@ namespace SignalGo.Server.ServiceManager
                                     string parameterComment = "";
                                     if (methodComment != null)
                                         parameterComment = (from x in methodComment.Parameters where x.Name == paramInfo.Name select x.Comment).FirstOrDefault();
+                                    id++;
                                     ServiceDetailsParameterInfo p = new ServiceDetailsParameterInfo()
                                     {
+                                        Id = id,
                                         Name = paramInfo.Name,
                                         Type = paramInfo.ParameterType.Name,
                                         FullTypeName = paramInfo.ParameterType.FullName,
@@ -2384,8 +2401,12 @@ namespace SignalGo.Server.ServiceManager
                                     if (jsonResult == "{}" || jsonResult == "[]")
                                         continue;
                                     var comment = xmlCommentLoader.GetCommment(type);
+                                    id++;
+                                    result.ProjectDomainDetailsInfo.Id = id;
+                                    id++;
                                     result.ProjectDomainDetailsInfo.Models.Add(new ModelDetailsInfo()
                                     {
+                                        Id = id,
                                         Comment = comment?.Summery,
                                         Name = type.Name,
                                         FullNameSpace = type.FullName,

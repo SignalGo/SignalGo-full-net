@@ -7,6 +7,10 @@ namespace SignalGo.Shared.Models
     public class ModelDetailsInfo
     {
         /// <summary>
+        /// id of class
+        /// </summary>
+        public int Id { get; set; }
+        /// <summary>
         /// name of model
         /// </summary>
         public string Name { get; set; }
