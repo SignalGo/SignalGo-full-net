@@ -74,7 +74,7 @@ namespace SignalGo.Server.IO
                     lineLen = 2;
                     _Length -= 2;
                 }
-                Console.WriteLine("ok&" + (endBuffer.Length - needRead - lineLen));
+                //Console.WriteLine("ok&" + (endBuffer.Length - needRead - lineLen));
                 var newBuffer = endBuffer.ToList().GetRange(0, endBuffer.Length - needRead - lineLen);
                 if (newBuffer.Count == 0)
                     return -1;
