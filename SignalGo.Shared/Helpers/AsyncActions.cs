@@ -42,6 +42,22 @@ namespace SignalGo.Shared
         /// <param name="action">your action</param>
         public static void Run(Action action, Action<Exception> onException = null)
         {
+#if (PORTABLE)
+            System.Threading.Tasks.Task thread = new System.Threading.Tasks.Task(() =>
+            {
+                try
+                {
+                    action();
+                }
+                catch (Exception ex)
+                {
+                    onException?.Invoke(ex);
+                    AutoLogger.LogError(ex, "AsyncActions Run");
+                    OnActionException?.Invoke(ex);
+                }
+            });
+            thread.Start();
+#else
             Thread thread = new Thread(() =>
             {
                 try
@@ -59,6 +75,7 @@ namespace SignalGo.Shared
                 IsBackground = false
             };
             thread.Start();
+#endif
         }
     }
 }

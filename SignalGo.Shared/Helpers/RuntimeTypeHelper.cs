@@ -24,7 +24,7 @@ namespace SignalGo.Shared.Helpers
 #if (NETSTANDARD1_6)
             var methods = serviceType.GetTypeInfo().GetMethods();
 #else
-            var methods = serviceType.GetMethods();
+            var methods = serviceType.GetListOfMethods();
 #endif
             foreach (var item in methods)
             {
@@ -53,20 +53,16 @@ namespace SignalGo.Shared.Helpers
                 findedTypes.Add(type);
             else
                 return;
-#if (NETSTANDARD1_6 || NETCOREAPP1_1)
-            if (type.GetTypeInfo().IsGenericType)
-#else
-            if (type.IsGenericType)
-#endif
+            if (type.GetIsGenericType())
             {
-                foreach (var item in type.GetGenericArguments())
+                foreach (var item in type.GetListOfGenericArguments())
                 {
                     GetListOfUsedTypes(item, ref findedTypes);
                 }
             }
             else
             {
-                foreach (var item in type.GetProperties())
+                foreach (var item in type.GetListOfProperties())
                 {
                     GetListOfUsedTypes(item.PropertyType, ref findedTypes);
                 }

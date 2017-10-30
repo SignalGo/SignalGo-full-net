@@ -18,7 +18,11 @@ namespace SignalGo.Shared.Http
 
         public FileActionResult(string fileName) : base(fileName)
         {
+#if (PORTABLE)
+            throw new NotSupportedException();
+#else
             FileStream = new FileStream(fileName, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite);
+#endif
         }
     }
 }

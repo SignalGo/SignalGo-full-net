@@ -3,7 +3,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+#if (!PORTABLE)
 using System.Net.Sockets;
+#endif
 using System.Reflection;
 using System.Text;
 
@@ -16,6 +18,7 @@ namespace SignalGo.Shared.Models
 
         public void Dispose()
         {
+#if (!PORTABLE)
             if (Stream is NetworkStream)
             {
                 try
@@ -37,6 +40,7 @@ namespace SignalGo.Shared.Models
                     AutoLogger.LogError(ex, "StreamInfo Dispose");
                 }
             }
+#endif
             Stream.Dispose();
         }
     }

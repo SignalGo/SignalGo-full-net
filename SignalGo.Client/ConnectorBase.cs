@@ -11,7 +11,9 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+#if (!PORTABLE)
 using System.Net.Sockets;
+#endif
 using System.Reflection;
 using System.Text;
 using System.Threading;
@@ -137,8 +139,11 @@ namespace SignalGo.Client
         {
             var added = WaitedMethodsForResponse.TryAdd(callInfo.Guid, new KeyValue<AutoResetEvent, MethodCallbackInfo>(new AutoResetEvent(false), null));
             var service = connector.Services.ContainsKey(callInfo.ServiceName) ? connector.Services[callInfo.ServiceName] : null;
+#if (PORTABLE)
+            var method = service?.GetType().FindMethod(callInfo.MethodName);
+#else
             var method = service?.GetType().GetMethod(callInfo.MethodName, RuntimeTypeHelper.GetMethodTypes(service.GetType(), callInfo).ToArray());
-
+#endif
             if (method != null && method.ReturnType == typeof(StreamInfo))
             {
                 callInfo.Data = connector.SessionId;
@@ -265,7 +270,11 @@ namespace SignalGo.Client
         /// <summary>
         /// client tcp
         /// </summary>
+#if (PORTABLE)
+        internal Sockets.Plugin.TcpSocketClient _client;
+#else
         internal TcpClient _client;
+#endif
         /// <summary>
         /// registred callbacks
         /// </summary>
@@ -282,7 +291,7 @@ namespace SignalGo.Client
         /// </summary>
         /// <param name="address">server address</param>
         /// <param name="port">server port</param>
-#if (NETSTANDARD1_6 || NETCOREAPP1_1)
+#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
         internal async void Connect(string address, int port)
 #else
         internal void Connect(string address, int port)
@@ -293,6 +302,9 @@ namespace SignalGo.Client
             IsDisposed = false;
 #if (NETSTANDARD1_6 || NETCOREAPP1_1)
             _client = new TcpClient();
+            await _client.ConnectAsync(address, port);
+#elif (PORTABLE)
+            _client = new Sockets.Plugin.TcpSocketClient();
             await _client.ConnectAsync(address, port);
 #else
             _client = new TcpClient(address, port);
@@ -311,7 +323,7 @@ namespace SignalGo.Client
             var type = typeof(T);
             MethodCallInfo callInfo = new MethodCallInfo()
             {
-#if (NETSTANDARD1_6 || NETCOREAPP1_1)
+#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
                 ServiceName = ((ServiceContractAttribute)type.GetTypeInfo().GetCustomAttributes(typeof(ServiceContractAttribute), true).FirstOrDefault()).Name,
 #else
                 ServiceName = ((ServiceContractAttribute)type.GetCustomAttributes(typeof(ServiceContractAttribute), true).FirstOrDefault()).Name,
@@ -333,7 +345,11 @@ namespace SignalGo.Client
         /// <returns></returns>
         internal object GetDefault(Type t)
         {
+#if (!PORTABLE)
             return this.GetType().GetMethod("GetDefaultGeneric").MakeGenericMethod(t).Invoke(this, null);
+#else
+            return this.GetType().FindMethod("GetDefaultGeneric").MakeGenericMethod(t).Invoke(this, null);
+#endif
         }
         /// <summary>
         /// get default value from type
@@ -344,7 +360,7 @@ namespace SignalGo.Client
         {
             return default(T);
         }
-#if (!NETSTANDARD1_6 && !NETCOREAPP1_1 && !NET35)
+#if (!NETSTANDARD1_6 && !NETCOREAPP1_1 && !NET35 && !PORTABLE)
         /// <summary>
         /// register service and method to server for client call thats
         /// </summary>
@@ -385,7 +401,7 @@ namespace SignalGo.Client
             };
             var callback = this.SendData<MethodCallbackInfo>(callInfo);
         }
-#if (!NETSTANDARD1_6 && !NETCOREAPP1_1 && !NET35)
+#if (!NETSTANDARD1_6 && !NETCOREAPP1_1 && !NET35 && !PORTABLE)
         /// <summary>
         /// register a callback interface and get dynamic calls
         /// not work on ios
@@ -471,7 +487,11 @@ namespace SignalGo.Client
             {
                 try
                 {
+#if (PORTABLE)
+                    var stream = _client.ReadStream;
+#else
                     var stream = _client.GetStream();
+#endif
                     while (true)
                     {
                         //first byte is DataType
@@ -485,7 +505,7 @@ namespace SignalGo.Client
                             var bytes = GoStreamReader.ReadBlockToEnd(stream, compresssMode, ProviderSetting.MaximumReceiveDataBlock, IsWebSocket);
                             if (SecuritySettings != null)
                                 bytes = DecryptBytes(bytes);
-                            var json = Encoding.UTF8.GetString(bytes);
+                            var json = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
                             MethodCallInfo callInfo = JsonConvert.DeserializeObject<MethodCallInfo>(json);
                             if (callInfo.Type == MethodType.User)
                                 CallMethod(callInfo);
@@ -503,7 +523,7 @@ namespace SignalGo.Client
                             var bytes = GoStreamReader.ReadBlockToEnd(stream, compresssMode, ProviderSetting.MaximumReceiveDataBlock, IsWebSocket);
                             if (SecuritySettings != null)
                                 bytes = DecryptBytes(bytes);
-                            var json = Encoding.UTF8.GetString(bytes);
+                            var json = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
                             MethodCallbackInfo callback = JsonConvert.DeserializeObject<MethodCallbackInfo>(json);
 
                             var geted = ConnectorExtension.WaitedMethodsForResponse.TryGetValue(callback.Guid, out KeyValue<AutoResetEvent, MethodCallbackInfo> keyValue);
@@ -518,7 +538,7 @@ namespace SignalGo.Client
                             var bytes = GoStreamReader.ReadBlockToEnd(stream, compresssMode, ProviderSetting.MaximumReceiveDataBlock, IsWebSocket);
                             if (SecuritySettings != null)
                                 bytes = DecryptBytes(bytes);
-                            var json = Encoding.UTF8.GetString(bytes);
+                            var json = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
                             getServiceDetialResult = JsonConvert.DeserializeObject<ProviderDetailsInfo>(json);
                             if (getServiceDetialResult == null)
                                 getServiceDetialExceptionResult = JsonConvert.DeserializeObject<Exception>(json);
@@ -530,7 +550,7 @@ namespace SignalGo.Client
                             var bytes = GoStreamReader.ReadBlockToEnd(stream, compresssMode, ProviderSetting.MaximumReceiveDataBlock, IsWebSocket);
                             if (SecuritySettings != null)
                                 bytes = DecryptBytes(bytes);
-                            var json = Encoding.UTF8.GetString(bytes);
+                            var json = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
                             getmethodParameterDetailsResult = json;
                             getServiceDetailEvent.Set();
                             getServiceDetailEvent.Reset();
@@ -585,6 +605,11 @@ namespace SignalGo.Client
             {
                 try
                 {
+#if (PORTABLE)
+                    var stream = _client.WriteStream;
+#else
+                    var stream = _client.GetStream();
+#endif
                     var json = JsonConvert.SerializeObject(Data);
                     List<byte> bytes = new List<byte>
                     {
@@ -599,7 +624,7 @@ namespace SignalGo.Client
                     bytes.AddRange(jsonBytes);
                     if (bytes.Count > ProviderSetting.MaximumSendDataBlock)
                         throw new Exception("SendData data length is upper than MaximumSendDataBlock");
-                    GoStreamWriter.WriteToStream(_client.GetStream(), bytes.ToArray(), IsWebSocket);
+                    GoStreamWriter.WriteToStream(stream, bytes.ToArray(), IsWebSocket);
                 }
                 catch (Exception ex)
                 {
@@ -624,7 +649,11 @@ namespace SignalGo.Client
             try
             {
                 var service = Callbacks[callInfo.ServiceName].Value;
+#if (PORTABLE)
+                var method = service.GetType().FindMethod(callInfo.MethodName);
+#else
                 var method = service.GetType().GetMethod(callInfo.MethodName, RuntimeTypeHelper.GetMethodTypes(service.GetType(), callInfo).ToArray());
+#endif
                 if (method == null)
                     throw new Exception($"Method {callInfo.MethodName} from service {callInfo.ServiceName} not found! serviceType: {service.GetType().FullName}");
                 List<object> parameters = new List<object>();
@@ -681,7 +710,12 @@ namespace SignalGo.Client
             if (data.Count > ProviderSetting.MaximumSendDataBlock)
                 throw new Exception("SendCallbackData data length is upper than MaximumSendDataBlock");
 
-            GoStreamWriter.WriteToStream(_client.GetStream(), data.ToArray(), IsWebSocket);
+#if (PORTABLE)
+            var stream = _client.WriteStream;
+#else
+            var stream = _client.GetStream();
+#endif
+            GoStreamWriter.WriteToStream(stream, data.ToArray(), IsWebSocket);
         }
 
 
@@ -707,8 +741,12 @@ namespace SignalGo.Client
                 data.AddRange(bytes);
                 if (data.Count > ProviderSetting.MaximumSendDataBlock)
                     throw new Exception("SendCallbackData data length is upper than MaximumSendDataBlock");
-
-                GoStreamWriter.WriteToStream(_client.GetStream(), data.ToArray(), IsWebSocket);
+#if (PORTABLE)
+                var stream = _client.WriteStream;
+#else
+                var stream = _client.GetStream();
+#endif
+                GoStreamWriter.WriteToStream(stream, data.ToArray(), IsWebSocket);
             });
             getServiceDetailEvent.WaitOne();
             if (getServiceDetialExceptionResult != null)
@@ -735,8 +773,12 @@ namespace SignalGo.Client
                 data.AddRange(bytes);
                 if (data.Count > ProviderSetting.MaximumSendDataBlock)
                     throw new Exception("SendCallbackData data length is upper than MaximumSendDataBlock");
-
-                GoStreamWriter.WriteToStream(_client.GetStream(), data.ToArray(), IsWebSocket);
+#if (PORTABLE)
+                var stream = _client.WriteStream;
+#else
+                var stream = _client.GetStream();
+#endif
+                GoStreamWriter.WriteToStream(stream, data.ToArray(), IsWebSocket);
             });
             getServiceDetailEvent.WaitOne();
             return getmethodParameterDetailsResult;
@@ -758,7 +800,7 @@ namespace SignalGo.Client
                     item.Value.Key.Set();
                 }
                 if (_client != null)
-#if (NETSTANDARD1_6 || NETCOREAPP1_1)
+#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
                     _client.Dispose();
 #else
                     _client.Close();

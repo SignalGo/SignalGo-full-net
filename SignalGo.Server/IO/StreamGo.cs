@@ -55,8 +55,18 @@ namespace SignalGo.Server.IO
             if (count + Position > Length)
             {
                 IsReadFinishedBytes = true;
+                //Console.WriteLine("length:" + Length + "pos:" + Position);
+                //Console.WriteLine("need take:" + (Length - Position + BoundarySize));
+#if (!PORTABLE)
                 var endBuffer = GoStreamReader.ReadBlockSize(CurrentStream, (ulong)(Length - Position + BoundarySize));
+#else
+                var endBuffer = GoStreamReader.ReadBlockSize(CurrentStream, (ulong)(Length - Position + BoundarySize));
+#endif
+                //Console.WriteLine("sizeTake:" + endBuffer.Length);
+                if (endBuffer.Length == 0)
+                    return 0;
                 var needRead = (int)BoundarySize;
+                //Console.WriteLine(endBuffer.Length + "&" + (endBuffer.Length - needRead) + " & " + needRead);
                 var text = Encoding.UTF8.GetString(endBuffer.ToList().GetRange(endBuffer.Length - needRead, needRead).ToArray());
                 int lineLen = 0;
                 if (!text.StartsWith("\r\n"))
@@ -64,6 +74,7 @@ namespace SignalGo.Server.IO
                     lineLen = 2;
                     _Length -= 2;
                 }
+                Console.WriteLine("ok&" + (endBuffer.Length - needRead - lineLen));
                 var newBuffer = endBuffer.ToList().GetRange(0, endBuffer.Length - needRead - lineLen);
                 if (newBuffer.Count == 0)
                     return -1;

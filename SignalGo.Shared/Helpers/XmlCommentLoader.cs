@@ -1,4 +1,5 @@
-﻿using System;
+﻿#if (!PORTABLE)
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
@@ -143,7 +144,7 @@ namespace SignalGo.Shared.Helpers
             if (documentation == null)
                 return null;
             List<CommentOfMethodInfo> methods = new List<CommentOfMethodInfo>();
-            foreach (var item in classInfo.GetMethods())
+            foreach (var item in classInfo.GetListOfMethods())
             {
                 var comment = GetCommment(item);
                 if (comment == null)
@@ -208,14 +209,10 @@ namespace SignalGo.Shared.Helpers
 
         string GetParameterFullName(Type type)
         {
-#if (NETSTANDARD1_6 || NETCOREAPP1_1)
-            if (type.GetTypeInfo().IsGenericType)
-#else
-            if (type.IsGenericType)
-#endif
+            if (type.GetIsGenericType())
             {
                 string generics = "";
-                foreach (var item in type.GetGenericArguments())
+                foreach (var item in type.GetListOfGenericArguments())
                 {
                     if (!string.IsNullOrEmpty(generics))
                     {
@@ -282,3 +279,4 @@ namespace SignalGo.Shared.Helpers
         }
     }
 }
+#endif

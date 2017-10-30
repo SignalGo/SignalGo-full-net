@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+#if (!PORTABLE)
 using System.Security.Cryptography;
+#endif
 using System.Text;
 
 namespace SignalGo.Shared.Security
@@ -11,12 +13,16 @@ namespace SignalGo.Shared.Security
     {
         public static byte[] EncryptBytes(byte[] bytes, string key, string IV)
         {
+#if (PORTABLE)
+            throw new NotSupportedException("not support for this .net standard version!");
+#else
             return EncryptBytes(bytes, Encoding.ASCII.GetBytes(key), Encoding.ASCII.GetBytes(IV));
+#endif
         }
 
         public static byte[] EncryptBytes(byte[] bytes, byte[] key, byte[] IV)
         {
-#if (NETSTANDARD1_6 || NETCOREAPP1_1)
+#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
             throw new NotSupportedException("not support for this .net standard version!");
 #else
             if (bytes == null || bytes.Length <= 0)
@@ -46,12 +52,16 @@ namespace SignalGo.Shared.Security
 
         public static byte[] DecryptBytes(byte[] bytes, string key, string IV)
         {
+#if (PORTABLE)
+            throw new NotSupportedException("not support for this .net standard version!");
+#else
             return DecryptBytes(bytes, Encoding.ASCII.GetBytes(key), Encoding.ASCII.GetBytes(IV));
+#endif
         }
 
         public static byte[] DecryptBytes(byte[] bytes, byte[] Key, byte[] IV)
         {
-#if (NETSTANDARD1_6 || NETCOREAPP1_1)
+#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
             throw new NotSupportedException("not support for this .net standard version!");
 #else
             if (bytes == null || bytes.Length <= 0)

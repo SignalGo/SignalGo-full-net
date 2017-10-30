@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+#if (!PORTABLE)
 using System.Net.Sockets;
+#endif
 using System.Text;
 using System.Threading;
 
@@ -10,13 +12,21 @@ namespace SignalGo.Shared.IO
 {
     public class CustomStreamReader : Stream
     {
+#if (!PORTABLE)
         NetworkStream CurrentStream { get; set; }
 
         public CustomStreamReader(NetworkStream currentStream)
         {
             CurrentStream = currentStream;
         }
+#else
+        Stream CurrentStream { get; set; }
 
+        public CustomStreamReader(Stream currentStream)
+        {
+            CurrentStream = currentStream;
+        }
+#endif
         public int LastByteRead { get; set; } = -5;
 
         public override bool CanRead => CurrentStream.CanRead;
@@ -60,8 +70,10 @@ namespace SignalGo.Shared.IO
             bool isFirst = true;
             do
             {
+#if (!PORTABLE)
                 if (!CheckDataAvalable(isFirst))
                     break;
+#endif
                 isFirst = false;
                 int data = CurrentStream.ReadByte();
                 LastByteRead = data;
@@ -70,8 +82,10 @@ namespace SignalGo.Shared.IO
                 result.Add((byte)data);
                 if (data == 13)
                 {
+#if (!PORTABLE)
                     if (!CheckDataAvalable(isFirst))
                         break;
+#endif
                     data = CurrentStream.ReadByte();
                     LastByteRead = data;
                     if (data == -1)
@@ -82,9 +96,9 @@ namespace SignalGo.Shared.IO
                 }
             }
             while (true);
-            return Encoding.UTF8.GetString(result.ToArray());
+            return Encoding.UTF8.GetString(result.ToArray(), 0, result.Count);
         }
-
+#if (!PORTABLE)
         bool CheckDataAvalable(bool isFirstCall)
         {
             if (isFirstCall || CurrentStream.DataAvailable)
@@ -98,5 +112,6 @@ namespace SignalGo.Shared.IO
             }
             return CurrentStream.DataAvailable;
         }
+#endif
     }
 }

@@ -64,7 +64,7 @@ namespace SignalGo.Shared.Converters
         /// <returns></returns>
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
-#if (NETSTANDARD1_6 || NETCOREAPP1_1)
+#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
             var implementICollection = (SkipDataExchangeAttribute)objectType.GetTypeInfo().GetCustomAttributes(typeof(SkipDataExchangeAttribute), true).FirstOrDefault();
 #else
             var implementICollection = (SkipDataExchangeAttribute)objectType.GetCustomAttributes(typeof(SkipDataExchangeAttribute), true).FirstOrDefault();
@@ -102,7 +102,7 @@ namespace SignalGo.Shared.Converters
             {
                 return;
             }
-            foreach (var property in type.GetProperties())
+            foreach (var property in type.GetListOfProperties())
             {
                 if (property.CanRead)
                 {
@@ -125,7 +125,7 @@ namespace SignalGo.Shared.Converters
                         if (ExchangerTypes != null)
                         {
                             var find = ExchangerTypes.FirstOrDefault(x => x.Type == type && (x.LimitationMode == LimitExchangeType.Both || x.LimitationMode == LimitExchangeType.IncomingCall));
-                            if (find != null)
+                            if (find != null && find.Properties != null)
                             {
                                 if (find.CustomDataExchangerType == CustomDataExchangerType.Take)
                                 {
@@ -146,8 +146,8 @@ namespace SignalGo.Shared.Converters
                     }
                     else
                     {
-                        bool isPropertyArray = typeof(IEnumerable).IsAssignableFrom(property.PropertyType) && property.PropertyType != typeof(string);
-                        bool isPropertyDictionary = typeof(IDictionary).IsAssignableFrom(property.PropertyType);
+                        bool isPropertyArray = typeof(IEnumerable).GetIsAssignableFrom(property.PropertyType) && property.PropertyType != typeof(string);
+                        bool isPropertyDictionary = typeof(IDictionary).GetIsAssignableFrom(property.PropertyType);
                         if (isPropertyDictionary)
                         {
                             var value = property.GetValue(instance, null);
@@ -188,19 +188,19 @@ namespace SignalGo.Shared.Converters
                     return;
                 }
                 var type = value.GetType();
-#if (NETSTANDARD1_6 || NETCOREAPP1_1)
+#if (NETSTANDARD1_6 || NETCOREAPP1_1 ||  PORTABLE)
                 if (type.GetTypeInfo().BaseType != null && type.Namespace == "System.Data.Entity.DynamicProxies")
                 {
                     type = type.GetTypeInfo().BaseType;
                 }
 #else
-                 if (type.BaseType != null && type.Namespace == "System.Data.Entity.DynamicProxies")
+                if (type.GetBaseType() != null && type.Namespace == "System.Data.Entity.DynamicProxies")
                 {
-                    type = type.BaseType;
+                    type = type.GetBaseType();
                 }
 #endif
 
-#if (NETSTANDARD1_6 || NETCOREAPP1_1)
+#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
                 var implementICollection = (SkipDataExchangeAttribute)type.GetTypeInfo().GetCustomAttributes(typeof(SkipDataExchangeAttribute), true).FirstOrDefault();
 #else
                 var implementICollection = (SkipDataExchangeAttribute)type.GetCustomAttributes(typeof(SkipDataExchangeAttribute), true).FirstOrDefault();
@@ -218,8 +218,8 @@ namespace SignalGo.Shared.Converters
                     return;
                 }
 
-                bool isArray = typeof(IEnumerable).IsAssignableFrom(type) && !(value is string);
-                bool isDictionary = typeof(IDictionary).IsAssignableFrom(type);
+                bool isArray = typeof(IEnumerable).GetIsAssignableFrom(type) && !(value is string);
+                bool isDictionary = typeof(IDictionary).GetIsAssignableFrom(type);
 
                 if (isArray && !isDictionary)
                     writer.WriteStartArray();
@@ -251,8 +251,8 @@ namespace SignalGo.Shared.Converters
                         if (item == null)
                             continue;
                         var itemType = item.GetType();
-                        bool isPropertyArray = typeof(IEnumerable).IsAssignableFrom(itemType) && itemType != typeof(string);
-                        bool isPropertyDictionary = typeof(IDictionary).IsAssignableFrom(itemType);
+                        bool isPropertyArray = typeof(IEnumerable).GetIsAssignableFrom(itemType) && itemType != typeof(string);
+                        bool isPropertyDictionary = typeof(IDictionary).GetIsAssignableFrom(itemType);
                         if (isPropertyArray || isPropertyDictionary)
                             serializer.Serialize(writer, item);
                         else
@@ -260,7 +260,7 @@ namespace SignalGo.Shared.Converters
 #if (NETSTANDARD1_6 || NETCOREAPP1_1)
                             bool canWriteFast = itemType == typeof(string) || !(itemType.GetTypeInfo().IsClass || itemType.GetTypeInfo().IsInterface);
 #else
-                            bool canWriteFast = itemType == typeof(string) || !(itemType.IsClass || itemType.IsInterface);
+                            bool canWriteFast = itemType == typeof(string) || !(itemType.GetIsClass() || itemType.GetIsInterface());
 #endif
                             if (canWriteFast)
                                 writer.WriteValue(item);
@@ -299,7 +299,7 @@ namespace SignalGo.Shared.Converters
         {
             try
             {
-                foreach (var property in baseType.GetProperties())
+                foreach (var property in baseType.GetListOfProperties())
                 {
                     if (property.CanRead)
                     {
@@ -322,7 +322,7 @@ namespace SignalGo.Shared.Converters
                             if (ExchangerTypes != null)
                             {
                                 var find = ExchangerTypes.FirstOrDefault(x => x.Type == baseType && (x.LimitationMode == LimitExchangeType.Both || x.LimitationMode == LimitExchangeType.OutgoingCall));
-                                if (find != null)
+                                if (find != null && find.Properties != null)
                                 {
                                     if (find.CustomDataExchangerType == CustomDataExchangerType.Take)
                                     {
@@ -339,8 +339,8 @@ namespace SignalGo.Shared.Converters
                         }
                         if (!isIgnored)
                         {
-                            bool isPropertyArray = typeof(IEnumerable).IsAssignableFrom(property.PropertyType) && property.PropertyType != typeof(string);
-                            bool isPropertyDictionary = typeof(IDictionary).IsAssignableFrom(property.PropertyType);
+                            bool isPropertyArray = typeof(IEnumerable).GetIsAssignableFrom(property.PropertyType) && property.PropertyType != typeof(string);
+                            bool isPropertyDictionary = typeof(IDictionary).GetIsAssignableFrom(property.PropertyType);
                             if (isPropertyArray || isPropertyDictionary)
                             {
                                 object propValue = null;

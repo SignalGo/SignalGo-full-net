@@ -1,4 +1,5 @@
-﻿using System;
+﻿#if (!PORTABLE)
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
@@ -134,3 +135,4 @@ namespace SignalGo.Shared.Security
         }
     }
 }
+#endif

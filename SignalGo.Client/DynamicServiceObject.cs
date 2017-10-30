@@ -6,6 +6,7 @@ using SignalGo.Client;
 using System.Linq;
 using System.Text;
 using System.Reflection;
+using SignalGo.Shared.Helpers;
 
 namespace SignalGo.Client
 {
@@ -39,7 +40,8 @@ namespace SignalGo.Client
             }
             else
             {
-                result = Newtonsoft.Json.JsonConvert.DeserializeObject(this.SendDataNoParam(binder.Name, ServiceName, args).ToString(), type);
+                var data = this.SendDataNoParam(binder.Name, ServiceName, args).ToString();
+                result = Newtonsoft.Json.JsonConvert.DeserializeObject(data, type);
             }
             return true;
         }
@@ -50,11 +52,8 @@ namespace SignalGo.Client
         /// <param name="type"></param>
         public void InitializeInterface(Type type)
         {
-#if (NETSTANDARD1_6 || NETCOREAPP1_1)
-            foreach (var item in type.GetTypeInfo().GetMethods())
-#else
-            foreach (var item in type.GetMethods())
-#endif
+            var items = type.GetListOfMethods();
+            foreach (var item in items)
             {
                 ReturnTypes.Add(item.Name, item.ReturnType);
             }

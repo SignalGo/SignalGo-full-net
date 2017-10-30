@@ -30,5 +30,17 @@ namespace SignalGo.Shared.Models
         /// list of methods
         /// </summary>
         public List<ServiceDetailsMethod> Methods { get; set; } = new List<ServiceDetailsMethod>();
+        /// <summary>
+        /// if item is exanded from treeview
+        /// </summary>
+        public bool IsExpanded { get; set; }
+        /// <summary>
+        /// if item is selected from treeview
+        /// </summary>
+        public bool IsSelected { get; set; }
+        public ServiceDetailsInterface Clone()
+        {
+            return new ServiceDetailsInterface() { Id = Id, Comment = Comment, FullNameSpace = FullNameSpace, Methods = new List<ServiceDetailsMethod>(), NameSpace = NameSpace, IsSelected = IsSelected, IsExpanded = IsExpanded };
+        }
     }
 }

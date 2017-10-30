@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+#if (!PORTABLE)
 using System.Net.Sockets;
+#endif
 using System.Text;
 
 namespace SignalGo.Shared.IO
@@ -20,6 +22,9 @@ namespace SignalGo.Shared.IO
         /// <param name="data">bytes of data to write</param>
 #if (NETSTANDARD1_6 || NETCOREAPP1_1)
         public static async void WriteToEnd(UdpClient udpClient, IPEndPoint iPEndPoint, byte[] data)
+#elif (PORTABLE)
+        public static async void WriteToEnd(Sockets.Plugin.UdpSocketClient udpClient, byte[] data)
+
 #else
         public static void WriteToEnd(UdpClient udpClient, IPEndPoint iPEndPoint, byte[] data)
 #endif
@@ -36,6 +41,9 @@ namespace SignalGo.Shared.IO
                 byte[] bytes = data.ToList().GetRange(lengthWrited, count - lengthWrited).ToArray();
 #if (NETSTANDARD1_6 || NETCOREAPP1_1)
                 var writeCount = await udpClient.SendAsync(bytes, data.Length, iPEndPoint);
+#elif (PORTABLE)
+                var writeCount = data.Length;
+                await udpClient.SendAsync(bytes, data.Length);
 #else
                 var writeCount = udpClient.Send(bytes, data.Length, iPEndPoint);
 #endif
@@ -44,8 +52,11 @@ namespace SignalGo.Shared.IO
                 lengthWrited += writeCount;
             }
         }
-
+#if (PORTABLE)
+        public static void WriteToStream(System.IO.Stream stream, byte[] data, bool IsWebSocket)
+#else
         public static void WriteToStream(NetworkStream stream, byte[] data, bool IsWebSocket)
+#endif
         {
             if (IsWebSocket)
             {

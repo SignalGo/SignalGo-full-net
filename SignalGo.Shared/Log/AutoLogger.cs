@@ -19,6 +19,7 @@ namespace SignalGo.Shared.Log
         
         static AutoLogger()
         {
+#if (!PORTABLE)
             try
             {
                 ApplicationDirectory = Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location);
@@ -27,7 +28,9 @@ namespace SignalGo.Shared.Log
             {
 
             }
+#endif
         }
+#if (!PORTABLE)
 
         static void GetOneStackTraceText(StackTrace stackTrace, StringBuilder builder)
         {
@@ -61,11 +64,12 @@ namespace SignalGo.Shared.Log
             }
             builder.AppendLine("<------------------------------StackTrace One End------------------------------>");
         }
-        
+#endif
 
         static object lockOBJ = new object();
         public static void LogText(string text, bool stacktrace = false)
         {
+#if (!PORTABLE)
             if (!IsEnabled)
                 return;
             StringBuilder str = new StringBuilder();
@@ -104,12 +108,14 @@ namespace SignalGo.Shared.Log
             {
 
             }
+#endif
         }
 
         public static string ApplicationDirectory { get; set; }
 
         public static void LogError(Exception e, string title)
         {
+#if (!PORTABLE)
             if (!IsEnabled)
                 return;
             try
@@ -149,6 +155,7 @@ namespace SignalGo.Shared.Log
             {
 
             }
+#endif
         }
 
         //static string GetAllInner(Exception e)

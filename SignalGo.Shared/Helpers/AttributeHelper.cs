@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SignalGo.Shared.Helpers;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -39,14 +40,14 @@ namespace System
         /// <returns>An array that contains all the custom attributes, or an array with zero elements if no attributes are defined.</returns>
         private static object[] GetCustomAttributes(Type type, Type attributeType, bool inherit)
         {
-#if (NETSTANDARD1_6 || NETCOREAPP1_1)
+#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
             var typeInfo = type.GetTypeInfo();
 #else
             var typeInfo = type;
 #endif
             if (!inherit)
             {
-#if (NETSTANDARD1_6 || NETCOREAPP1_1)
+#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
                 return typeInfo.GetCustomAttributes(attributeType, false).Cast<object>().ToArray();
 #else
                 return typeInfo.GetCustomAttributes(attributeType, false);
@@ -59,15 +60,15 @@ namespace System
             do
             {
                 baseType.GetCustomAttributes(attributeType, true).Apply(attributeCollection.Add);
-#if (NETSTANDARD1_6 || NETCOREAPP1_1)
-                baseType = baseType.BaseType.GetTypeInfo();
+#if (NETSTANDARD1_6 || NETCOREAPP1_1 ||PORTABLE)
+                baseType = baseType.BaseType == null ? null : baseType.BaseType.GetTypeInfo();
 #else
                 baseType = baseType.BaseType;
 #endif
             }
             while (baseType != null);
 
-            foreach (var interfaceType in type.GetInterfaces())
+            foreach (var interfaceType in type.GetListOfInterfaces())
             {
                 GetCustomAttributes(interfaceType, attributeType, true).Apply(attributeCollection.Add);
             }
@@ -83,7 +84,7 @@ namespace System
             List<Type> result = new List<Type>();
             if (type == null)
                 return result;
-#if (NETSTANDARD1_6 || NETCOREAPP1_1)
+#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
             var typeInfo = type.GetTypeInfo();
 #else
             var typeInfo = type;
@@ -100,12 +101,12 @@ namespace System
                 }
             }
 
-            foreach (var interfaceType in type.GetInterfaces())
+            foreach (var interfaceType in type.GetListOfInterfaces())
             {
-#if (NETSTANDARD1_6 || NETCOREAPP1_1)
+#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
                 var interfaceTypeInfo = interfaceType.GetTypeInfo();
 #else
-            var interfaceTypeInfo = interfaceType;
+                var interfaceTypeInfo = interfaceType;
 #endif
                 foreach (var attrib in interfaceTypeInfo.GetCustomAttributes(false))
                 {

@@ -31,7 +31,7 @@ namespace SignalGo.Shared.Helpers
         /// invoke function for non-void methods call
         /// </summary>
         public static Func<object, MethodInfo, object[], object> InvokedServerMethodFunction { get; set; }
-#if (!NETSTANDARD1_6 && !NETCOREAPP1_1)
+#if (!NETSTANDARD1_6 && !NETCOREAPP1_1 && !PORTABLE)
         /// <summary>
         /// generate a class from an interface type
         /// </summary>
@@ -48,10 +48,7 @@ namespace SignalGo.Shared.Helpers
         {
             var callback = Activator.CreateInstance(type);
             var field = callback.GetType()
-#if (NETSTANDARD1_6 || NETCOREAPP1_1)
-                .GetTypeInfo()
-#endif
-                .GetProperty("InvokedServerMethodAction");
+                .GetPropertyInfo("InvokedServerMethodAction");
 
             field.SetValue(callback, new Action<object, MethodInfo, object[]>((t, method, param) =>
             {
@@ -59,10 +56,7 @@ namespace SignalGo.Shared.Helpers
             }), null);
 
             var field2 = callback.GetType()
-#if (NETSTANDARD1_6 || NETCOREAPP1_1)
-                .GetTypeInfo()
-#endif
-                .GetProperty("InvokedServerMethodFunction");
+                .GetPropertyInfo("InvokedServerMethodFunction");
             field2.SetValue(callback, new Func<object, MethodInfo, object[], object>((t, method, param) =>
             {
                 return InvokedServerMethodFunction?.Invoke(t, method, param);
@@ -75,10 +69,7 @@ namespace SignalGo.Shared.Helpers
         {
             var callback = Activator.CreateInstance(type);
             var field = callback.GetType()
-#if (NETSTANDARD1_6 || NETCOREAPP1_1)
-                .GetTypeInfo()
-#endif
-                .GetProperty("InvokedServerMethodAction");
+                .GetPropertyInfo("InvokedServerMethodAction");
 
             field.SetValue(callback, new Action<object, MethodInfo, object[]>((t, method, param) =>
             {
@@ -86,10 +77,7 @@ namespace SignalGo.Shared.Helpers
             }), null);
 
             var field2 = callback.GetType()
-#if (NETSTANDARD1_6 || NETCOREAPP1_1)
-                .GetTypeInfo()
-#endif
-                .GetProperty("InvokedServerMethodFunction");
+                .GetPropertyInfo("InvokedServerMethodFunction");
             field2.SetValue(callback, new Func<object, MethodInfo, object[], object>((t, method, param) =>
             {
                 return InvokedServerMethodFunction?.Invoke(t, method, param);
@@ -97,7 +85,7 @@ namespace SignalGo.Shared.Helpers
 
             return callback;
         }
-#if (!NETSTANDARD1_6 && !NETCOREAPP1_1)
+#if (!NETSTANDARD1_6 && !NETCOREAPP1_1 && !PORTABLE)
 
         static Type GenerateInterfaceServiceType(Type type, Type inter, List<Type> assemblyTypes, bool isServer)
         {
@@ -233,16 +221,11 @@ namespace SignalGo.Shared.Helpers
 #endif
         static string GetGenecricTypeString(Type type, ref List<Type> types)
         {
-#if (NETSTANDARD1_6 || NETCOREAPP1_1)
-            TypeInfo typeInfo = type.GetTypeInfo();
-#else
-            Type typeInfo = type;
-#endif
             string result = type.Namespace + "." + (type.Name.Contains("`") ? type.Name.Remove(type.Name.IndexOf('`')) : type.Name);
-            if (typeInfo.IsGenericType)
+            if (type.GetIsGenericType())
             {
                 result += "<";
-                foreach (var item in typeInfo.GetGenericArguments())
+                foreach (var item in type.GetListOfGenericArguments())
                 {
                     result += GetGenecricTypeString(item, ref types) + ",";
                     if (!types.Contains(item))
@@ -288,7 +271,7 @@ namespace SignalGo.Shared.Helpers
         //        return "";
         //    return attributes;
         //}
-#if (!NETSTANDARD1_6 && !NETCOREAPP1_1)
+#if (!NETSTANDARD1_6 && !NETCOREAPP1_1 && !PORTABLE)
         public static Action<CompilerResults, List<Type>, string> OnErrorAction { get; set; }
         private static Assembly CompileSource(string sourceCode, List<Type> types)
         {
@@ -338,18 +321,14 @@ namespace SignalGo.Shared.Helpers
 
             foreach (var type in types)
             {
-#if (NETSTANDARD1_6 || NETCOREAPP1_1)
-                var typeInfo = type.GetTypeInfo();
-#else
-                Type typeInfo = type;
-#endif
-
-                foreach (var ex in typeInfo.GetNestedTypes())
+                var nestedTypes = type.GetNestedTypes();
+                foreach (var ex in nestedTypes)
                 {
                     if (!all.Contains(ex))
                         all.Add(ex);
                 }
-                foreach (var ex in typeInfo.GetInterfaces())
+                var interfaces = type.GetListOfInterfaces();
+                foreach (var ex in interfaces)
                 {
                     if (!all.Contains(ex))
                         all.Add(ex);
@@ -363,31 +342,22 @@ namespace SignalGo.Shared.Helpers
         public static List<Type> GetListOfTypes(Type type)
         {
             List<Type> all = new List<Type>();
-#if (NETSTANDARD1_6 || NETCOREAPP1_1)
-            var typeInfo = type.GetTypeInfo();
-#else
-            Type typeInfo = type;
-#endif
-            foreach (var ex in typeInfo.GetNestedTypes())
+            foreach (var ex in type.GetNestedTypes())
             {
                 if (!all.Contains(ex))
                     all.Add(ex);
             }
-            foreach (var ex in typeInfo.GetInterfaces())
+            foreach (var ex in type.GetListOfInterfaces())
             {
                 if (!all.Contains(ex))
                     all.Add(ex);
             }
-            var parent = typeInfo.BaseType;
+            var parent = type.GetBaseType();
 
             while (parent != null)
             {
                 all.Add(parent);
-#if (NETSTANDARD1_6 || NETCOREAPP1_1)
-                parent = parent.GetTypeInfo().BaseType;
-#else
-                parent = parent.BaseType;
-#endif
+                parent = parent.GetBaseType();
             }
             return all;
         }

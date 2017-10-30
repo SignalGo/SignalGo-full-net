@@ -761,6 +761,7 @@ namespace SignalGo.Server.ServiceManager
                                     + settingHeaders +
                                     "Content-Length: " + (message.Length - 2) + newLine
                                     + "Connection: Close" + newLine;
+                    Console.WriteLine(response + message);
                     client.TcpClient.Client.Send(System.Text.Encoding.UTF8.GetBytes(response + message));
                     Thread.Sleep(100);
                 }
@@ -798,7 +799,15 @@ namespace SignalGo.Server.ServiceManager
                     //var postResponse = Encoding.UTF8.GetString(buffer.ToList().GetRange(0, readCount).ToArray());
                     //content = postResponse;
                     var boundary = headers["content-type"].Split('=').Last();
-                    var fileHeaderCount = GetHttpFileFileHeader(client.TcpClient.GetStream(), out string response);
+                    var fileHeaderCount = 0;
+                    string response = "";
+                    //if (len > 0)
+                    //{
+                    //    var readedBytes = GoStreamReader.ReadBlockSize(client.TcpClient.GetStream(), (ulong)len);
+                    //    response = Encoding.UTF8.GetString(readedBytes);
+                    //}
+                    //else
+                    fileHeaderCount = GetHttpFileFileHeader(client.TcpClient.GetStream(), boundary, len, out response);
                     string contentType = "";
                     string fileName = "";
                     string name = "";
@@ -1043,7 +1052,7 @@ namespace SignalGo.Server.ServiceManager
             }
         }
 
-        int GetHttpFileFileHeader(Stream stream, out string response)
+        int GetHttpFileFileHeader(Stream stream, string boundary, int maxLen, out string response)
         {
             List<byte> bytes = new List<byte>();
             byte findNextlvl = 0;
@@ -1053,6 +1062,13 @@ namespace SignalGo.Server.ServiceManager
                 if (singleByte < 0)
                     break;
                 bytes.Add((byte)singleByte);
+                if (bytes.Count >= maxLen)
+                {
+                    var data = Encoding.UTF8.GetString(bytes.ToArray());
+                    response = data;
+                    return bytes.Count;
+
+                }
                 if (findNextlvl > 0)
                 {
                     if (findNextlvl == 1 && singleByte == 10)
@@ -1141,6 +1157,10 @@ namespace SignalGo.Server.ServiceManager
 
                 //response += "Content-Type: text/html" + newLine + "Connection: Close" + newLine;
                 client.Client.Send(dataBytes);
+                client.GetStream().Flush();
+                Thread.Sleep(100);
+
+
             }
         }
 
@@ -1801,7 +1821,7 @@ namespace SignalGo.Server.ServiceManager
                     var securityAttributes = serviceMethod.GetCustomAttributes(typeof(SecurityContractAttribute), true).ToList();
                     var customDataExchanger = serviceMethod.GetCustomAttributes(typeof(CustomDataExchanger), true).Cast<CustomDataExchanger>().ToList();
 
-                    customDataExchanger.AddRange(method.GetCustomAttributes(typeof(CustomDataExchanger), true).Cast<CustomDataExchanger>().ToList());
+                    customDataExchanger.AddRange(method.GetCustomAttributes(typeof(CustomDataExchanger), true).Cast<CustomDataExchanger>().Where(x => x.GetExchangerByUserCustomization(client)).ToList());
                     securityAttributes.AddRange(method.GetCustomAttributes(typeof(SecurityContractAttribute), true));
                     //securityAttributes.AddRange(service.GetType().GetCustomAttributes(typeof(SecurityContractAttribute), true));
                     //securityAttributes.AddRange(serviceType.GetCustomAttributes(typeof(SecurityContractAttribute), true));
@@ -1881,7 +1901,7 @@ namespace SignalGo.Server.ServiceManager
                 }
                 catch (Exception ex)
                 {
-                    SignalGo.Shared.Log.AutoLogger.LogError(ex, $"{client.IPAddress} {client.SessionId} ServerBase CallMethod");
+                    SignalGo.Shared.Log.AutoLogger.LogError(ex, $"{client.IPAddress} {client.SessionId} ServerBase CallMethod: {callInfo.MethodName}");
                     callback.IsException = true;
                     callback.Data = ServerSerializationHelper.SerializeObject(ex.ToString(), this);
                 }
@@ -2569,7 +2589,7 @@ namespace SignalGo.Server.ServiceManager
                     {
                         try
                         {
-                            var gType = newType.GetGenericArguments().FirstOrDefault();
+                            var gType = newType.GetListOfGenericArguments().FirstOrDefault();
                             var listType = typeof(List<>).MakeGenericType(gType);
                             result = Activator.CreateInstance(listType);
                         }
@@ -2592,7 +2612,7 @@ namespace SignalGo.Server.ServiceManager
                     if (newType.GetGenericTypeDefinition() == typeof(List<>) || newType.GetGenericTypeDefinition() == typeof(ICollection<>)
                         || newType.GetGenericTypeDefinition() == typeof(IList<>))
                     {
-                        var gType = newType.GetGenericArguments().FirstOrDefault();
+                        var gType = newType.GetListOfGenericArguments().FirstOrDefault();
                         if (gType != null)
                         {
                             try

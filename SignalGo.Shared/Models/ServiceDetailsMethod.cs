@@ -43,6 +43,19 @@ namespace SignalGo.Shared.Models
         /// list of parameters
         /// </summary>
         public List<ServiceDetailsParameterInfo> Parameters { get; set; }
+        /// <summary>
+        /// if item is exanded from treeview
+        /// </summary>
+        public bool IsExpanded { get; set; }
+        /// <summary>
+        /// if item is selected from treeview
+        /// </summary>
+        public bool IsSelected { get; set; }
+        public ServiceDetailsMethod Clone()
+        {
+            return new ServiceDetailsMethod() { Id = Id, Comment = Comment, ExceptionsComment = ExceptionsComment, MethodName = MethodName, Parameters = new List<ServiceDetailsParameterInfo>(), ReturnComment = ReturnComment, ReturnType = ReturnType, TestExample = TestExample, IsSelected = IsSelected, IsExpanded = IsExpanded };
+        }
+
     }
 
     public class MethodParameterDetails

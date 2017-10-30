@@ -1,5 +1,5 @@
 ﻿#if (NETSTANDARD1_6 || NETCOREAPP1_1)
-using Microsoft.Extensions.DependencyModel;
+//using Microsoft.Extensions.DependencyModel;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -19,37 +19,38 @@ namespace SignalGo.Shared.Helpers
         public Assembly[] GetAssemblies()
         {
             var assemblies = new List<Assembly>();
-            var dependencies = DependencyContext.Default.RuntimeLibraries;
-            foreach (var library in dependencies)
-            {
-                if (IsCandidateCompilationLibrary(library))
-                {
-                    var assembly = Assembly.Load(new AssemblyName(library.Name));
-                    assemblies.Add(assembly);
-                }
-            }
             return assemblies.ToArray();
+            //var dependencies = DependencyContext.Default.RuntimeLibraries;
+            //foreach (var library in dependencies)
+            //{
+            //    if (IsCandidateCompilationLibrary(library))
+            //    {
+            //        var assembly = Assembly.Load(new AssemblyName(library.Name));
+            //        assemblies.Add(assembly);
+            //    }
+            //}
+            //return assemblies.ToArray();
         }
 
-        private static bool IsCandidateCompilationLibrary(RuntimeLibrary compilationLibrary)
-        {
-            if (compilationLibrary.Name == ("Specify"))
-                return true;
-            else
-            {
-                var e = compilationLibrary.Dependencies.GetEnumerator();
-                // check first
-                if (!e.MoveNext())
-                    return false;
-                // do some stuff, then enumerate the list
-                do
-                {
-                    if (e.Current.Name.StartsWith("Specify"))
-                        return true;
-                } while (e.MoveNext());
-            }
-            return false;
-        }
+        //private static bool IsCandidateCompilationLibrary(RuntimeLibrary compilationLibrary)
+        //{
+        //    if (compilationLibrary.Name == ("Specify"))
+        //        return true;
+        //    else
+        //    {
+        //        var e = compilationLibrary.Dependencies.GetEnumerator();
+        //        // check first
+        //        if (!e.MoveNext())
+        //            return false;
+        //        // do some stuff, then enumerate the list
+        //        do
+        //        {
+        //            if (e.Current.Name.StartsWith("Specify"))
+        //                return true;
+        //        } while (e.MoveNext());
+        //    }
+        //    return false;
+        //}
     }
 }
 #endif

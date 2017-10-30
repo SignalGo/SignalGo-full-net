@@ -42,5 +42,17 @@ namespace SignalGo.Shared.Models
         /// example template of request data
         /// </summary>
         public string TemplateValue { get; set; }
+        /// <summary>
+        /// if item is exanded from treeview
+        /// </summary>
+        public bool IsExpanded { get; set; }
+        /// <summary>
+        /// if item is selected from treeview
+        /// </summary>
+        public bool IsSelected { get; set; }
+        public ServiceDetailsParameterInfo Clone()
+        {
+            return new ServiceDetailsParameterInfo() { Id = Id, Comment = Comment, FullTypeName = FullTypeName, IsJson = IsJson, Name = Name, TemplateValue = TemplateValue, Type = Type, Value = Value, IsSelected = IsSelected, IsExpanded = IsExpanded };
+        }
     }
 }

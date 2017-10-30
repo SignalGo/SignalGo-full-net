@@ -4,7 +4,9 @@ using SignalGo.Shared.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+#if (!PORTABLE)
 using System.Net.Sockets;
+#endif
 using System.Text;
 
 namespace SignalGo.Client
@@ -13,22 +15,39 @@ namespace SignalGo.Client
     {
         internal override StreamInfo RegisterFileStreamToDownload(MethodCallInfo Data)
         {
-            if (IsDisposed || !_client.Connected)
+#if (PORTABLE)
+            if (IsDisposed || !_client.ReadStream.CanRead)
                 return null;
+#else
+              if (IsDisposed || !_client.Connected)
+                return null;
+#endif
             //connect to tcp
 #if (NETSTANDARD1_6 || NETCOREAPP1_1)
             var downloadFileSocket = new TcpClient();
             var waitable = downloadFileSocket.ConnectAsync(_address, _port);
             waitable.Wait();
+#elif (PORTABLE)
+            var downloadFileSocket = new Sockets.Plugin.TcpSocketClient();
+            downloadFileSocket.ConnectAsync(_address, _port).Wait();
+
 #else
             var downloadFileSocket = new TcpClient(_address, _port);
 #endif
-            var socketStream = downloadFileSocket.GetStream();
 
+#if (PORTABLE)
+            var firstBytes = Encoding.UTF8.GetBytes("SignalGo/1.0");
+            var wrtiteStream = downloadFileSocket.WriteStream;
+            var readStream = downloadFileSocket.ReadStream;
+            downloadFileSocket.WriteStream.Write(firstBytes, 0, firstBytes.Length);
+#else
+            var wrtiteStream = downloadFileSocket.GetStream();
+            var readStream = downloadFileSocket.GetStream();
             downloadFileSocket.Client.Send(Encoding.UTF8.GetBytes("SignalGo/1.0"));
+#endif
             //get OK SignalGo/1.0
-            int o = socketStream.ReadByte();
-            int k = socketStream.ReadByte();
+            int o = readStream.ReadByte();
+            int k = readStream.ReadByte();
 
             //register client
             var json = JsonConvert.SerializeObject(new List<string>() { "/DownloadFile" });
@@ -37,7 +56,7 @@ namespace SignalGo.Client
             byte[] dataLen = BitConverter.GetBytes(jsonBytes.Length);
             bytes.AddRange(dataLen);
             bytes.AddRange(jsonBytes);
-            GoStreamWriter.WriteToStream(socketStream, bytes.ToArray(), IsWebSocket);
+            GoStreamWriter.WriteToStream(wrtiteStream, bytes.ToArray(), IsWebSocket);
 
             ///send method data
             json = JsonConvert.SerializeObject(Data);
@@ -51,25 +70,25 @@ namespace SignalGo.Client
             if (bytes.Count > ProviderSetting.MaximumSendDataBlock)
                 throw new Exception("SendData data length is upper than MaximumSendDataBlock");
 
-            GoStreamWriter.WriteToStream(socketStream, bytes.ToArray(), IsWebSocket);
+            GoStreamWriter.WriteToStream(wrtiteStream, bytes.ToArray(), IsWebSocket);
 
             //get OK SignalGo/1.0
             //int o = socketStream.ReadByte();
             //int k = socketStream.ReadByte();
 
             //get DataType
-            var dataType = (DataType)socketStream.ReadByte();
+            var dataType = (DataType)readStream.ReadByte();
             //secound byte is compress mode
-            var compresssMode = (CompressMode)socketStream.ReadByte();
+            var compresssMode = (CompressMode)readStream.ReadByte();
 
             // server is called client method
             if (dataType == DataType.ResponseCallMethod)
             {
-                var bytesArray = GoStreamReader.ReadBlockToEnd(socketStream, compresssMode, ProviderSetting.MaximumReceiveDataBlock, IsWebSocket);
-                json = Encoding.UTF8.GetString(bytesArray);
+                var bytesArray = GoStreamReader.ReadBlockToEnd(readStream, compresssMode, ProviderSetting.MaximumReceiveDataBlock, IsWebSocket);
+                json = Encoding.UTF8.GetString(bytesArray, 0, bytesArray.Length);
                 MethodCallInfo callInfo = JsonConvert.DeserializeObject<MethodCallInfo>(json);
                 var data = JsonConvert.DeserializeObject<StreamInfo>(callInfo.Data.ToString());
-                data.Stream = socketStream;
+                data.Stream = readStream;
                 return data;
             }
             return null;
@@ -77,18 +96,31 @@ namespace SignalGo.Client
 
         internal override void RegisterFileStreamToUpload(StreamInfo streamInfo, MethodCallInfo Data)
         {
-            if (IsDisposed || !_client.Connected)
+#if (PORTABLE)
+            if (IsDisposed || !_client.ReadStream.CanRead)
+                return ;
+#else
+              if (IsDisposed || !_client.Connected)
                 return;
+#endif
             //connect to tcp
 #if (NETSTANDARD1_6 || NETCOREAPP1_1)
             var downloadFileSocket = new TcpClient();
             var waitable = downloadFileSocket.ConnectAsync(_address, _port);
             waitable.Wait();
+#elif (PORTABLE)
+            var downloadFileSocket = new Sockets.Plugin.TcpSocketClient();
 #else
             var downloadFileSocket = new TcpClient(_address, _port);
 #endif
+#if (PORTABLE)
+            streamInfo.Stream = downloadFileSocket.WriteStream;
+            var firstBytes = Encoding.UTF8.GetBytes("SignalGo/1.0");
+            downloadFileSocket.WriteStream.Write(firstBytes, 0, firstBytes.Length);
+#else
             streamInfo.Stream = downloadFileSocket.GetStream();
             downloadFileSocket.Client.Send(Encoding.UTF8.GetBytes("SignalGo/1.0"));
+#endif
             //get OK SignalGo/1.0
             int o = streamInfo.Stream.ReadByte();
             int k = streamInfo.Stream.ReadByte();
@@ -100,8 +132,11 @@ namespace SignalGo.Client
             byte[] dataLen = BitConverter.GetBytes(jsonBytes.Length);
             bytes.AddRange(dataLen);
             bytes.AddRange(jsonBytes);
+#if (PORTABLE)
+            GoStreamWriter.WriteToStream(downloadFileSocket.WriteStream, bytes.ToArray(), IsWebSocket);
+#else
             GoStreamWriter.WriteToStream(downloadFileSocket.GetStream(), bytes.ToArray(), IsWebSocket);
-
+#endif
             ///send method data
             json = JsonConvert.SerializeObject(Data);
             bytes = new List<byte>();
@@ -114,7 +149,11 @@ namespace SignalGo.Client
             if (bytes.Count > ProviderSetting.MaximumSendDataBlock)
                 throw new Exception("SendData data length is upper than MaximumSendDataBlock");
 
+#if (PORTABLE)
+            GoStreamWriter.WriteToStream(downloadFileSocket.WriteStream, bytes.ToArray(), IsWebSocket);
+#else
             GoStreamWriter.WriteToStream(downloadFileSocket.GetStream(), bytes.ToArray(), IsWebSocket);
+#endif
         }
     }
 }

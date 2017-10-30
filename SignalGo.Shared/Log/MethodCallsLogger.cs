@@ -86,6 +86,9 @@ namespace SignalGo.Shared.Log
 
         static void StartEngine()
         {
+#if (PORTABLE)
+            throw new NotSupportedException();
+#else
             if (!isStop)
                 return;
             isStop = false;
@@ -127,6 +130,7 @@ namespace SignalGo.Shared.Log
             });
             _thread.IsBackground = true;
             _thread.Start();
+#endif
         }
 
         static ConcurrentQueue<BaseLogInformation> Logs = new ConcurrentQueue<BaseLogInformation>();
@@ -203,7 +207,10 @@ namespace SignalGo.Shared.Log
 
         static void WriteToFile(CallMethodLogInformation log)
         {
-#if(NET35)
+#if (PORTABLE)
+            throw new NotSupportedException();
+#else
+#if (NET35)
             string path = CombinePath(AutoLogger.ApplicationDirectory, "Logs", log.DateTime.Year.ToString(), log.DateTime.Month.ToString(), log.DateTime.Day.ToString());
 #else
             string path = System.IO.Path.Combine(AutoLogger.ApplicationDirectory, "Logs", log.DateTime.Year.ToString(), log.DateTime.Month.ToString(), log.DateTime.Day.ToString());
@@ -251,10 +258,14 @@ namespace SignalGo.Shared.Log
                 byte[] bytes = Encoding.UTF8.GetBytes(build.ToString());
                 stream.Write(bytes, 0, bytes.Length);
             }
+#endif
         }
 
         static void WriteToFile(CallClientMethodLogInformation log)
         {
+#if (PORTABLE)
+            throw new NotSupportedException();
+#else
 #if (NET35)
             string path = CombinePath(AutoLogger.ApplicationDirectory, "Logs", log.DateTime.Year.ToString(), log.DateTime.Month.ToString(), log.DateTime.Day.ToString());
 #else
@@ -305,10 +316,14 @@ namespace SignalGo.Shared.Log
                 byte[] bytes = Encoding.UTF8.GetBytes(build.ToString());
                 stream.Write(bytes, 0, bytes.Length);
             }
+#endif
         }
 
         static void WriteToFile(HttpCallMethodLogInformation log)
         {
+#if (PORTABLE)
+            throw new NotSupportedException();
+#else
 #if (NET35)
             string path = CombinePath(AutoLogger.ApplicationDirectory, "Logs", log.DateTime.Year.ToString(), log.DateTime.Month.ToString(), log.DateTime.Day.ToString());
 #else
@@ -359,15 +374,20 @@ namespace SignalGo.Shared.Log
                 byte[] bytes = Encoding.UTF8.GetBytes(build.ToString());
                 stream.Write(bytes, 0, bytes.Length);
             }
+#endif
         }
 
         static string GetDateTimeString(DateTime dt)
         {
+#if (PORTABLE)
+            throw new NotSupportedException();
+#else
             PersianCalendar persian = new PersianCalendar();
             string log = "";
             if (IsPersianDateLog)
                 log = $"{persian.GetYear(dt)}/{persian.GetMonth(dt)}/{persian.GetDayOfMonth(dt)} {persian.GetHour(dt)}:{persian.GetMinute(dt)}:{persian.GetSecond(dt)}.{persian.GetMilliseconds(dt)} ## ";
             return log + $"{dt.ToString("MM/dd/yyyy HH:mm:ss")}.{dt.Millisecond}";
+#endif
         }
     }
 }

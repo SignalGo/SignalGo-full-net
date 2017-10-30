@@ -1,46 +1,118 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
-    <TargetFrameworks>netstandard1.6;net45;net40;netcoreapp1.1;net35</TargetFrameworks>
-    <ProjectGuid>{78D8601B-E331-47B7-A4A8-46B7460D82A4}</ProjectGuid>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <TargetFrameworks>net45;net40;net35;netstandard1.6;portable45-net45+win8;portable-net45+win8+wpa81</TargetFrameworks>
+    <MinimumVisualStudioVersion>10.0</MinimumVisualStudioVersion>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <AssemblyVersion>2.2</AssemblyVersion>
+    <FileVersion>2.2</FileVersion>
+    <VersionPrefix>2.2</VersionPrefix>
+    <!--<VersionSuffix>beta1</VersionSuffix>-->
+    <Authors>Ali Yousefi</Authors>
+    <Company></Company>
+    <Product>SignalGo.Shared</Product>
+    <Description>
+      SignalGo is a library for Cross-Platform developers that makes it incredibly simple to add real-time web functionality to your applications. What is "real-time web" functionality? It's the ability to have your server-side code push content to the connected clients as it happens, in real-time. like WCF and SignalR
+      Features:
+
+      1.Send and receive any data like class,object,parameters,methods,return types
+
+      2.Send(upload) and receive(download) stream like file stream
+
+      3.Send and receive data with UDP connection for sound and video streamming
+
+      4.Return data from a method (client and server)
+
+      5.Linq query to Clients for send or receive data
+
+      6.Setting for maximum and minimum and timeout data transport
+
+      7.Using best security algoritm for send or receive data
+
+      8.call methods from http (GET and Post) protocol(like browser) with support upload files and manage Controllers like asp.net MVC
+
+      and other features...
+    </Description>
+    <Copyright>Copyright © ali.visual.studio@gmail.com 2016</Copyright>
+    <Summary>
+    </Summary>
+    <NeutralLanguage>en-US</NeutralLanguage>
+    <PackageId>SignalGo.Shared</PackageId>
+    <PackageTags>SignalGo SignalR WCF Server Client Signal Sig RealTime Real-Time</PackageTags>
+    <PackageIconUrl>http://cdn.persiangig.com/preview/v14ukL88fq/SignalGo.png</PackageIconUrl>
+    <PackageProjectUrl>https://github.com/SignalGo/SignalGo-full-net</PackageProjectUrl>
+    <PackageLicenseUrl>https://github.com/SignalGo/SignalGo-full-net/blob/master/LICENSE</PackageLicenseUrl>
+    <RepositoryUrl>https://github.com/SignalGo/SignalGo-full-net</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
     <RootNamespace>SignalGo.Shared</RootNamespace>
     <AssemblyName>SignalGo.Shared</AssemblyName>
-    <Version>2.2</Version>
-    <Copyright>Copyright © ali.visual.studio@gmail.com 2016</Copyright>
-    <Description>SignalGo is a library for Cross-Platform developers that makes it incredibly simple to add real-time web functionality to your applications. What is "real-time web" functionality? It's the ability to have your server-side code push content to the connected clients as it happens, in real-time. like WCF and SignalR
-Features:
-
-1.Send and receive any data like class,object,parameters,methods,return types
-
-2.Send(upload) and receive(download) stream like file stream
-
-3.Send and receive data with UDP connection for sound and video streamming
-
-4.Return data from a method (client and server)
-
-5.Linq query to Clients for send or receive data
-
-6.Setting for maximum and minimum and timeout data transport
-
-7.Using best security algoritm for send or receive data
-
-8.call methods from http (GET and Post) protocol(like browser) with support upload files and manage Controllers like asp.net MVC
-
-and other features...</Description>
-    <PackageProjectUrl>https://github.com/SignalGo/SignalGo-full-net</PackageProjectUrl>
-    <PackageReleaseNotes>1.fix bugs and more improvement
-
-2.support upload files with POST
-
-3.support for .net 3.5 , .net 4.0 , .net 4.5, .net core 1.1 , .net standard 1.6</PackageReleaseNotes>
-    <PackageTags>SignalGo SignalR WCF Server Client Signal Sig RealTime Real-Time</PackageTags>
-    <PackageLicenseUrl>https://github.com/SignalGo/SignalGo-full-net/blob/master/LICENSE</PackageLicenseUrl>
-    <PackageIconUrl>http://cdn.persiangig.com/preview/v14ukL88fq/SignalGo.png</PackageIconUrl>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NetStandardImplicitPackageVersion>1.6.1</NetStandardImplicitPackageVersion>
+    <MinClientVersion>2.12</MinClientVersion>
   </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\$(Configuration)</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\$(Configuration)</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Folder Include="Properties\" />
+  </ItemGroup>
+
   <PropertyGroup>
     <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\SignalGo.Shared.xml</DocumentationFile>
   </PropertyGroup>
+
+
+  <PropertyGroup Condition="'$(TargetFramework)'=='net45'">
+    <AssemblyTitle>SignalGo.Shared</AssemblyTitle>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(TargetFramework)'=='net40'">
+    <AssemblyTitle>SignalGo.Shared .NET 4.0</AssemblyTitle>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(TargetFramework)'=='net35'">
+    <AssemblyTitle>SignalGo.Shared .NET 3.5</AssemblyTitle>
+  </PropertyGroup>
+  
+  <PropertyGroup Condition="'$(TargetFramework)'=='portable45-net45+win8'">
+    <TargetFrameworkIdentifier>.NETPortable</TargetFrameworkIdentifier>
+    <AssemblyTitle>SignalGo.Shared .NET Portable</AssemblyTitle>
+    <EnableDefaultCompileItems>True</EnableDefaultCompileItems>
+    <TargetFrameworkProfile>Profile7</TargetFrameworkProfile>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <LanguageTargets>$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets</LanguageTargets>
+    <DefineConstants>PORTABLE;$(AdditionalConstants)</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(TargetFramework)'=='portable-net45+win8+wpa81'">
+    <TargetFrameworkIdentifier>.NETPortable</TargetFrameworkIdentifier>
+    <AssemblyTitle>SignalGo.Shared .NET Portable</AssemblyTitle>
+    <EnableDefaultCompileItems>True</EnableDefaultCompileItems>
+    <TargetFrameworkProfile>Profile111</TargetFrameworkProfile>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <NugetTargetMoniker>.NETPortable,Version=v0.0,Profile=Profile111</NugetTargetMoniker>
+    <LanguageTargets>$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets</LanguageTargets>
+    <DefineConstants>PORTABLE;$(AdditionalConstants)</DefineConstants>
+  </PropertyGroup>
+
+
   <ItemGroup Condition="'$(TargetFramework)' == 'net35'">
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -50,9 +122,7 @@ and other features...</Description>
     <Reference Include="System.Xml" />
     <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
     <PackageReference Include="TaskParallelLibrary" Version="1.0.2856" />
-    
   </ItemGroup>
-  <!-- Need to conditionally bring in references for the .NET Framework 4.0 target -->
   <ItemGroup Condition="'$(TargetFramework)' == 'net40'">
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System" />
@@ -73,14 +143,12 @@ and other features...</Description>
     <Reference Include="System.Xml" />
     <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
   </ItemGroup>
-  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard1.6'">
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard1.6'" >
     <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
     <PackageReference Include="System.Diagnostics.StackTrace" Version="4.3.0" />
     <PackageReference Include="System.Xml.XmlSerializer" Version="4.3.0" />
     <PackageReference Include="System.Threading.Thread" Version="4.3.0" />
     <PackageReference Include="System.Reflection.TypeExtensions" Version="4.4.0" />
-    <PackageReference Include="Microsoft.Extensions.DependencyModel" Version="2.0.0" />
-    
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp1.1'">
     <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
@@ -88,62 +156,13 @@ and other features...</Description>
     <PackageReference Include="System.Xml.XmlSerializer" Version="4.3.0" />
     <PackageReference Include="System.Threading.Thread" Version="4.3.0" />
     <PackageReference Include="System.Reflection.TypeExtensions" Version="4.4.0" />
-    <PackageReference Include="Microsoft.Extensions.DependencyModel" Version="2.0.0" />
   </ItemGroup>
-  <!-- <ItemGroup>
-    <Compile Include="Converters\DataExchangeConverter.cs" />
-    <Compile Include="DataTypes\Enums.cs" />
-    <Compile Include="DataTypes\IgnoreContract.cs" />
-    <Compile Include="DataTypes\ServiceContractAttribute.cs" />
-    <Compile Include="DataTypes\HttpSupportAttribute.cs" />
-    <Compile Include="DataTypes\SkipDataExchangeAttribute.cs" />
-    <Compile Include="DataTypes\SkipIncomingCallAttribute.cs" />
-    <Compile Include="DataTypes\SkipOutgoingCallAttribute.cs" />
-    <Compile Include="Helpers\AsyncActions.cs" />
-    <Compile Include="Helpers\AttributeHelper.cs" />
-    <Compile Include="Helpers\ConcurrentList.cs" />
-    <Compile Include="Helpers\CSCodeInjection.cs" />
-    <Compile Include="Helpers\JsonSettingHelper.cs" />
-    <Compile Include="Helpers\RuntimeTypeHelper.cs" />
-    <Compile Include="Helpers\SerializeHelper.cs" />
-    <Compile Include="Helpers\XmlCommentLoader.cs" />
-    <Compile Include="Http\ActionResult.cs" />
-    <Compile Include="Http\FileActionResult.cs" />
-    <Compile Include="Http\HttpPostedFileInfo.cs" />
-    <Compile Include="IO\CustomStreamReader.cs" />
-    <Compile Include="IO\GoStream.cs" />
-    <Compile Include="IO\GoStreamReader.cs" />
-    <Compile Include="IO\GoStreamWriter.cs" />
-    <Compile Include="Log\AutoLogger.cs" />
-    <Compile Include="Log\MethodCallsLogger.cs" />
-    <Compile Include="Managers\SegmentManager.cs" />
-    <Compile Include="Http\HttpRequestController.cs" />
-    <Compile Include="Models\CustomContentDisposition.cs" />
-    <Compile Include="Models\HttpControllerDetailsInfo.cs" />
-    <Compile Include="Models\ISegment.cs" />
-    <Compile Include="Models\ProviderDetailsInfo.cs" />
-    <Compile Include="Models\ServiceDetailsInfo.cs" />
-    <Compile Include="Models\ServiceDetailsParameterInfo.cs" />
-    <Compile Include="Models\ServiceDetailsMethod.cs" />
-    <Compile Include="Models\ServiceDetailsInterface.cs" />
-    <Compile Include="Models\SettingsInfo.cs" />
-    <Compile Include="Models\StreamInfo.cs" />
-    <Compile Include="Models\KeyValue.cs" />
-    <Compile Include="Models\MethodCallbackInfo.cs" />
-    <Compile Include="Models\MethodCallInfo.cs" />
-    <Compile Include="Models\ParameterInfo.cs" />
-    <Compile Include="Models\ProviderSetting.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Security\AESSecurity.cs" />
-    <Compile Include="Security\ISecurityAlgoritm.cs" />
-    <Compile Include="Security\RSAAESSecurity.cs" />
-    <Compile Include="Security\RSASecurity.cs" />
-  </ItemGroup>-->
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'portable45-net45+win8'">
+    <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
+    <PackageReference Include="rda.SocketsForPCL" Version="2.0.2" />
+  </ItemGroup>
+    <ItemGroup Condition="'$(TargetFramework)' == 'portable-net45+win8+wpa81'">
+    <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
+    <PackageReference Include="rda.SocketsForPCL" Version="2.0.2" />
+  </ItemGroup>
 </Project>

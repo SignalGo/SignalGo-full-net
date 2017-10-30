@@ -26,5 +26,17 @@ namespace SignalGo.Shared.Models
         /// json template of model
         /// </summary>
         public string JsonTemplate { get; set; }
+        /// <summary>
+        /// if item is exanded from treeview
+        /// </summary>
+        public bool IsExpanded { get; set; }
+        /// <summary>
+        /// if item is selected from treeview
+        /// </summary>
+        public bool IsSelected { get; set; }
+        public ModelDetailsInfo Clone()
+        {
+            return new ModelDetailsInfo() { Id = Id, Name = Name, Comment = Comment, FullNameSpace = FullNameSpace, JsonTemplate = JsonTemplate, IsSelected = IsSelected, IsExpanded = IsExpanded };
+        }
     }
 }

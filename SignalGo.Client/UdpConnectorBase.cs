@@ -3,7 +3,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+#if (!PORTABLE)
 using System.Net.Sockets;
+#endif
 using System.Text;
 using System.Threading.Tasks;
 using SignalGo.Shared.Models;
@@ -23,8 +25,14 @@ namespace SignalGo.Client
         /// received data action
         /// </summary>
         public Action<byte[]> OnReceivedData { get; set; }
+#if (!PORTABLE)
         Socket socket = null;
         IPEndPoint iPEndPoint = null;
+#else
+        Sockets.Plugin.UdpSocketClient socket = null;
+        string _ipAddress = null;
+        int _port = 0;
+#endif
         /// <summary>
         /// connect to socket
         /// </summary>
@@ -33,8 +41,14 @@ namespace SignalGo.Client
         public void ConnectToUDP(string ipAddress, int port)
         {
             isStart = false;
+#if (!PORTABLE)
             socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             iPEndPoint = new IPEndPoint(IPAddress.Parse(ipAddress), port);
+#else
+            socket = new Sockets.Plugin.UdpSocketClient();
+            _ipAddress = ipAddress;
+            _port = port;
+#endif
             StartReadingData();
             AsyncActions.Run(() =>
             {
@@ -46,19 +60,37 @@ namespace SignalGo.Client
         public int BufferSize { get; set; } = 50000;
 
         //start to reading data from server
+#if (PORTABLE)
         void StartReadingData()
+#else
+        void StartReadingData()
+#endif
         {
             Task.Factory.StartNew(() =>
             {
                 try
                 {
+#if (PORTABLE)
+                    socket.ConnectAsync(_ipAddress, _port).Wait();
+#else
                     socket.Connect(iPEndPoint);
+#endif
+#if (PORTABLE)
+                    ManualResetEvent ev = new ManualResetEvent(true);
+                    socket.MessageReceived += (s, e) =>
+                    {
+                        OnReceivedData?.Invoke(e.ByteData);
+                    };
+
+                    ev.WaitOne();
+#else
                     while (!IsDisposed)
                     {
                         byte[] bytes = new byte[BufferSize];
                         var readCount = socket.Receive(bytes);
                         OnReceivedData?.Invoke(bytes.ToList().GetRange(0, readCount).ToArray());
                     }
+#endif
                 }
                 catch (Exception ex)
                 {
@@ -92,7 +124,12 @@ namespace SignalGo.Client
                 arrayToSend = BytesToSend.Take();
                 if (IsDisposed)
                     break;
+#if (PORTABLE)
+                socket.SendToAsync(arrayToSend, arrayToSend.Length, _ipAddress, _port).Wait();
+
+#else
                 var sendCount = socket.SendTo(arrayToSend, arrayToSend.Length, SocketFlags.None, iPEndPoint);
+#endif
 
             }
             isStart = false;
@@ -115,12 +152,15 @@ namespace SignalGo.Client
             }
             SendCallbackData(callback);
         }
-
+#if (PORTABLE)
+        internal void DisposedClient(Sockets.Plugin.UdpSocketClient client)
+#else
         internal void DisposedClient(TcpClient client)
+#endif
         {
             base.Dispose();
             if (socket != null)
-#if (NETSTANDARD1_6 || NETCOREAPP1_1)
+#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
                 socket.Dispose();
 #else
                 socket.Close();

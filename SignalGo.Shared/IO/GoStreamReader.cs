@@ -3,7 +3,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+#if (!PORTABLE)
 using System.Net.Sockets;
+#endif
 using System.Text;
 using System.Threading;
 
@@ -20,7 +22,7 @@ namespace SignalGo.Shared.IO
         /// <param name="stream">your stream to read a block</param>
         /// <param name="compress">compress mode</param>
         /// <returns>return a block byte array</returns>
-        public static byte[] ReadBlockToEnd(NetworkStream stream, CompressMode compress, uint maximum, bool isWebSocket)
+        public static byte[] ReadBlockToEnd(Stream stream, CompressMode compress, uint maximum, bool isWebSocket)
         {
             if (isWebSocket)
             {
@@ -77,7 +79,7 @@ namespace SignalGo.Shared.IO
         /// <param name="maximum">maximum read</param>
         /// <param name="isWebSocket">if reading socket is websocket</param>
         /// <returns></returns>
-        public static byte ReadOneByte(NetworkStream stream, CompressMode compress, uint maximum, bool isWebSocket)
+        public static byte ReadOneByte(Stream stream, CompressMode compress, uint maximum, bool isWebSocket)
         {
             byte[] dataBytes = null;
             if (isWebSocket)
@@ -92,7 +94,7 @@ namespace SignalGo.Shared.IO
             return dataBytes[0];
         }
 
-        static List<byte> GetLengthOfWebSocket(NetworkStream stream, ref ulong len)
+        static List<byte> GetLengthOfWebSocket(Stream stream, ref ulong len)
         {
             List<byte> bytes = new List<byte>();
 
@@ -124,7 +126,7 @@ namespace SignalGo.Shared.IO
             return bytes;
         }
 
-        public static byte[] ReadBlockSize(NetworkStream stream, ulong count)
+        public static byte[] ReadBlockSize(Stream stream, ulong count)
         {
             List<byte> bytes = new List<byte>();
             ulong lengthReaded = 0;
@@ -146,6 +148,40 @@ namespace SignalGo.Shared.IO
             return bytes.ToArray();
         }
 
+#if (!PORTABLE)
+        public static byte[] ReadBlockSizeDataAvalable(NetworkStream stream, ulong count)
+        {
+            List<byte> bytes = new List<byte>();
+            ulong lengthReaded = 0;
+
+            while (lengthReaded < count)
+            {
+                if (!stream.DataAvailable)
+                {
+                    for (int i = 0; i < 5; i++)
+                    {
+                        Thread.Sleep(1000);
+                        if (stream.DataAvailable)
+                            break;
+                    }
+                    if (!stream.DataAvailable)
+                        break;
+                }
+                ulong countToRead = count;
+                if (lengthReaded + countToRead > count)
+                {
+                    countToRead = count - lengthReaded;
+                }
+                byte[] readBytes = new byte[countToRead];
+                var readCount = stream.Read(readBytes, 0, (int)countToRead);
+                if (readCount <= 0)
+                    throw new Exception("read zero buffer! client disconnected: " + readCount);
+                lengthReaded += (ulong)readCount;
+                bytes.AddRange(readBytes.ToList().GetRange(0, readCount));
+            }
+            return bytes.ToArray();
+        }
+#endif
         //static byte[] DecodeMessage(byte[] bytes)
         //{
         //    string incomingData = string.Empty;

@@ -105,7 +105,7 @@ namespace SignalGo.Shared.Helpers
                 { typeof(string), SerializeObjectType.String },
                 { typeof(void), SerializeObjectType.Void },
                 { typeof(IntPtr), SerializeObjectType.IntPtr },
-#if (!NETSTANDARD1_6 && !NETCOREAPP1_1)
+#if (!NETSTANDARD1_6 && !NETCOREAPP1_1 && !PORTABLE)
                 { typeof(DBNull), SerializeObjectType.DBNull }
 #endif
         };
@@ -125,7 +125,7 @@ namespace SignalGo.Shared.Helpers
             else if (type.GetTypeInfo().IsEnum)
                 return SerializeObjectType.Enum;
 #else
-            else if (type.IsEnum)
+            else if (type.GetIsEnum())
                 return SerializeObjectType.Enum;
 #endif
             return SerializeObjectType.Object;
