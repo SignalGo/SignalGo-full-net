@@ -321,7 +321,7 @@ namespace SignalGo.Shared.Helpers
 
             foreach (var type in types)
             {
-                var nestedTypes = type.GetNestedTypes();
+                var nestedTypes = type.GetListOfNestedTypes();
                 foreach (var ex in nestedTypes)
                 {
                     if (!all.Contains(ex))
@@ -342,7 +342,7 @@ namespace SignalGo.Shared.Helpers
         public static List<Type> GetListOfTypes(Type type)
         {
             List<Type> all = new List<Type>();
-            foreach (var ex in type.GetNestedTypes())
+            foreach (var ex in type.GetListOfNestedTypes())
             {
                 if (!all.Contains(ex))
                     all.Add(ex);

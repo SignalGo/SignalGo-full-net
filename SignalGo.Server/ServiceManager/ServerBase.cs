@@ -163,7 +163,7 @@ namespace SignalGo.Server.ServiceManager
             };
 #if (NETSTANDARD1_6 || NETCOREAPP1_1)
 #else
-         mainThread.SetApartmentState(ApartmentState.STA);
+            mainThread.SetApartmentState(ApartmentState.STA);
 #endif
             mainThread.Start();
             resetEvent.WaitOne();
@@ -527,6 +527,7 @@ namespace SignalGo.Server.ServiceManager
             {
                 var methodName = lines.Last();
                 string parameters = "";
+                //Dictionary<string, string> multiPartParameter = new Dictionary<string, string>();
                 if (httpMethod == "GET")
                 {
                     if (methodName.Contains("?"))
@@ -545,6 +546,7 @@ namespace SignalGo.Server.ServiceManager
                         var readCount = client.TcpClient.Client.Receive(buffer);
                         var postResponse = Encoding.UTF8.GetString(buffer.ToList().GetRange(0, readCount).ToArray());
                         content = postResponse;
+                        
                     }
 
                     methodName = lines.Last();
@@ -555,6 +557,10 @@ namespace SignalGo.Server.ServiceManager
                         methodName = sp.First();
                         parameters = sp.Last();
                     }
+                    //else if (parameters.StartsWith("----") && parameters.ToLower().Contains("content-disposition"))
+                    //{
+
+                    //}
                 }
 
 
@@ -793,20 +799,9 @@ namespace SignalGo.Server.ServiceManager
                 HttpPostedFileInfo fileInfo = null;
                 if (content.Length < len)
                 {
-                    //byte[] buffer = new byte[len * 5];
-                    //var readCount = client.TcpClient.Client.Receive(buffer);
-                    //// I dont know why 44 bytes(overplus) always sent
-                    //var postResponse = Encoding.UTF8.GetString(buffer.ToList().GetRange(0, readCount).ToArray());
-                    //content = postResponse;
                     var boundary = headers["content-type"].Split('=').Last();
                     var fileHeaderCount = 0;
                     string response = "";
-                    //if (len > 0)
-                    //{
-                    //    var readedBytes = GoStreamReader.ReadBlockSize(client.TcpClient.GetStream(), (ulong)len);
-                    //    response = Encoding.UTF8.GetString(readedBytes);
-                    //}
-                    //else
                     fileHeaderCount = GetHttpFileFileHeader(client.TcpClient.GetStream(), boundary, len, out response);
                     string contentType = "";
                     string fileName = "";
@@ -1819,7 +1814,7 @@ namespace SignalGo.Server.ServiceManager
                     }
 
                     var securityAttributes = serviceMethod.GetCustomAttributes(typeof(SecurityContractAttribute), true).ToList();
-                    var customDataExchanger = serviceMethod.GetCustomAttributes(typeof(CustomDataExchanger), true).Cast<CustomDataExchanger>().ToList();
+                    var customDataExchanger = serviceMethod.GetCustomAttributes(typeof(CustomDataExchanger), true).Cast<CustomDataExchanger>().Where(x => x.GetExchangerByUserCustomization(client)).ToList();
 
                     customDataExchanger.AddRange(method.GetCustomAttributes(typeof(CustomDataExchanger), true).Cast<CustomDataExchanger>().Where(x => x.GetExchangerByUserCustomization(client)).ToList());
                     securityAttributes.AddRange(method.GetCustomAttributes(typeof(SecurityContractAttribute), true));
@@ -1939,12 +1934,12 @@ namespace SignalGo.Server.ServiceManager
                 MethodInfo method = defaultGeneratorType.GetTypeInfo().GetDeclaredMethod("GetDefault");
                 return method.Invoke(null, null);
 #else
-             return defaultGeneratorType.InvokeMember(
-                  "GetDefault",
-                  BindingFlags.Static |
-                  BindingFlags.Public |
-                  BindingFlags.InvokeMethod,
-                  null, null, new object[0]);
+                return defaultGeneratorType.InvokeMember(
+                     "GetDefault",
+                     BindingFlags.Static |
+                     BindingFlags.Public |
+                     BindingFlags.InvokeMethod,
+                     null, null, new object[0]);
 #endif
             }
             catch (Exception ex)
@@ -2185,12 +2180,14 @@ namespace SignalGo.Server.ServiceManager
         /// </summary>
         /// <param name="client"></param>
         /// <param name="hostUrl">host url that client connected</param>
+        List<Type> skippedTypes = new List<Type>();
         internal void SendServiceDetail(ClientInfo client, string hostUrl)
         {
             AsyncActions.Run(() =>
             {
                 try
                 {
+
                     var url = new Uri(hostUrl);
                     hostUrl = url.Host + ":" + url.Port;
                     using (var xmlCommentLoader = new XmlCommentLoader())
@@ -2226,7 +2223,7 @@ namespace SignalGo.Server.ServiceManager
                                 var methods = serviceType.GetMethods().Where(x => !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_")))).ToList();
                                 if (methods.Count == 0)
                                     continue;
-                                var comment = xmlCommentLoader.GetCommment(serviceType);
+                                var comment = xmlCommentLoader.GetComment(serviceType);
                                 id++;
                                 var interfaceInfo = new ServiceDetailsInterface()
                                 {
@@ -2239,6 +2236,11 @@ namespace SignalGo.Server.ServiceManager
                                 List<ServiceDetailsMethod> serviceMethods = new List<ServiceDetailsMethod>();
                                 foreach (var method in methods)
                                 {
+                                    var pType = SerializeHelper.GetTypeCodeOfObject(method.ReturnType);
+                                    if (pType == SerializeObjectType.Enum)
+                                    {
+                                        AddEnumAndNewModels(ref id, method.ReturnType, result, SerializeObjectType.Enum, xmlCommentLoader);
+                                    }
                                     var methodComment = comment == null ? null : (from x in comment.Methods where x.Name == method.Name && x.Parameters.Count == method.GetParameters().Length select x).FirstOrDefault();
                                     string exceptions = "";
                                     if (methodComment?.Exceptions != null && methodComment?.Exceptions.Count > 0)
@@ -2286,6 +2288,11 @@ namespace SignalGo.Server.ServiceManager
                                     RuntimeTypeHelper.GetListOfUsedTypes(method.ReturnType, ref modelTypes);
                                     foreach (var paramInfo in method.GetParameters())
                                     {
+                                        pType = SerializeHelper.GetTypeCodeOfObject(paramInfo.ParameterType);
+                                        if (pType == SerializeObjectType.Enum)
+                                        {
+                                            AddEnumAndNewModels(ref id, paramInfo.ParameterType, result, SerializeObjectType.Enum, xmlCommentLoader);
+                                        }
                                         string parameterComment = "";
                                         if (methodComment != null)
                                             parameterComment = (from x in methodComment.Parameters where x.Name == paramInfo.Name select x.Comment).FirstOrDefault();
@@ -2308,6 +2315,122 @@ namespace SignalGo.Server.ServiceManager
                         }
 
 
+
+
+
+                        foreach (var service in RegisteredCallbacksTypes)
+                        {
+                            id++;
+                            var serviceDetail = new CallbackServiceDetailsInfo()
+                            {
+                                ServiceName = service.Key,
+                                FullNameSpace = service.Value.FullName,
+                                NameSpace = service.Value.Name,
+                                Id = id
+                            };
+
+                            result.Callbacks.Add(serviceDetail);
+                            List<Type> types = new List<Type>();
+                            if (service.Value.GetCustomAttributes<ServiceContractAttribute>(false).Length > 0)
+                                types.Add(service.Value);
+                            foreach (var item in CSCodeInjection.GetListOfTypes(service.Value))
+                            {
+                                if (item.GetCustomAttributes<ServiceContractAttribute>(false).Length > 0 && !types.Contains(item))
+                                {
+                                    types.Add(item);
+                                    types.AddRange(CSCodeInjection.GetListOfTypes(service.Value).Where(x => !types.Contains(x)));
+                                }
+                            }
+
+                            var methods = service.Value.GetMethods().Where(x => !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_")))).ToList();
+                            if (methods.Count == 0)
+                                continue;
+                            var comment = xmlCommentLoader.GetComment(service.Value);
+                            List<ServiceDetailsMethod> serviceMethods = new List<ServiceDetailsMethod>();
+                            foreach (var method in methods)
+                            {
+                                var pType = SerializeHelper.GetTypeCodeOfObject(method.ReturnType);
+                                if (pType == SerializeObjectType.Enum)
+                                {
+                                    AddEnumAndNewModels(ref id, method.ReturnType, result, SerializeObjectType.Enum, xmlCommentLoader);
+                                }
+                                var methodComment = comment == null ? null : (from x in comment.Methods where x.Name == method.Name && x.Parameters.Count == method.GetParameters().Length select x).FirstOrDefault();
+                                string exceptions = "";
+                                if (methodComment?.Exceptions != null && methodComment?.Exceptions.Count > 0)
+                                {
+                                    foreach (var ex in methodComment.Exceptions)
+                                    {
+                                        try
+                                        {
+                                            if (ex.RefrenceType.LastIndexOf('.') != -1)
+                                            {
+                                                var baseNameOfEnum = ex.RefrenceType.Substring(0, ex.RefrenceType.LastIndexOf('.'));
+                                                var type = GetEnumType(baseNameOfEnum);
+#if (NETSTANDARD1_6 || NETCOREAPP1_1)
+                                                if (type != null && type.GetTypeInfo().IsEnum)
+#else
+                                                if (type != null && type.IsEnum)
+#endif
+                                                {
+                                                    var value = Enum.Parse(type, ex.RefrenceType.Substring(ex.RefrenceType.LastIndexOf('.') + 1, ex.RefrenceType.Length - ex.RefrenceType.LastIndexOf('.') - 1));
+                                                    int exNumber = (int)value;
+                                                    exceptions += ex.RefrenceType + $" ({exNumber}) : " + ex.Comment + Environment.NewLine;
+                                                    continue;
+                                                }
+                                            }
+                                        }
+                                        catch
+                                        {
+
+                                        }
+
+                                        exceptions += ex.RefrenceType + ":" + ex.Comment + Environment.NewLine;
+                                    }
+                                }
+                                id++;
+                                ServiceDetailsMethod info = new ServiceDetailsMethod()
+                                {
+                                    MethodName = method.Name,
+                                    Parameters = new List<ServiceDetailsParameterInfo>(),
+                                    ReturnType = method.ReturnType.FullName,
+                                    Comment = methodComment?.Summery,
+                                    ReturnComment = methodComment?.Returns,
+                                    ExceptionsComment = exceptions,
+                                    Id = id
+                                };
+                                RuntimeTypeHelper.GetListOfUsedTypes(method.ReturnType, ref modelTypes);
+                                foreach (var paramInfo in method.GetParameters())
+                                {
+                                    pType = SerializeHelper.GetTypeCodeOfObject(paramInfo.ParameterType);
+                                    if (pType == SerializeObjectType.Enum)
+                                    {
+                                        AddEnumAndNewModels(ref id, paramInfo.ParameterType, result, SerializeObjectType.Enum, xmlCommentLoader);
+                                    }
+                                    string parameterComment = "";
+                                    if (methodComment != null)
+                                        parameterComment = (from x in methodComment.Parameters where x.Name == paramInfo.Name select x.Comment).FirstOrDefault();
+                                    id++;
+                                    ServiceDetailsParameterInfo p = new ServiceDetailsParameterInfo()
+                                    {
+                                        Name = paramInfo.Name,
+                                        Type = paramInfo.ParameterType.Name,
+                                        FullTypeName = paramInfo.ParameterType.FullName,
+                                        Comment = parameterComment,
+                                        Id = id
+                                    };
+                                    info.Parameters.Add(p);
+                                    RuntimeTypeHelper.GetListOfUsedTypes(paramInfo.ParameterType, ref modelTypes);
+                                }
+                                serviceMethods.Add(info);
+                            }
+                            serviceDetail.Methods.AddRange(serviceMethods);
+                        }
+
+
+
+
+
+
                         foreach (var httpServiceType in RegisteredHttpServiceTypes)
                         {
                             id++;
@@ -2322,10 +2445,15 @@ namespace SignalGo.Server.ServiceManager
                             var methods = httpServiceType.Value.GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance).Where(x => !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_")))).ToList();
                             if (methods.Count == 0)
                                 continue;
-                            var comment = xmlCommentLoader.GetCommment(httpServiceType.Value);
+                            var comment = xmlCommentLoader.GetComment(httpServiceType.Value);
                             List<ServiceDetailsMethod> serviceMethods = new List<ServiceDetailsMethod>();
                             foreach (var method in methods)
                             {
+                                var pType = SerializeHelper.GetTypeCodeOfObject(method.ReturnType);
+                                if (pType == SerializeObjectType.Enum)
+                                {
+                                    AddEnumAndNewModels(ref id, method.ReturnType, result, SerializeObjectType.Enum, xmlCommentLoader);
+                                }
                                 var methodComment = comment == null ? null : (from x in comment.Methods where x.Name == method.Name && x.Parameters.Count == method.GetParameters().Length select x).FirstOrDefault();
                                 string exceptions = "";
                                 if (methodComment?.Exceptions != null && methodComment?.Exceptions.Count > 0)
@@ -2375,6 +2503,11 @@ namespace SignalGo.Server.ServiceManager
                                 string testExampleParams = "";
                                 foreach (var paramInfo in method.GetParameters())
                                 {
+                                    pType = SerializeHelper.GetTypeCodeOfObject(paramInfo.ParameterType);
+                                    if (pType == SerializeObjectType.Enum)
+                                    {
+                                        AddEnumAndNewModels(ref id, paramInfo.ParameterType, result, SerializeObjectType.Enum, xmlCommentLoader);
+                                    }
                                     string parameterComment = "";
                                     if (methodComment != null)
                                         parameterComment = (from x in methodComment.Parameters where x.Name == paramInfo.Name select x.Comment).FirstOrDefault();
@@ -2405,38 +2538,53 @@ namespace SignalGo.Server.ServiceManager
                         {
                             try
                             {
-                                var mode = SerializeHelper.GetTypeCodeOfObject(type);
-                                if (mode == SerializeObjectType.Object)
-                                {
-                                    if (type.Name.Contains("`") || type == typeof(CustomAttributeTypedArgument) || type == typeof(CustomAttributeNamedArgument) ||
-#if (NETSTANDARD1_6 || NETCOREAPP1_1)
-                                        type.GetTypeInfo().BaseType == typeof(Attribute))
-#else
-                                    type.BaseType == typeof(Attribute))
-#endif
-                                        continue;
+                                var pType = SerializeHelper.GetTypeCodeOfObject(type);
+                                AddEnumAndNewModels(ref id, type, result, pType, xmlCommentLoader);
+                                //                                var mode = SerializeHelper.GetTypeCodeOfObject(type);
+                                //                                if (mode == SerializeObjectType.Object)
+                                //                                {
+                                //                                    if (type.Name.Contains("`") || type == typeof(CustomAttributeTypedArgument) || type == typeof(CustomAttributeNamedArgument) ||
+                                //#if (NETSTANDARD1_6 || NETCOREAPP1_1)
+                                //                                        type.GetTypeInfo().BaseType == typeof(Attribute))
+                                //#else
+                                //                                    type.BaseType == typeof(Attribute))
+                                //#endif
+                                //                                        continue;
 
-                                    var instance = Activator.CreateInstance(type);
-                                    string jsonResult = JsonConvert.SerializeObject(instance, Formatting.None, new JsonSerializerSettings() { NullValueHandling = NullValueHandling.Include });
-                                    if (jsonResult == "{}" || jsonResult == "[]")
-                                        continue;
-                                    var comment = xmlCommentLoader.GetCommment(type);
-                                    id++;
-                                    result.ProjectDomainDetailsInfo.Id = id;
-                                    id++;
-                                    result.ProjectDomainDetailsInfo.Models.Add(new ModelDetailsInfo()
-                                    {
-                                        Id = id,
-                                        Comment = comment?.Summery,
-                                        Name = type.Name,
-                                        FullNameSpace = type.FullName,
-                                        JsonTemplate = jsonResult
-                                    });
-                                }
-                                else if (mode == SerializeObjectType.Enum)
-                                {
-                                    //Enum.GetValues(type);
-                                }
+                                //                                    var instance = Activator.CreateInstance(type);
+                                //                                    string jsonResult = JsonConvert.SerializeObject(instance, Formatting.Indented, new JsonSerializerSettings() { NullValueHandling = NullValueHandling.Include });
+                                //                                    var refactorResult = (JObject)JsonConvert.DeserializeObject(jsonResult);
+                                //                                    foreach (var item in refactorResult.Properties())
+                                //                                    {
+                                //                                        var find = type.GetProperties().FirstOrDefault(x => x.Name == item.Name);
+                                //                                        refactorResult[item.Name] = find.PropertyType.FullName;
+                                //                                    }
+                                //                                    jsonResult = JsonConvert.SerializeObject(refactorResult, Formatting.Indented, new JsonSerializerSettings() { NullValueHandling = NullValueHandling.Include });
+
+                                //                                    if (jsonResult == "{}" || jsonResult == "[]")
+                                //                                        continue;
+                                //                                    var comment = xmlCommentLoader.GetComment(type);
+                                //                                    id++;
+                                //                                    result.ProjectDomainDetailsInfo.Id = id;
+                                //                                    id++;
+                                //                                    result.ProjectDomainDetailsInfo.Models.Add(new ModelDetailsInfo()
+                                //                                    {
+                                //                                        Id = id,
+                                //                                        Comment = comment?.Summery,
+                                //                                        Name = type.Name,
+                                //                                        FullNameSpace = type.FullName,
+                                //                                        ObjectType = mode,
+                                //                                        JsonTemplate = jsonResult
+                                //                                    });
+                                //                                    foreach (var property in type.GetProperties())
+                                //                                    {
+                                //                                        var pType = SerializeHelper.GetTypeCodeOfObject(property.PropertyType);
+                                //                                        if (pType == SerializeObjectType.Enum)
+                                //                                        {
+                                //                                            AddEnumAndNewModels(ref id, property.PropertyType, result, SerializeObjectType.Enum, xmlCommentLoader);
+                                //                                        }
+                                //                                    }
+                                //                                }
                             }
                             catch (Exception ex)
                             {
@@ -2477,8 +2625,120 @@ namespace SignalGo.Server.ServiceManager
 
                     SignalGo.Shared.Log.AutoLogger.LogError(ex, $"{client.IPAddress} {client.SessionId} ServerBase CallMethod");
                 }
+                finally
+                {
+                    skippedTypes.Clear();
+                }
             });
+
+            void AddEnumAndNewModels(ref int id, Type type, ProviderDetailsInfo result, SerializeObjectType objType, XmlCommentLoader xmlCommentLoader)
+            {
+                if (result.ProjectDomainDetailsInfo.Models.Any(x => x.FullNameSpace == type.FullName) || skippedTypes.Contains(type))
+                    return;
+                id++;
+                result.ProjectDomainDetailsInfo.Id = id;
+                id++;
+                if (objType == SerializeObjectType.Enum)
+                {
+                    List<string> items = new List<string>();
+                    foreach (Enum obj in Enum.GetValues(type))
+                    {
+                        int x = Convert.ToInt32(obj); // x is the integer value of enum
+                        items.Add(obj.ToString() + " = " + x);
+                    }
+
+                    result.ProjectDomainDetailsInfo.Models.Add(new ModelDetailsInfo()
+                    {
+                        Id = id,
+                        Name = type.Name,
+                        FullNameSpace = type.FullName,
+                        ObjectType = objType,
+                        JsonTemplate = JsonConvert.SerializeObject(items, Formatting.Indented, new JsonSerializerSettings() { NullValueHandling = NullValueHandling.Include })
+                    });
+                }
+                else
+                {
+                    try
+                    {
+                        if (type.Name.Contains("`") || type == typeof(CustomAttributeTypedArgument) || type == typeof(CustomAttributeNamedArgument) ||
+#if (NETSTANDARD1_6 || NETCOREAPP1_1)
+                                    type.GetTypeInfo().BaseType == typeof(Attribute) || type.GetTypeInfo().BaseType == null)
+#else
+                                    type.BaseType == typeof(Attribute) || type.BaseType == null)
+#endif
+                        {
+                            skippedTypes.Add(type);
+                            return;
+                        }
+
+                        var instance = Activator.CreateInstance(type);
+                        string jsonResult = JsonConvert.SerializeObject(instance, Formatting.Indented, new JsonSerializerSettings() { NullValueHandling = NullValueHandling.Include });
+                        var refactorResult = (JObject)JsonConvert.DeserializeObject(jsonResult);
+                        foreach (var item in refactorResult.Properties())
+                        {
+                            var find = type.GetProperties().FirstOrDefault(x => x.Name == item.Name);
+                            refactorResult[item.Name] = find.PropertyType.FullName;
+                        }
+                        jsonResult = JsonConvert.SerializeObject(refactorResult, Formatting.Indented, new JsonSerializerSettings() { NullValueHandling = NullValueHandling.Include });
+
+                        if (jsonResult == "{}" || jsonResult == "[]")
+                        {
+                            skippedTypes.Add(type);
+                            return;
+                        }
+                        var comment = xmlCommentLoader.GetComment(type);
+                        id++;
+                        result.ProjectDomainDetailsInfo.Id = id;
+                        id++;
+                        result.ProjectDomainDetailsInfo.Models.Add(new ModelDetailsInfo()
+                        {
+                            Id = id,
+                            Comment = comment?.Summery,
+                            Name = type.Name,
+                            FullNameSpace = type.FullName,
+                            ObjectType = objType,
+                            JsonTemplate = jsonResult
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        skippedTypes.Add(type);
+                    }
+                }
+
+                foreach (var item in type.GetListOfGenericArguments())
+                {
+                    var pType = SerializeHelper.GetTypeCodeOfObject(item);
+                    AddEnumAndNewModels(ref id, item, result, pType, xmlCommentLoader);
+                }
+
+                foreach (var item in type.GetListOfInterfaces())
+                {
+                    var pType = SerializeHelper.GetTypeCodeOfObject(item);
+                    AddEnumAndNewModels(ref id, item, result, pType, xmlCommentLoader);
+                }
+
+                foreach (var item in type.GetListOfNestedTypes())
+                {
+                    var pType = SerializeHelper.GetTypeCodeOfObject(item);
+                    AddEnumAndNewModels(ref id, item, result, pType, xmlCommentLoader);
+                }
+
+                foreach (var item in type.GetListOfBaseTypes())
+                {
+                    var pType = SerializeHelper.GetTypeCodeOfObject(item);
+                    AddEnumAndNewModels(ref id, item, result, pType, xmlCommentLoader);
+                }
+                foreach (var property in type.GetProperties())
+                {
+                    var pType = SerializeHelper.GetTypeCodeOfObject(property.PropertyType);
+                    AddEnumAndNewModels(ref id, property.PropertyType, result, pType, xmlCommentLoader);
+
+                }
+            }
         }
+
+
 
 
 

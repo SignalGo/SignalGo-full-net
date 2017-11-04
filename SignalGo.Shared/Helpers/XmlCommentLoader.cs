@@ -138,7 +138,7 @@ namespace SignalGo.Shared.Helpers
         /// </summary>
         /// <param name="classInfo">your type</param>
         /// <returns>comment of class</returns>
-        public CommentOfClassInfo GetCommment(Type classInfo)
+        public CommentOfClassInfo GetComment(Type classInfo)
         {
             var documentation = GetElementFromType(classInfo);
             if (documentation == null)

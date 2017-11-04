@@ -154,8 +154,6 @@
       <Project>{78D8601B-E331-47B7-A4A8-46B7460D82A4}</Project>
       <Name>SignalGo.Shared</Name>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <Folder Include="Properties\" />
   </ItemGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

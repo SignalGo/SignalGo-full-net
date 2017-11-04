@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SignalGo.Shared.Helpers;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -31,12 +32,16 @@ namespace SignalGo.Shared.Models
         /// </summary>
         public bool IsExpanded { get; set; }
         /// <summary>
+        /// type of object
+        /// </summary>
+        public SerializeObjectType ObjectType { get; set; }
+        /// <summary>
         /// if item is selected from treeview
         /// </summary>
         public bool IsSelected { get; set; }
         public ModelDetailsInfo Clone()
         {
-            return new ModelDetailsInfo() { Id = Id, Name = Name, Comment = Comment, FullNameSpace = FullNameSpace, JsonTemplate = JsonTemplate, IsSelected = IsSelected, IsExpanded = IsExpanded };
+            return new ModelDetailsInfo() { Id = Id, ObjectType = ObjectType, Name = Name, Comment = Comment, FullNameSpace = FullNameSpace, JsonTemplate = JsonTemplate, IsSelected = IsSelected, IsExpanded = IsExpanded };
         }
     }
 }

@@ -5,14 +5,31 @@ using System.Text;
 
 namespace SignalGo.Shared.Models
 {
+    /// <summary>
+    /// details of server info
+    /// </summary>
     public class ProviderDetailsInfo
     {
         /// <summary>
         /// id of class
         /// </summary>
         public int Id { get; set; }
+        /// <summary>
+        /// list of server services
+        /// </summary>
         public List<ServiceDetailsInfo> Services { get; set; } = new List<ServiceDetailsInfo>();
+        /// <summary>
+        /// 
+        /// </summary>
+        public List<CallbackServiceDetailsInfo> Callbacks { get; set; } = new List<CallbackServiceDetailsInfo>();
+
+        /// <summary>
+        /// list of web api services
+        /// </summary>
         public WebApiDetailsInfo WebApiDetailsInfo { get; set; } = new WebApiDetailsInfo();
+        /// <summary>
+        /// list of project models and types
+        /// </summary>
         public ProjectDomainDetailsInfo ProjectDomainDetailsInfo { get; set; } = new ProjectDomainDetailsInfo();
         /// <summary>
         /// if item is exanded from treeview

@@ -17,7 +17,7 @@ namespace SignalGo.Shared.Helpers
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
-        public static IEnumerable<Type> GetNestedTypes(this Type type)
+        public static IEnumerable<Type> GetListOfNestedTypes(this Type type)
         {
 #if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
             var typeInfo = type.GetTypeInfo();
@@ -30,6 +30,29 @@ namespace SignalGo.Shared.Helpers
             return typeInfo.GetNestedTypes();
 #endif
         }
+
+        /// <summary>
+        /// get Nested Types
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public static IEnumerable<Type> GetListOfBaseTypes(this Type type)
+        {
+            List<Type> result = new List<Type>();
+            Type parent = type;
+            while (parent != null)
+            {
+
+                result.Add(parent);
+#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
+                parent = parent.GetTypeInfo().BaseType;
+#else
+                parent = parent.BaseType;
+#endif
+            }
+            return result;
+        }
+
         /// <summary>
         /// interfaces
         /// </summary>
@@ -133,7 +156,7 @@ namespace SignalGo.Shared.Helpers
         /// <param name="type"></param>
         /// <param name="newType"></param>
         /// <returns></returns>
-        public static bool GetIsAssignableFrom(this Type type,Type newType)
+        public static bool GetIsAssignableFrom(this Type type, Type newType)
         {
             return type
 #if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)

@@ -2,18 +2,23 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace SignalGo.Shared.Models
 {
     /// <summary>
-    /// one of interface
+    /// server callback classes
     /// </summary>
-    public class ServiceDetailsInterface
+    public class CallbackServiceDetailsInfo
     {
         /// <summary>
         /// id of class
         /// </summary>
         public int Id { get; set; }
+        /// <summary>
+        /// name of service
+        /// </summary>
+        public string ServiceName { get; set; }
         /// <summary>
         /// name of class
         /// </summary>
@@ -38,10 +43,13 @@ namespace SignalGo.Shared.Models
         /// if item is selected from treeview
         /// </summary>
         public bool IsSelected { get; set; }
-
-        public ServiceDetailsInterface Clone()
+        /// <summary>
+        /// clone class
+        /// </summary>
+        /// <returns></returns>
+        public CallbackServiceDetailsInfo Clone()
         {
-            return new ServiceDetailsInterface() { Id = Id, Comment = Comment, FullNameSpace = FullNameSpace, Methods = new List<ServiceDetailsMethod>(), NameSpace = NameSpace, IsSelected = IsSelected, IsExpanded = IsExpanded };
+            return new CallbackServiceDetailsInfo() { Id = Id, Comment = Comment, FullNameSpace = FullNameSpace, NameSpace = NameSpace, ServiceName = ServiceName, IsSelected = IsSelected, IsExpanded = IsExpanded };
         }
     }
 }
