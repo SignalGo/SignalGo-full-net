@@ -527,7 +527,7 @@ namespace SignalGo.Server.ServiceManager
             {
                 var methodName = lines.Last();
                 string parameters = "";
-                //Dictionary<string, string> multiPartParameter = new Dictionary<string, string>();
+                Dictionary<string, string> multiPartParameter = new Dictionary<string, string>();
                 if (httpMethod == "GET")
                 {
                     if (methodName.Contains("?"))
@@ -546,7 +546,7 @@ namespace SignalGo.Server.ServiceManager
                         var readCount = client.TcpClient.Client.Receive(buffer);
                         var postResponse = Encoding.UTF8.GetString(buffer.ToList().GetRange(0, readCount).ToArray());
                         content = postResponse;
-                        
+
                     }
 
                     methodName = lines.Last();
@@ -557,10 +557,30 @@ namespace SignalGo.Server.ServiceManager
                         methodName = sp.First();
                         parameters = sp.Last();
                     }
-                    //else if (parameters.StartsWith("----") && parameters.ToLower().Contains("content-disposition"))
-                    //{
-
-                    //}
+                    else if (parameters.StartsWith("----") && parameters.ToLower().Contains("content-disposition"))
+                    {
+                        var boundary = parameters.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries)[0];
+                        var pValues = parameters.Split(new string[] { boundary }, StringSplitOptions.RemoveEmptyEntries);
+                        string name = "";
+                        foreach (var data in pValues)
+                        {
+                            if (data.ToLower().Contains("content-disposition"))
+                            {
+                                if (data.Replace(" ", "").Contains(";name="))
+                                {
+                                    var keyValue = data.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
+                                    var header = keyValue[0];
+                                    if (header.ToLower().IndexOf("content-disposition:") == 0)
+                                    {
+                                        var disp = new CustomContentDisposition(header);
+                                        if (disp.Parameters.ContainsKey("name"))
+                                            name = disp.Parameters["name"];
+                                        multiPartParameter.Add(name, keyValue[1]);
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
 
 
@@ -589,7 +609,14 @@ namespace SignalGo.Server.ServiceManager
                         }
 
                         List<Tuple<string, string>> values = new List<Tuple<string, string>>();
-                        if (headers["content-type"] == "application/json")
+                        if (multiPartParameter.Count > 0)
+                        {
+                            foreach (var item in multiPartParameter)
+                            {
+                                values.Add(new Tuple<string, string>(item.Key, item.Value));
+                            }
+                        }
+                        else if (headers["content-type"] == "application/json")
                         {
                             JObject des = (JObject)JsonConvert.DeserializeObject(parameters);
                             foreach (var item in des.Properties())

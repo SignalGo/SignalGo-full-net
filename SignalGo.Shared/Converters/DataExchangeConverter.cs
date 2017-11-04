@@ -85,6 +85,8 @@ namespace SignalGo.Shared.Converters
 
             var jToken = JToken.Load(reader);
             var obj = jToken.ToObject(objectType);
+            if (obj == null)
+                obj = JsonConvert.DeserializeObject(jToken.ToString(), objectType);
             GenerateProperties(obj);
             return obj;
         }
