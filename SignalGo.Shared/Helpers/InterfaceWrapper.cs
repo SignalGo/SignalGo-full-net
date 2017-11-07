@@ -180,9 +180,11 @@ namespace SignalGo.Shared.Helpers
                 }
             }
 #if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
-            return Activator.CreateInstance(type.CreateTypeInfo().GetType(), CallMethodAction);
+            var newType = type.CreateTypeInfo();
+            return Activator.CreateInstance(newType.AsType(), CallMethodAction);
 #else
-            return Activator.CreateInstance(type.CreateType(), CallMethodAction);
+            var newType = type.CreateType();
+            return Activator.CreateInstance(newType, CallMethodAction);
 #endif
 
         }
