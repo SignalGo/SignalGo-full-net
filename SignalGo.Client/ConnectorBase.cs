@@ -299,7 +299,7 @@ namespace SignalGo.Client
         /// <param name="address">server address</param>
         /// <param name="port">server port</param>
 #if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
-        internal async void Connect(string address, int port)
+        internal void Connect(string address, int port)
 #else
         internal void Connect(string address, int port)
 #endif
@@ -309,14 +309,20 @@ namespace SignalGo.Client
             IsDisposed = false;
 #if (NETSTANDARD1_6 || NETCOREAPP1_1)
             _client = new TcpClient();
-            await _client.ConnectAsync(address, port);
+            bool isSuccess = _client.ConnectAsync(address, port).Wait(new TimeSpan(0, 0, 5));
+            if (!isSuccess)
+                throw new TimeoutException();
 #elif (PORTABLE)
             _client = new Sockets.Plugin.TcpSocketClient();
-            await _client.ConnectAsync(address, port);
+            bool isSuccess = _client.ConnectAsync(address, port).Wait(new TimeSpan(0, 0, 5));
+            if (!isSuccess)
+                throw new TimeoutException();
 #else
             _client = new TcpClient(address, port);
 #endif
+
             IsConnected = true;
+
         }
 
         /// <summary>
