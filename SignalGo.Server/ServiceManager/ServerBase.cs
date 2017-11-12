@@ -568,14 +568,19 @@ namespace SignalGo.Server.ServiceManager
                             {
                                 if (data.Replace(" ", "").Contains(";name="))
                                 {
-                                    var keyValue = data.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
-                                    var header = keyValue[0];
+                                    int index = data.ToLower().IndexOf("content-disposition");
+                                    var header = data.Substring(index);
+                                    var headLen = header.IndexOf("\r\n");
+                                    header = data.Substring(index, headLen);
+                                    var newData = data.Substring(index + headLen + 2);
+                                    //newData = newData.Split(new string[] { boundary }, StringSplitOptions.RemoveEmptyEntries);
                                     if (header.ToLower().IndexOf("content-disposition:") == 0)
                                     {
                                         var disp = new CustomContentDisposition(header);
                                         if (disp.Parameters.ContainsKey("name"))
                                             name = disp.Parameters["name"];
-                                        multiPartParameter.Add(name, keyValue[1]);
+                                        newData = newData.Substring(2, newData.Length - 4);
+                                        multiPartParameter.Add(name, newData);
                                     }
                                 }
                             }
@@ -821,6 +826,7 @@ namespace SignalGo.Server.ServiceManager
                     methodName = sp.First();
                     parameters = sp.Last();
                 }
+                Dictionary<string, string> multiPartParameter = new Dictionary<string, string>();
 
                 var len = int.Parse(headers["content-length"]);
                 HttpPostedFileInfo fileInfo = null;
@@ -859,7 +865,29 @@ namespace SignalGo.Server.ServiceManager
                                 }
                                 break;
                             }
-
+                            else if (data.ToLower().Contains("content-disposition"))
+                            {
+                                if (data.Replace(" ", "").Contains(";name="))
+                                {
+                                    int index = data.ToLower().IndexOf("content-disposition");
+                                    var header = data.Substring(index);
+                                    var headLen = header.IndexOf("\r\n");
+                                    header = data.Substring(index, headLen);
+                                    var byteData = GoStreamReader.ReadBlockSize(client.TcpClient.GetStream(), (ulong)(len - content.Length - fileHeaderCount));
+                                    string text = Encoding.UTF8.GetString(byteData);
+                                    var newData = text.Substring(0, text.IndexOf(boundary) - 4);
+                                    //var newData = data.Substring(index + headLen + 2);
+                                    //newData = newData.Split(new string[] { boundary }, StringSplitOptions.RemoveEmptyEntries);
+                                    if (header.ToLower().IndexOf("content-disposition:") == 0)
+                                    {
+                                        var disp = new CustomContentDisposition(header);
+                                        if (disp.Parameters.ContainsKey("name"))
+                                            name = disp.Parameters["name"];
+                                        //newData = newData.Substring(2, newData.Length - 4);
+                                        multiPartParameter.Add(name, newData);
+                                    }
+                                }
+                            }
                             var keyValue = data.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
                             if (keyValue.Length == 2)
                             {
@@ -877,17 +905,20 @@ namespace SignalGo.Server.ServiceManager
                             }
                         }
                     }
-
-                    var stream = new StreamGo(client.TcpClient.GetStream());
-                    stream.SetOfStreamLength(len - content.Length - fileHeaderCount, boundary.Length + 6);
-                    fileInfo = new HttpPostedFileInfo()
+                    if (multiPartParameter.Count == 0)
                     {
-                        Name = name,
-                        ContentLength = stream.Length,
-                        ContentType = contentType,
-                        FileName = fileName,
-                        InputStream = stream
-                    };
+                        var stream = new StreamGo(client.TcpClient.GetStream());
+                        stream.SetOfStreamLength(len - content.Length - fileHeaderCount, boundary.Length + 6);
+                        fileInfo = new HttpPostedFileInfo()
+                        {
+                            Name = name,
+                            ContentLength = stream.Length,
+                            ContentType = contentType,
+                            FileName = fileName,
+                            InputStream = stream
+                        };
+                    }
+
 
                     //byte[] buffer = new byte[len * 5];
                     //var readCount = client.TcpClient.Client.Receive(buffer);
@@ -924,7 +955,14 @@ namespace SignalGo.Server.ServiceManager
                         }
 
                         List<Tuple<string, string>> values = new List<Tuple<string, string>>();
-                        if (headers["content-type"] == "application/json")
+                        if (multiPartParameter.Count > 0)
+                        {
+                            foreach (var item in multiPartParameter)
+                            {
+                                values.Add(new Tuple<string, string>(item.Key, item.Value));
+                            }
+                        }
+                        else if (headers["content-type"] == "application/json")
                         {
                             JObject des = (JObject)JsonConvert.DeserializeObject(parameters);
                             foreach (var item in des.Properties())

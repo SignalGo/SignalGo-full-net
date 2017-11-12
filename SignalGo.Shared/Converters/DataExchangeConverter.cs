@@ -70,7 +70,7 @@ namespace SignalGo.Shared.Converters
             var implementICollection = (SkipDataExchangeAttribute)objectType.GetCustomAttributes(typeof(SkipDataExchangeAttribute), true).FirstOrDefault();
 
 #endif
-            bool? canIgnore = implementICollection == null ? (bool?)null : implementICollection.CanIgnore(null, null, objectType, implementICollection);
+            bool? canIgnore = implementICollection == null ? (bool?)null : implementICollection.CanIgnore(null, null, null, objectType, implementICollection);
             if (canIgnore.HasValue)
             {
                 if (canIgnore.Value)
@@ -109,7 +109,7 @@ namespace SignalGo.Shared.Converters
                 if (property.CanRead)
                 {
                     var implementICollection = (SkipDataExchangeAttribute)property.GetCustomAttributes(typeof(SkipDataExchangeAttribute), true).FirstOrDefault();
-                    var canIgnore = implementICollection == null ? (bool?)null : implementICollection.CanIgnore(instance, property, type, implementICollection);
+                    var canIgnore = implementICollection == null ? (bool?)null : implementICollection.CanIgnore(instance, property, null, type, implementICollection);
                     bool isIgnored = false;
                     if (canIgnore.HasValue)
                     {
@@ -207,7 +207,7 @@ namespace SignalGo.Shared.Converters
 #else
                 var implementICollection = (SkipDataExchangeAttribute)type.GetCustomAttributes(typeof(SkipDataExchangeAttribute), true).FirstOrDefault();
 #endif
-                bool? canIgnore = implementICollection == null ? (bool?)null : implementICollection.CanIgnore(value, null, type, implementICollection);
+                bool? canIgnore = implementICollection == null ? (bool?)null : implementICollection.CanIgnore(value, null, null, type, implementICollection);
                 if (canIgnore.HasValue)
                 {
                     if (canIgnore.Value)
@@ -303,91 +303,147 @@ namespace SignalGo.Shared.Converters
             {
                 foreach (var property in baseType.GetListOfProperties())
                 {
-                    if (property.CanRead)
-                    {
-                        var implementICollection = (SkipDataExchangeAttribute)property.GetCustomAttributes(typeof(SkipDataExchangeAttribute), true).FirstOrDefault();
-                        var canIgnore = implementICollection == null ? (bool?)null : implementICollection.CanIgnore(instance, property, baseType, implementICollection);
-                        bool isIgnored = false;
-                        if (canIgnore.HasValue)
-                        {
-                            if (canIgnore.Value)
-                            {
-                                isIgnored = true;
-                            }
-                        }
-                        else if (implementICollection != null && (implementICollection.Mode == LimitExchangeType.Both || implementICollection.Mode == Mode))
-                        {
-                            isIgnored = true;
-                        }
-                        if (!isIgnored)
-                        {
-                            if (ExchangerTypes != null)
-                            {
-                                var find = ExchangerTypes.FirstOrDefault(x => x.Type == baseType && (x.LimitationMode == LimitExchangeType.Both || x.LimitationMode == LimitExchangeType.OutgoingCall));
-                                if (find != null && find.Properties != null)
-                                {
-                                    if (find.CustomDataExchangerType == CustomDataExchangerType.Take)
-                                    {
-                                        if (find.Properties != null && !find.Properties.Contains(property.Name) && find.IsEnabled(Client, Server, property.Name, baseType))
-                                            isIgnored = true;
-                                    }
-                                    else
-                                    {
-                                        if (find.Properties != null && find.Properties.Contains(property.Name) && find.IsEnabled(Client, Server, property.Name, baseType))
-                                            isIgnored = true;
-                                    }
-                                }
-                            }
-                        }
-                        if (!isIgnored)
-                        {
-                            bool isPropertyArray = typeof(IEnumerable).GetIsAssignableFrom(property.PropertyType) && property.PropertyType != typeof(string);
-                            bool isPropertyDictionary = typeof(IDictionary).GetIsAssignableFrom(property.PropertyType);
-                            if (isPropertyArray || isPropertyDictionary)
-                            {
-                                object propValue = null;
-                                try
-                                {
-                                    propValue = property.GetValue(instance, null);
-                                }
-                                catch (Exception ex)
-                                {
-                                    AutoLogger.LogError(ex, "WriteData 1");
-                                }
-                                if (propValue != null)
-                                {
-                                    try
-                                    {
-                                        writer.WritePropertyName(property.Name);
-                                        serializer.Serialize(writer, propValue);
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        AutoLogger.LogError(ex, "WriteData 2");
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                try
-                                {
-                                    var value = property.GetValue(instance, null);
-                                    writer.WritePropertyName(property.Name);
-                                    serializer.Serialize(writer, value);
-                                }
-                                catch (Exception ex)
-                                {
-                                    AutoLogger.LogError(ex, "WriteData 3");
-                                }
-                            }
-                        }
-                    }
+                    GenerateValue(property, null);
                 }
 
+                foreach (var field in baseType.GetListOfFields())
+                {
+                    GenerateValue(null, field);
+                }
             }
             catch (Exception ex)
             {
                 AutoLogger.LogError(ex, "WriteData 4");
+            }
+
+            void GenerateValue(PropertyInfo property, FieldInfo field)
+            {
+                if ((property != null && property.CanRead) || field != null)
+                {
+                    SkipDataExchangeAttribute implementICollection = null;
+                    if (property != null)
+                        implementICollection = (SkipDataExchangeAttribute)property.GetCustomAttributes(typeof(SkipDataExchangeAttribute), true).FirstOrDefault();
+                    else if (field != null)
+                        implementICollection = (SkipDataExchangeAttribute)field.GetCustomAttributes(typeof(SkipDataExchangeAttribute), true).FirstOrDefault();
+
+                    var canIgnore = implementICollection == null ? (bool?)null : implementICollection.CanIgnore(instance, property, field, baseType, implementICollection);
+                    bool isIgnored = false;
+                    if (canIgnore.HasValue)
+                    {
+                        if (canIgnore.Value)
+                        {
+                            isIgnored = true;
+                        }
+                    }
+                    else if (implementICollection != null && (implementICollection.Mode == LimitExchangeType.Both || implementICollection.Mode == Mode))
+                    {
+                        isIgnored = true;
+                    }
+                    if (!isIgnored)
+                    {
+                        if (ExchangerTypes != null)
+                        {
+                            var find = ExchangerTypes.FirstOrDefault(x => x.Type == baseType && (x.LimitationMode == LimitExchangeType.Both || x.LimitationMode == LimitExchangeType.OutgoingCall));
+                            if (find != null && find.Properties != null)
+                            {
+                                if (find.CustomDataExchangerType == CustomDataExchangerType.Take)
+                                {
+                                    if (property != null)
+                                    {
+                                        if (find.Properties != null && !find.Properties.Contains(property.Name) && find.IsEnabled(Client, Server, property.Name, baseType))
+                                            isIgnored = true;
+                                    }
+
+                                    else if (field != null)
+                                    {
+                                        if (find.Properties != null && !find.Properties.Contains(field.Name) && find.IsEnabled(Client, Server, field.Name, baseType))
+                                            isIgnored = true;
+                                    }
+                                }
+                                else
+                                {
+                                    if (property != null)
+                                    {
+                                        if (find.Properties != null && find.Properties.Contains(property.Name) && find.IsEnabled(Client, Server, property.Name, baseType))
+                                            isIgnored = true;
+                                    }
+                                    else if (field != null)
+                                    {
+                                        if (find.Properties != null && find.Properties.Contains(field.Name) && find.IsEnabled(Client, Server, field.Name, baseType))
+                                            isIgnored = true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if (!isIgnored)
+                    {
+                        bool isPropertyArray = false;
+                        if (property != null)
+                            isPropertyArray = typeof(IEnumerable).GetIsAssignableFrom(property.PropertyType) && property.PropertyType != typeof(string);
+                        else if (field != null)
+                            isPropertyArray = typeof(IEnumerable).GetIsAssignableFrom(field.FieldType) && field.FieldType != typeof(string);
+
+                        bool isPropertyDictionary = false;
+                        if (property != null)
+                            isPropertyDictionary = typeof(IDictionary).GetIsAssignableFrom(property.PropertyType);
+                        else if (field != null)
+                            isPropertyDictionary = typeof(IDictionary).GetIsAssignableFrom(field.FieldType);
+
+                        if (isPropertyArray || isPropertyDictionary)
+                        {
+                            object propValue = null;
+                            try
+                            {
+                                if (property != null)
+                                    propValue = property.GetValue(instance, null);
+                                else if (field != null)
+                                    propValue = field.GetValue(instance);
+                            }
+                            catch (Exception ex)
+                            {
+                                AutoLogger.LogError(ex, "WriteData 1");
+                            }
+                            if (propValue != null)
+                            {
+                                try
+                                {
+                                    if (property != null)
+                                        writer.WritePropertyName(property.Name);
+                                    else if (field != null)
+                                        writer.WritePropertyName(field.Name);
+                                    serializer.Serialize(writer, propValue);
+                                }
+                                catch (Exception ex)
+                                {
+                                    AutoLogger.LogError(ex, "WriteData 2");
+                                }
+                            }
+                        }
+                        else
+                        {
+                            try
+                            {
+                                object value = null;
+                                if (property != null)
+                                {
+                                    value = property.GetValue(instance, null);
+                                    writer.WritePropertyName(property.Name);
+                                }
+                                else if (field != null)
+                                {
+                                    value = field.GetValue(instance);
+                                    writer.WritePropertyName(field.Name);
+                                }
+                                serializer.Serialize(writer, value);
+                            }
+                            catch (Exception ex)
+                            {
+                                AutoLogger.LogError(ex, "WriteData 3");
+                            }
+                        }
+                    }
+                }
             }
         }
     }

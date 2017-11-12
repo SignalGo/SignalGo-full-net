@@ -1,7 +1,4 @@
-﻿#undef Mobile
-//#define Mobile
-
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using SignalGo;
 using SignalGo.Shared.DataTypes;
 using SignalGo.Shared.Helpers;
@@ -31,7 +28,6 @@ namespace SignalGo.Client
     {
         static ConnectorExtension()
         {
-#if (!Mobile)
             CSCodeInjection.InvokedClientMethodAction = (client, method, parameters) =>
             {
                 if (!(client is OperationCalls))
@@ -48,7 +44,6 @@ namespace SignalGo.Client
                     return null;
                 return data is StreamInfo ? data : JsonConvert.DeserializeObject(data.ToString(), method.ReturnType);
             };
-#endif
         }
 
         /// <summary>
@@ -119,20 +114,32 @@ namespace SignalGo.Client
         /// <returns></returns>
         internal static object SendData(this OperationCalls client, string callerName, string attibName, params object[] args)
         {
-            MethodCallInfo callInfo = new MethodCallInfo();
+            string serviceName = "";
             if (string.IsNullOrEmpty(attibName))
-                callInfo.ServiceName = client.GetType().GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault().Name;
+                serviceName = client.GetType().GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault().Name;
             else
-                callInfo.ServiceName = attibName;
+                serviceName = attibName;
 
-            callInfo.MethodName = callerName;
+            return SendData(client.Connector, serviceName, callerName, args);
+        }
+
+        /// <summary>
+        /// send data to server
+        /// </summary>
+        /// <returns></returns>
+        internal static object SendData(ConnectorBase connector, string serviceName, string methodName, params object[] args)
+        {
+            MethodCallInfo callInfo = new MethodCallInfo();
+            callInfo.ServiceName = serviceName;
+
+            callInfo.MethodName = methodName;
             foreach (var item in args)
             {
                 callInfo.Parameters.Add(new Shared.Models.ParameterInfo() { Value = JsonConvert.SerializeObject(item), Type = item?.GetType().FullName });
             }
             var guid = Guid.NewGuid().ToString();
             callInfo.Guid = guid;
-            return SendData(client.Connector, callInfo, args.Length == 1 && args[0] != null && args[0].GetType() == typeof(StreamInfo) ? (StreamInfo)args[0] : null);
+            return SendData(connector, callInfo, args.Length == 1 && args[0] != null && args[0].GetType() == typeof(StreamInfo) ? (StreamInfo)args[0] : null);
         }
 
         static object SendData(this ConnectorBase connector, MethodCallInfo callInfo, StreamInfo streamInfo)
@@ -292,7 +299,7 @@ namespace SignalGo.Client
         /// <param name="address">server address</param>
         /// <param name="port">server port</param>
 #if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
-        internal async void Connect(string address, int port)
+        internal void Connect(string address, int port)
 #else
         internal void Connect(string address, int port)
 #endif
@@ -302,19 +309,26 @@ namespace SignalGo.Client
             IsDisposed = false;
 #if (NETSTANDARD1_6 || NETCOREAPP1_1)
             _client = new TcpClient();
-            await _client.ConnectAsync(address, port);
+            bool isSuccess = _client.ConnectAsync(address, port).Wait(new TimeSpan(0, 0, 5));
+            if (!isSuccess)
+                throw new TimeoutException();
 #elif (PORTABLE)
             _client = new Sockets.Plugin.TcpSocketClient();
-            await _client.ConnectAsync(address, port);
+            bool isSuccess = _client.ConnectAsync(address, port).Wait(new TimeSpan(0, 0, 5));
+            if (!isSuccess)
+                throw new TimeoutException();
 #else
             _client = new TcpClient(address, port);
 #endif
+
             IsConnected = true;
+
         }
 
         /// <summary>
         /// register service and method to server for client call thats
         /// T type must inherited OprationCalls interface
+        /// T type must not be an interface
         /// </summary>
         /// <typeparam name="T">type of class for call server methods</typeparam>
         /// <returns>return instance class for call methods</returns>
@@ -354,7 +368,6 @@ namespace SignalGo.Client
         /// <summary>
         /// get default value from type
         /// </summary>
-        /// <param name="t"></param>
         /// <returns></returns>
         internal T GetDefaultGeneric<T>()
         {
@@ -366,7 +379,7 @@ namespace SignalGo.Client
         /// </summary>
         /// <typeparam name="T">type of interface for create instanse</typeparam>
         /// <returns>return instance of interface that client can call methods</returns>
-        public T RegisterClientServiceInterface<T>()
+        public T RegisterClientServiceInterface<T>() where T : class
         {
             var type = typeof(T);
             var name = type.GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault().Name;
@@ -391,6 +404,42 @@ namespace SignalGo.Client
             return (T)objectInstance;
         }
 #endif
+        /// <summary>
+        /// register service and method to server for client call thats
+        /// </summary>
+        /// <typeparam name="T">type of interface for create instanse</typeparam>
+        /// <returns>return instance of interface that client can call methods</returns>
+        public T RegisterClientServiceInterfaceWrapper<T>() where T : class
+        {
+            var type = typeof(T);
+            var name = type.GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault().Name;
+            MethodCallInfo callInfo = new MethodCallInfo()
+            {
+                ServiceName = name,
+                MethodName = "/RegisterService",
+                Guid = Guid.NewGuid().ToString()
+            };
+            var callback = this.SendData<MethodCallbackInfo>(callInfo);
+
+            var objectInstance = InterfaceWrapper.Wrap<T>((serviceName, method, args) =>
+            {
+                if (typeof(void) == method.ReturnType)
+                {
+                    ConnectorExtension.SendData(this, serviceName, method.Name, args);
+                    return null;
+                }
+                else
+                {
+                    var data = ConnectorExtension.SendData(this, serviceName, method.Name, args);
+                    if (data == null)
+                        return null;
+                    return data is StreamInfo ? data : JsonConvert.DeserializeObject(data.ToString(), method.ReturnType);
+                };
+            });
+
+            Services.TryAdd(name, objectInstance);
+            return (T)objectInstance;
+        }
         public void RegisterClientServiceInterface(string serviceName)
         {
             MethodCallInfo callInfo = new MethodCallInfo()

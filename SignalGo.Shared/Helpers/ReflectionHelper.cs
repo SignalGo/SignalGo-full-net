@@ -151,6 +151,23 @@ namespace SignalGo.Shared.Helpers
 #endif
         }
         /// <summary>
+        /// get list of fields
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public static IEnumerable<FieldInfo> GetListOfFields(this Type type)
+        {
+            return type
+#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
+                .GetTypeInfo()
+#endif
+#if (PORTABLE)
+                .DeclaredFields;
+#else
+                .GetFields();
+#endif
+        }
+        /// <summary>
         /// IsAssignableFrom
         /// </summary>
         /// <param name="type"></param>
