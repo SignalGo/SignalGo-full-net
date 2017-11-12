@@ -28,17 +28,19 @@ namespace SignalGo.Shared.Converters
         /// <summary>
         /// exchange types
         /// </summary>
-        private CustomDataExchanger[] ExchangerTypes { get; set; }
+        private CustomDataExchangerAttribute[] ExchangerTypes { get; set; }
+
         /// <summary>
         /// constructor of this attrib neeed your strategy mode
         /// </summary>
         /// <param name="mode">strategy mode</param>
         /// <param name="exchangerTypes">exchange types</param>
-        public DataExchangeConverter(LimitExchangeType mode, params CustomDataExchanger[] exchangerTypes)
+        public DataExchangeConverter(LimitExchangeType mode, params CustomDataExchangerAttribute[] exchangerTypes)
         {
             Mode = mode;
             ExchangerTypes = exchangerTypes;
         }
+
         /// <summary>
         /// your strategy mode for serialize and deserialize
         /// </summary>
@@ -91,6 +93,23 @@ namespace SignalGo.Shared.Converters
             return obj;
         }
 
+        void MergeExchangeTypes(Type type, LimitExchangeType limitExchangeType)
+        {
+            if (ExchangerTypes == null || ExchangerTypes.Length == 0 || ExchangerTypes.Any(x => x.Type == type))
+            {
+                var customDataExchanger = type.GetCustomAttributes<CustomDataExchangerAttribute>(true).ToList();
+                foreach (var exchanger in customDataExchanger)
+                {
+                    exchanger.Type = type;
+                }
+                customDataExchanger.RemoveAll(x => (x.LimitationMode != LimitExchangeType.Both && x.LimitationMode != limitExchangeType) || !x.IsEnabled(Client, Server, null, type) || !x.GetExchangerByUserCustomization(Client));
+                if (ExchangerTypes != null)
+                    customDataExchanger.AddRange(ExchangerTypes);
+                if (customDataExchanger.Count > 0)
+                    ExchangerTypes = customDataExchanger.ToArray();
+            }
+        }
+
         /// <summary>
         /// generate properties of object for deserialze
         /// </summary>
@@ -100,6 +119,7 @@ namespace SignalGo.Shared.Converters
             if (instance == null)
                 return;
             var type = instance.GetType();
+            MergeExchangeTypes(type, LimitExchangeType.IncomingCall);
             if (SerializeHelper.GetTypeCodeOfObject(instance.GetType()) != SerializeObjectType.Object)
             {
                 return;
@@ -190,7 +210,9 @@ namespace SignalGo.Shared.Converters
                     return;
                 }
                 var type = value.GetType();
-#if (NETSTANDARD1_6 || NETCOREAPP1_1 ||  PORTABLE)
+                MergeExchangeTypes(type, LimitExchangeType.OutgoingCall);
+
+#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
                 if (type.GetTypeInfo().BaseType != null && type.Namespace == "System.Data.Entity.DynamicProxies")
                 {
                     type = type.GetTypeInfo().BaseType;

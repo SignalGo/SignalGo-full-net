@@ -1837,6 +1837,15 @@ namespace SignalGo.Server.ServiceManager
                         result.AppendLine("</Exception>");
                         throw new Exception($"{client.IPAddress} {client.SessionId} " + result.ToString());
                     }
+
+                    var serviceMethod = serviceType.GetMethod(method.Name, method.GetParameters().Select(p => p.ParameterType).ToArray());
+
+                    var securityAttributes = serviceMethod.GetCustomAttributes(typeof(SecurityContractAttribute), true).ToList();
+                    var customDataExchanger = serviceMethod.GetCustomAttributes(typeof(CustomDataExchangerAttribute), true).Cast<CustomDataExchangerAttribute>().Where(x => x.GetExchangerByUserCustomization(client)).ToList();
+
+                    customDataExchanger.AddRange(method.GetCustomAttributes(typeof(CustomDataExchangerAttribute), true).Cast<CustomDataExchangerAttribute>().Where(x => x.GetExchangerByUserCustomization(client)).ToList());
+                    securityAttributes.AddRange(method.GetCustomAttributes(typeof(SecurityContractAttribute), true));
+
                     List<object> parameters = new List<object>();
                     int index = 0;
                     var prms = method.GetParameters();
@@ -1845,11 +1854,10 @@ namespace SignalGo.Server.ServiceManager
                         if (item.Value == null)
                             parameters.Add(GetDefault(prms[index].ParameterType));
                         else
-                            parameters.Add(ServerSerializationHelper.Deserialize(item.Value, prms[index].ParameterType, this));
+                            parameters.Add(ServerSerializationHelper.Deserialize(item.Value, prms[index].ParameterType, this, customDataExchanger: customDataExchanger.ToArray(), client: client));
                         index++;
                     }
 
-                    var serviceMethod = serviceType.GetMethod(method.Name, method.GetParameters().Select(p => p.ParameterType).ToArray());
                     var clientLimitationAttribute = serviceMethod.GetCustomAttributes(typeof(ClientLimitationAttribute), true).ToList();
                     clientLimitationAttribute.AddRange(method.GetCustomAttributes(typeof(ClientLimitationAttribute), true));
 
@@ -1878,11 +1886,7 @@ namespace SignalGo.Server.ServiceManager
                         }
                     }
 
-                    var securityAttributes = serviceMethod.GetCustomAttributes(typeof(SecurityContractAttribute), true).ToList();
-                    var customDataExchanger = serviceMethod.GetCustomAttributes(typeof(CustomDataExchanger), true).Cast<CustomDataExchanger>().Where(x => x.GetExchangerByUserCustomization(client)).ToList();
 
-                    customDataExchanger.AddRange(method.GetCustomAttributes(typeof(CustomDataExchanger), true).Cast<CustomDataExchanger>().Where(x => x.GetExchangerByUserCustomization(client)).ToList());
-                    securityAttributes.AddRange(method.GetCustomAttributes(typeof(SecurityContractAttribute), true));
                     //securityAttributes.AddRange(service.GetType().GetCustomAttributes(typeof(SecurityContractAttribute), true));
                     //securityAttributes.AddRange(serviceType.GetCustomAttributes(typeof(SecurityContractAttribute), true));
                     //var allattrib = serviceMethod.GetCustomAttributes(true);
