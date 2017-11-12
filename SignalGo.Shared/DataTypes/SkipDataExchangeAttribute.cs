@@ -34,7 +34,7 @@ namespace SignalGo.Shared.DataTypes
         /// <param name="type">type that want serialize or deserialize</param>
         /// <param name="attribute">attribute</param>
         /// <returns></returns>
-        public virtual bool? CanIgnore(object model, PropertyInfo property, Type type, SkipDataExchangeAttribute attribute)
+        public virtual bool? CanIgnore(object model, PropertyInfo property, FieldInfo fieldInfo, Type type, SkipDataExchangeAttribute attribute)
         {
             return null;
         }
