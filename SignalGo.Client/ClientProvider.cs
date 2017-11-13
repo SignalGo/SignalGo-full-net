@@ -115,19 +115,28 @@ namespace SignalGo.Client
 
         void Connect()
         {
-            var firstBytes = Encoding.UTF8.GetBytes("SignalGo/1.0" + System.Environment.NewLine);
+            try
+            {
+                var firstBytes = Encoding.UTF8.GetBytes("SignalGo/1.0" + System.Environment.NewLine);
 #if (!PORTABLE)
-            var len = _client.Client.Send(firstBytes);
-            byte b1 = (byte)_client.GetStream().ReadByte();
-            byte b2 = (byte)_client.GetStream().ReadByte();
+                var len = _client.Client.Send(firstBytes);
+                var stream = _client.GetStream();
+
 #else
-            _client.WriteStream.Write(firstBytes, 0, firstBytes.Length);
-            byte b1 = (byte)_client.ReadStream.ReadByte();
-            byte b2 = (byte)_client.ReadStream.ReadByte();
+                _client.WriteStream.Write(firstBytes, 0, firstBytes.Length);
+                var stream = _client.ReadStream;
 #endif
+                byte b1 = (byte)stream.ReadByte();
+                byte b2 = (byte)stream.ReadByte();
 #if (!PORTABLE)
-            Console.WriteLine("Connect Write " + Encoding.UTF8.GetString(new byte[2] { b1, b2 }));
+                Console.WriteLine("Connect Write " + Encoding.UTF8.GetString(new byte[2] { b1, b2 }));
 #endif
+            }
+            catch (Exception ex)
+            {
+
+                throw;
+            }
         }
 
         /// <summary>

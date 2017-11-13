@@ -423,18 +423,31 @@ namespace SignalGo.Client
 
             var objectInstance = InterfaceWrapper.Wrap<T>((serviceName, method, args) =>
             {
-                if (typeof(void) == method.ReturnType)
+                try
                 {
-                    ConnectorExtension.SendData(this, serviceName, method.Name, args);
+                    if (typeof(void) == method.ReturnType)
+                    {
+                        ConnectorExtension.SendData(this, serviceName, method.Name, args);
+                        return null;
+                    }
+                    else
+                    {
+                        var data = ConnectorExtension.SendData(this, serviceName, method.Name, args);
+                        if (data == null)
+                            return null;
+                        if (data is StreamInfo)
+                            return data;
+                        else
+                        {
+                            var result = JsonConvert.DeserializeObject(data.ToString(), method.ReturnType, new JsonSerializerSettings() { ReferenceLoopHandling = ReferenceLoopHandling.Ignore, Converters = new List<JsonConverter>() { new Shared.Converters.DataExchangeConverter(LimitExchangeType.Both) { Server = null, Client = this } }, Formatting = Formatting.None, NullValueHandling = NullValueHandling.Ignore });
+                            return result;
+                        }
+                    };
+                }
+                catch (Exception ex)
+                {
                     return null;
                 }
-                else
-                {
-                    var data = ConnectorExtension.SendData(this, serviceName, method.Name, args);
-                    if (data == null)
-                        return null;
-                    return data is StreamInfo ? data : JsonConvert.DeserializeObject(data.ToString(), method.ReturnType);
-                };
             });
 
             Services.TryAdd(name, objectInstance);
