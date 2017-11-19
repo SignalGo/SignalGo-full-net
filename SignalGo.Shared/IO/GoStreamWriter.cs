@@ -69,6 +69,17 @@ namespace SignalGo.Shared.IO
             }
         }
 
+#if (PORTABLE)
+        public static void WriteBlockToStream(System.IO.Stream stream, byte[] data)
+#else
+        public static void WriteBlockToStream(NetworkStream stream, byte[] data)
+#endif
+        {
+            var size = BitConverter.GetBytes(data.Length);
+            stream.Write(size, 0, size.Length);
+            stream.Write(data, 0, data.Length);
+        }
+
         private static byte[] EncodeMessageToSend(byte[] bytesRaw)
         {
             byte[] response;

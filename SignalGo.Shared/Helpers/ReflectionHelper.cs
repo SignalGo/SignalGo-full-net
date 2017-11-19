@@ -115,6 +115,23 @@ namespace SignalGo.Shared.Helpers
                 .GetProperty(name);
 #endif
         }
+#if (!PORTABLE)
+        /// <summary>
+        /// get property
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="name">property name</param>
+        /// <param name="flags"></param>
+        /// <returns></returns>
+        public static PropertyInfo GetPropertyInfo(this Type type, string name, BindingFlags flags)
+        {
+            return type
+#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
+                .GetTypeInfo()
+#endif
+                .GetProperty(name, flags);
+        }
+#endif
         /// <summary>
         /// get method
         /// </summary>

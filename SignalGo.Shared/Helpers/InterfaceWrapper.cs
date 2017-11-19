@@ -60,8 +60,8 @@ namespace SignalGo.Shared.Helpers
 
         public static Object Wrap(Type serviceInterfaceType, Func<string, MethodInfo, object[], object> CallMethodAction)
         {
-            ///this method load GetCurrentMethod for xamarin linked assembly
-            //var fix = System.Reflection.MethodInfo.GetCurrentMethod
+            //this method load GetCurrentMethod for xamarin linked assembly
+            //var fix = System.Reflection.MethodInfo.GetCurrentMethod();
 
             AssemblyName assemblyName = new AssemblyName(String.Format("tmp_{0}", serviceInterfaceType.FullName));
             String moduleName = String.Format("{0}.dll", assemblyName.Name);

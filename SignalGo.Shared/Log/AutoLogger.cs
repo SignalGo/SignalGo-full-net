@@ -69,6 +69,8 @@ namespace SignalGo.Shared.Log
         static object lockOBJ = new object();
         public static void LogText(string text, bool stacktrace = false)
         {
+            if (string.IsNullOrEmpty(ApplicationDirectory))
+                return;
 #if (!PORTABLE)
             if (!IsEnabled)
                 return;
@@ -115,6 +117,8 @@ namespace SignalGo.Shared.Log
 
         public static void LogError(Exception e, string title)
         {
+            if (string.IsNullOrEmpty(ApplicationDirectory))
+                return;
 #if (!PORTABLE)
             if (!IsEnabled)
                 return;
