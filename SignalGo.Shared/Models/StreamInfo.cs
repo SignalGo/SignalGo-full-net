@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 #if (!PORTABLE)
 using System.Net.Sockets;
 #endif
@@ -22,7 +23,10 @@ namespace SignalGo.Shared.Models
         /// data of stream
         /// </summary>
         public T Data { get; set; }
-
+        /// <summary>
+        /// status of request
+        /// </summary>
+        public HttpStatusCode Status { get; set; } = HttpStatusCode.OK;
         /// <summary>
         /// this action use client side for send one byte when client is ready to download
         /// </summary>
