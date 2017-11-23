@@ -42,7 +42,6 @@
   <ItemGroup>
     <Compile Include="Accessibilities\ConstructorFactory.cs" />
     <Compile Include="Accessibilities\DataFactory.cs" />
-    <Compile Include="Drawing\Shapes\Class1.cs" />
     <Compile Include="Drawing\Shapes\DoubleUtil.cs" />
     <Compile Include="Drawing\Shapes\Matrix.cs" />
     <Compile Include="Drawing\Shapes\MatrixUtil.cs" />
