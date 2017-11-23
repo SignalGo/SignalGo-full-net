@@ -459,8 +459,12 @@ namespace SignalGo.Client
         /// </summary>
         /// <typeparam name="T">type of interface for create instanse</typeparam>
         /// <returns>return instance of interface that client can call methods</returns>
-        public T RegisterStreamServiceInterfaceWrapper<T>() where T : class
+        public T RegisterStreamServiceInterfaceWrapper<T>(string serverAddress = null, int? port = null) where T : class
         {
+            if (string.IsNullOrEmpty(serverAddress))
+                serverAddress = _address;
+            if (port == null)
+                port = _port;
             var type = typeof(T);
             var name = type.GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault().Name;
 
@@ -469,23 +473,23 @@ namespace SignalGo.Client
                 try
                 {
 #if (NETSTANDARD1_6 || NETCOREAPP1_1)
-                    _client = new TcpClient();
-                    bool isSuccess = _client.ConnectAsync(_address, _port).Wait(new TimeSpan(0, 0, 5));
+                    var _newClient = new TcpClient();
+                    bool isSuccess = _newClient.ConnectAsync(serverAddress, port.Value).Wait(new TimeSpan(0, 0, 5));
                     if (!isSuccess)
                         throw new TimeoutException();
 #elif (PORTABLE)
-                    _client = new Sockets.Plugin.TcpSocketClient();
-                    bool isSuccess = _client.ConnectAsync(_address, _port).Wait(new TimeSpan(0, 0, 5));
+                    var _newClient = new Sockets.Plugin.TcpSocketClient();
+                    bool isSuccess = _newClient.ConnectAsync(serverAddress, port.Value).Wait(new TimeSpan(0, 0, 5));
                     if (!isSuccess)
                         throw new TimeoutException();
 #else
-                    _client = new TcpClient(_address, _port);
+                    var _newClient = new TcpClient(serverAddress, port.Value);
 #endif
 #if (PORTABLE)
-                    var stream = _client.WriteStream;
-                    var readStream = _client.ReadStream;
+                    var stream = _newClient.WriteStream;
+                    var readStream = _newClient.ReadStream;
 #else
-                    var stream = _client.GetStream();
+                    var stream = _newClient.GetStream();
                     var readStream = stream;
 #endif
 
@@ -516,7 +520,7 @@ namespace SignalGo.Client
                     var callbackInfo = JsonConvert.DeserializeObject<MethodCallbackInfo>(Encoding.UTF8.GetString(callBackBytes, 0, callBackBytes.Length));
 
                     var result = JsonConvert.DeserializeObject(callbackInfo.Data, method.ReturnType);
-                    result.GetType().GetPropertyInfo("Stream").SetValue(result, stream,null);
+                    result.GetType().GetPropertyInfo("Stream").SetValue(result, stream, null);
                     result.GetType().GetPropertyInfo("GetStreamAction"
 #if (!PORTABLE)
                         , BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance

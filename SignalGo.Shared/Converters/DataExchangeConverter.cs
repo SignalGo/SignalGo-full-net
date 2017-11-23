@@ -175,8 +175,13 @@ namespace SignalGo.Shared.Converters
             }
 
             var jToken = JToken.Load(reader);
-            JsonSerializer sz = new JsonSerializer();
-            sz.Converters.Add(new CustomICollectionCreationConverter());
+            JsonSerializer sz = new JsonSerializer()
+            {
+                MissingMemberHandling = MissingMemberHandling.Ignore,
+                NullValueHandling = NullValueHandling.Ignore
+            };
+            sz.Converters.Add(new CustomICollectionCreationConverter() { });
+
             var obj = jToken.ToObject(objectType, sz);
             if (obj == null)
                 obj = JsonConvert.DeserializeObject(jToken.ToString(), objectType);

@@ -56,6 +56,7 @@
     <Compile Include="Models\TestServerModel.cs" />
     <Compile Include="Models\TestServerStreamModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Utilities\FactoryTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -72,6 +73,10 @@
     <ProjectReference Include="..\SignalGo.Shared\SignalGo.Shared.csproj">
       <Project>{78D8601B-E331-47B7-A4A8-46B7460D82A4}</Project>
       <Name>SignalGo.Shared</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\SignalGo.Utilities\SignalGo.Utilities.csproj">
+      <Project>{a8d61499-a96b-4c74-a281-51f7367de808}</Project>
+      <Name>SignalGo.Utilities</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets" Condition="Exists('$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets')" />
