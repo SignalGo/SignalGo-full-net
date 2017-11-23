@@ -10,15 +10,15 @@ namespace SignalGo.Shared.DataTypes
     /// <summary>
     /// system custom data exchanger help you to ignore or take custom properties to serialize data
     /// </summary>
-    [AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
-    public class CustomDataExchanger : Attribute
+    [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class, AllowMultiple = true)]
+    public class CustomDataExchangerAttribute : Attribute
     {
         /// <summary>
-        /// type of data exchanger you need
+        /// type of data exchanger you need to ignore that peroperties or take
         /// </summary>
         public CustomDataExchangerType CustomDataExchangerType { get; set; } = CustomDataExchangerType.Take;
         /// <summary>
-        /// limitation mode in incoming call or outgoingCall
+        /// limitation mode in incoming call or outgoingCall or both
         /// </summary>
         public LimitExchangeType LimitationMode { get; set; } = LimitExchangeType.Both;
         /// <summary>
@@ -34,7 +34,7 @@ namespace SignalGo.Shared.DataTypes
         /// </summary>
         /// <param name="type">type of your class to ignore or take properties for serialize</param>
         /// <param name="properties">property names that you need to ignore or take for serialize</param>
-        public CustomDataExchanger(Type type, params string[] properties)
+        public CustomDataExchangerAttribute(Type type, params string[] properties)
         {
             Type = type;
             Properties = properties;
@@ -42,10 +42,20 @@ namespace SignalGo.Shared.DataTypes
 
         /// <summary>
         /// default constructor for data exchanger
-        /// if properties was null system take full properties and not ignoring
+        /// this is use for class types not methods
         /// </summary>
-        /// <param name="type">type of your class to ignore or take properties for serialize</param>
-        public CustomDataExchanger(Type type)
+        /// <param name="properties">property names that you need to ignore or take for serialize</param>
+        public CustomDataExchangerAttribute(params string[] properties)
+        {
+            Properties = properties;
+        }
+
+        /// <summary>
+        /// default constructor for data exchanger
+        /// if properties was null system take or ignore full properties and not ignoring
+        /// </summary>
+        /// <param name="type">type of your class to ignore or take or ignore properties for serialize</param>
+        public CustomDataExchangerAttribute(Type type)
         {
             Type = type;
         }
@@ -53,14 +63,23 @@ namespace SignalGo.Shared.DataTypes
         /// <summary>
         /// default constructor for data exchanger
         /// </summary>
-        /// <param name="type">type of your class to ignore or take properties for serialize</param>
-        /// <param name="properties">list of types you want to take methods of that types</param>
-        public CustomDataExchanger(Type type, params Type[] properties)
+        /// <param name="type">type of your class to ignore or take or ignore properties for serialize</param>
+        /// <param name="properties">list of types you want to take or ignore methods of that types</param>
+        public CustomDataExchangerAttribute(Type type, params Type[] properties)
         {
             Type = type;
             Properties = GetProperties(properties).ToArray();
         }
 
+        /// <summary>
+        /// default constructor for data exchanger
+        /// this is use for class types not methods
+        /// </summary>
+        /// <param name="properties">list of types you want to take or ignore methods of that types</param>
+        public CustomDataExchangerAttribute(params Type[] properties)
+        {
+            Properties = GetProperties(properties).ToArray();
+        }
         /// <summary>
         /// get list of methods of type
         /// </summary>

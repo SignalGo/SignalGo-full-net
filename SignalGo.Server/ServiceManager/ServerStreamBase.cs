@@ -112,5 +112,129 @@ namespace SignalGo.Server.ServiceManager
             data.Stream = stream;
             method.Invoke(service, parameters.ToArray());
         }
+
+
+        /// <summary>
+        /// this method call when client want to upload file or stream to your server
+        /// </summary>
+        /// <param name="stream">client stream</param>
+        /// <param name="client">client</param>
+        public override void DownloadStreamFromClient(NetworkStream stream, ClientInfo client)
+        {
+            MethodCallbackInfo callback = new MethodCallbackInfo();
+            try
+            {
+                var bytes = GoStreamReader.ReadBlockToEnd(stream, CompressMode.None, ProviderSetting.MaximumReceiveStreamHeaderBlock, false);
+                var json = Encoding.UTF8.GetString(bytes);
+                MethodCallInfo callInfo = ServerSerializationHelper.Deserialize<MethodCallInfo>(json, this);
+                var service = FindStreamServiceByName(callInfo.ServiceName);
+                if (service == null)
+                    DisposeClient(client);
+                else
+                {
+                    var serviceType = service.GetType();
+#if (NETSTANDARD1_6 || NETCOREAPP1_1)
+                    var method = serviceType.GetTypeInfo().GetMethod(callInfo.MethodName, RuntimeTypeHelper.GetMethodTypes(serviceType, callInfo, typeof(StreamInfo<>)).ToArray());
+#else
+                    var method = serviceType.GetMethod(callInfo.MethodName, RuntimeTypeHelper.GetMethodTypes(serviceType, callInfo, typeof(StreamInfo<>)).ToArray());
+#endif
+                    List<object> parameters = new List<object>();
+                    int index = 0;
+                    var prms = method.GetParameters();
+                    foreach (var item in callInfo.Parameters)
+                    {
+                        parameters.Add(ServerSerializationHelper.Deserialize(item.Value, prms[index].ParameterType, this));
+                        index++;
+                    }
+                    StreamInfo data = parameters[0] as StreamInfo;
+                    data.Stream = stream;
+                    if (method.ReturnType == typeof(void))
+                    {
+                        method.Invoke(service, parameters.ToArray());
+                    }
+                    else
+                    {
+                        var result = method.Invoke(service, parameters.ToArray());
+                        callback.Data = ServerSerializationHelper.SerializeObject(result);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                callback.IsException = true;
+                callback.Data = ServerSerializationHelper.SerializeObject(ex);
+            }
+            SendCallbackData(callback, client);
+        }
+        /// <summary>
+        /// this method calll when client want to download file or stream from your server
+        /// </summary>
+        /// <param name="stream">client stream</param>
+        /// <param name="client">client</param>
+        public override void UploadStreamToClient(NetworkStream stream, ClientInfo client)
+        {
+            MethodCallbackInfo callback = new MethodCallbackInfo();
+            IDisposable userStreamDisposable = null;
+            try
+            {
+                var bytes = GoStreamReader.ReadBlockToEnd(stream, CompressMode.None, ProviderSetting.MaximumReceiveStreamHeaderBlock, false);
+                var json = Encoding.UTF8.GetString(bytes);
+                MethodCallInfo callInfo = ServerSerializationHelper.Deserialize<MethodCallInfo>(json, this);
+                var service = FindStreamServiceByName(callInfo.ServiceName);
+                if (service == null)
+                    DisposeClient(client);
+                else
+                {
+                    var serviceType = service.GetType();
+#if (NETSTANDARD1_6 || NETCOREAPP1_1)
+                    var method = serviceType.GetTypeInfo().GetMethod(callInfo.MethodName, RuntimeTypeHelper.GetMethodTypes(serviceType, callInfo).ToArray());
+#else
+                    var method = serviceType.GetMethod(callInfo.MethodName, RuntimeTypeHelper.GetMethodTypes(serviceType, callInfo).ToArray());
+#endif
+                    List<object> parameters = new List<object>();
+                    int index = 0;
+                    var prms = method.GetParameters();
+                    foreach (var item in callInfo.Parameters)
+                    {
+                        parameters.Add(ServerSerializationHelper.Deserialize(item.Value, prms[index].ParameterType, this));
+                        index++;
+                    }
+
+                    userStreamDisposable = (IDisposable)method.Invoke(service, parameters.ToArray());
+                    var userStream = (Stream)userStreamDisposable.GetType().GetPropertyInfo("Stream").GetValue(userStreamDisposable, null);
+                    long len = (long)userStreamDisposable.GetType().GetPropertyInfo("Length").GetValue(userStreamDisposable, null);
+                    callback.Data = ServerSerializationHelper.SerializeObject(userStreamDisposable);
+
+                    json = ServerSerializationHelper.SerializeObject(callback, this);
+                    bytes = Encoding.UTF8.GetBytes(json);
+                    byte[] lenBytes = BitConverter.GetBytes(bytes.Length);
+                    stream.Write(lenBytes, 0, lenBytes.Length);
+                    stream.Write(bytes, 0, bytes.Length);
+
+                    //read one byte to start send data to client client can cancel socket after get headers
+                    //for example when client is cach images and get last upadate heade and dont need to download file he can dispose socket befor sending any data
+                    stream.ReadByte();
+                    long writeLen = 0;
+                    while (writeLen < len)
+                    {
+                        bytes = new byte[1024 * 100];
+                        var readCount = userStream.Read(bytes, 0, bytes.Length);
+                        stream.Write(bytes, 0, readCount);
+                        writeLen += readCount;
+                    }
+                    userStream.Dispose();
+                    stream.Dispose();
+                }
+            }
+            catch (Exception ex)
+            {
+                if (userStreamDisposable == null)
+                    userStreamDisposable.Dispose();
+                callback.IsException = true;
+                callback.Data = ServerSerializationHelper.SerializeObject(ex);
+                SendCallbackData(callback, client);
+            }
+        }
+
     }
 }

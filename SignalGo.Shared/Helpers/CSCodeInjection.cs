@@ -1,4 +1,6 @@
-﻿using Microsoft.CSharp;
+﻿#if (!NETSTANDARD1_6 && !NETCOREAPP1_1 && !PORTABLE)
+using Microsoft.CSharp;
+#endif
 using SignalGo.Shared.DataTypes;
 using System;
 using System.CodeDom.Compiler;

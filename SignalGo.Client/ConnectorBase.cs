@@ -423,23 +423,129 @@ namespace SignalGo.Client
 
             var objectInstance = InterfaceWrapper.Wrap<T>((serviceName, method, args) =>
             {
-                if (typeof(void) == method.ReturnType)
+                try
                 {
-                    ConnectorExtension.SendData(this, serviceName, method.Name, args);
+                    if (typeof(void) == method.ReturnType)
+                    {
+                        ConnectorExtension.SendData(this, serviceName, method.Name, args);
+                        return null;
+                    }
+                    else
+                    {
+                        var data = ConnectorExtension.SendData(this, serviceName, method.Name, args);
+                        if (data == null)
+                            return null;
+                        if (data is StreamInfo)
+                            return data;
+                        else
+                        {
+                            var result = JsonConvert.DeserializeObject(data.ToString(), method.ReturnType, new JsonSerializerSettings() { ReferenceLoopHandling = ReferenceLoopHandling.Ignore, Converters = new List<JsonConverter>() { new Shared.Converters.DataExchangeConverter(LimitExchangeType.Both) { Server = null, Client = this } }, Formatting = Formatting.None, NullValueHandling = NullValueHandling.Ignore });
+                            return result;
+                        }
+                    };
+                }
+                catch (Exception ex)
+                {
                     return null;
                 }
-                else
-                {
-                    var data = ConnectorExtension.SendData(this, serviceName, method.Name, args);
-                    if (data == null)
-                        return null;
-                    return data is StreamInfo ? data : JsonConvert.DeserializeObject(data.ToString(), method.ReturnType);
-                };
             });
 
             Services.TryAdd(name, objectInstance);
             return (T)objectInstance;
         }
+
+        /// <summary>
+        /// register service and method to server for file or stream download and upload
+        /// </summary>
+        /// <typeparam name="T">type of interface for create instanse</typeparam>
+        /// <returns>return instance of interface that client can call methods</returns>
+        public T RegisterStreamServiceInterfaceWrapper<T>(string serverAddress = null, int? port = null) where T : class
+        {
+            if (string.IsNullOrEmpty(serverAddress))
+                serverAddress = _address;
+            if (port == null)
+                port = _port;
+            var type = typeof(T);
+            var name = type.GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault().Name;
+
+            var objectInstance = InterfaceWrapper.Wrap<T>((serviceName, method, args) =>
+            {
+                try
+                {
+#if (NETSTANDARD1_6 || NETCOREAPP1_1)
+                    var _newClient = new TcpClient();
+                    bool isSuccess = _newClient.ConnectAsync(serverAddress, port.Value).Wait(new TimeSpan(0, 0, 5));
+                    if (!isSuccess)
+                        throw new TimeoutException();
+#elif (PORTABLE)
+                    var _newClient = new Sockets.Plugin.TcpSocketClient();
+                    bool isSuccess = _newClient.ConnectAsync(serverAddress, port.Value).Wait(new TimeSpan(0, 0, 5));
+                    if (!isSuccess)
+                        throw new TimeoutException();
+#else
+                    var _newClient = new TcpClient(serverAddress, port.Value);
+#endif
+#if (PORTABLE)
+                    var stream = _newClient.WriteStream;
+                    var readStream = _newClient.ReadStream;
+#else
+                    var stream = _newClient.GetStream();
+                    var readStream = stream;
+#endif
+
+                    //var json = JsonConvert.SerializeObject(Data);
+                    //var jsonBytes = Encoding.UTF8.GetBytes(json);
+                    var header = "SignalGo-Stream/2.0\r\n";
+                    var bytes = Encoding.UTF8.GetBytes(header);
+                    stream.Write(bytes, 0, bytes.Length);
+                    if (method.GetParameters().Any(x => x.ParameterType == typeof(StreamInfo) || x.ParameterType == typeof(StreamInfo<>)))
+                    {
+                        stream.Write(new byte[] { 0 }, 0, 1);
+                    }
+                    else
+                        stream.Write(new byte[] { 1 }, 0, 1);
+
+                    MethodCallInfo callInfo = new MethodCallInfo();
+                    callInfo.ServiceName = name;
+                    foreach (var item in args)
+                    {
+                        callInfo.Parameters.Add(new Shared.Models.ParameterInfo() { Value = JsonConvert.SerializeObject(item) });
+                    }
+                    callInfo.MethodName = method.Name;
+                    var json = JsonConvert.SerializeObject(callInfo);
+
+                    var jsonBytes = Encoding.UTF8.GetBytes(json);
+                    GoStreamWriter.WriteBlockToStream(stream, jsonBytes);
+                    var callBackBytes = GoStreamReader.ReadBlockToEnd(readStream, CompressMode.None, ProviderSetting.MaximumReceiveStreamHeaderBlock, false);
+                    var callbackInfo = JsonConvert.DeserializeObject<MethodCallbackInfo>(Encoding.UTF8.GetString(callBackBytes, 0, callBackBytes.Length));
+
+                    var result = JsonConvert.DeserializeObject(callbackInfo.Data, method.ReturnType);
+                    result.GetType().GetPropertyInfo("Stream").SetValue(result, stream, null);
+                    result.GetType().GetPropertyInfo("GetStreamAction"
+#if (!PORTABLE)
+                        , BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance
+#endif
+                        ).SetValue(result, new Action(() =>
+                    {
+                        stream.Write(new byte[] { 0 }, 0, 1);
+                        result.GetType().GetPropertyInfo("GetStreamAction"
+#if (!PORTABLE)
+                        , BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance
+#endif
+                            ).SetValue(result, null, null);
+                    }), null);
+
+                    return result;
+                }
+                catch (Exception ex)
+                {
+                    return null;
+                }
+            });
+
+            return (T)objectInstance;
+        }
+
         public void RegisterClientServiceInterface(string serviceName)
         {
             MethodCallInfo callInfo = new MethodCallInfo()

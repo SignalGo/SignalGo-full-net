@@ -13,7 +13,7 @@ namespace SignalGo.Server.Helpers
 {
     public static class ServerSerializationHelper
     {
-        public static string SerializeObject(this object obj, ServerBase serverBase = null, NullValueHandling nullValueHandling = NullValueHandling.Ignore, CustomDataExchanger[] customDataExchanger = null, ClientInfo client = null)
+        public static string SerializeObject(this object obj, ServerBase serverBase = null, NullValueHandling nullValueHandling = NullValueHandling.Ignore, CustomDataExchangerAttribute[] customDataExchanger = null, ClientInfo client = null)
         {
             if (obj == null)
                 return "";
@@ -22,22 +22,22 @@ namespace SignalGo.Server.Helpers
             return JsonConvert.SerializeObject(obj, new JsonSerializerSettings() { Formatting = Formatting.None, NullValueHandling = nullValueHandling, ReferenceLoopHandling = ReferenceLoopHandling.Ignore });
         }
 
-        public static T Deserialize<T>(this string json, ServerBase serverBase = null)
+        public static T Deserialize<T>(this string json, ServerBase serverBase = null, CustomDataExchangerAttribute[] customDataExchanger = null, ClientInfo client = null)
         {
-            return (T)Deserialize(json, typeof(T), serverBase);
+            return (T)Deserialize(json, typeof(T), serverBase, customDataExchanger: customDataExchanger, client: client);
         }
 
-        public static object Deserialize(this string json, ServerBase serverBase = null)
+        public static object Deserialize(this string json, ServerBase serverBase = null, CustomDataExchangerAttribute[] customDataExchanger = null, ClientInfo client = null)
         {
-            return Deserialize<object>(json, serverBase);
+            return Deserialize<object>(json, serverBase, customDataExchanger: customDataExchanger,client:client);
         }
 
-        public static object Deserialize(this string json, Type type, ServerBase serverBase = null, NullValueHandling nullValueHandling = NullValueHandling.Ignore)
+        public static object Deserialize(this string json, Type type, ServerBase serverBase = null, NullValueHandling nullValueHandling = NullValueHandling.Ignore, CustomDataExchangerAttribute[] customDataExchanger = null, ClientInfo client = null)
         {
             if (string.IsNullOrEmpty(json))
                 return null;
             if (serverBase != null && serverBase.InternalSetting.IsEnabledDataExchanger)
-                return JsonConvert.DeserializeObject(json, type, new JsonSerializerSettings() { ReferenceLoopHandling = ReferenceLoopHandling.Ignore, Converters = new List<JsonConverter>() { new DataExchangeConverter(LimitExchangeType.IncomingCall) }, Formatting = Formatting.None, NullValueHandling = nullValueHandling });
+                return JsonConvert.DeserializeObject(json, type, new JsonSerializerSettings() { ReferenceLoopHandling = ReferenceLoopHandling.Ignore, Converters = new List<JsonConverter>() { new DataExchangeConverter(LimitExchangeType.IncomingCall, customDataExchanger) { Server = serverBase, Client = client } }, Formatting = Formatting.None, NullValueHandling = nullValueHandling });
             return JsonConvert.DeserializeObject(json, type, new JsonSerializerSettings() { Formatting = Formatting.None, NullValueHandling = nullValueHandling, ReferenceLoopHandling = ReferenceLoopHandling.Ignore });
         }
     }

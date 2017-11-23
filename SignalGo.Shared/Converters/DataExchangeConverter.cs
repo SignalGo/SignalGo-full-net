@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
 using SignalGo.Shared.DataTypes;
 using SignalGo.Shared.Helpers;
@@ -12,6 +13,92 @@ using System.Text;
 
 namespace SignalGo.Shared.Converters
 {
+    /// <summary>
+    /// Creates a ICollection object.
+    /// this will help you to convert entity framework ICollections
+    /// </summary>
+    /// <typeparam>The object type to convert.</typeparam>
+    public class CustomICollectionCreationConverter : JsonConverter
+    {
+        Type BaseType { get; set; }
+
+        public CustomICollectionCreationConverter()
+        {
+            BaseType = typeof(ICollection<>);
+        }
+        /// <summary>
+        /// Writes the JSON representation of the object.
+        /// </summary>
+        /// <param name="writer">The <see cref="JsonWriter"/> to write to.</param>
+        /// <param name="value">The value.</param>
+        /// <param name="serializer">The calling serializer.</param>
+        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+        {
+            throw new NotSupportedException("CustomCreationConverter should only be used while deserializing.");
+        }
+
+        /// <summary>
+        /// Reads the JSON representation of the object.
+        /// </summary>
+        /// <param name="reader">The <see cref="JsonReader"/> to read from.</param>
+        /// <param name="objectType">Type of the object.</param>
+        /// <param name="existingValue">The existing value of object being read.</param>
+        /// <param name="serializer">The calling serializer.</param>
+        /// <returns>The object value.</returns>
+        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+        {
+            if (reader.TokenType == JsonToken.Null)
+            {
+                return null;
+            }
+
+            var value = Create(objectType);
+            if (value == null)
+            {
+                throw new JsonSerializationException("No object created.");
+            }
+
+            serializer.Populate(reader, value);
+            return value;
+        }
+
+        /// <summary>
+        /// Creates an object which will then be populated by the serializer.
+        /// </summary>
+        /// <param name="objectType">Type of the object.</param>
+        /// <returns>The created object.</returns>
+        public object Create(Type objectType)
+        {
+            var generic = objectType.GetListOfGenericArguments().FirstOrDefault();
+            return Activator.CreateInstance(typeof(List<>).MakeGenericType(generic));
+        }
+
+        /// <summary>
+        /// Determines whether this instance can convert the specified object type.
+        /// </summary>
+        /// <param name="objectType">Type of the object.</param>
+        /// <returns>
+        /// 	<c>true</c> if this instance can convert the specified object type; otherwise, <c>false</c>.
+        /// </returns>
+        public override bool CanConvert(Type objectType)
+        {
+            if (objectType.GetIsGenericType() && objectType.GetGenericTypeDefinition() == BaseType)
+                return true;
+            return false;
+        }
+
+        /// <summary>
+        /// Gets a value indicating whether this <see cref="JsonConverter"/> can write JSON.
+        /// </summary>
+        /// <value>
+        /// 	<c>true</c> if this <see cref="JsonConverter"/> can write JSON; otherwise, <c>false</c>.
+        /// </value>
+        public override bool CanWrite
+        {
+            get { return false; }
+        }
+    }
+
     /// <summary>
     /// data exchanger of json serialize or deserializer
     /// </summary>
@@ -28,17 +115,19 @@ namespace SignalGo.Shared.Converters
         /// <summary>
         /// exchange types
         /// </summary>
-        private CustomDataExchanger[] ExchangerTypes { get; set; }
+        private CustomDataExchangerAttribute[] ExchangerTypes { get; set; }
+
         /// <summary>
         /// constructor of this attrib neeed your strategy mode
         /// </summary>
         /// <param name="mode">strategy mode</param>
         /// <param name="exchangerTypes">exchange types</param>
-        public DataExchangeConverter(LimitExchangeType mode, params CustomDataExchanger[] exchangerTypes)
+        public DataExchangeConverter(LimitExchangeType mode, params CustomDataExchangerAttribute[] exchangerTypes)
         {
             Mode = mode;
             ExchangerTypes = exchangerTypes;
         }
+
         /// <summary>
         /// your strategy mode for serialize and deserialize
         /// </summary>
@@ -53,6 +142,8 @@ namespace SignalGo.Shared.Converters
         {
             return true;
         }
+
+
 
         /// <summary>
         /// read json for deseralize object
@@ -84,11 +175,35 @@ namespace SignalGo.Shared.Converters
             }
 
             var jToken = JToken.Load(reader);
-            var obj = jToken.ToObject(objectType);
+            JsonSerializer sz = new JsonSerializer()
+            {
+                MissingMemberHandling = MissingMemberHandling.Ignore,
+                NullValueHandling = NullValueHandling.Ignore
+            };
+            sz.Converters.Add(new CustomICollectionCreationConverter() { });
+
+            var obj = jToken.ToObject(objectType, sz);
             if (obj == null)
                 obj = JsonConvert.DeserializeObject(jToken.ToString(), objectType);
             GenerateProperties(obj);
             return obj;
+        }
+
+        void MergeExchangeTypes(Type type, LimitExchangeType limitExchangeType)
+        {
+            if (ExchangerTypes == null || ExchangerTypes.Length == 0 || ExchangerTypes.Any(x => x.Type == type))
+            {
+                var customDataExchanger = type.GetCustomAttributes<CustomDataExchangerAttribute>(true).ToList();
+                foreach (var exchanger in customDataExchanger)
+                {
+                    exchanger.Type = type;
+                }
+                customDataExchanger.RemoveAll(x => (x.LimitationMode != LimitExchangeType.Both && x.LimitationMode != limitExchangeType) || !x.IsEnabled(Client, Server, null, type) || !x.GetExchangerByUserCustomization(Client));
+                if (ExchangerTypes != null)
+                    customDataExchanger.AddRange(ExchangerTypes);
+                if (customDataExchanger.Count > 0)
+                    ExchangerTypes = customDataExchanger.ToArray();
+            }
         }
 
         /// <summary>
@@ -100,6 +215,7 @@ namespace SignalGo.Shared.Converters
             if (instance == null)
                 return;
             var type = instance.GetType();
+            MergeExchangeTypes(type, LimitExchangeType.IncomingCall);
             if (SerializeHelper.GetTypeCodeOfObject(instance.GetType()) != SerializeObjectType.Object)
             {
                 return;
@@ -164,10 +280,16 @@ namespace SignalGo.Shared.Converters
                         {
                             var value = property.GetValue(instance, null);
                             if (value != null)
+                            {
                                 foreach (object item in (IEnumerable)value)
                                 {
                                     GenerateProperties(item);
                                 }
+                            }
+                            else if (property.PropertyType == typeof(ICollection<>))
+                            {
+
+                            }
                         }
                     }
                 }
@@ -190,7 +312,9 @@ namespace SignalGo.Shared.Converters
                     return;
                 }
                 var type = value.GetType();
-#if (NETSTANDARD1_6 || NETCOREAPP1_1 ||  PORTABLE)
+                MergeExchangeTypes(type, LimitExchangeType.OutgoingCall);
+
+#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
                 if (type.GetTypeInfo().BaseType != null && type.Namespace == "System.Data.Entity.DynamicProxies")
                 {
                     type = type.GetTypeInfo().BaseType;

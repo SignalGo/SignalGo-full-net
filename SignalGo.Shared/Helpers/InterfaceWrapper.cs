@@ -60,6 +60,9 @@ namespace SignalGo.Shared.Helpers
 
         public static Object Wrap(Type serviceInterfaceType, Func<string, MethodInfo, object[], object> CallMethodAction)
         {
+            //this method load GetCurrentMethod for xamarin linked assembly
+            //var fix = System.Reflection.MethodInfo.GetCurrentMethod();
+
             AssemblyName assemblyName = new AssemblyName(String.Format("tmp_{0}", serviceInterfaceType.FullName));
             String moduleName = String.Format("{0}.dll", assemblyName.Name);
             String ns = serviceInterfaceType.Namespace;
@@ -136,10 +139,12 @@ namespace SignalGo.Shared.Helpers
                     var invoke = CallMethodAction.GetType().FindMethod("Invoke");
                     generator.Emit(OpCodes.Ldarg_0);//stack [this]
                     generator.Emit(OpCodes.Ldfld, fields[0]);//stack
-
+                    if (attrib == null)
+                        throw new Exception("attrib not found");
                     generator.Emit(OpCodes.Ldstr, attrib.Name);
                     var getCurgntMethod = typeof(MethodBase).FindMethod("GetCurrentMethod");
-
+                    if (getCurgntMethod == null)
+                        throw new Exception("GetCurrentMethod not found");
                     generator.Emit(OpCodes.Call, getCurgntMethod);
 
 
@@ -170,7 +175,8 @@ namespace SignalGo.Shared.Helpers
                         EmitInt32(generator, 0);
                         generator.Emit(OpCodes.Newarr, typeof(object));
                     }
-
+                    if (invoke == null)
+                        throw new Exception("invoke not found");
                     generator.EmitCall(OpCodes.Call, invoke, null);
 
 

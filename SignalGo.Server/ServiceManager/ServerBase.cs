@@ -99,6 +99,11 @@ namespace SignalGo.Server.ServiceManager
         /// </summary>
         internal ConcurrentDictionary<ClientInfo, ConcurrentList<object>> Services { get; set; } = new ConcurrentDictionary<ClientInfo, ConcurrentList<object>>();
         /// <summary>
+        /// stream services for upload and download files
+        /// </summary>
+        internal ConcurrentDictionary<string, object> StreamServices { get; set; } = new ConcurrentDictionary<string, object>();
+
+        /// <summary>
         /// signle instance services
         /// </summary>
         internal ConcurrentDictionary<string, object> SingleInstanceServices { get; set; } = new ConcurrentDictionary<string, object>();
@@ -217,6 +222,12 @@ namespace SignalGo.Server.ServiceManager
             return null;
         }
 
+        internal object FindStreamServiceByName(string name)
+        {
+            StreamServices.TryGetValue(name, out object value);
+            return value;
+        }
+
         internal object FindClientCallbackByType(ClientInfo client, Type serviceType)
         {
             var serviceName = serviceType.GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault().Name;
@@ -241,6 +252,22 @@ namespace SignalGo.Server.ServiceManager
             var name = ((ServiceContractAttribute)type.GetCustomAttributes(typeof(ServiceContractAttribute), true).FirstOrDefault()).Name;
 #endif
             RegisteredCallbacksTypes.TryAdd(name, type);
+        }
+        /// <summary>
+        /// register stream service for download and upload stream or file
+        /// </summary>
+        /// <param name="type"></param>
+        public void RegisterStreamService(Type type)
+        {
+#if (NETSTANDARD1_6 || NETCOREAPP1_1)
+            var name = ((ServiceContractAttribute)type.GetTypeInfo().GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault()).Name;
+#else
+            var name = ((ServiceContractAttribute)type.GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault()).Name;
+#endif
+            if (StreamServices.ContainsKey(name))
+                throw new Exception("duplicate call");
+            var service =  Activator.CreateInstance(type);
+            StreamServices.TryAdd(name, service);
         }
 
 #if (!NETSTANDARD1_6 && !NETCOREAPP1_1)
@@ -312,7 +339,26 @@ namespace SignalGo.Server.ServiceManager
                     using (var reader = new CustomStreamReader(tcpClient.GetStream()))
                     {
                         headerResponse = reader.ReadLine();
-                        if (headerResponse.Contains("SignalGo/1.0"))
+                        if (headerResponse.Contains("SignalGo-Stream/2.0"))
+                        {
+                            //"SignalGo/1.0";
+                            //"SignalGo/1.0";
+                            client.IsWebSocket = false;
+                            var b = GoStreamReader.ReadOneByte(tcpClient.GetStream(), CompressMode.None, 1, false);
+                            //upload from client and download from server
+                            if (b == 0)
+                            {
+                                DownloadStreamFromClient(tcpClient.GetStream(), client);
+                            }
+                            //download from server and upload from client
+                            else
+                            {
+                                UploadStreamToClient(tcpClient.GetStream(), client);
+                            }
+                            DisposeClient(client);
+                            return;
+                        }
+                        else if (headerResponse.Contains("SignalGo/1.0"))
                         {
                             //"SignalGo/1.0";
                             //"SignalGo/1.0";
@@ -1837,6 +1883,15 @@ namespace SignalGo.Server.ServiceManager
                         result.AppendLine("</Exception>");
                         throw new Exception($"{client.IPAddress} {client.SessionId} " + result.ToString());
                     }
+
+                    var serviceMethod = serviceType.GetMethod(method.Name, method.GetParameters().Select(p => p.ParameterType).ToArray());
+
+                    var securityAttributes = serviceMethod.GetCustomAttributes(typeof(SecurityContractAttribute), true).ToList();
+                    var customDataExchanger = serviceMethod.GetCustomAttributes(typeof(CustomDataExchangerAttribute), true).Cast<CustomDataExchangerAttribute>().Where(x => x.GetExchangerByUserCustomization(client)).ToList();
+
+                    customDataExchanger.AddRange(method.GetCustomAttributes(typeof(CustomDataExchangerAttribute), true).Cast<CustomDataExchangerAttribute>().Where(x => x.GetExchangerByUserCustomization(client)).ToList());
+                    securityAttributes.AddRange(method.GetCustomAttributes(typeof(SecurityContractAttribute), true));
+
                     List<object> parameters = new List<object>();
                     int index = 0;
                     var prms = method.GetParameters();
@@ -1845,11 +1900,10 @@ namespace SignalGo.Server.ServiceManager
                         if (item.Value == null)
                             parameters.Add(GetDefault(prms[index].ParameterType));
                         else
-                            parameters.Add(ServerSerializationHelper.Deserialize(item.Value, prms[index].ParameterType, this));
+                            parameters.Add(ServerSerializationHelper.Deserialize(item.Value, prms[index].ParameterType, this, customDataExchanger: customDataExchanger.ToArray(), client: client));
                         index++;
                     }
 
-                    var serviceMethod = serviceType.GetMethod(method.Name, method.GetParameters().Select(p => p.ParameterType).ToArray());
                     var clientLimitationAttribute = serviceMethod.GetCustomAttributes(typeof(ClientLimitationAttribute), true).ToList();
                     clientLimitationAttribute.AddRange(method.GetCustomAttributes(typeof(ClientLimitationAttribute), true));
 
@@ -1878,11 +1932,7 @@ namespace SignalGo.Server.ServiceManager
                         }
                     }
 
-                    var securityAttributes = serviceMethod.GetCustomAttributes(typeof(SecurityContractAttribute), true).ToList();
-                    var customDataExchanger = serviceMethod.GetCustomAttributes(typeof(CustomDataExchanger), true).Cast<CustomDataExchanger>().Where(x => x.GetExchangerByUserCustomization(client)).ToList();
 
-                    customDataExchanger.AddRange(method.GetCustomAttributes(typeof(CustomDataExchanger), true).Cast<CustomDataExchanger>().Where(x => x.GetExchangerByUserCustomization(client)).ToList());
-                    securityAttributes.AddRange(method.GetCustomAttributes(typeof(SecurityContractAttribute), true));
                     //securityAttributes.AddRange(service.GetType().GetCustomAttributes(typeof(SecurityContractAttribute), true));
                     //securityAttributes.AddRange(serviceType.GetCustomAttributes(typeof(SecurityContractAttribute), true));
                     //var allattrib = serviceMethod.GetCustomAttributes(true);
@@ -2963,6 +3013,8 @@ namespace SignalGo.Server.ServiceManager
 
 
         }
+
+
         /// <summary>
         /// error handling for return type methods (not void)
         /// </summary>
@@ -2975,13 +3027,15 @@ namespace SignalGo.Server.ServiceManager
         public abstract StreamInfo RegisterFileToDownload(NetworkStream stream, CompressMode compressMode, ClientInfo client, bool isWebSocket);
         public abstract void RegisterFileToUpload(NetworkStream stream, CompressMode compressMode, ClientInfo client, bool isWebSocket);
         public abstract void WriteStreamToClient(StreamInfo streamInfo, NetworkStream toWrite, bool isWebSocket);
-        //public abstract void RegisterFileCallback();
-        //public abstract void DownloadFileFromClient();
 
+        public abstract void UploadStreamToClient(NetworkStream stream, ClientInfo client);
+        public abstract void DownloadStreamFromClient(NetworkStream stream, ClientInfo client);
+
+
+        private volatile bool _IsFinishingServer = false;
         /// <summary>
         /// is server going to finish
         /// </summary>
-        private volatile bool _IsFinishingServer = false;
         public bool IsFinishingServer
         {
             get

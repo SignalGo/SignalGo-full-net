@@ -26,5 +26,9 @@ namespace SignalGo.Shared.Models
         /// maximum receive data block
         /// </summary>
         public uint MaximumReceiveDataBlock { get; set; } = uint.MaxValue;
+        /// <summary>
+        /// maximum header of stream for download from client
+        /// </summary>
+        public uint MaximumReceiveStreamHeaderBlock { get; set; } = 65536;
     }
 }
