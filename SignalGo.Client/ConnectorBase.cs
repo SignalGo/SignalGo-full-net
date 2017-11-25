@@ -492,7 +492,6 @@ namespace SignalGo.Client
                     var stream = _newClient.GetStream();
                     var readStream = stream;
 #endif
-
                     //var json = JsonConvert.SerializeObject(Data);
                     //var jsonBytes = Encoding.UTF8.GetBytes(json);
                     var header = "SignalGo-Stream/2.0\r\n";

@@ -175,6 +175,7 @@ namespace SignalGo.Server.ServiceManager
         {
             MethodCallbackInfo callback = new MethodCallbackInfo();
             IDisposable userStreamDisposable = null;
+            Stream userStream = null;
             try
             {
                 var bytes = GoStreamReader.ReadBlockToEnd(stream, CompressMode.None, ProviderSetting.MaximumReceiveStreamHeaderBlock, false);
@@ -201,8 +202,9 @@ namespace SignalGo.Server.ServiceManager
                     }
 
                     userStreamDisposable = (IDisposable)method.Invoke(service, parameters.ToArray());
-                    var userStream = (Stream)userStreamDisposable.GetType().GetPropertyInfo("Stream").GetValue(userStreamDisposable, null);
+                    userStream = (Stream)userStreamDisposable.GetType().GetPropertyInfo("Stream").GetValue(userStreamDisposable, null);
                     long len = (long)userStreamDisposable.GetType().GetPropertyInfo("Length").GetValue(userStreamDisposable, null);
+
                     callback.Data = ServerSerializationHelper.SerializeObject(userStreamDisposable);
 
                     json = ServerSerializationHelper.SerializeObject(callback, this);
@@ -213,7 +215,24 @@ namespace SignalGo.Server.ServiceManager
 
                     //read one byte to start send data to client client can cancel socket after get headers
                     //for example when client is cach images and get last upadate heade and dont need to download file he can dispose socket befor sending any data
-                    stream.ReadByte();
+                    //client.TcpClient.Client.
+                    //Console.WriteLine("poll to read");
+                    //if (client.TcpClient.Client.Poll(10000, SelectMode.SelectRead))
+                    //{
+                    //    Console.WriteLine("poll read ok");
+                    //    stream.ReadByte();
+                    //}
+                    //else
+                    //{
+                    //    var connected = client.TcpClient.Connected;
+                    //    var dataav = stream.DataAvailable;
+                    //    userStream.Dispose();
+                    //    DisposeClient(client);
+                    //    Console.WriteLine("poll read error, client disposed " + connected + "," + dataav);
+                    //    return;
+                    //}
+                    //Console.WriteLine("poll read started");
+                    GoStreamReader.ReadOneByte(stream, new TimeSpan(0, 0, 10));
                     long writeLen = 0;
                     while (writeLen < len)
                     {
@@ -223,6 +242,7 @@ namespace SignalGo.Server.ServiceManager
                         writeLen += readCount;
                     }
                     userStream.Dispose();
+                    Console.WriteLine("user stream finished");
                     stream.Dispose();
                 }
             }
@@ -230,6 +250,12 @@ namespace SignalGo.Server.ServiceManager
             {
                 if (userStreamDisposable == null)
                     userStreamDisposable.Dispose();
+                stream.Dispose();
+                if (userStream != null)
+                {
+                    userStream.Dispose();
+                    Console.WriteLine("user stream disposed");
+                }
                 callback.IsException = true;
                 callback.Data = ServerSerializationHelper.SerializeObject(ex);
                 SendCallbackData(callback, client);

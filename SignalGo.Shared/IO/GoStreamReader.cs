@@ -94,6 +94,26 @@ namespace SignalGo.Shared.IO
             return dataBytes[0];
         }
 
+        public static byte ReadOneByte(Stream stream, TimeSpan timeout)
+        {
+            ManualResetEvent resetEvent = new ManualResetEvent(false);
+            resetEvent.Reset();
+            byte oneByte = 0;
+            AsyncActions.Run(() =>
+            {
+                var data = stream.ReadByte();
+                if (data >= 0)
+                {
+                    oneByte = (byte)data;
+                    resetEvent.Set();
+                }
+            });
+
+            if (resetEvent.WaitOne(timeout))
+                return oneByte;
+            throw new TimeoutException();
+        }
+
         static List<byte> GetLengthOfWebSocket(Stream stream, ref ulong len)
         {
             List<byte> bytes = new List<byte>();
