@@ -766,7 +766,7 @@ namespace SignalGo.Server.ServiceManager
                             if (string.IsNullOrEmpty(currentParam.Item2))
                                 resultParameters.Add(GetDefault(item.ParameterType));
                             else
-                                resultParameters.Add(ServerSerializationHelper.Deserialize(currentParam.Item2.SerializeObject(this), item.ParameterType, this));
+                                resultParameters.Add(ServerSerializationHelper.Deserialize(currentParam.Item2, item.ParameterType, this));
                             index++;
                         }
                         if (MethodCallsLogger.IsStart)
