@@ -669,7 +669,7 @@ namespace SignalGo.Server.ServiceManager
                         }
                         else if (headers["content-type"] == "application/json")
                         {
-                            JObject des = (JObject)JsonConvert.DeserializeObject(parameters);
+                            JObject des = (JObject)ServerSerializationHelper.Deserialize(parameters, this);
                             foreach (var item in des.Properties())
                             {
                                 var value = des.GetValue(item.Name);
@@ -1010,7 +1010,7 @@ namespace SignalGo.Server.ServiceManager
                         }
                         else if (headers["content-type"] == "application/json")
                         {
-                            JObject des = (JObject)JsonConvert.DeserializeObject(parameters);
+                            JObject des = (JObject)ServerSerializationHelper.Deserialize(parameters);
                             foreach (var item in des.Properties())
                             {
                                 var value = des.GetValue(item.Name);
@@ -1108,7 +1108,7 @@ namespace SignalGo.Server.ServiceManager
                             if (string.IsNullOrEmpty(currentParam.Item2))
                                 resultParameters.Add(GetDefault(item.ParameterType));
                             else
-                                resultParameters.Add(ServerSerializationHelper.Deserialize(currentParam.Item2.SerializeObject(this), item.ParameterType, this));
+                                resultParameters.Add(ServerSerializationHelper.Deserialize(currentParam.Item2, item.ParameterType, this));
                             index++;
                         }
                         if (MethodCallsLogger.IsStart)
