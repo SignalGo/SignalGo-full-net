@@ -29,7 +29,7 @@ namespace SignalGo.Server.Helpers
 
         public static object Deserialize(this string json, ServerBase serverBase = null, CustomDataExchangerAttribute[] customDataExchanger = null, ClientInfo client = null)
         {
-            return Deserialize<object>(json, serverBase, customDataExchanger: customDataExchanger,client:client);
+            return Deserialize<object>(json, serverBase, customDataExchanger: customDataExchanger, client: client);
         }
 
         public static object Deserialize(this string json, Type type, ServerBase serverBase = null, NullValueHandling nullValueHandling = NullValueHandling.Ignore, CustomDataExchangerAttribute[] customDataExchanger = null, ClientInfo client = null)
@@ -37,8 +37,30 @@ namespace SignalGo.Server.Helpers
             if (string.IsNullOrEmpty(json))
                 return null;
             if (serverBase != null && serverBase.InternalSetting.IsEnabledDataExchanger)
+                return JsonConvert.DeserializeObject(json, type, new JsonSerializerSettings() { ReferenceLoopHandling = ReferenceLoopHandling.Ignore, Converters = new List<JsonConverter>() { new DataExchangeConverter(LimitExchangeType.IncomingCall, customDataExchanger) { Server = serverBase, Client = client } }, Formatting = Formatting.None, NullValueHandling = nullValueHandling});
+            return JsonConvert.DeserializeObject(json, type, new JsonSerializerSettings() { Formatting = Formatting.None, NullValueHandling = nullValueHandling, ReferenceLoopHandling = ReferenceLoopHandling.Ignore });
+        }
+
+        public static object DeserializeByValidate(this string json, Type type, ServerBase serverBase = null, NullValueHandling nullValueHandling = NullValueHandling.Ignore, CustomDataExchangerAttribute[] customDataExchanger = null, ClientInfo client = null)
+        {
+            if (string.IsNullOrEmpty(json))
+                return null;
+            if (!IsValidJson(json))
+                json = SerializeObject(json, serverBase, nullValueHandling, customDataExchanger, client);
+            if (serverBase != null && serverBase.InternalSetting.IsEnabledDataExchanger)
                 return JsonConvert.DeserializeObject(json, type, new JsonSerializerSettings() { ReferenceLoopHandling = ReferenceLoopHandling.Ignore, Converters = new List<JsonConverter>() { new DataExchangeConverter(LimitExchangeType.IncomingCall, customDataExchanger) { Server = serverBase, Client = client } }, Formatting = Formatting.None, NullValueHandling = nullValueHandling });
             return JsonConvert.DeserializeObject(json, type, new JsonSerializerSettings() { Formatting = Formatting.None, NullValueHandling = nullValueHandling, ReferenceLoopHandling = ReferenceLoopHandling.Ignore });
+        }
+
+        public static bool IsValidJson(this string json)
+        {
+            if ((json.StartsWith("{") && json.EndsWith("}")) ||
+                (json.StartsWith("[") && json.EndsWith("]")) ||
+                (json.StartsWith("\"") && json.EndsWith("\"")))
+            {
+                return true;
+            }
+            return false;
         }
     }
 }

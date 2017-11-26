@@ -766,7 +766,14 @@ namespace SignalGo.Server.ServiceManager
                             if (string.IsNullOrEmpty(currentParam.Item2))
                                 resultParameters.Add(GetDefault(item.ParameterType));
                             else
-                                resultParameters.Add(ServerSerializationHelper.Deserialize(currentParam.Item2, item.ParameterType, this));
+                            {
+                                var obj = ServerSerializationHelper.DeserializeByValidate(currentParam.Item2, item.ParameterType, this);
+
+
+                                //if (obj == null)
+                                //    obj = ServerSerializationHelper.Deserialize(currentParam.Item2.SerializeObject(this), item.ParameterType, this);
+                                resultParameters.Add(obj);
+                            }
                             index++;
                         }
                         if (MethodCallsLogger.IsStart)
@@ -1108,7 +1115,12 @@ namespace SignalGo.Server.ServiceManager
                             if (string.IsNullOrEmpty(currentParam.Item2))
                                 resultParameters.Add(GetDefault(item.ParameterType));
                             else
-                                resultParameters.Add(ServerSerializationHelper.Deserialize(currentParam.Item2, item.ParameterType, this));
+                            {
+                                var obj = ServerSerializationHelper.DeserializeByValidate(currentParam.Item2, item.ParameterType, this);
+                                //if (obj == null)
+                                //    obj = ServerSerializationHelper.Deserialize(currentParam.Item2.SerializeObject(this), item.ParameterType, this);
+                                resultParameters.Add(obj);
+                            }
                             index++;
                         }
                         if (MethodCallsLogger.IsStart)
