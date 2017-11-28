@@ -57,7 +57,7 @@ namespace SignalGo.Server.ServiceManager
         #endregion
 
         //internal ConcurrentDictionary<ClientInfo, SynchronizationContext> ClientDispatchers { get; set; } = new ConcurrentDictionary<ClientInfo, SynchronizationContext>();
-        internal static ConcurrentDictionary<SynchronizationContext, ClientInfo> AllDispatchers { get; set; } = new ConcurrentDictionary<SynchronizationContext, ClientInfo>();
+        internal static HashMapDictionary<SynchronizationContext, ClientInfo> AllDispatchers { get; set; } = new HashMapDictionary<SynchronizationContext, ClientInfo>();
 
         /// <summary>
         /// کلاینت ها و توابعی که منتظر هستند پاسخشون از سمت کلاینت برگرده
@@ -392,7 +392,7 @@ namespace SignalGo.Server.ServiceManager
 
                                 if (SynchronizationContext.Current == null)
                                     SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());
-                                AllDispatchers.TryAdd(SynchronizationContext.Current, client);
+                                AllDispatchers.Add(SynchronizationContext.Current, client);
 
                                 string[] lines = null;
                                 if (headerResponse.Contains("\r\n\r\n"))
@@ -1410,7 +1410,7 @@ namespace SignalGo.Server.ServiceManager
                 if (SynchronizationContext.Current == null)
                     SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());
                 //ClientDispatchers.TryAdd(client, SynchronizationContext.Current);
-                AllDispatchers.TryAdd(SynchronizationContext.Current, client);
+                AllDispatchers.Add(SynchronizationContext.Current, client);
                 client.MainContext = SynchronizationContext.Current;
                 client.MainThread = thread;
                 try
@@ -1623,19 +1623,20 @@ namespace SignalGo.Server.ServiceManager
                 }
                 ClientRemove(client);
 
-                List<SynchronizationContext> contexts = new List<SynchronizationContext>();
-                foreach (var item in AllDispatchers)
-                {
-                    if (item.Value == client)
-                    {
-                        contexts.Add(item.Key);
-                    }
-                }
+                //List<SynchronizationContext> contexts = new List<SynchronizationContext>();
+                //foreach (var item in AllDispatchers)
+                //{
+                //    if (item.Value == client)
+                //    {
+                //        contexts.Add(item.Key);
+                //    }
+                //}
+                AllDispatchers.Remove(client);
 
-                foreach (var item in contexts)
-                {
-                    AllDispatchers.Remove(item);
-                }
+                //foreach (var item in contexts)
+                //{
+                //    AllDispatchers.Remove(item);
+                //}
 
                 client.OnDisconnected?.Invoke();
                 //GC.Collect();
@@ -1860,7 +1861,7 @@ namespace SignalGo.Server.ServiceManager
                 if (SynchronizationContext.Current == null)
                     SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());
                 if (!AllDispatchers.ContainsKey(SynchronizationContext.Current))
-                    AllDispatchers.TryAdd(SynchronizationContext.Current, client);
+                    AllDispatchers.Add(SynchronizationContext.Current, client);
                 MethodCallbackInfo callback = new MethodCallbackInfo()
                 {
                     Guid = callInfo.Guid
@@ -2242,7 +2243,7 @@ namespace SignalGo.Server.ServiceManager
                     ClientConnectedCallingCount++;
                     if (SynchronizationContext.Current == null)
                         SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());
-                    AllDispatchers.TryAdd(SynchronizationContext.Current, client);
+                    AllDispatchers.Add(SynchronizationContext.Current, client);
                     if (client.IsWebSocket)
                     {
                         string json = ServerSerializationHelper.SerializeObject(callInfo, this);

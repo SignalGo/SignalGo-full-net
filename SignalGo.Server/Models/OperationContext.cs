@@ -3,6 +3,7 @@ using SignalGo.Shared.DataTypes;
 using SignalGo.Shared.Helpers;
 using SignalGo.Shared.Log;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -18,13 +19,104 @@ namespace SignalGo.Server.Models
             get
             {
                 if (SynchronizationContext.Current != null && ServerBase.AllDispatchers.ContainsKey(SynchronizationContext.Current))
-                    return new OperationContext() { Client = ServerBase.AllDispatchers[SynchronizationContext.Current], ServerBase = ServerBase.AllDispatchers[SynchronizationContext.Current].ServerBase };
+                {
+                    var clients = ServerBase.AllDispatchers[SynchronizationContext.Current];
+                    return new OperationContext() { Client = clients.FirstOrDefault(), Clients = clients, ServerBase = clients.FirstOrDefault().ServerBase };
+                }
                 return null;
             }
         }
 
         public ServerBase ServerBase { get; set; }
-        public ClientInfo Client { get; set; }
+        public ClientInfo Client { get; private set; }
+        public IEnumerable<ClientInfo> Clients { get; private set; }
+
+        public T GetService<T>() where T : class
+        {
+            var attribute = typeof(T).GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault();
+            ServerBase.SingleInstanceServices.TryGetValue(attribute.Name, out object result);
+            return (T)result;
+        }
+    }
+
+    /// <summary>
+    /// operation contract for client that help you to save a class and get it later inside of your service class
+    /// </summary>
+    /// <typeparam name="T">type of your setting</typeparam>
+    public class OperationContext<T> where T : class
+    {
+        static ConcurrentDictionary<ClientInfo, HashSet<object>> savedSettings = new ConcurrentDictionary<ClientInfo, HashSet<object>>();
+        static T _Current = null;
+        /// <summary>
+        /// get seeting of one type that you set it
+        /// </summary>
+        public static T CurrentSetting
+        {
+            get
+            {
+                var context = OperationContext.Current;
+                if (context == null)
+                    throw new Exception("SynchronizationContext is null or empty! Do not call this property inside of another thread that do not have any synchronizationContext or you can call SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());");
+
+                if (savedSettings.TryGetValue(context.Client, out HashSet<object> result))
+                {
+                    return (T)result.FirstOrDefault(x => x.GetType() == typeof(T));
+                }
+                return null;
+            }
+            set
+            {
+                SetSetting(value);
+            }
+        }
+
+        /// <summary>
+        /// set setting for this client
+        /// </summary>
+        /// <param name="setting"></param>
+        public static void SetSetting(object setting)
+        {
+            var context = OperationContext.Current;
+            if (SynchronizationContext.Current == null)
+                throw new Exception("SynchronizationContext is null or empty! Do not call this property inside of another thread that do not have any synchronizationContext or you can call SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());");
+            if (!savedSettings.ContainsKey(context.Client))
+                savedSettings.TryAdd(context.Client, new HashSet<object>() { setting });
+            else if (savedSettings.TryGetValue(context.Client, out HashSet<object> result) && !result.Contains(setting))
+                result.Add(setting);
+        }
+
+        /// <summary>
+        /// get first setting of type that setted
+        /// </summary>
+        /// <typeparam name="T">type of setting</typeparam>
+        /// <returns></returns>
+        public static IEnumerable<T> GetSettings<T>()
+        {
+            var context = OperationContext.Current;
+            if (SynchronizationContext.Current == null)
+                throw new Exception("SynchronizationContext is null or empty! Do not call this property inside of another thread that do not have any synchronizationContext or you can call SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());");
+            if (savedSettings.TryGetValue(context.Client, out HashSet<object> result))
+            {
+                return result.Where(x => x.GetType() == typeof(T)).Select(x => (T)x);
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// get all settings of client
+        /// </summary>
+        /// <returns></returns>
+        public static IEnumerable<object> GetSettings()
+        {
+            var context = OperationContext.Current;
+            if (SynchronizationContext.Current == null)
+                throw new Exception("SynchronizationContext is null or empty! Do not call this property inside of another thread that do not have any synchronizationContext or you can call SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());");
+            if (savedSettings.TryGetValue(context.Client, out HashSet<object> result))
+            {
+                return result;
+            }
+            return null;
+        }
     }
 
     public class ClientContext<T>
@@ -206,7 +298,7 @@ namespace SignalGo.Server.Models
             foreach (var item in context.ServerBase.Clients.ToArray())
             {
                 var find = FindClientCallback<T>(context.ServerBase, item, serviceType, attribName);
-                
+
                 if (find != null)
                     items.Add(new ClientContext<T>(find, item));
             }

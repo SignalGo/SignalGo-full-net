@@ -75,7 +75,7 @@ namespace SignalGo.Server.ServiceManager
 
         static object SendDataNow(this OperationCalls client, string callerName, params object[] args)
         {
-            if (SynchronizationContext.Current != null && ServerBase.AllDispatchers.ContainsKey(SynchronizationContext.Current) && ServerBase.AllDispatchers[SynchronizationContext.Current].MainContext == SynchronizationContext.Current)
+            if (SynchronizationContext.Current != null && ServerBase.AllDispatchers.ContainsKey(SynchronizationContext.Current) && ServerBase.AllDispatchers[SynchronizationContext.Current].FirstOrDefault().MainContext == SynchronizationContext.Current)
                 throw new Exception("Cannot call method from class Constractor or main Thread");
             var attribute = client.GetType().GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault();
             MethodCallInfo callInfo = new MethodCallInfo();

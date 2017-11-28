@@ -18,6 +18,6 @@ namespace SignalGoTest.Models
     [ServiceContract("TestServerStreamModel")]
     public interface ITestServerStreamModel
     {
-        StreamInfo<string> DownloadImage(string name, TestStreamModel  testStreamModel);
+        StreamInfo<string> DownloadImage(string name, TestStreamModel testStreamModel);
     }
 }

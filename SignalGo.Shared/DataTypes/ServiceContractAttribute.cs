@@ -50,7 +50,8 @@ namespace SignalGo.Shared.DataTypes
         /// </summary>
         public string Name { get; set; }
         /// <summary>
-        /// when cllient connect to servevr and registering service, service class get new instance
+        /// when cllient connect to server and registering a service, service class get new instance
+        /// you can change the instance plane with this parameter
         /// </summary>
         public InstanceType InstanceType { get; set; } = InstanceType.MultipeInstance;
     }
