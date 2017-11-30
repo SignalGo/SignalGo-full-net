@@ -31,6 +31,14 @@ namespace SignalGo.Server.Models
         public ClientInfo Client { get; private set; }
         public IEnumerable<ClientInfo> Clients { get; private set; }
 
+        public List<ClientInfo> AllServerClients
+        {
+            get
+            {
+                return ServerBase.Clients.ToList();
+            }
+        }
+
         public T GetService<T>() where T : class
         {
             var attribute = typeof(T).GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault();
@@ -102,11 +110,54 @@ namespace SignalGo.Server.Models
             return null;
         }
 
+        public static IEnumerable<T> GetSettings<T>(ClientInfo client)
+        {
+            if (savedSettings.TryGetValue(client, out HashSet<object> result))
+            {
+                return result.Where(x => x.GetType() == typeof(T)).Select(x => (T)x);
+            }
+            return null;
+        }
+
+        public static T GetSetting<T>(ClientInfo client)
+        {
+            if (savedSettings.TryGetValue(client, out HashSet<object> result))
+            {
+                return (T)result.FirstOrDefault(x => x.GetType() == typeof(T));
+            }
+            return default(T);
+        }
+
+        public static IEnumerable<T> GetSettings<T>(IEnumerable<ClientInfo> clients, Func<T, bool> func)
+        {
+            foreach (var item in clients)
+            {
+                if (savedSettings.TryGetValue(item, out HashSet<object> result))
+                {
+                    return result.Where(x => x.GetType() == typeof(T) && func((T)x)).Select(x => (T)x);
+                }
+            }
+            return null;
+        }
+
+        public static IEnumerable<T> GetSettings(IEnumerable<ClientInfo> clients, Func<T, bool> func)
+        {
+            foreach (var item in clients)
+            {
+                if (savedSettings.TryGetValue(item, out HashSet<object> result))
+                {
+                    var find = result.Where(x => x.GetType() == typeof(T) && func((T)x)).Select(x => (T)x).FirstOrDefault();
+                    if (find != null)
+                        yield return find;
+                }
+            }
+        }
+
         /// <summary>
         /// get all settings of client
         /// </summary>
         /// <returns></returns>
-        public static IEnumerable<object> GetSettings()
+        public static IEnumerable<object> GetAllSettings()
         {
             var context = OperationContext.Current;
             if (SynchronizationContext.Current == null)
