@@ -40,7 +40,11 @@ namespace SignalGo.Shared
         /// Run action on thread
         /// </summary>
         /// <param name="action">your action</param>
-        public static void Run(Action action, Action<Exception> onException = null)
+#if (PORTABLE)
+        public static System.Threading.Tasks.Task Run(Action action, Action<Exception> onException = null)
+#else
+        public static Thread Run(Action action, Action<Exception> onException = null)
+#endif
         {
 #if (PORTABLE)
             System.Threading.Tasks.Task thread = new System.Threading.Tasks.Task(() =>
@@ -76,6 +80,7 @@ namespace SignalGo.Shared
             };
             thread.Start();
 #endif
+            return thread;
         }
     }
 }
