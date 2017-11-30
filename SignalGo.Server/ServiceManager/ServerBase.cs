@@ -926,17 +926,14 @@ namespace SignalGo.Server.ServiceManager
                                     var header = data.Substring(index);
                                     var headLen = header.IndexOf("\r\n");
                                     header = data.Substring(index, headLen);
-                                    var byteData = GoStreamReader.ReadBlockSize(client.TcpClient.GetStream(), (ulong)(len - content.Length - fileHeaderCount));
-                                    string text = Encoding.UTF8.GetString(byteData);
-                                    var newData = text.Substring(0, text.IndexOf(boundary) - 4);
-                                    //var newData = data.Substring(index + headLen + 2);
-                                    //newData = newData.Split(new string[] { boundary }, StringSplitOptions.RemoveEmptyEntries);
+                                    //var byteData = GoStreamReader.ReadBlockSize(client.TcpClient.GetStream(), (ulong)(len - content.Length - fileHeaderCount));
+                                    string newData = data.Substring(headLen+4);//Encoding.UTF8.GetString(byteData);
+                                    //var newData = text.Substring(0, text.IndexOf(boundary) - 4);
                                     if (header.ToLower().IndexOf("content-disposition:") == 0)
                                     {
                                         var disp = new CustomContentDisposition(header);
                                         if (disp.Parameters.ContainsKey("name"))
                                             name = disp.Parameters["name"];
-                                        //newData = newData.Substring(2, newData.Length - 4);
                                         multiPartParameter.Add(name, newData);
                                     }
                                 }
@@ -1196,7 +1193,9 @@ namespace SignalGo.Server.ServiceManager
                     else if (findNextlvl == 3 && singleByte == 10)
                     {
                         var data = Encoding.UTF8.GetString(bytes.ToArray());
-                        if (data.Replace(" ", "").ToLower().Contains("content-disposition:"))
+                        var res = data.Replace(" ", "").ToLower();
+                        
+                        if (res.Contains("content-disposition:") && res.Contains("filename"))
                             break;
                         findNextlvl = 0;
                     }
