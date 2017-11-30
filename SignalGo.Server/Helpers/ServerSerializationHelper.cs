@@ -54,6 +54,7 @@ namespace SignalGo.Server.Helpers
 
         public static bool IsValidJson(this string json)
         {
+            json = json.Trim();
             if ((json.StartsWith("{") && json.EndsWith("}")) ||
                 (json.StartsWith("[") && json.EndsWith("]")) ||
                 (json.StartsWith("\"") && json.EndsWith("\"")))
