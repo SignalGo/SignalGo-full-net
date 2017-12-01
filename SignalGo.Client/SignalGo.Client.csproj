@@ -10,7 +10,10 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>SignalGo.Client</RootNamespace>
     <AssemblyName>SignalGo.Client</AssemblyName>
-    <Version>2.2.0.0</Version>
+    <AssemblyVersion>2.5</AssemblyVersion>
+    <FileVersion>2.5</FileVersion>
+    <VersionPrefix>2.5</VersionPrefix>
+    <Version>2.5</Version>
     <Copyright>Copyright © ali.visual.studio@gmail.com 2016</Copyright>
     <Description>
       SignalGo is a library for Cross-Platform developers that makes it incredibly simple to add real-time web functionality to your applications. What is "real-time web" functionality? It's the ability to have your server-side code push content to the connected clients as it happens, in real-time. like WCF and SignalR
