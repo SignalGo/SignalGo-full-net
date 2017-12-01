@@ -613,6 +613,31 @@ namespace SignalGo.Client
             Services.TryAdd(name, obj);
             return obj;
         }
+
+        /// <summary>
+        /// register a callback interface and get dynamic calls
+        /// works for all platform like windows ,android ,ios and ...
+        /// </summary>
+        /// <typeparam name="T">interface type for use dynamic call</typeparam>
+        /// <returns>return dynamic type to call methods</returns>
+        public dynamic RegisterClientServiceDynamic(string serviceName)
+        {
+            MethodCallInfo callInfo = new MethodCallInfo()
+            {
+                ServiceName = serviceName,
+                MethodName = "/RegisterService",
+                Guid = Guid.NewGuid().ToString()
+            };
+            var callback = this.SendData<MethodCallbackInfo>(callInfo);
+
+            var obj = new DynamicServiceObjectWitoutInterface()
+            {
+                Connector = this,
+                ServiceName = serviceName
+            };
+            Services.TryAdd(serviceName, obj);
+            return obj;
+        }
 #endif
         /// <summary>
         /// register server callback class, it's client methods wait for server call thats

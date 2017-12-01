@@ -13,7 +13,7 @@ namespace SignalGo.Client
     /// <summary>
     /// helper of dynamic calls
     /// </summary>
-    public class DynamicServiceObject : DynamicObject, OperationCalls
+    internal class DynamicServiceObject : DynamicObject, OperationCalls
     {
         /// <summary>
         /// service name
@@ -57,6 +57,29 @@ namespace SignalGo.Client
             {
                 ReturnTypes.Add(item.Name, item.ReturnType);
             }
+        }
+    }
+
+
+    /// <summary>
+    /// helper of dynamic calls
+    /// </summary>
+    internal class DynamicServiceObjectWitoutInterface : DynamicObject, OperationCalls
+    {
+        /// <summary>
+        /// service name
+        /// </summary>
+        public string ServiceName { get; set; }
+
+        /// <summary>
+        /// connector to call methods
+        /// </summary>
+        public ConnectorBase Connector { get; set; }
+
+        public override bool TryInvokeMember(InvokeMemberBinder binder, object[] args, out object result)
+        {
+            result = this.SendDataNoParam(binder.Name, ServiceName, args);
+            return true;
         }
     }
 }
