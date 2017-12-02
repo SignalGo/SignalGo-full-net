@@ -497,8 +497,10 @@ namespace SignalGo.Client
                     var header = "SignalGo-Stream/2.0\r\n";
                     var bytes = Encoding.UTF8.GetBytes(header);
                     stream.Write(bytes, 0, bytes.Length);
-                    if (method.GetParameters().Any(x => x.ParameterType == typeof(StreamInfo) || x.ParameterType == typeof(StreamInfo<>)))
+                    bool isUpload = false;
+                    if (method.GetParameters().Any(x => x.ParameterType == typeof(StreamInfo) || (x.ParameterType.GetIsGenericType() && x.ParameterType.GetGenericTypeDefinition() == typeof(StreamInfo<>))))
                     {
+                        isUpload = true;
                         stream.Write(new byte[] { 0 }, 0, 1);
                     }
                     else
@@ -506,33 +508,61 @@ namespace SignalGo.Client
 
                     MethodCallInfo callInfo = new MethodCallInfo();
                     callInfo.ServiceName = name;
+                    IStreamInfo iStream = null;
                     foreach (var item in args)
                     {
                         callInfo.Parameters.Add(new Shared.Models.ParameterInfo() { Value = JsonConvert.SerializeObject(item) });
+                        if (item is IStreamInfo)
+                        {
+                            iStream = (IStreamInfo)item;
+                        }
                     }
                     callInfo.MethodName = method.Name;
                     var json = JsonConvert.SerializeObject(callInfo);
 
                     var jsonBytes = Encoding.UTF8.GetBytes(json);
                     GoStreamWriter.WriteBlockToStream(stream, jsonBytes);
+                    if (isUpload)
+                    {
+                        long length = iStream.Length;
+                        long position = 0;
+                        int blockOfRead = 1024 * 10;
+                        while (length != position)
+                        {
+
+                            if (position + blockOfRead > length)
+                                blockOfRead = (int)(length - position);
+                            bytes = new byte[blockOfRead];
+                            var readCount = iStream.Stream.Read(bytes, 0, bytes.Length);
+                            position += readCount;
+                            stream.Write(bytes, 0, readCount);
+                        }
+                        var responseType = (DataType)GoStreamReader.ReadOneByte(readStream, CompressMode.None, ProviderSetting.MaximumReceiveStreamHeaderBlock, false);
+                        var compressMode = (CompressMode)GoStreamReader.ReadOneByte(readStream, CompressMode.None, ProviderSetting.MaximumReceiveStreamHeaderBlock, false);
+                    }
+
+
                     var callBackBytes = GoStreamReader.ReadBlockToEnd(readStream, CompressMode.None, ProviderSetting.MaximumReceiveStreamHeaderBlock, false);
                     var callbackInfo = JsonConvert.DeserializeObject<MethodCallbackInfo>(Encoding.UTF8.GetString(callBackBytes, 0, callBackBytes.Length));
 
                     var result = JsonConvert.DeserializeObject(callbackInfo.Data, method.ReturnType);
-                    result.GetType().GetPropertyInfo("Stream").SetValue(result, stream, null);
-                    result.GetType().GetPropertyInfo("GetStreamAction"
-#if (!PORTABLE)
-                        , BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance
-#endif
-                        ).SetValue(result, new Action(() =>
+                    if (!isUpload)
                     {
-                        stream.Write(new byte[] { 0 }, 0, 1);
+                        result.GetType().GetPropertyInfo("Stream").SetValue(result, stream, null);
                         result.GetType().GetPropertyInfo("GetStreamAction"
 #if (!PORTABLE)
                         , BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance
 #endif
+                        ).SetValue(result, new Action(() =>
+                        {
+                            stream.Write(new byte[] { 0 }, 0, 1);
+                            result.GetType().GetPropertyInfo("GetStreamAction"
+#if (!PORTABLE)
+                        , BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance
+#endif
                             ).SetValue(result, null, null);
-                    }), null);
+                        }), null);
+                    }
 
                     return result;
                 }

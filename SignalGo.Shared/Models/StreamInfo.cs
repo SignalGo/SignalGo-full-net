@@ -13,11 +13,19 @@ using System.Text;
 
 namespace SignalGo.Shared.Models
 {
+    public interface IStreamInfo : IDisposable
+    {
+        Stream Stream { get; set; }
+        /// <summary>
+        /// length of stream
+        /// </summary>
+        long Length { get; set; }
+    }
     /// <summary>
     /// stream for upload and download
     /// </summary>
     /// <typeparam name="T">data of stream</typeparam>
-    public class StreamInfo<T> : IDisposable
+    public class StreamInfo<T> : IStreamInfo
     {
         /// <summary>
         /// data of stream
@@ -89,7 +97,7 @@ namespace SignalGo.Shared.Models
         }
     }
 
-    public class StreamInfo : IDisposable
+    public class StreamInfo : IStreamInfo
     {
         public Dictionary<string, object> Headers { get; set; } = new Dictionary<string, object>();
         [JsonIgnore()]

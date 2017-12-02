@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using SignalGo;
 using SignalGo.Server.Helpers;
+using SignalGo.Server.IO;
 using SignalGo.Server.Models;
 using SignalGo.Shared.Helpers;
 using SignalGo.Shared.IO;
@@ -132,11 +133,12 @@ namespace SignalGo.Server.ServiceManager
                     DisposeClient(client);
                 else
                 {
+                    //, typeof(StreamInfo<>)
                     var serviceType = service.GetType();
 #if (NETSTANDARD1_6 || NETCOREAPP1_1)
-                    var method = serviceType.GetTypeInfo().GetMethod(callInfo.MethodName, RuntimeTypeHelper.GetMethodTypes(serviceType, callInfo, typeof(StreamInfo<>)).ToArray());
+                    var method = serviceType.GetTypeInfo().GetMethod(callInfo.MethodName, RuntimeTypeHelper.GetMethodTypes(serviceType, callInfo).ToArray());
 #else
-                    var method = serviceType.GetMethod(callInfo.MethodName, RuntimeTypeHelper.GetMethodTypes(serviceType, callInfo, typeof(StreamInfo<>)).ToArray());
+                    var method = serviceType.GetMethod(callInfo.MethodName, RuntimeTypeHelper.GetMethodTypes(serviceType, callInfo).ToArray());
 #endif
                     List<object> parameters = new List<object>();
                     int index = 0;
@@ -146,8 +148,11 @@ namespace SignalGo.Server.ServiceManager
                         parameters.Add(ServerSerializationHelper.Deserialize(item.Value, prms[index].ParameterType, this));
                         index++;
                     }
-                    StreamInfo data = parameters[0] as StreamInfo;
+                    var data = (IStreamInfo)parameters.FirstOrDefault(x=>x.GetType() == typeof(StreamInfo) || (x.GetType().GetIsGenericType() && x.GetType().GetGenericTypeDefinition() == typeof(StreamInfo<>)));
+                    //var upStream = new UploadStreamGo(stream);
                     data.Stream = stream;
+                    //upStream.SetLengthOfBase(data.Length);
+                    //data.Stream = stream;
                     if (method.ReturnType == typeof(void))
                     {
                         method.Invoke(service, parameters.ToArray());
@@ -157,7 +162,17 @@ namespace SignalGo.Server.ServiceManager
                         var result = method.Invoke(service, parameters.ToArray());
                         callback.Data = ServerSerializationHelper.SerializeObject(result);
                     }
+                    //if (!upStream.IsFinished)
+                    //{
+                    //    throw new IOException("stream read must finished for send response to client");
+                    //}
                 }
+            }
+            catch(IOException ex)
+            {
+                Shared.Log.AutoLogger.LogError(ex, "upload stream error");
+                DisposeClient(client);
+                return;
             }
             catch (Exception ex)
             {
