@@ -52,9 +52,9 @@ namespace SignalGo.Server.ServiceManager
         public ProviderSetting ProviderSetting { get; set; } = new ProviderSetting();
         public Action DisconnectedAction { get; set; }
         public Action<Exception> ServerInternalExceptionAction { get; set; }
-        #region test
-        public Action<ClientInfo> AddedClient { get; set; }
-        #endregion
+
+        public Action<ClientInfo> ConnectedClientAction { get; set; }
+        public Action<ClientInfo> DisconnectedClientAction { get; set; }
 
         //internal ConcurrentDictionary<ClientInfo, SynchronizationContext> ClientDispatchers { get; set; } = new ConcurrentDictionary<ClientInfo, SynchronizationContext>();
         internal static HashMapDictionary<SynchronizationContext, ClientInfo> AllDispatchers { get; set; } = new HashMapDictionary<SynchronizationContext, ClientInfo>();
@@ -269,7 +269,14 @@ namespace SignalGo.Server.ServiceManager
             var service =  Activator.CreateInstance(type);
             StreamServices.TryAdd(name, service);
         }
-
+        /// <summary>
+        /// register stream service for download and upload stream or file
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        public void RegisterStreamService<T>()
+        {
+            RegisterStreamService(typeof(T));
+        }
 #if (!NETSTANDARD1_6 && !NETCOREAPP1_1)
         public void RegisterClientCallbackInterfaceService<T>()
         {
@@ -456,7 +463,7 @@ namespace SignalGo.Server.ServiceManager
                         }
 
                         StartToReadingClientData(client);
-                        AddedClient?.Invoke(client);
+                        ConnectedClientAction?.Invoke(client);
                     }
                 }
                 catch (Exception ex)
@@ -1638,6 +1645,7 @@ namespace SignalGo.Server.ServiceManager
                 //}
 
                 client.OnDisconnected?.Invoke();
+                DisconnectedClientAction?.Invoke(client);
                 //GC.Collect();
                 //GC.WaitForPendingFinalizers();
                 //GC.Collect();
@@ -1733,7 +1741,7 @@ namespace SignalGo.Server.ServiceManager
 
                 //جلوگیری از هنگ
                 //AsyncActions.Run(objectInstance.OnInitialized);
-                AddedClient?.Invoke(client);
+                //AddedClient?.Invoke(client);
             }
             catch (Exception ex)
             {
