@@ -175,7 +175,7 @@ namespace SignalGo.Client
                 throw new TimeoutException();
             }
             var result = WaitedMethodsForResponse[callInfo.Guid].Value;
-            if (callInfo.MethodName == "/RegisterService")
+            if (!result.IsException && callInfo.MethodName == "/RegisterService")
             {
                 connector.SessionId = JsonConvert.DeserializeObject<string>(result.Data);
                 result.Data = null;
