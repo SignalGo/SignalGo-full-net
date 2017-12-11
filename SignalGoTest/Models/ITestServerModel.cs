@@ -15,11 +15,6 @@ namespace SignalGoTest.Models
     public interface ITestServerModel : ITestServerModelBase
     {
         Tuple<string> HelloWorld(string yourName);
-    }
-
-
-    public interface ITestServerModelParent : ITestServerModel
-    {
-        Tuple<bool> Login(string yourName);
+        Tuple<string> WhoAmI();
     }
 }

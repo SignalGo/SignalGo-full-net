@@ -32,6 +32,15 @@ namespace SignalGo.Server.ServiceManager
     public abstract class ServerBase : IDisposable
     {
         /// <summary>
+        /// server is started or not
+        /// </summary>
+        public bool IsStarted { get; set; }
+        /// <summary>
+        /// when server connection stopped or started
+        /// </summary>
+        public Action<bool> ServerConnectionChanged { get; set; }
+
+        /// <summary>
         /// calling method count if this is going to zero server can stop
         /// </summary>
         private volatile int _callingCount;
@@ -147,6 +156,8 @@ namespace SignalGo.Server.ServiceManager
                             VirtualDirectories.Add(item);
                     }
                     server.Start();
+                    IsStarted = true;
+                    ServerConnectionChanged?.Invoke(true);
                     resetEvent.Set();
                     while (true)
                     {
@@ -157,6 +168,7 @@ namespace SignalGo.Server.ServiceManager
                 {
                     Console.WriteLine("Server Disposed! : " + ex);
                     ServerInternalExceptionAction?.Invoke(ex);
+                    ServerConnectionChanged?.Invoke(false);
                     SignalGo.Shared.Log.AutoLogger.LogError(ex, "Connect Server");
                     exception = ex;
                     resetEvent.Set();
@@ -3078,7 +3090,10 @@ namespace SignalGo.Server.ServiceManager
                 CallAfterFinishAction?.Invoke();
         }
 
-        public bool IsDisposed = false;
+        /// <summary>
+        /// when server is disposed
+        /// </summary>
+        public bool IsDisposed { get; set; }
         /// <summary>
         /// dispose service
         /// </summary>
@@ -3090,6 +3105,9 @@ namespace SignalGo.Server.ServiceManager
                 DisposeClient(item);
             }
             server.Stop();
+            IsStarted = false;
+            ServerConnectionChanged?.Invoke(false);
+
             DisconnectedAction?.Invoke();
         }
 
