@@ -33,6 +33,7 @@ namespace System
             return GetCustomAttributes(type, typeof(T), inherit).Select(arg => (T)arg).ToArray();
         }
 
+        static ConcurrentDictionary<Type, object[]> CachedCustomAttributes = new ConcurrentDictionary<Type, object[]>();
         /// <summary>Private helper for searching attributes.</summary>
         /// <param name="type">The type which is searched for the attribute.</param>
         /// <param name="attributeType">The type of attribute to search for.</param>
@@ -45,13 +46,19 @@ namespace System
 #else
             var typeInfo = type;
 #endif
+            if (CachedCustomAttributes.ContainsKey(type))
+                return CachedCustomAttributes[type];
             if (!inherit)
             {
+                object[] cach = null;
 #if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
-                return typeInfo.GetCustomAttributes(attributeType, false).Cast<object>().ToArray();
+                cach= typeInfo.GetCustomAttributes(attributeType, false).Cast<object>().ToArray();
 #else
-                return typeInfo.GetCustomAttributes(attributeType, false);
+                cach = typeInfo.GetCustomAttributes(attributeType, false);
 #endif
+                if (!CachedCustomAttributes.ContainsKey(type))
+                    CachedCustomAttributes.TryAdd(type, cach);
+                return cach;
             }
 
             var attributeCollection = new Collection<object>();
@@ -75,10 +82,12 @@ namespace System
 
             var attributeArray = new object[attributeCollection.Count];
             attributeCollection.CopyTo(attributeArray, 0);
+            if (!CachedCustomAttributes.ContainsKey(type))
+                CachedCustomAttributes.TryAdd(type, attributeArray);
             return attributeArray;
         }
 
-        static ConcurrentDictionary<Type, List<Type>> SavedTypesOfAttribute = new ConcurrentDictionary<Type, List<Type>>();
+        static ConcurrentDictionary<Type, List<Type>> CachedTypesOfAttribute = new ConcurrentDictionary<Type, List<Type>>();
         public static List<Type> GetTypesByAttribute<T>(this Type type, bool isManual = true) where T : Attribute
         {
             List<Type> result = new List<Type>();
@@ -89,8 +98,8 @@ namespace System
 #else
             var typeInfo = type;
 #endif
-            if (SavedTypesOfAttribute.ContainsKey(type))
-                return SavedTypesOfAttribute[type];
+            if (CachedTypesOfAttribute.ContainsKey(type))
+                return CachedTypesOfAttribute[type];
             foreach (var attrib in typeInfo.GetCustomAttributes(false))
             {
                 if (attrib.GetType() == typeof(T))
@@ -120,7 +129,7 @@ namespace System
             }
             result.AddRange(typeInfo.BaseType.GetTypesByAttribute<T>(isManual: false));
             if (isManual)
-                SavedTypesOfAttribute[type] = result;
+                CachedTypesOfAttribute[type] = result;
             return result;
         }
 

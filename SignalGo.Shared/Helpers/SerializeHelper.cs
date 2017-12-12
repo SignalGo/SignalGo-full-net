@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -129,6 +130,16 @@ namespace SignalGo.Shared.Helpers
                 return SerializeObjectType.Enum;
 #endif
             return SerializeObjectType.Object;
+        }
+
+        internal static ConcurrentDictionary<Type, Delegate> HandleSerializingObjectList = new ConcurrentDictionary<Type, Delegate>();
+
+        public static void HandleSerializingObject<TType, TResultType>(Func<TType, TResultType> func) 
+            where TResultType : class 
+            where TType : class
+        {
+            //HandleSerializingObjectList[null].GetMethodInfo
+            HandleSerializingObjectList.TryAdd(typeof(TType), func);
         }
     }
 }

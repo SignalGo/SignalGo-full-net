@@ -39,6 +39,14 @@ namespace SignalGo.Server.Models
             }
         }
 
+        public int ConnectedClientsCount
+        {
+            get
+            {
+                return ServerBase.Clients.Count;
+            }
+        }
+
         public T GetService<T>() where T : class
         {
             var attribute = typeof(T).GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault();
@@ -53,7 +61,7 @@ namespace SignalGo.Server.Models
     /// <typeparam name="T">type of your setting</typeparam>
     public class OperationContext<T> where T : class
     {
-        static ConcurrentDictionary<ClientInfo, HashSet<object>> savedSettings = new ConcurrentDictionary<ClientInfo, HashSet<object>>();
+        internal static ConcurrentDictionary<ClientInfo, HashSet<object>> SavedSettings { get; set; } = new ConcurrentDictionary<ClientInfo, HashSet<object>>();
         static T _Current = null;
         /// <summary>
         /// get seeting of one type that you set it
@@ -66,7 +74,7 @@ namespace SignalGo.Server.Models
                 if (context == null)
                     throw new Exception("SynchronizationContext is null or empty! Do not call this property inside of another thread that do not have any synchronizationContext or you can call SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());");
 
-                if (savedSettings.TryGetValue(context.Client, out HashSet<object> result))
+                if (SavedSettings.TryGetValue(context.Client, out HashSet<object> result))
                 {
                     return (T)result.FirstOrDefault(x => x.GetType() == typeof(T));
                 }
@@ -87,9 +95,9 @@ namespace SignalGo.Server.Models
             var context = OperationContext.Current;
             if (SynchronizationContext.Current == null)
                 throw new Exception("SynchronizationContext is null or empty! Do not call this property inside of another thread that do not have any synchronizationContext or you can call SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());");
-            if (!savedSettings.ContainsKey(context.Client))
-                savedSettings.TryAdd(context.Client, new HashSet<object>() { setting });
-            else if (savedSettings.TryGetValue(context.Client, out HashSet<object> result) && !result.Contains(setting))
+            if (!SavedSettings.ContainsKey(context.Client))
+                SavedSettings.TryAdd(context.Client, new HashSet<object>() { setting });
+            else if (SavedSettings.TryGetValue(context.Client, out HashSet<object> result) && !result.Contains(setting))
                 result.Add(setting);
         }
 
@@ -103,7 +111,7 @@ namespace SignalGo.Server.Models
             var context = OperationContext.Current;
             if (SynchronizationContext.Current == null)
                 throw new Exception("SynchronizationContext is null or empty! Do not call this property inside of another thread that do not have any synchronizationContext or you can call SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());");
-            if (savedSettings.TryGetValue(context.Client, out HashSet<object> result))
+            if (SavedSettings.TryGetValue(context.Client, out HashSet<object> result))
             {
                 return result.Where(x => x.GetType() == typeof(T)).Select(x => (T)x);
             }
@@ -112,7 +120,7 @@ namespace SignalGo.Server.Models
 
         public static IEnumerable<T> GetSettings<T>(ClientInfo client)
         {
-            if (savedSettings.TryGetValue(client, out HashSet<object> result))
+            if (SavedSettings.TryGetValue(client, out HashSet<object> result))
             {
                 return result.Where(x => x.GetType() == typeof(T)).Select(x => (T)x);
             }
@@ -121,7 +129,7 @@ namespace SignalGo.Server.Models
 
         public static T GetSetting<T>(ClientInfo client)
         {
-            if (savedSettings.TryGetValue(client, out HashSet<object> result))
+            if (SavedSettings.TryGetValue(client, out HashSet<object> result))
             {
                 return (T)result.FirstOrDefault(x => x.GetType() == typeof(T));
             }
@@ -132,7 +140,7 @@ namespace SignalGo.Server.Models
         {
             foreach (var item in clients)
             {
-                if (savedSettings.TryGetValue(item, out HashSet<object> result))
+                if (SavedSettings.TryGetValue(item, out HashSet<object> result))
                 {
                     return result.Where(x => x.GetType() == typeof(T) && func((T)x)).Select(x => (T)x);
                 }
@@ -144,7 +152,7 @@ namespace SignalGo.Server.Models
         {
             foreach (var item in clients)
             {
-                if (savedSettings.TryGetValue(item, out HashSet<object> result))
+                if (SavedSettings.TryGetValue(item, out HashSet<object> result))
                 {
                     var find = result.Where(x => x.GetType() == typeof(T) && func((T)x)).Select(x => (T)x).FirstOrDefault();
                     if (find != null)
@@ -162,7 +170,7 @@ namespace SignalGo.Server.Models
             var context = OperationContext.Current;
             if (SynchronizationContext.Current == null)
                 throw new Exception("SynchronizationContext is null or empty! Do not call this property inside of another thread that do not have any synchronizationContext or you can call SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());");
-            if (savedSettings.TryGetValue(context.Client, out HashSet<object> result))
+            if (SavedSettings.TryGetValue(context.Client, out HashSet<object> result))
             {
                 return result;
             }

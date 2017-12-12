@@ -164,7 +164,10 @@ namespace SignalGo.Shared.Helpers
 #if (PORTABLE)
                 .DeclaredProperties;
 #else
-                .GetProperties();
+                .GetProperties(BindingFlags.Public |
+                          BindingFlags.NonPublic |
+                          BindingFlags.Instance |
+                          BindingFlags.DeclaredOnly);
 #endif
         }
         /// <summary>
@@ -181,7 +184,10 @@ namespace SignalGo.Shared.Helpers
 #if (PORTABLE)
                 .DeclaredFields;
 #else
-                .GetFields();
+                .GetFields(BindingFlags.Public |
+                          BindingFlags.NonPublic |
+                          BindingFlags.Instance |
+                          BindingFlags.DeclaredOnly);
 #endif
         }
         /// <summary>

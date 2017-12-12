@@ -35,10 +35,6 @@ namespace SignalGo.Server.ServiceManager
         /// server is started or not
         /// </summary>
         public bool IsStarted { get; set; }
-        /// <summary>
-        /// when server connection stopped or started
-        /// </summary>
-        public Action<bool> ServerConnectionChanged { get; set; }
 
         /// <summary>
         /// calling method count if this is going to zero server can stop
@@ -59,11 +55,12 @@ namespace SignalGo.Server.ServiceManager
         }
 
         public ProviderSetting ProviderSetting { get; set; } = new ProviderSetting();
-        public Action DisconnectedAction { get; set; }
-        public Action<Exception> ServerInternalExceptionAction { get; set; }
 
-        public Action<ClientInfo> ConnectedClientAction { get; set; }
-        public Action<ClientInfo> DisconnectedClientAction { get; set; }
+        public Action OnServerDisconnectedAction { get; set; }
+        public Action<Exception> OnServerInternalExceptionAction { get; set; }
+
+        public Action<ClientInfo> OnConnectedClientAction { get; set; }
+        public Action<ClientInfo> OnDisconnectedClientAction { get; set; }
 
         //internal ConcurrentDictionary<ClientInfo, SynchronizationContext> ClientDispatchers { get; set; } = new ConcurrentDictionary<ClientInfo, SynchronizationContext>();
         internal static HashMapDictionary<SynchronizationContext, ClientInfo> AllDispatchers { get; set; } = new HashMapDictionary<SynchronizationContext, ClientInfo>();
@@ -157,7 +154,6 @@ namespace SignalGo.Server.ServiceManager
                     }
                     server.Start();
                     IsStarted = true;
-                    ServerConnectionChanged?.Invoke(true);
                     resetEvent.Set();
                     while (true)
                     {
@@ -167,12 +163,11 @@ namespace SignalGo.Server.ServiceManager
                 catch (Exception ex)
                 {
                     Console.WriteLine("Server Disposed! : " + ex);
-                    ServerInternalExceptionAction?.Invoke(ex);
-                    ServerConnectionChanged?.Invoke(false);
+                    OnServerInternalExceptionAction?.Invoke(ex);
                     SignalGo.Shared.Log.AutoLogger.LogError(ex, "Connect Server");
                     exception = ex;
                     resetEvent.Set();
-                    Dispose();
+                    Stop();
                 }
             })
             {
@@ -475,7 +470,7 @@ namespace SignalGo.Server.ServiceManager
                         }
 
                         StartToReadingClientData(client);
-                        ConnectedClientAction?.Invoke(client);
+                        OnConnectedClientAction?.Invoke(client);
                     }
                 }
                 catch (Exception ex)
@@ -1655,9 +1650,8 @@ namespace SignalGo.Server.ServiceManager
                 //{
                 //    AllDispatchers.Remove(item);
                 //}
-
                 client.OnDisconnected?.Invoke();
-                DisconnectedClientAction?.Invoke(client);
+                OnDisconnectedClientAction?.Invoke(client);
                 //GC.Collect();
                 //GC.WaitForPendingFinalizers();
                 //GC.Collect();
@@ -3100,16 +3094,18 @@ namespace SignalGo.Server.ServiceManager
         public void Dispose()
         {
             IsDisposed = true;
+            Stop();
+        }
+
+        public void Stop()
+        {
             foreach (var item in Clients.ToList())
             {
                 DisposeClient(item);
             }
             server.Stop();
             IsStarted = false;
-            ServerConnectionChanged?.Invoke(false);
-
-            DisconnectedAction?.Invoke();
+            OnServerDisconnectedAction?.Invoke();
         }
-
     }
 }

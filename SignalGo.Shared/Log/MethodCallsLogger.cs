@@ -12,44 +12,126 @@ using System.Threading;
 
 namespace SignalGo.Shared.Log
 {
+    /// <summary>
+    /// base of log information
+    /// </summary>
     public abstract class BaseLogInformation
     {
+        /// <summary>
+        /// date of call
+        /// </summary>
         public DateTime DateTime { get; set; }
+        /// <summary>
+        /// date of result
+        /// </summary>
         public DateTime ResultDateTime { get; set; }
+        /// <summary>
+        /// Elapsed time from start call to result
+        /// </summary>
+        public TimeSpan Elapsed
+        {
+            get
+            {
+                return ResultDateTime - DateTime;
+            }
+        }
+
         /// <summary>
         /// after set call method result is going to true and write to log file
         /// </summary>
         public bool CanWriteToFile { get; set; }
+        /// <summary>
+        /// client sessionId
+        /// </summary>
         public string SessionId { get; set; }
+        /// <summary>
+        /// client connected Date Time
+        /// </summary>
         public DateTime ConnectedDateTime { get; set; }
+        /// <summary>
+        /// ip addresses
+        /// </summary>
         public string IPAddress { get; set; }
+        /// <summary>
+        /// object od result
+        /// </summary>
         public object Result { get; set; }
+        /// <summary>
+        /// name of method
+        /// </summary>
         public string MethodName { get; set; }
     }
 
+    /// <summary>
+    /// log of method called
+    /// </summary>
     public class CallMethodLogInformation : BaseLogInformation
     {
+        /// <summary>
+        /// name of service
+        /// </summary>
         public string ServiceName { get; set; }
+        /// <summary>
+        /// parameters of method
+        /// </summary>
         public List<Models.ParameterInfo> Parameters { get; set; }
+        /// <summary>
+        /// method
+        /// </summary>
         public MethodInfo Method { get; set; }
     }
-
+    /// <summary>
+    /// log of callbacks
+    /// </summary>
     public class CallClientMethodLogInformation : BaseLogInformation
     {
+        /// <summary>
+        /// service name
+        /// </summary>
         public string ServiceName { get; set; }
+        /// <summary>
+        /// parameters
+        /// </summary>
         public List<Models.ParameterInfo> Parameters { get; set; }
     }
 
+    /// <summary>
+    /// log of http calls
+    /// </summary>
     public class HttpCallMethodLogInformation : BaseLogInformation
     {
+        /// <summary>
+        /// address of http call
+        /// </summary>
         public string Address { get; set; }
+        /// <summary>
+        /// parameters
+        /// </summary>
         public List<string> Parameters { get; set; }
+        /// <summary>
+        /// method
+        /// </summary>
         public MethodInfo Method { get; set; }
     }
 
-
+    /// <summary>
+    /// signalGo log system manager
+    /// </summary>
     public static class MethodCallsLogger
     {
+        /// <summary>
+        /// when user called and response a service method
+        /// </summary>
+        public static Action<CallMethodLogInformation> ServiceMethodCalledAction { get; set; }
+        /// <summary>
+        /// when server called a client method
+        /// </summary>
+        public static Action<CallClientMethodLogInformation> ServiceCallbackMethodCalledAction { get; set; }
+        /// <summary>
+        /// when a http method called from client
+        /// </summary>
+        public static Action<HttpCallMethodLogInformation> HttpServiceMethodCalledAction { get; set; }
+
         /// <summary>
         /// if false ignore write errors to .log file
         /// </summary>
@@ -62,7 +144,9 @@ namespace SignalGo.Shared.Log
                     StartEngine();
             }
         }
-
+        /// <summary>
+        /// when system logger is started
+        /// </summary>
         public static bool IsStart
         {
             get
@@ -70,7 +154,9 @@ namespace SignalGo.Shared.Log
                 return !isStop;
             }
         }
-
+        /// <summary>
+        /// if you want log persian datet time
+        /// </summary>
         public static bool IsPersianDateLog { get; set; } = false;
 
         static bool isStop = true;
@@ -171,6 +257,7 @@ namespace SignalGo.Shared.Log
             log.ResultDateTime = DateTime.Now.ToLocalTime();
             log.Result = result;
             log.CanWriteToFile = true;
+            ServiceMethodCalledAction?.Invoke(log);
         }
 
         public static void FinishLog(HttpCallMethodLogInformation log, object result)
@@ -182,6 +269,7 @@ namespace SignalGo.Shared.Log
             log.ResultDateTime = DateTime.Now.ToLocalTime();
             log.Result = result;
             log.CanWriteToFile = true;
+            HttpServiceMethodCalledAction?.Invoke(log);
         }
 
         public static void FinishLog(CallClientMethodLogInformation log, object result)
@@ -193,6 +281,7 @@ namespace SignalGo.Shared.Log
             log.ResultDateTime = DateTime.Now.ToLocalTime();
             log.Result = result;
             log.CanWriteToFile = true;
+            ServiceCallbackMethodCalledAction?.Invoke(log);
         }
 
         static string CombinePath(params string[] pathes)

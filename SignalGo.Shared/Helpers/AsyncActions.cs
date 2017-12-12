@@ -32,6 +32,12 @@ namespace SignalGo.Shared
     /// </summary>
     public static class AsyncActions
     {
+        //static Thread UIThread { get; set; }
+        //public static void InitializeUIThread()
+        //{
+        //    UIThread = Thread.CurrentThread;
+
+        //}
         /// <summary>
         /// if actions return exceptions
         /// </summary>

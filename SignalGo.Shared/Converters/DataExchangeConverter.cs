@@ -182,7 +182,16 @@ namespace SignalGo.Shared.Converters
             };
             sz.Converters.Add(new CustomICollectionCreationConverter() { });
 
-            var obj = jToken.ToObject(objectType, sz);
+            object obj = null;
+
+            try
+            {
+                obj = jToken.ToObject(objectType, sz);
+            }
+            catch (Exception ex)
+            {
+
+            }
             if (obj == null)
                 obj = JsonConvert.DeserializeObject(jToken.ToString(), objectType);
             GenerateProperties(obj);
@@ -429,9 +438,10 @@ namespace SignalGo.Shared.Converters
                 {
                     GenerateValue(property, null);
                 }
-
                 foreach (var field in baseType.GetListOfFields())
                 {
+                    if (field.DeclaringType == baseType)
+                        continue;
                     GenerateValue(null, field);
                 }
             }
@@ -559,6 +569,7 @@ namespace SignalGo.Shared.Converters
                                     value = field.GetValue(instance);
                                     writer.WritePropertyName(field.Name);
                                 }
+                                //if (value != instance)//loop handling
                                 serializer.Serialize(writer, value);
                             }
                             catch (Exception ex)

@@ -348,7 +348,8 @@ namespace SignalGo.Client
             var callback = this.SendData<MethodCallbackInfo>(callInfo);
             var objectInstance = Activator.CreateInstance(type);
             var duplex = objectInstance as OperationCalls;
-            duplex.Connector = this;
+            if (duplex != null)
+                duplex.Connector = this;
             Services.TryAdd(callInfo.ServiceName, objectInstance);
             return (T)objectInstance;
         }
