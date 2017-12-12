@@ -133,13 +133,26 @@ namespace SignalGo.Shared.Helpers
         }
 
         internal static ConcurrentDictionary<Type, Delegate> HandleSerializingObjectList = new ConcurrentDictionary<Type, Delegate>();
+        internal static ConcurrentDictionary<Type, SerializeDelegateHandler> HandleDeserializingObjectList = new ConcurrentDictionary<Type, SerializeDelegateHandler>();
 
         public static void HandleSerializingObject<TType, TResultType>(Func<TType, TResultType> func) 
             where TResultType : class 
             where TType : class
         {
-            //HandleSerializingObjectList[null].GetMethodInfo
             HandleSerializingObjectList.TryAdd(typeof(TType), func);
         }
+
+        public static void HandleDeserializingObject<TType, TResultType>(Func<TType, TResultType> func)
+    where TResultType : class
+    where TType : class
+        {
+            HandleDeserializingObjectList.TryAdd(typeof(TResultType), new SerializeDelegateHandler() { Delegate = func, ParameterType = typeof(TType) });
+        }
+    }
+
+    public class SerializeDelegateHandler
+    {
+        public Delegate Delegate { get; set; }
+        public Type ParameterType { get; set; }
     }
 }

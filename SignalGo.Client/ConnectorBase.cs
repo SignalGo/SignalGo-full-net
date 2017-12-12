@@ -42,7 +42,7 @@ namespace SignalGo.Client
                 var data = SendData((OperationCalls)client, method.Name, "", parameters);
                 if (data == null)
                     return null;
-                return data is StreamInfo ? data : JsonConvert.DeserializeObject(data.ToString(), method.ReturnType);
+                return data is StreamInfo ? data : ClientSerializationHelper.Deserialize(data.ToString(), method.ReturnType);
             };
         }
 

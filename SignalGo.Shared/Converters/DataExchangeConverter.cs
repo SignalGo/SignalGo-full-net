@@ -51,14 +51,33 @@ namespace SignalGo.Shared.Converters
             {
                 return null;
             }
-
-            var value = Create(objectType);
-            if (value == null)
+            object value = null;
+            if (objectType.GetIsGenericType() && objectType.GetGenericTypeDefinition() == BaseType)
             {
-                throw new JsonSerializationException("No object created.");
+                value = Create(objectType);
+                if (value == null)
+                {
+                    throw new JsonSerializationException("No object created.");
+                }
+                serializer.Populate(reader, value);
+            }
+            else
+            {
+                if (SerializeHelper.HandleDeserializingObjectList.TryGetValue(objectType, out SerializeDelegateHandler serializehandling))
+                {
+                    try
+                    {
+                        var json = JToken.Load(reader);
+                        var instance = json.ToObject(serializehandling.ParameterType);
+                        value = serializehandling.Delegate.DynamicInvoke(instance);
+                    }
+                    catch (Exception ex)
+                    {
+
+                    }
+                }
             }
 
-            serializer.Populate(reader, value);
             return value;
         }
 
@@ -82,7 +101,7 @@ namespace SignalGo.Shared.Converters
         /// </returns>
         public override bool CanConvert(Type objectType)
         {
-            if (objectType.GetIsGenericType() && objectType.GetGenericTypeDefinition() == BaseType)
+            if (objectType.GetIsGenericType() && objectType.GetGenericTypeDefinition() == BaseType || SerializeHelper.HandleDeserializingObjectList.ContainsKey(objectType))
                 return true;
             return false;
         }
@@ -546,6 +565,9 @@ namespace SignalGo.Shared.Converters
                                         writer.WritePropertyName(property.Name);
                                     else if (field != null)
                                         writer.WritePropertyName(field.Name);
+                                    SerializeHelper.HandleSerializingObjectList.TryGetValue(property.PropertyType, out Delegate serializeHandler);
+                                    if (serializeHandler != null)
+                                        propValue = serializeHandler.DynamicInvoke(propValue);
                                     serializer.Serialize(writer, propValue);
                                 }
                                 catch (Exception ex)
@@ -569,6 +591,9 @@ namespace SignalGo.Shared.Converters
                                     value = field.GetValue(instance);
                                     writer.WritePropertyName(field.Name);
                                 }
+                                SerializeHelper.HandleSerializingObjectList.TryGetValue(property.PropertyType, out Delegate serializeHandler);
+                                if (serializeHandler != null)
+                                    value = serializeHandler.DynamicInvoke(value);
                                 //if (value != instance)//loop handling
                                 serializer.Serialize(writer, value);
                             }

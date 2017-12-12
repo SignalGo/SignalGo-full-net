@@ -122,15 +122,15 @@ namespace SignalGo.Shared.Log
         /// <summary>
         /// when user called and response a service method
         /// </summary>
-        public static Action<CallMethodLogInformation> ServiceMethodCalledAction { get; set; }
+        public static Action<CallMethodLogInformation> OnServiceMethodCalledAction { get; set; }
         /// <summary>
         /// when server called a client method
         /// </summary>
-        public static Action<CallClientMethodLogInformation> ServiceCallbackMethodCalledAction { get; set; }
+        public static Action<CallClientMethodLogInformation> OnServiceCallbackMethodCalledAction { get; set; }
         /// <summary>
         /// when a http method called from client
         /// </summary>
-        public static Action<HttpCallMethodLogInformation> HttpServiceMethodCalledAction { get; set; }
+        public static Action<HttpCallMethodLogInformation> OnHttpServiceMethodCalledAction { get; set; }
 
         /// <summary>
         /// if false ignore write errors to .log file
@@ -257,7 +257,7 @@ namespace SignalGo.Shared.Log
             log.ResultDateTime = DateTime.Now.ToLocalTime();
             log.Result = result;
             log.CanWriteToFile = true;
-            ServiceMethodCalledAction?.Invoke(log);
+            OnServiceMethodCalledAction?.Invoke(log);
         }
 
         public static void FinishLog(HttpCallMethodLogInformation log, object result)
@@ -269,7 +269,7 @@ namespace SignalGo.Shared.Log
             log.ResultDateTime = DateTime.Now.ToLocalTime();
             log.Result = result;
             log.CanWriteToFile = true;
-            HttpServiceMethodCalledAction?.Invoke(log);
+            OnHttpServiceMethodCalledAction?.Invoke(log);
         }
 
         public static void FinishLog(CallClientMethodLogInformation log, object result)
@@ -281,7 +281,7 @@ namespace SignalGo.Shared.Log
             log.ResultDateTime = DateTime.Now.ToLocalTime();
             log.Result = result;
             log.CanWriteToFile = true;
-            ServiceCallbackMethodCalledAction?.Invoke(log);
+            OnServiceCallbackMethodCalledAction?.Invoke(log);
         }
 
         static string CombinePath(params string[] pathes)
