@@ -340,6 +340,19 @@ namespace SignalGo.Shared.Converters
                     return;
                 }
                 var type = value.GetType();
+                SerializeHelper.HandleSerializingObjectList.TryGetValue(type, out Delegate serializeHandler);
+                if (serializeHandler != null)
+                {
+                    value = serializeHandler.DynamicInvoke(value);
+                    type = value.GetType();
+                    if (SerializeHelper.GetTypeCodeOfObject(value.GetType()) != SerializeObjectType.Object)
+                    {
+                        writer.WriteValue(value);
+                        return;
+                    }
+                }
+
+
                 MergeExchangeTypes(type, LimitExchangeType.OutgoingCall);
 
 #if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)

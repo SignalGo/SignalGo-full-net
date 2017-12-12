@@ -42,7 +42,7 @@ namespace SignalGo.Client
                 var data = SendData((OperationCalls)client, method.Name, "", parameters);
                 if (data == null)
                     return null;
-                return data is StreamInfo ? data : ClientSerializationHelper.Deserialize(data.ToString(), method.ReturnType);
+                return data is StreamInfo ? data : ClientSerializationHelper.DeserializeObject(data.ToString(), method.ReturnType);
             };
         }
 
@@ -64,7 +64,7 @@ namespace SignalGo.Client
             var data = SendData(client, callerName, "", args);
             if (data == null || data.ToString() == "")
                 return default(T);
-            return JsonConvert.DeserializeObject<T>(data.ToString());
+            return ClientSerializationHelper.DeserializeObject<T>(data.ToString());
         }
         /// <summary>
         /// send data to connector
@@ -78,7 +78,7 @@ namespace SignalGo.Client
             var data = SendData(connector, callInfo, null);
             if (data == null || data.ToString() == "")
                 return default(T);
-            return JsonConvert.DeserializeObject<T>(data.ToString());
+            return ClientSerializationHelper.DeserializeObject<T>(data.ToString());
         }
         /// <summary>
         /// send data none return value
@@ -135,7 +135,7 @@ namespace SignalGo.Client
             callInfo.MethodName = methodName;
             foreach (var item in args)
             {
-                callInfo.Parameters.Add(new Shared.Models.ParameterInfo() { Value = JsonConvert.SerializeObject(item), Type = item?.GetType().FullName });
+                callInfo.Parameters.Add(new Shared.Models.ParameterInfo() { Value = ClientSerializationHelper.SerializeObject(item), Type = item?.GetType().FullName });
             }
             var guid = Guid.NewGuid().ToString();
             callInfo.Guid = guid;
@@ -177,7 +177,7 @@ namespace SignalGo.Client
             var result = WaitedMethodsForResponse[callInfo.Guid].Value;
             if (!result.IsException && callInfo.MethodName == "/RegisterService")
             {
-                connector.SessionId = JsonConvert.DeserializeObject<string>(result.Data);
+                connector.SessionId = ClientSerializationHelper.DeserializeObject<string>(result.Data);
                 result.Data = null;
             }
             WaitedMethodsForResponse.Remove(callInfo.Guid);
@@ -188,7 +188,7 @@ namespace SignalGo.Client
                 return null;
             }
             if (result.IsException)
-                throw new Exception("server exception:" + JsonConvert.DeserializeObject<string>(result.Data));
+                throw new Exception("server exception:" + ClientSerializationHelper.DeserializeObject<string>(result.Data));
             else if (result.IsAccessDenied && result.Data == null)
                 throw new Exception("server permission denied exception.");
 
@@ -212,7 +212,7 @@ namespace SignalGo.Client
             var added = WaitedMethodsForResponse.TryAdd(callInfo.Guid, new KeyValue<AutoResetEvent, MethodCallbackInfo>(new AutoResetEvent(false), null));
             //var service = connector.Services.ContainsKey(callInfo.ServiceName) ? connector.Services[callInfo.ServiceName] : null;
             //var method = service == null ? null : service.GetType().GetMethod(callInfo.MethodName, RuntimeTypeHelper.GetMethodTypes(service.GetType(), callInfo).ToArray());
-            json = JsonConvert.SerializeObject(callInfo);
+            json = ClientSerializationHelper.SerializeObject(callInfo);
             connector.SendData(callInfo);
 
 
@@ -226,7 +226,7 @@ namespace SignalGo.Client
             var result = WaitedMethodsForResponse[callInfo.Guid].Value;
             if (callInfo.MethodName == "/RegisterService")
             {
-                connector.SessionId = JsonConvert.DeserializeObject<string>(result.Data);
+                connector.SessionId = ClientSerializationHelper.DeserializeObject<string>(result.Data);
                 result.Data = null;
             }
             WaitedMethodsForResponse.Remove(callInfo.Guid);
@@ -237,7 +237,7 @@ namespace SignalGo.Client
                 return "disposed";
             }
             if (result.IsException)
-                throw new Exception("server exception:" + JsonConvert.DeserializeObject<string>(result.Data));
+                throw new Exception("server exception:" + ClientSerializationHelper.DeserializeObject<string>(result.Data));
             else if (result.IsAccessDenied && result.Data == null)
                 throw new Exception("server permission denied exception.");
 
@@ -440,7 +440,7 @@ namespace SignalGo.Client
                             return data;
                         else
                         {
-                            var result = JsonConvert.DeserializeObject(data.ToString(), method.ReturnType, new JsonSerializerSettings() { ReferenceLoopHandling = ReferenceLoopHandling.Ignore, Converters = new List<JsonConverter>() { new Shared.Converters.DataExchangeConverter(LimitExchangeType.Both) { Server = null, Client = this } }, Formatting = Formatting.None, NullValueHandling = NullValueHandling.Ignore });
+                            var result = ClientSerializationHelper.DeserializeObject(data.ToString(), method.ReturnType);
                             return result;
                         }
                     };
@@ -512,14 +512,14 @@ namespace SignalGo.Client
                     IStreamInfo iStream = null;
                     foreach (var item in args)
                     {
-                        callInfo.Parameters.Add(new Shared.Models.ParameterInfo() { Value = JsonConvert.SerializeObject(item) });
+                        callInfo.Parameters.Add(new Shared.Models.ParameterInfo() { Value = ClientSerializationHelper.SerializeObject(item) });
                         if (item is IStreamInfo)
                         {
                             iStream = (IStreamInfo)item;
                         }
                     }
                     callInfo.MethodName = method.Name;
-                    var json = JsonConvert.SerializeObject(callInfo);
+                    var json = ClientSerializationHelper.SerializeObject(callInfo);
 
                     var jsonBytes = Encoding.UTF8.GetBytes(json);
                     GoStreamWriter.WriteBlockToStream(stream, jsonBytes);
@@ -544,9 +544,9 @@ namespace SignalGo.Client
 
 
                     var callBackBytes = GoStreamReader.ReadBlockToEnd(readStream, CompressMode.None, ProviderSetting.MaximumReceiveStreamHeaderBlock, false);
-                    var callbackInfo = JsonConvert.DeserializeObject<MethodCallbackInfo>(Encoding.UTF8.GetString(callBackBytes, 0, callBackBytes.Length));
+                    var callbackInfo = ClientSerializationHelper.DeserializeObject<MethodCallbackInfo>(Encoding.UTF8.GetString(callBackBytes, 0, callBackBytes.Length));
 
-                    var result = JsonConvert.DeserializeObject(callbackInfo.Data, method.ReturnType);
+                    var result = ClientSerializationHelper.DeserializeObject(callbackInfo.Data, method.ReturnType);
                     if (!isUpload)
                     {
                         result.GetType().GetPropertyInfo("Stream").SetValue(result, stream, null);
@@ -716,7 +716,7 @@ namespace SignalGo.Client
                             if (SecuritySettings != null)
                                 bytes = DecryptBytes(bytes);
                             var json = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
-                            MethodCallInfo callInfo = JsonConvert.DeserializeObject<MethodCallInfo>(json);
+                            MethodCallInfo callInfo = ClientSerializationHelper.DeserializeObject<MethodCallInfo>(json);
                             if (callInfo.Type == MethodType.User)
                                 CallMethod(callInfo);
                             else if (callInfo.Type == MethodType.SignalGo)
@@ -734,7 +734,7 @@ namespace SignalGo.Client
                             if (SecuritySettings != null)
                                 bytes = DecryptBytes(bytes);
                             var json = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
-                            MethodCallbackInfo callback = JsonConvert.DeserializeObject<MethodCallbackInfo>(json);
+                            MethodCallbackInfo callback = ClientSerializationHelper.DeserializeObject<MethodCallbackInfo>(json);
 
                             var geted = ConnectorExtension.WaitedMethodsForResponse.TryGetValue(callback.Guid, out KeyValue<AutoResetEvent, MethodCallbackInfo> keyValue);
                             if (geted)
@@ -749,9 +749,9 @@ namespace SignalGo.Client
                             if (SecuritySettings != null)
                                 bytes = DecryptBytes(bytes);
                             var json = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
-                            getServiceDetialResult = JsonConvert.DeserializeObject<ProviderDetailsInfo>(json);
+                            getServiceDetialResult = ClientSerializationHelper.DeserializeObject<ProviderDetailsInfo>(json);
                             if (getServiceDetialResult == null)
-                                getServiceDetialExceptionResult = JsonConvert.DeserializeObject<Exception>(json);
+                                getServiceDetialExceptionResult = ClientSerializationHelper.DeserializeObject<Exception>(json);
                             getServiceDetailEvent.Set();
                             getServiceDetailEvent.Reset();
                         }
@@ -820,7 +820,7 @@ namespace SignalGo.Client
 #else
                     var stream = _client.GetStream();
 #endif
-                    var json = JsonConvert.SerializeObject(Data);
+                    var json = ClientSerializationHelper.SerializeObject(Data);
                     List<byte> bytes = new List<byte>
                     {
                         (byte)DataType.CallMethod,
@@ -870,7 +870,7 @@ namespace SignalGo.Client
                 int index = 0;
                 foreach (var item in method.GetParameters())
                 {
-                    parameters.Add(JsonConvert.DeserializeObject(callInfo.Parameters[index].Value, item.ParameterType));
+                    parameters.Add(ClientSerializationHelper.DeserializeObject(callInfo.Parameters[index].Value, item.ParameterType));
                     index++;
                 }
                 if (method.ReturnType == typeof(void))
@@ -878,14 +878,14 @@ namespace SignalGo.Client
                 else
                 {
                     var data = method.Invoke(service, parameters.ToArray());
-                    callback.Data = data == null ? null : JsonConvert.SerializeObject(data);
+                    callback.Data = data == null ? null : ClientSerializationHelper.SerializeObject(data);
                 }
             }
             catch (Exception ex)
             {
                 AutoLogger.LogError(ex, "ConnectorBase CallMethod");
                 callback.IsException = true;
-                callback.Data = JsonConvert.SerializeObject(ex.ToString());
+                callback.Data = ClientSerializationHelper.SerializeObject(ex.ToString());
             }
             SendCallbackData(callback);
         }
@@ -905,7 +905,7 @@ namespace SignalGo.Client
         /// <param name="callback">method callback data</param>
         internal void SendCallbackData(MethodCallbackInfo callback)
         {
-            string json = JsonConvert.SerializeObject(callback);
+            string json = ClientSerializationHelper.SerializeObject(callback);
             byte[] bytes = Encoding.UTF8.GetBytes(json);
             if (SecuritySettings != null)
                 bytes = EncryptBytes(bytes);
@@ -937,7 +937,7 @@ namespace SignalGo.Client
         {
             AsyncActions.Run(() =>
             {
-                string json = JsonConvert.SerializeObject(hostUrl);
+                string json = ClientSerializationHelper.SerializeObject(hostUrl);
                 byte[] bytes = Encoding.UTF8.GetBytes(json);
                 if (SecuritySettings != null)
                     bytes = EncryptBytes(bytes);
@@ -969,7 +969,7 @@ namespace SignalGo.Client
         {
             AsyncActions.Run(() =>
             {
-                string json = JsonConvert.SerializeObject(methodParameterDetails);
+                string json = ClientSerializationHelper.SerializeObject(methodParameterDetails);
                 byte[] bytes = Encoding.UTF8.GetBytes(json);
                 if (SecuritySettings != null)
                     bytes = EncryptBytes(bytes);

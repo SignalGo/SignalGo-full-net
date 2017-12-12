@@ -17,21 +17,21 @@ namespace SignalGo.Client
             if (obj == null)
                 return "";
             //if (serverBase != null && serverBase.InternalSetting.IsEnabledDataExchanger)
-            //    return JsonConvert.SerializeObject(obj, Formatting.None, new JsonSerializerSettings() { ReferenceLoopHandling = ReferenceLoopHandling.Ignore, Converters = new List<JsonConverter>() { new DataExchangeConverter(LimitExchangeType.OutgoingCall, customDataExchanger) { Server = serverBase, Client = client } }, Formatting = Formatting.None, NullValueHandling = nullValueHandling });
-            return JsonConvert.SerializeObject(obj, new JsonSerializerSettings() { Formatting = Formatting.None, NullValueHandling = nullValueHandling, ReferenceLoopHandling = ReferenceLoopHandling.Ignore });
+                return JsonConvert.SerializeObject(obj, Formatting.None, new JsonSerializerSettings() { ReferenceLoopHandling = ReferenceLoopHandling.Ignore, Converters = new List<JsonConverter>() { new DataExchangeConverter(LimitExchangeType.OutgoingCall, customDataExchanger)  }, Formatting = Formatting.None, NullValueHandling = nullValueHandling });
+            //return JsonConvert.SerializeObject(obj, new JsonSerializerSettings() { Formatting = Formatting.None, NullValueHandling = nullValueHandling, ReferenceLoopHandling = ReferenceLoopHandling.Ignore });
         }
 
-        public static T Deserialize<T>(this string json, CustomDataExchangerAttribute[] customDataExchanger = null)
+        public static T DeserializeObject<T>(this string json, CustomDataExchangerAttribute[] customDataExchanger = null)
         {
-            return (T)Deserialize(json, typeof(T), customDataExchanger: customDataExchanger);
+            return (T)DeserializeObject(json, typeof(T), customDataExchanger: customDataExchanger);
         }
 
-        public static object Deserialize(this string json, CustomDataExchangerAttribute[] customDataExchanger = null)
+        public static object DeserializeObject(this string json, CustomDataExchangerAttribute[] customDataExchanger = null)
         {
-            return Deserialize<object>(json, customDataExchanger: customDataExchanger);
+            return DeserializeObject<object>(json, customDataExchanger: customDataExchanger);
         }
 
-        public static object Deserialize(this string json, Type type, NullValueHandling nullValueHandling = NullValueHandling.Ignore, CustomDataExchangerAttribute[] customDataExchanger = null)
+        public static object DeserializeObject(this string json, Type type, NullValueHandling nullValueHandling = NullValueHandling.Ignore, CustomDataExchangerAttribute[] customDataExchanger = null)
         {
             if (string.IsNullOrEmpty(json))
                 return null;
