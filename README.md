@@ -1,3 +1,5 @@
+# [You can read Wiki by click here](https://github.com/SignalGo/SignalGo-full-net/wiki)
+
 # server-net
 Server version of SignalGo for .Net Framework
 
