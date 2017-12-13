@@ -17,14 +17,15 @@ namespace SignalGo.Shared.Log
     /// </summary>
     public abstract class BaseLogInformation
     {
+        public bool IgnoreLogging { get; set; }
         /// <summary>
         /// date of call
         /// </summary>
-        public DateTime DateTime { get; set; }
+        public DateTime DateTimeStartMethod { get; set; }
         /// <summary>
         /// date of result
         /// </summary>
-        public DateTime ResultDateTime { get; set; }
+        public DateTime DateTimeEndMethod { get; set; }
         /// <summary>
         /// Elapsed time from start call to result
         /// </summary>
@@ -32,7 +33,7 @@ namespace SignalGo.Shared.Log
         {
             get
             {
-                return ResultDateTime - DateTime;
+                return DateTimeEndMethod - DateTimeStartMethod;
             }
         }
 
@@ -43,7 +44,7 @@ namespace SignalGo.Shared.Log
         /// <summary>
         /// client sessionId
         /// </summary>
-        public string SessionId { get; set; }
+        public string ClientId { get; set; }
         /// <summary>
         /// client connected Date Time
         /// </summary>
@@ -189,6 +190,8 @@ namespace SignalGo.Shared.Log
                         {
                             if (Logs.TryDequeue(out nextLog))
                             {
+                                if (nextLog.IgnoreLogging)
+                                    continue;
                                 if (nextLog is CallMethodLogInformation)
                                     WriteToFile((CallMethodLogInformation)nextLog);
                                 else if (nextLog is HttpCallMethodLogInformation)
@@ -225,7 +228,7 @@ namespace SignalGo.Shared.Log
         {
             if (isStop)
                 return null;
-            var log = new CallMethodLogInformation() { DateTime = DateTime.Now.ToLocalTime(), Method = method, Parameters = parameters, ServiceName = serviceName, ConnectedDateTime = connectedDateTime, IPAddress = ipAddress, SessionId = sessionId };
+            var log = new CallMethodLogInformation() { DateTimeStartMethod = DateTime.Now.ToLocalTime(), Method = method, Parameters = parameters, ServiceName = serviceName, ConnectedDateTime = connectedDateTime, IPAddress = ipAddress, ClientId = sessionId, MethodName = method?.Name };
             Logs.Enqueue(log);
             return log;
         }
@@ -234,7 +237,7 @@ namespace SignalGo.Shared.Log
         {
             if (isStop)
                 return null;
-            var log = new HttpCallMethodLogInformation() { DateTime = DateTime.Now.ToLocalTime(), Method = method, Parameters = parameters, Address = address, ConnectedDateTime = connectedDateTime, IPAddress = ipAddress, SessionId = sessionId };
+            var log = new HttpCallMethodLogInformation() { DateTimeStartMethod = DateTime.Now.ToLocalTime(), Method = method, Parameters = parameters, Address = address, ConnectedDateTime = connectedDateTime, IPAddress = ipAddress, ClientId = sessionId, MethodName = method?.Name };
             Logs.Enqueue(log);
             return log;
         }
@@ -243,7 +246,7 @@ namespace SignalGo.Shared.Log
         {
             if (isStop)
                 return null;
-            var log = new CallClientMethodLogInformation() { DateTime = DateTime.Now.ToLocalTime(), MethodName = methodName, Parameters = parameters, ServiceName = serviceName, ConnectedDateTime = connectedDateTime, IPAddress = ipAddress, SessionId = sessionId };
+            var log = new CallClientMethodLogInformation() { DateTimeStartMethod = DateTime.Now.ToLocalTime(), MethodName = methodName, Parameters = parameters, ServiceName = serviceName, ConnectedDateTime = connectedDateTime, IPAddress = ipAddress, ClientId = sessionId };
             Logs.Enqueue(log);
             return log;
         }
@@ -254,10 +257,10 @@ namespace SignalGo.Shared.Log
                 return;
             if (log == null)
                 return;
-            log.ResultDateTime = DateTime.Now.ToLocalTime();
+            log.DateTimeEndMethod = DateTime.Now.ToLocalTime();
             log.Result = result;
-            log.CanWriteToFile = true;
             OnServiceMethodCalledAction?.Invoke(log);
+            log.CanWriteToFile = true;
         }
 
         public static void FinishLog(HttpCallMethodLogInformation log, object result)
@@ -266,10 +269,10 @@ namespace SignalGo.Shared.Log
                 return;
             if (log == null)
                 return;
-            log.ResultDateTime = DateTime.Now.ToLocalTime();
+            log.DateTimeEndMethod = DateTime.Now.ToLocalTime();
             log.Result = result;
-            log.CanWriteToFile = true;
             OnHttpServiceMethodCalledAction?.Invoke(log);
+            log.CanWriteToFile = true;
         }
 
         public static void FinishLog(CallClientMethodLogInformation log, object result)
@@ -278,10 +281,10 @@ namespace SignalGo.Shared.Log
                 return;
             if (log == null)
                 return;
-            log.ResultDateTime = DateTime.Now.ToLocalTime();
+            log.DateTimeEndMethod = DateTime.Now.ToLocalTime();
             log.Result = result;
-            log.CanWriteToFile = true;
             OnServiceCallbackMethodCalledAction?.Invoke(log);
+            log.CanWriteToFile = true;
         }
 
         static string CombinePath(params string[] pathes)
@@ -300,19 +303,19 @@ namespace SignalGo.Shared.Log
             throw new NotSupportedException();
 #else
 #if (NET35)
-            string path = CombinePath(AutoLogger.ApplicationDirectory, "Logs", log.DateTime.Year.ToString(), log.DateTime.Month.ToString(), log.DateTime.Day.ToString());
+            string path = CombinePath(AutoLogger.ApplicationDirectory, "Logs", log.DateTimeStartMethod.Year.ToString(), log.DateTimeStartMethod.Month.ToString(), log.DateTimeStartMethod.Day.ToString());
 #else
-            string path = System.IO.Path.Combine(AutoLogger.ApplicationDirectory, "Logs", log.DateTime.Year.ToString(), log.DateTime.Month.ToString(), log.DateTime.Day.ToString());
+            string path = System.IO.Path.Combine(AutoLogger.ApplicationDirectory, "Logs", log.DateTimeStartMethod.Year.ToString(), log.DateTimeStartMethod.Month.ToString(), log.DateTimeStartMethod.Day.ToString());
 #endif
             if (!System.IO.Directory.Exists(path))
                 System.IO.Directory.CreateDirectory(path);
-            path = System.IO.Path.Combine(path, $"{log.DateTime.Year}-{log.DateTime.Month}-{log.DateTime.Day} {log.DateTime.ToLocalTime().Hour}.log");
+            path = System.IO.Path.Combine(path, $"{log.DateTimeStartMethod.Year}-{log.DateTimeStartMethod.Month}-{log.DateTimeStartMethod.Day} {log.DateTimeStartMethod.ToLocalTime().Hour}.log");
 
             StringBuilder build = new StringBuilder();
             build.AppendLine("########################################");
             build.AppendLine("Client Information:");
             build.AppendLine($"	Ip Address:	{log.IPAddress}");
-            build.AppendLine($"	SessionId:	{log.SessionId}");
+            build.AppendLine($"	SessionId:	{log.ClientId}");
             build.AppendLine($"	Connected Time:	{GetDateTimeString(log.ConnectedDateTime)}");
             build.AppendLine("");
             build.AppendLine($"Call Information:");
@@ -336,9 +339,9 @@ namespace SignalGo.Shared.Log
             build.AppendLine("			" + (log.Result == null ? "Null" : JsonConvert.SerializeObject(log.Result, Formatting.None, new JsonSerializerSettings() { Formatting = Formatting.None })).Replace(@"\""", ""));
             build.AppendLine("");
             build.AppendLine($"Invoked Time:");
-            build.AppendLine($"			{GetDateTimeString(log.DateTime)}");
+            build.AppendLine($"			{GetDateTimeString(log.DateTimeStartMethod)}");
             build.AppendLine($"Result Time:");
-            build.AppendLine($"			{GetDateTimeString(log.ResultDateTime)}");
+            build.AppendLine($"			{GetDateTimeString(log.DateTimeEndMethod)}");
             build.AppendLine("----------------------------------------------------------------------------------------");
             build.AppendLine("");
             using (var stream = new System.IO.FileStream(path, FileMode.OpenOrCreate, FileAccess.ReadWrite))
@@ -356,19 +359,19 @@ namespace SignalGo.Shared.Log
             throw new NotSupportedException();
 #else
 #if (NET35)
-            string path = CombinePath(AutoLogger.ApplicationDirectory, "Logs", log.DateTime.Year.ToString(), log.DateTime.Month.ToString(), log.DateTime.Day.ToString());
+            string path = CombinePath(AutoLogger.ApplicationDirectory, "Logs", log.DateTimeStartMethod.Year.ToString(), log.DateTimeStartMethod.Month.ToString(), log.DateTimeStartMethod.Day.ToString());
 #else
-            string path = System.IO.Path.Combine(AutoLogger.ApplicationDirectory, "Logs", log.DateTime.Year.ToString(), log.DateTime.Month.ToString(), log.DateTime.Day.ToString());
+            string path = System.IO.Path.Combine(AutoLogger.ApplicationDirectory, "Logs", log.DateTimeStartMethod.Year.ToString(), log.DateTimeStartMethod.Month.ToString(), log.DateTimeStartMethod.Day.ToString());
 #endif
             if (!System.IO.Directory.Exists(path))
                 System.IO.Directory.CreateDirectory(path);
-            path = System.IO.Path.Combine(path, $"Callback-{log.DateTime.Year}-{log.DateTime.Month}-{log.DateTime.Day} {log.DateTime.ToLocalTime().Hour}.log");
+            path = System.IO.Path.Combine(path, $"Callback-{log.DateTimeStartMethod.Year}-{log.DateTimeStartMethod.Month}-{log.DateTimeStartMethod.Day} {log.DateTimeStartMethod.ToLocalTime().Hour}.log");
 
             StringBuilder build = new StringBuilder();
             build.AppendLine("########################################");
             build.AppendLine("Client Information:");
             build.AppendLine($"	Ip Address:	{log.IPAddress}");
-            build.AppendLine($"	SessionId:	{log.SessionId}");
+            build.AppendLine($"	SessionId:	{log.ClientId}");
             build.AppendLine($"	Connected Time:	{GetDateTimeString(log.ConnectedDateTime)}");
             build.AppendLine("");
             build.AppendLine($"Call Information:");
@@ -394,9 +397,9 @@ namespace SignalGo.Shared.Log
             build.AppendLine("			" + (log.Result == null ? "Null" : JsonConvert.SerializeObject(log.Result, Formatting.None, new JsonSerializerSettings() { Formatting = Formatting.None })).Replace(@"\""", ""));
             build.AppendLine("");
             build.AppendLine($"Invoked Time:");
-            build.AppendLine($"			{GetDateTimeString(log.DateTime)}");
+            build.AppendLine($"			{GetDateTimeString(log.DateTimeStartMethod)}");
             build.AppendLine($"Result Time:");
-            build.AppendLine($"			{GetDateTimeString(log.ResultDateTime)}");
+            build.AppendLine($"			{GetDateTimeString(log.DateTimeEndMethod)}");
             build.AppendLine("----------------------------------------------------------------------------------------");
             build.AppendLine("");
             using (var stream = new System.IO.FileStream(path, FileMode.OpenOrCreate, FileAccess.ReadWrite))
@@ -414,19 +417,19 @@ namespace SignalGo.Shared.Log
             throw new NotSupportedException();
 #else
 #if (NET35)
-            string path = CombinePath(AutoLogger.ApplicationDirectory, "Logs", log.DateTime.Year.ToString(), log.DateTime.Month.ToString(), log.DateTime.Day.ToString());
+            string path = CombinePath(AutoLogger.ApplicationDirectory, "Logs", log.DateTimeStartMethod.Year.ToString(), log.DateTimeStartMethod.Month.ToString(), log.DateTimeStartMethod.Day.ToString());
 #else
-            string path = System.IO.Path.Combine(AutoLogger.ApplicationDirectory, "Logs", log.DateTime.Year.ToString(), log.DateTime.Month.ToString(), log.DateTime.Day.ToString());
+            string path = System.IO.Path.Combine(AutoLogger.ApplicationDirectory, "Logs", log.DateTimeStartMethod.Year.ToString(), log.DateTimeStartMethod.Month.ToString(), log.DateTimeStartMethod.Day.ToString());
 #endif
             if (!System.IO.Directory.Exists(path))
                 System.IO.Directory.CreateDirectory(path);
-            path = System.IO.Path.Combine(path, $"HTTP-{log.DateTime.Year}-{log.DateTime.Month}-{log.DateTime.Day} {log.DateTime.ToLocalTime().Hour}.log");
+            path = System.IO.Path.Combine(path, $"HTTP-{log.DateTimeStartMethod.Year}-{log.DateTimeStartMethod.Month}-{log.DateTimeStartMethod.Day} {log.DateTimeStartMethod.ToLocalTime().Hour}.log");
 
             StringBuilder build = new StringBuilder();
             build.AppendLine("########################################");
             build.AppendLine("Client Information:");
             build.AppendLine($"	Ip Address:	{log.IPAddress}");
-            build.AppendLine($"	SessionId:	{log.SessionId}");
+            build.AppendLine($"	SessionId:	{log.ClientId}");
             build.AppendLine($"	Connected Time:	{GetDateTimeString(log.ConnectedDateTime)}");
             build.AppendLine("");
             build.AppendLine($"Call Information:");
@@ -452,9 +455,9 @@ namespace SignalGo.Shared.Log
             build.AppendLine("			" + (log.Result == null ? "Null" : log.Result.GetType().FullName));
             build.AppendLine("");
             build.AppendLine($"Invoked Time:");
-            build.AppendLine($"			{GetDateTimeString(log.DateTime)}");
+            build.AppendLine($"			{GetDateTimeString(log.DateTimeStartMethod)}");
             build.AppendLine($"Result Time:");
-            build.AppendLine($"			{GetDateTimeString(log.ResultDateTime)}");
+            build.AppendLine($"			{GetDateTimeString(log.DateTimeEndMethod)}");
             build.AppendLine("----------------------------------------------------------------------------------------");
             build.AppendLine("");
             using (var stream = new System.IO.FileStream(path, FileMode.OpenOrCreate, FileAccess.ReadWrite))
