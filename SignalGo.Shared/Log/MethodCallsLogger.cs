@@ -265,7 +265,8 @@ namespace SignalGo.Shared.Log
             if (log == null)
                 return;
             log.DateTimeEndMethod = DateTime.Now.ToLocalTime();
-            log.Result = result;
+            if (log.Exception == null)
+                log.Result = result;
             OnServiceMethodCalledAction?.Invoke(log);
             log.CanWriteToFile = true;
         }
@@ -277,7 +278,8 @@ namespace SignalGo.Shared.Log
             if (log == null)
                 return;
             log.DateTimeEndMethod = DateTime.Now.ToLocalTime();
-            log.Result = result;
+            if (log.Exception == null)
+                log.Result = result;
             OnHttpServiceMethodCalledAction?.Invoke(log);
             log.CanWriteToFile = true;
         }
@@ -289,7 +291,8 @@ namespace SignalGo.Shared.Log
             if (log == null)
                 return;
             log.DateTimeEndMethod = DateTime.Now.ToLocalTime();
-            log.Result = result;
+            if (log.Exception == null)
+                log.Result = result;
             OnServiceCallbackMethodCalledAction?.Invoke(log);
             log.CanWriteToFile = true;
         }
@@ -342,9 +345,21 @@ namespace SignalGo.Shared.Log
                 build.AppendLine("			" + (parameter.Value == null ? "Null" : JsonConvert.SerializeObject(parameter.Value, Formatting.None, new JsonSerializerSettings() { Formatting = Formatting.None }).Replace(@"\""", "")));
             }
             build.AppendLine("");
-            build.AppendLine($"Result Information:");
-            build.AppendLine("			" + (log.Result == null ? "Null" : JsonConvert.SerializeObject(log.Result, Formatting.None, new JsonSerializerSettings() { Formatting = Formatting.None })).Replace(@"\""", ""));
-            build.AppendLine("");
+
+            if (log.Exception == null)
+            {
+                build.AppendLine($"Result Information:");
+                build.AppendLine("			" + (log.Result == null ? "Null" : JsonConvert.SerializeObject(log.Result, Formatting.None, new JsonSerializerSettings() { Formatting = Formatting.None })).Replace(@"\""", ""));
+                build.AppendLine("");
+            }
+            else
+            {
+                build.AppendLine($"Exception:");
+                build.AppendLine("			" + log.Exception.ToString());
+                build.AppendLine("");
+            }
+
+
             build.AppendLine($"Invoked Time:");
             build.AppendLine($"			{GetDateTimeString(log.DateTimeStartMethod)}");
             build.AppendLine($"Result Time:");
@@ -400,9 +415,18 @@ namespace SignalGo.Shared.Log
                 build.AppendLine("			" + (parameter.Value == null ? "Null" : JsonConvert.SerializeObject(parameter.Value, Formatting.None, new JsonSerializerSettings() { Formatting = Formatting.None }).Replace(@"\""", "")));
             }
             build.AppendLine("");
-            build.AppendLine($"Result Information:");
-            build.AppendLine("			" + (log.Result == null ? "Null" : JsonConvert.SerializeObject(log.Result, Formatting.None, new JsonSerializerSettings() { Formatting = Formatting.None })).Replace(@"\""", ""));
-            build.AppendLine("");
+            if (log.Exception == null)
+            {
+                build.AppendLine($"Result Information:");
+                build.AppendLine("			" + (log.Result == null ? "Null" : JsonConvert.SerializeObject(log.Result, Formatting.None, new JsonSerializerSettings() { Formatting = Formatting.None })).Replace(@"\""", ""));
+                build.AppendLine("");
+            }
+            else
+            {
+                build.AppendLine($"Exception:");
+                build.AppendLine("			" + log.Exception.ToString());
+                build.AppendLine("");
+            }
             build.AppendLine($"Invoked Time:");
             build.AppendLine($"			{GetDateTimeString(log.DateTimeStartMethod)}");
             build.AppendLine($"Result Time:");
@@ -456,11 +480,19 @@ namespace SignalGo.Shared.Log
                 build.AppendLine("			" + (value == null ? "Null" : value));
             }
             build.AppendLine("");
-            build.AppendLine($"Result Information:");
-            build.AppendLine("			" + (log.Result == null ? "Null" : JsonConvert.SerializeObject(log.Result, Formatting.None, new JsonSerializerSettings() { Formatting = Formatting.None })).Replace(@"\""", ""));
-            build.AppendLine("");
-            build.AppendLine("			" + (log.Result == null ? "Null" : log.Result.GetType().FullName));
-            build.AppendLine("");
+            if (log.Exception == null)
+            {
+                build.AppendLine($"Result Information:");
+                build.AppendLine("			" + (log.Result == null ? "Null" : JsonConvert.SerializeObject(log.Result, Formatting.None, new JsonSerializerSettings() { Formatting = Formatting.None })).Replace(@"\""", ""));
+                build.AppendLine("");
+                build.AppendLine("			" + (log.Result == null ? "Null" : log.Result.GetType().FullName));
+                build.AppendLine("");
+            }
+            else
+            {
+                build.AppendLine($"Exception:");
+                build.AppendLine("			" + log.Exception.ToString());
+            }
             build.AppendLine($"Invoked Time:");
             build.AppendLine($"			{GetDateTimeString(log.DateTimeStartMethod)}");
             build.AppendLine($"Result Time:");
