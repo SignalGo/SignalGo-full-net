@@ -11,7 +11,7 @@ namespace SignalGo.Server.Models
 {
     public class ClientInfo
     {
-        public string SessionId { get; internal set; }
+        public string ClientId { get; internal set; }
         public string IPAddress { get; internal set; }
         public uint? ClientVersion { get; set; }
         public object Tag { get; set; }

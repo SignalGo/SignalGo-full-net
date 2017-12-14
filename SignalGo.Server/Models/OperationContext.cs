@@ -213,7 +213,7 @@ namespace SignalGo.Server.Models
                     {
                         try
                         {
-                            throw new Exception($"context client not exist! {context.Client.SessionId} {context.ServerBase.Callbacks.Count} {context.ServerBase.Services.Count} {DateTime.Now}");
+                            throw new Exception($"context client not exist! {context.Client.ClientId} {context.ServerBase.Callbacks.Count} {context.ServerBase.Services.Count} {DateTime.Now}");
                         }
                         catch (Exception ex)
                         {
@@ -230,7 +230,7 @@ namespace SignalGo.Server.Models
                         {
                             try
                             {
-                                throw new Exception($"context client not exist 2 ! {context.Client.SessionId} {context.ServerBase.Callbacks.Count} {context.ServerBase.Services.Count} {DateTime.Now}");
+                                throw new Exception($"context client not exist 2 ! {context.Client.ClientId} {context.ServerBase.Callbacks.Count} {context.ServerBase.Services.Count} {DateTime.Now}");
                             }
                             catch (Exception ex)
                             {
@@ -301,7 +301,7 @@ namespace SignalGo.Server.Models
                 GetClientCallbackOfClientContext<T>(serverBase, client);
                 find = serverBase.FindClientCallbackByType(client, serviceType);
                 if (find == null)
-                    AutoLogger.LogText($"GetAllClientCallbackListOfClientContext service not found : {serviceType.FullName} : name: {attribName} session: {client.SessionId}", true);
+                    AutoLogger.LogText($"GetAllClientCallbackListOfClientContext service not found : {serviceType.FullName} : name: {attribName} session: {client.ClientId}", true);
             }
             return find;
         }
@@ -402,7 +402,7 @@ namespace SignalGo.Server.Models
 #endif
             var serviceType = context.ServerBase.GetRegisteredCallbacksTypeByName(attribName);
             List<ClientContext<T>> items = new List<ClientContext<T>>();
-            var client = (from x in context.ServerBase.Clients.ToArray() where sessionId == x.SessionId select x).FirstOrDefault();
+            var client = (from x in context.ServerBase.Clients.ToArray() where sessionId == x.ClientId select x).FirstOrDefault();
             if (client != null)
             {
                 var find = FindClientCallback<T>(context.ServerBase, client, serviceType, attribName);
@@ -505,7 +505,7 @@ namespace SignalGo.Server.Models
 #endif
             var serviceType = context.ServerBase.GetRegisteredCallbacksTypeByName(attribName);
             List<ClientContext<T>> items = new List<ClientContext<T>>();
-            foreach (var item in (from x in context.ServerBase.Clients.ToArray() where sessionIds.Contains(x.SessionId) select x))
+            foreach (var item in (from x in context.ServerBase.Clients.ToArray() where sessionIds.Contains(x.ClientId) select x))
             {
                 var find = FindClientCallback<T>(context.ServerBase, item, serviceType, attribName);
 
@@ -531,7 +531,7 @@ namespace SignalGo.Server.Models
 #endif
             var serviceType = context.ServerBase.GetRegisteredCallbacksTypeByName(attribName);
             List<ClientContext<T>> items = new List<ClientContext<T>>();
-            foreach (var item in (from x in context.ServerBase.Clients.ToArray() where !sessionIds.Contains(x.SessionId) select x))
+            foreach (var item in (from x in context.ServerBase.Clients.ToArray() where !sessionIds.Contains(x.ClientId) select x))
             {
                 var find = FindClientCallback<T>(context.ServerBase, item, serviceType, attribName);
                 if (find != null)
@@ -657,7 +657,7 @@ namespace SignalGo.Server.Models
                     {
                         try
                         {
-                            throw new Exception($"context client not exist! {client.SessionId} {serverBase.Callbacks.Count} {serverBase.Services.Count} {DateTime.Now}");
+                            throw new Exception($"context client not exist! {client.ClientId} {serverBase.Callbacks.Count} {serverBase.Services.Count} {DateTime.Now}");
                         }
                         catch (Exception ex)
                         {
@@ -756,7 +756,7 @@ namespace SignalGo.Server.Models
 #endif
             var serviceType = serverBase.GetRegisteredCallbacksTypeByName(attribName);
             List<ClientContext<T>> items = new List<ClientContext<T>>();
-            var client = (from x in serverBase.Clients.ToArray() where sessionId == x.SessionId select x).FirstOrDefault();
+            var client = (from x in serverBase.Clients.ToArray() where sessionId == x.ClientId select x).FirstOrDefault();
             if (client != null)
             {
                 var find = FindClientCallback<T>(serverBase, client, serviceType, attribName);
@@ -837,7 +837,7 @@ namespace SignalGo.Server.Models
 #endif
             var serviceType = serverBase.GetRegisteredCallbacksTypeByName(attribName);
             List<ClientContext<T>> items = new List<ClientContext<T>>();
-            foreach (var item in (from x in serverBase.Clients.ToArray() where sessionIds.Contains(x.SessionId) select x))
+            foreach (var item in (from x in serverBase.Clients.ToArray() where sessionIds.Contains(x.ClientId) select x))
             {
                 var find = FindClientCallback<T>(serverBase, item, serviceType, attribName);
 
@@ -863,7 +863,7 @@ namespace SignalGo.Server.Models
 #endif
             var serviceType = serverBase.GetRegisteredCallbacksTypeByName(attribName);
             List<ClientContext<T>> items = new List<ClientContext<T>>();
-            foreach (var item in (from x in serverBase.Clients.ToArray() where !sessionIds.Contains(x.SessionId) select x))
+            foreach (var item in (from x in serverBase.Clients.ToArray() where !sessionIds.Contains(x.ClientId) select x))
             {
                 var find = FindClientCallback<T>(serverBase, item, serviceType, attribName);
 

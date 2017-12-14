@@ -240,7 +240,7 @@ namespace SignalGo.Server.ServiceManager
             var serviceName = serviceType.GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault().Name;
             if (!Callbacks.ContainsKey(client))
             {
-                AutoLogger.LogText($"Callbacks is not ContainsKey! {serviceType.FullName} {client.SessionId} {DateTime.Now}");
+                AutoLogger.LogText($"Callbacks is not ContainsKey! {serviceType.FullName} {client.ClientId} {DateTime.Now}");
                 return null;
             }
             foreach (var item in Callbacks[client].ToArray())
@@ -337,9 +337,9 @@ namespace SignalGo.Server.ServiceManager
                     client.ServerBase = this;
                     client.TcpClient = tcpClient;
                     client.IPAddress = ((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address.ToString().Replace("::ffff:", "");
-                    client.SessionId = Guid.NewGuid().ToString();
-                    AutoLogger.LogText($"client connected : {client.IPAddress} {client.SessionId} {DateTime.Now.ToString()}");
-                    Console.WriteLine($"client connected : {client.IPAddress} {client.SessionId} {DateTime.Now.ToString()} {ClientConnectedCallingCount}");
+                    client.ClientId = Guid.NewGuid().ToString();
+                    AutoLogger.LogText($"client connected : {client.IPAddress} {client.ClientId} {DateTime.Now.ToString()}");
+                    Console.WriteLine($"client connected : {client.IPAddress} {client.ClientId} {DateTime.Now.ToString()} {ClientConnectedCallingCount}");
                     ClientConnectedCallingCount++;
                     Clients.Add(client);
                     if (ClientsByIp.ContainsKey(client.IPAddress))
@@ -791,7 +791,7 @@ namespace SignalGo.Server.ServiceManager
                             index++;
                         }
                         if (MethodCallsLogger.IsStart)
-                            logInfo = MethodCallsLogger.AddHttpMethodLog(client.SessionId, client.IPAddress, client.ConnectedDateTime, address, method, values.Select(x => x.Item2).ToList());
+                            logInfo = MethodCallsLogger.AddHttpMethodLog(client.ClientId, client.IPAddress, client.ConnectedDateTime, address, method, values.Select(x => x.Item2).ToList());
 
                         bool isStaticLock = method.GetCustomAttributes(typeof(StaticLockAttribute), true).Count() > 0;
                         if (isStaticLock)
@@ -1137,7 +1137,7 @@ namespace SignalGo.Server.ServiceManager
                             index++;
                         }
                         if (MethodCallsLogger.IsStart)
-                            logInfo = MethodCallsLogger.AddHttpMethodLog(client.SessionId, client.IPAddress, client.ConnectedDateTime, address, method, values.Select(x => x.Item2).ToList());
+                            logInfo = MethodCallsLogger.AddHttpMethodLog(client.ClientId, client.IPAddress, client.ConnectedDateTime, address, method, values.Select(x => x.Item2).ToList());
 
                         bool isStaticLock = method.GetCustomAttributes(typeof(StaticLockAttribute), true).Count() > 0;
                         if (isStaticLock)
@@ -1407,11 +1407,11 @@ namespace SignalGo.Server.ServiceManager
                 op.CurrentClient = client;
                 //objectInstance.ServerBase = this;
                 callbacks.Add(objectInstance);
-                AutoLogger.LogText($"RegisterCallbacksForClient foreach {((object)objectInstance).ToString()} {client.SessionId}");
+                AutoLogger.LogText($"RegisterCallbacksForClient foreach {((object)objectInstance).ToString()} {client.ClientId}");
                 ////objectInstance.OnInitialized();
             }
             var add = Callbacks.TryAdd(client, callbacks);
-            AutoLogger.LogText($"RegisterCallbacksForClient add {add} {client.SessionId}");
+            AutoLogger.LogText($"RegisterCallbacksForClient add {add} {client.ClientId}");
         }
 
         /// <summary>
@@ -1499,7 +1499,7 @@ namespace SignalGo.Server.ServiceManager
                                     continue;
                             }
                             if (callInfo == null)
-                                AutoLogger.LogText($"{client.IPAddress} {client.SessionId} callinfo is null:" + json);
+                                AutoLogger.LogText($"{client.IPAddress} {client.ClientId} callinfo is null:" + json);
                             //else
                             //    AutoLogger.LogText(callInfo.MethodName);
                             //ست کردن تنظیمات
@@ -1533,7 +1533,7 @@ namespace SignalGo.Server.ServiceManager
                             var json = Encoding.UTF8.GetString(bytes);
                             MethodCallbackInfo callback = ServerSerializationHelper.Deserialize<MethodCallbackInfo>(json, this);
                             if (callback == null)
-                                AutoLogger.LogText($"{client.IPAddress} {client.SessionId} callback is null:" + json);
+                                AutoLogger.LogText($"{client.IPAddress} {client.ClientId} callback is null:" + json);
                             if (callback.PartNumber != 0)
                             {
                                 var result = CurrentSegmentManager.GenerateAndMixSegments(callback);
@@ -1586,7 +1586,7 @@ namespace SignalGo.Server.ServiceManager
                         else
                         {
                             //throw new Exception($"Correct DataType Data {dataType}");
-                            AutoLogger.LogText($"Correct DataType Data {oneByteOfDataType} {client.SessionId} {client.IPAddress}");
+                            AutoLogger.LogText($"Correct DataType Data {oneByteOfDataType} {client.ClientId} {client.IPAddress}");
                             break;
                         }
                     }
@@ -1594,7 +1594,7 @@ namespace SignalGo.Server.ServiceManager
                 }
                 catch (Exception ex)
                 {
-                    SignalGo.Shared.Log.AutoLogger.LogError(ex, $"{client.IPAddress} {client.SessionId} ServerBase StartToReadingClientData");
+                    SignalGo.Shared.Log.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase StartToReadingClientData");
                     DisposeClient(client);
                 }
             })
@@ -1681,7 +1681,7 @@ namespace SignalGo.Server.ServiceManager
             }
             catch (Exception ex)
             {
-                AutoLogger.LogError(ex, $"{client.IPAddress} {client.SessionId} CloseCllient");
+                AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} CloseCllient");
             }
         }
         /// <summary>
@@ -1690,18 +1690,18 @@ namespace SignalGo.Server.ServiceManager
         /// <param name="sessionId">client session id</param>
         public void CloseClient(string sessionId)
         {
-            var client = GetClientBySessionId(sessionId);
+            var client = GetClientByClientId(sessionId);
             if (client != null)
                 CloseClient(client);
         }
 
-        public ClientInfo GetClientBySessionId(string sessionId)
+        public ClientInfo GetClientByClientId(string sessionId)
         {
             try
             {
                 foreach (var item in Clients.ToArray())
                 {
-                    if (item.SessionId == sessionId)
+                    if (item.ClientId == sessionId)
                         return item;
                 }
             }
@@ -1722,7 +1722,7 @@ namespace SignalGo.Server.ServiceManager
             MethodCallbackInfo callback = new MethodCallbackInfo()
             {
                 Guid = callInfo.Guid,
-                Data = ServerSerializationHelper.SerializeObject(client.SessionId, this)
+                Data = ServerSerializationHelper.SerializeObject(client.ClientId, this)
             };
             try
             {
@@ -1734,7 +1734,7 @@ namespace SignalGo.Server.ServiceManager
                 var service = FindClientServiceByType(client, serviceType, serviceTypeAttribute);
                 if (service != null && serviceTypeAttribute.InstanceType == InstanceType.MultipeInstance)
                 {
-                    throw new Exception($"{client.IPAddress} {client.SessionId} this service for this client exist, type: {serviceType.FullName} : serviceName:{callInfo.ServiceName}");
+                    throw new Exception($"{client.IPAddress} {client.ClientId} this service for this client exist, type: {serviceType.FullName} : serviceName:{callInfo.ServiceName}");
                 }
                 else if (service == null)
                 {
@@ -1755,7 +1755,7 @@ namespace SignalGo.Server.ServiceManager
             }
             catch (Exception ex)
             {
-                SignalGo.Shared.Log.AutoLogger.LogError(ex, $"{client.IPAddress} {client.SessionId} ServerBase RegisterClassForClient");
+                SignalGo.Shared.Log.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase RegisterClassForClient");
                 callback.IsException = true;
                 callback.Data = ServerSerializationHelper.SerializeObject(ex.ToString(), this);
             }
@@ -1784,7 +1784,7 @@ namespace SignalGo.Server.ServiceManager
             }
             catch (Exception ex)
             {
-                SignalGo.Shared.Log.AutoLogger.LogError(ex, $"{client.IPAddress} {client.SessionId} ServerBase RegisterMethodsForClient");
+                SignalGo.Shared.Log.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase RegisterMethodsForClient");
                 callback.IsException = true;
                 callback.Data = ServerSerializationHelper.SerializeObject(ex.ToString(), this);
             }
@@ -1813,7 +1813,7 @@ namespace SignalGo.Server.ServiceManager
             }
             catch (Exception ex)
             {
-                SignalGo.Shared.Log.AutoLogger.LogError(ex, $"{client.IPAddress} {client.SessionId} ServerBase UnRegisterMethodsForClient");
+                SignalGo.Shared.Log.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase UnRegisterMethodsForClient");
                 callback.IsException = true;
                 callback.Data = ServerSerializationHelper.SerializeObject(ex.ToString(), this);
             }
@@ -1887,13 +1887,13 @@ namespace SignalGo.Server.ServiceManager
                 {
                     ClientConnectedCallingCount++;
                     if (!RegisteredServiceTypes.ContainsKey(callInfo.ServiceName))
-                        throw new Exception($"{client.IPAddress} {client.SessionId} Service {callInfo.ServiceName} not found");
+                        throw new Exception($"{client.IPAddress} {client.ClientId} Service {callInfo.ServiceName} not found");
                     var serviceType = RegisteredServiceTypes[callInfo.ServiceName];
                     if (serviceType == null)
-                        throw new Exception($"{client.IPAddress} {client.SessionId} serviceType {callInfo.ServiceName} not found");
+                        throw new Exception($"{client.IPAddress} {client.ClientId} serviceType {callInfo.ServiceName} not found");
                     var service = FindClientServiceByType(client, serviceType, null);
                     if (service == null)
-                        throw new Exception($"{client.IPAddress} {client.SessionId} service {callInfo.ServiceName} not found");
+                        throw new Exception($"{client.IPAddress} {client.ClientId} service {callInfo.ServiceName} not found");
 
                     var method = GetMethod(callInfo, serviceType);// serviceType.GetMethod(callInfo.MethodName, RuntimeTypeHelper.GetMethodTypes(serviceType, callInfo).ToArray());
                     if (method == null)
@@ -1911,7 +1911,7 @@ namespace SignalGo.Server.ServiceManager
                         result.AppendLine(json);
                         result.AppendLine("</JSON>");
                         result.AppendLine("</Exception>");
-                        throw new Exception($"{client.IPAddress} {client.SessionId} " + result.ToString());
+                        throw new Exception($"{client.IPAddress} {client.ClientId} " + result.ToString());
                     }
 
                     var serviceMethod = serviceType.GetMethod(method.Name, method.GetParameters().Select(p => p.ParameterType).ToArray());
@@ -1972,7 +1972,7 @@ namespace SignalGo.Server.ServiceManager
                     //when method have static locl attribute calling is going to lock
                     bool isStaticLock = serviceMethod.GetCustomAttributes(typeof(StaticLockAttribute), true).Count() > 0 || method.GetCustomAttributes(typeof(StaticLockAttribute), true).Count() > 0;
                     if (MethodCallsLogger.IsStart)
-                        logInfo = MethodCallsLogger.AddCallMethodLog(client.SessionId, client.IPAddress, client.ConnectedDateTime, callInfo.ServiceName, method, callInfo.Parameters);
+                        logInfo = MethodCallsLogger.AddCallMethodLog(client.ClientId, client.IPAddress, client.ConnectedDateTime, callInfo.ServiceName, method, callInfo.Parameters);
 
                     //check if client have permissions for call method
                     bool canCall = true;
@@ -2043,7 +2043,7 @@ namespace SignalGo.Server.ServiceManager
                 {
                     if (logInfo != null)
                         logInfo.Exception = ex;
-                    SignalGo.Shared.Log.AutoLogger.LogError(ex, $"{client.IPAddress} {client.SessionId} ServerBase CallMethod: {callInfo.MethodName}");
+                    SignalGo.Shared.Log.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase CallMethod: {callInfo.MethodName}");
                     callback.IsException = true;
                     callback.Data = ServerSerializationHelper.SerializeObject(ex.ToString(), this);
                 }
@@ -2135,7 +2135,7 @@ namespace SignalGo.Server.ServiceManager
             }
             catch (Exception ex)
             {
-                SignalGo.Shared.Log.AutoLogger.LogError(ex, $"{client.IPAddress} {client.SessionId} ServerBase SetSettings");
+                SignalGo.Shared.Log.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase SetSettings");
                 if (!client.TcpClient.Connected)
                     DisposeClient(client);
             }
@@ -2209,7 +2209,7 @@ namespace SignalGo.Server.ServiceManager
                     data.AddRange(len);
                     data.AddRange(bytes);
                     if (data.Count > ProviderSetting.MaximumSendDataBlock)
-                        throw new Exception($"{client.IPAddress} {client.SessionId} SendCallbackData data length is upper than MaximumSendDataBlock");
+                        throw new Exception($"{client.IPAddress} {client.ClientId} SendCallbackData data length is upper than MaximumSendDataBlock");
 
                     GoStreamWriter.WriteToStream(client.TcpClient.GetStream(), data.ToArray(), client.IsWebSocket);
                 }
@@ -2217,7 +2217,7 @@ namespace SignalGo.Server.ServiceManager
             }
             catch (Exception ex)
             {
-                SignalGo.Shared.Log.AutoLogger.LogError(ex, $"{client.IPAddress} {client.SessionId} ServerBase SendCallbackData");
+                SignalGo.Shared.Log.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase SendCallbackData");
                 if (!client.TcpClient.Connected)
                     DisposeClient(client);
             }
@@ -2256,7 +2256,7 @@ namespace SignalGo.Server.ServiceManager
             {
                 CallClientMethodLogInformation log = null;
                 if (MethodCallsLogger.IsStart)
-                    log = MethodCallsLogger.AddCallClientMethodLog(client.SessionId, client.IPAddress, client.ConnectedDateTime, callInfo.ServiceName, callInfo.MethodName, callInfo.Parameters);
+                    log = MethodCallsLogger.AddCallClientMethodLog(client.ClientId, client.IPAddress, client.ConnectedDateTime, callInfo.ServiceName, callInfo.MethodName, callInfo.Parameters);
                 try
                 {
                     ClientConnectedCallingCount++;
@@ -2772,7 +2772,7 @@ namespace SignalGo.Server.ServiceManager
                     bytes.AddRange(jsonBytes);
                     GoStreamWriter.WriteToStream(client.TcpClient.GetStream(), bytes.ToArray(), client.IsWebSocket);
 
-                    SignalGo.Shared.Log.AutoLogger.LogError(ex, $"{client.IPAddress} {client.SessionId} ServerBase CallMethod");
+                    SignalGo.Shared.Log.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase CallMethod");
                 }
                 finally
                 {
@@ -2916,10 +2916,10 @@ namespace SignalGo.Server.ServiceManager
                 try
                 {
                     if (!RegisteredServiceTypes.ContainsKey(detail.ServiceName))
-                        throw new Exception($"{client.IPAddress} {client.SessionId} Service {detail.ServiceName} not found");
+                        throw new Exception($"{client.IPAddress} {client.ClientId} Service {detail.ServiceName} not found");
                     var serviceType = RegisteredServiceTypes[detail.ServiceName];
                     if (serviceType == null)
-                        throw new Exception($"{client.IPAddress} {client.SessionId} serviceType {detail.ServiceName} not found");
+                        throw new Exception($"{client.IPAddress} {client.ClientId} serviceType {detail.ServiceName} not found");
 
                     string json = "method or parameter not found";
                     foreach (var method in serviceType.GetMethods())
@@ -2949,7 +2949,7 @@ namespace SignalGo.Server.ServiceManager
                 }
                 catch (Exception ex)
                 {
-                    SignalGo.Shared.Log.AutoLogger.LogError(ex, $"{client.IPAddress} {client.SessionId} ServerBase CallMethod");
+                    SignalGo.Shared.Log.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase CallMethod");
                 }
             });
         }
