@@ -17,6 +17,9 @@ namespace SignalGo.Shared.Log
     /// </summary>
     public abstract class BaseLogInformation
     {
+        /// <summary>
+        /// ignore log for this iformation
+        /// </summary>
         public bool IgnoreLogging { get; set; }
         /// <summary>
         /// date of call
@@ -61,6 +64,10 @@ namespace SignalGo.Shared.Log
         /// name of method
         /// </summary>
         public string MethodName { get; set; }
+        /// <summary>
+        /// if method call have exception result
+        /// </summary>
+        public Exception Exception { get; set; }
     }
 
     /// <summary>

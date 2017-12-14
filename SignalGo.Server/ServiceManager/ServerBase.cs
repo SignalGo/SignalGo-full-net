@@ -273,7 +273,7 @@ namespace SignalGo.Server.ServiceManager
 #endif
             if (StreamServices.ContainsKey(name))
                 throw new Exception("duplicate call");
-            var service =  Activator.CreateInstance(type);
+            var service = Activator.CreateInstance(type);
             StreamServices.TryAdd(name, service);
         }
         /// <summary>
@@ -817,6 +817,8 @@ namespace SignalGo.Server.ServiceManager
                     }
                     catch (Exception ex)
                     {
+                        if (logInfo != null)
+                            logInfo.Exception = ex;
                         string data = newLine + ex.ToString() + address + newLine;
                         sendInternalErrorMessage(data);
                         AutoLogger.LogError(ex, "RunHttpGETRequest");
@@ -941,7 +943,7 @@ namespace SignalGo.Server.ServiceManager
                                     var headLen = header.IndexOf("\r\n");
                                     header = data.Substring(index, headLen);
                                     //var byteData = GoStreamReader.ReadBlockSize(client.TcpClient.GetStream(), (ulong)(len - content.Length - fileHeaderCount));
-                                    string newData = data.Substring(headLen+4);//Encoding.UTF8.GetString(byteData);
+                                    string newData = data.Substring(headLen + 4);//Encoding.UTF8.GetString(byteData);
                                     //var newData = text.Substring(0, text.IndexOf(boundary) - 4);
                                     if (header.ToLower().IndexOf("content-disposition:") == 0)
                                     {
@@ -1161,6 +1163,8 @@ namespace SignalGo.Server.ServiceManager
                     }
                     catch (Exception ex)
                     {
+                        if (logInfo != null)
+                            logInfo.Exception = ex;
                         string data = newLine + ex.ToString() + address + newLine;
                         sendInternalErrorMessage(data);
                         AutoLogger.LogError(ex, "RunHttpGETRequest");
@@ -1208,7 +1212,7 @@ namespace SignalGo.Server.ServiceManager
                     {
                         var data = Encoding.UTF8.GetString(bytes.ToArray());
                         var res = data.Replace(" ", "").ToLower();
-                        
+
                         if (res.Contains("content-disposition:") && res.Contains("filename"))
                             break;
                         findNextlvl = 0;
@@ -2037,6 +2041,8 @@ namespace SignalGo.Server.ServiceManager
                 }
                 catch (Exception ex)
                 {
+                    if (logInfo != null)
+                        logInfo.Exception = ex;
                     SignalGo.Shared.Log.AutoLogger.LogError(ex, $"{client.IPAddress} {client.SessionId} ServerBase CallMethod: {callInfo.MethodName}");
                     callback.IsException = true;
                     callback.Data = ServerSerializationHelper.SerializeObject(ex.ToString(), this);
@@ -2305,6 +2311,8 @@ namespace SignalGo.Server.ServiceManager
                 }
                 catch (Exception ex)
                 {
+                    if (log != null)
+                        log.Exception = ex;
                     AutoLogger.LogError(ex, "CallClientMethod");
                 }
                 finally
