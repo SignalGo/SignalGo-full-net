@@ -21,7 +21,7 @@ namespace SignalGoTest
                 server = new SignalGo.Server.ServiceManager.ServerProvider();
                 server.RegisterStreamService(typeof(TestServerStreamModel));
                 server.Start("http://localhost:1132/SignalGoTestService");
-
+                
                 //your client connector that will be connect to your server
                 ClientProvider provider = new ClientProvider();
                 //connect to your server must have full address that your server is listen

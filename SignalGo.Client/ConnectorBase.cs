@@ -153,13 +153,13 @@ namespace SignalGo.Client
 #endif
             if (method != null && method.ReturnType == typeof(StreamInfo))
             {
-                callInfo.Data = connector.SessionId;
+                callInfo.Data = connector.ClientId;
                 StreamInfo stream = connector.RegisterFileStreamToDownload(callInfo);
                 return stream;
             }
             else if (method != null && streamInfo != null && method.ReturnType == typeof(void) && method.GetParameters().Length == 1 && method.GetParameters()[0].ParameterType == typeof(StreamInfo))
             {
-                callInfo.Data = connector.SessionId;
+                callInfo.Data = connector.ClientId;
                 connector.RegisterFileStreamToUpload(streamInfo, callInfo);
                 return null;
             }
@@ -177,7 +177,7 @@ namespace SignalGo.Client
             var result = WaitedMethodsForResponse[callInfo.Guid].Value;
             if (!result.IsException && callInfo.MethodName == "/RegisterService")
             {
-                connector.SessionId = ClientSerializationHelper.DeserializeObject<string>(result.Data);
+                connector.ClientId = ClientSerializationHelper.DeserializeObject<string>(result.Data);
                 result.Data = null;
             }
             WaitedMethodsForResponse.Remove(callInfo.Guid);
@@ -226,7 +226,7 @@ namespace SignalGo.Client
             var result = WaitedMethodsForResponse[callInfo.Guid].Value;
             if (callInfo.MethodName == "/RegisterService")
             {
-                connector.SessionId = ClientSerializationHelper.DeserializeObject<string>(result.Data);
+                connector.ClientId = ClientSerializationHelper.DeserializeObject<string>(result.Data);
                 result.Data = null;
             }
             WaitedMethodsForResponse.Remove(callInfo.Guid);
@@ -257,7 +257,7 @@ namespace SignalGo.Client
         /// <summary>
         /// client session id from server
         /// </summary>
-        public string SessionId { get; set; }
+        public string ClientId { get; set; }
         /// <summary>
         /// connector is disposed
         /// </summary>
