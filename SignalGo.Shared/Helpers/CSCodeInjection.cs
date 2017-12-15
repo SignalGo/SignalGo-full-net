@@ -16,14 +16,14 @@ namespace SignalGo.Shared.Helpers
     /// </summary>
     public static class CSCodeInjection
     {
-        /// <summary>
-        /// invoke action for void methods call
-        /// </summary>
-        public static Action<object, MethodInfo, object[]> InvokedClientMethodAction { get; set; }
-        /// <summary>
-        /// invoke function for non-void methods call
-        /// </summary>
-        public static Func<object, MethodInfo, object[], object> InvokedClientMethodFunction { get; set; }
+        ///// <summary>
+        ///// invoke action for void methods call
+        ///// </summary>
+        //public static Action<object, string, MethodInfo, object[]> InvokedClientMethodAction { get; set; }
+        ///// <summary>
+        ///// invoke function for non-void methods call
+        ///// </summary>
+        //public static Func<object, string, MethodInfo, object[], object> InvokedClientMethodFunction { get; set; }
 
         /// <summary>
         /// invoke action for void methods call
@@ -41,9 +41,9 @@ namespace SignalGo.Shared.Helpers
         /// <param name="inter">a class or interface must inherited</param>
         /// <param name="assemblyTypes">types of assembly</param>
         /// <returns>return a new type genearted by code injection</returns>
-        public static Type GenerateInterfaceType(Type type, Type inter, List<Type> assemblyTypes, bool isServer)
+        public static Type GenerateInterfaceType(Type type, Type inter, List<Type> assemblyTypes)
         {
-            return GenerateInterfaceServiceType(type, inter, assemblyTypes, isServer);
+            return GenerateInterfaceServiceType(type, inter, assemblyTypes);
         }
 #endif
         public static T InstanceServerInterface<T>(Type type, List<Type> assemblyTypes)
@@ -89,7 +89,7 @@ namespace SignalGo.Shared.Helpers
         }
 #if (!NETSTANDARD1_6 && !NETCOREAPP1_1 && !PORTABLE)
 
-        static Type GenerateInterfaceServiceType(Type type, Type inter, List<Type> assemblyTypes, bool isServer)
+        static Type GenerateInterfaceServiceType(Type type, Type inter, List<Type> assemblyTypes)
         {
             if (!type.IsInterface)
                 throw new Exception("type must be interface");
@@ -108,13 +108,13 @@ namespace SignalGo.Shared.Helpers
             if (!isServiceContract)
                 throw new Exception("your class is not used ServiceContractAttribute");
 
-            return GenerateType(type, attrib.Name, inter, assemblyTypes, isServer);
+            return GenerateType(type, attrib.Name, inter, assemblyTypes);
         }
 
-        static Type GenerateType(Type type, string className, Type inter, List<Type> assemblyTypes, bool isServer)
+        static Type GenerateType(Type type, string className, Type inter, List<Type> assemblyTypes)
         {
-            string actionMethodName = isServer ? "InvokedServerMethodAction" : "InvokedClientMethodAction";
-            string functionMethodName = isServer ? "InvokedServerMethodFunction" : "InvokedClientMethodFunction";
+            string actionMethodName = "InvokedServerMethodAction";
+            string functionMethodName  ="InvokedServerMethodFunction";
 
             string bodyGenerate = " public Action<object,MethodInfo, object[]> " + actionMethodName + " { get; set; } public Func<object,MethodInfo, object[], object> " + functionMethodName + " { get; set; }";
             List<string> foundedNameSpaces = new List<string>();
@@ -122,9 +122,9 @@ namespace SignalGo.Shared.Helpers
             if (assemblyTypes != null)
                 types.AddRange(assemblyTypes);
             types.Add(type);
-            types.Add(inter);
             if (inter != null)
             {
+                types.Add(inter);
                 foreach (var property in inter.GetProperties())
                 {
                     var nameSpace = property.PropertyType.Namespace;
