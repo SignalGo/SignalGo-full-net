@@ -426,24 +426,58 @@ namespace SignalGo.Client
             {
                 try
                 {
-                    if (typeof(void) == method.ReturnType)
+                    //this is async action
+                    if (method.ReturnType == typeof(Task))
                     {
-                        ConnectorExtension.SendData(this, serviceName, method.Name, args);
-                        return null;
+                        var task = new Task(() =>
+                         {
+                             ConnectorExtension.SendData(this, serviceName, method.Name, args);
+                         });
+                        task.Start();
+                        return task;
+                    }
+                    //this is async function
+                    else if (method.ReturnType.GetBaseType() == typeof(Task))
+                    {
+                        var func = new Func<object>(() =>
+                        {
+                            var data = ConnectorExtension.SendData(this, serviceName, method.Name, args);
+                            if (data == null)
+                                return null;
+                            if (data is StreamInfo)
+                                return data;
+                            else
+                            {
+                                var result = ClientSerializationHelper.DeserializeObject(data.ToString(), method.ReturnType.GetListOfGenericArguments().FirstOrDefault());
+                                return result;
+                            }
+                        });
+
+                        var task = (Task)Activator.CreateInstance(typeof(Task<>).MakeGenericType(typeof(object)), func);
+                        task.Start();
+                        return task;
                     }
                     else
                     {
-                        var data = ConnectorExtension.SendData(this, serviceName, method.Name, args);
-                        if (data == null)
+                        if (typeof(void) == method.ReturnType)
+                        {
+                            ConnectorExtension.SendData(this, serviceName, method.Name, args);
                             return null;
-                        if (data is StreamInfo)
-                            return data;
+                        }
                         else
                         {
-                            var result = ClientSerializationHelper.DeserializeObject(data.ToString(), method.ReturnType);
-                            return result;
-                        }
-                    };
+                            var data = ConnectorExtension.SendData(this, serviceName, method.Name, args);
+                            if (data == null)
+                                return null;
+                            if (data is StreamInfo)
+                                return data;
+                            else
+                            {
+                                var result = ClientSerializationHelper.DeserializeObject(data.ToString(), method.ReturnType);
+                                return result;
+                            }
+                        };
+                    }
                 }
                 catch (Exception ex)
                 {
