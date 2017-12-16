@@ -32,12 +32,32 @@ namespace SignalGo.Shared
     /// </summary>
     public static class AsyncActions
     {
-        //static Thread UIThread { get; set; }
-        //public static void InitializeUIThread()
-        //{
-        //    UIThread = Thread.CurrentThread;
+#if (!PORTABLE)
+        static SynchronizationContext UIThread { get; set; }
+        /// <summary>
+        /// initialize ui thread
+        /// </summary>
+        public static void InitializeUIThread()
+        {
+            if (SynchronizationContext.Current == null)
+                SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());
+            UIThread = SynchronizationContext.Current;
+        }
 
-        //}
+        /// <summary>
+        /// run your code on ui thread
+        /// </summary>
+        /// <param name="action"></param>
+        public static void RunOnUI(Action action)
+        {
+            if (UIThread == null)
+                throw new Exception("UI thread not initialized please call AsyncActions.InitializeUIThread in your ui thread to initialize");
+            UIThread.Post((state) =>
+            {
+                action();
+            }, null);
+        }
+#endif
         /// <summary>
         /// if actions return exceptions
         /// </summary>
@@ -46,6 +66,7 @@ namespace SignalGo.Shared
         /// Run action on thread
         /// </summary>
         /// <param name="action">your action</param>
+        /// <param name="onException"></param>
 #if (PORTABLE)
         public static System.Threading.Tasks.Task Run(Action action, Action<Exception> onException = null)
 #else
@@ -87,6 +108,33 @@ namespace SignalGo.Shared
             thread.Start();
 #endif
             return thread;
+        }
+
+        /// <summary>
+        /// run your code with async await
+        /// </summary>
+        /// <param name="action"></param>
+        /// <returns></returns>
+        public static System.Threading.Tasks.Task RunAsync(Action action)
+        {
+            return System.Threading.Tasks.Task.Factory.StartNew(() =>
+            {
+                action();
+            });
+        }
+
+        /// <summary>
+        /// run your code with async await
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="func"></param>
+        /// <returns></returns>
+        public static System.Threading.Tasks.Task<T> RunAsync<T>(Func<T> func)
+        {
+            return System.Threading.Tasks.Task<T>.Factory.StartNew(() =>
+            {
+                return func();
+            });
         }
     }
 }
