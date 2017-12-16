@@ -1066,13 +1066,15 @@ namespace SignalGo.Client
                 _client.Close();
 #endif
             if (IsConnected)
+            {
+                IsConnected = false;
                 OnDisconnected?.Invoke();
+            }
 #if (NET35)
                 getServiceDetailEvent?.Close();
 #else
             getServiceDetailEvent?.Dispose();
 #endif
-            IsConnected = false;
         }
         /// <summary>
         /// close and dispose connector
