@@ -179,9 +179,13 @@ namespace SignalGo.Shared.Helpers
                         throw new Exception("invoke not found");
                     generator.EmitCall(OpCodes.Call, invoke, null);
 
+                    generator.Emit(OpCodes.Castclass, method.ReturnType);
+                    generator.Emit(OpCodes.Unbox_Any, method.ReturnType);
 
                     if (method.ReturnType == typeof(void))
                         generator.Emit(OpCodes.Pop);
+
+                    //generator.Emit(OpCodes.Castclass, method.ReturnType);
                     generator.Emit(OpCodes.Ret);
                 }
             }

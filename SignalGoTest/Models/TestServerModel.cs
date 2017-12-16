@@ -14,21 +14,46 @@ namespace SignalGoTest.Models
 
     public class TestServerModel : ITestServerModel
     {
-        public Tuple<string> HelloWorld(string yourName)
+        public string HelloWorld(string yourName)
         {
             OperationContext<TestSetting>.CurrentSetting = new TestSetting() { Name = yourName };
 
-            return new Tuple<string>("hello: " + yourName);
+            return "hello: " + yourName;
         }
 
-        public Tuple<bool> Logout(string yourName)
+        public bool Logout(string yourName)
         {
             throw new NotImplementedException();
         }
 
-        public Tuple<string> WhoAmI()
+        public string WhoAmI()
         {
-            return new Tuple<string>("you are : " + OperationContext<TestSetting>.CurrentSetting.Name);
+            return "you are : " + OperationContext<TestSetting>.CurrentSetting.Name;
+        }
+
+        public int MUL(int x, int y)
+        {
+            return x * y;
+        }
+
+        public double Tagh(double x, double y)
+        {
+            return x / y;
+        }
+
+        public TimeSpan TimeS(int x)
+        {
+            return new TimeSpan(x);
+        }
+
+        public long LongValue()
+        {
+            return long.MaxValue;
+        }
+
+        Tuple<bool> ITestServerModelBase.Logout(string yourName)
+        {
+            throw new NotImplementedException();
         }
     }
 }

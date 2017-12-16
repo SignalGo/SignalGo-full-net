@@ -20,7 +20,7 @@ namespace SignalGo.Shared.Log
         /// <summary>
         /// ignore log for this iformation
         /// </summary>
-        public bool IgnoreLogging { get; set; }
+        public bool IsIgnoreLogTextFile { get; set; }
         /// <summary>
         /// date of call
         /// </summary>
@@ -197,7 +197,7 @@ namespace SignalGo.Shared.Log
                         {
                             if (Logs.TryDequeue(out nextLog))
                             {
-                                if (nextLog.IgnoreLogging)
+                                if (nextLog.IsIgnoreLogTextFile)
                                     continue;
                                 if (nextLog is CallMethodLogInformation)
                                     WriteToFile((CallMethodLogInformation)nextLog);

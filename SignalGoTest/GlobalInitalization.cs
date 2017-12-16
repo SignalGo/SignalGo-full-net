@@ -21,6 +21,7 @@ namespace SignalGoTest
             {
                 server = new SignalGo.Server.ServiceManager.ServerProvider();
                 server.RegisterStreamService(typeof(TestServerStreamModel));
+                server.InitializeService<TestServerModel>();
                 server.Start("http://localhost:1132/SignalGoTestService");
                 server.OnConnectedClientAction = (client) =>
                 {
@@ -34,6 +35,14 @@ namespace SignalGoTest
                 ClientProvider provider = new ClientProvider();
                 //connect to your server must have full address that your server is listen
                 provider.Connect("http://localhost:1132/SignalGoTestService");
+                var service = provider.RegisterClientServiceInterfaceWrapper<ITestServerModel>();
+
+                var result = service.HelloWorld("ali");
+                var result1 = service.MUL(10, 20);
+                var result3 = service.WhoAmI();
+                var result4 = service.Tagh(10,3);
+                var result5 = service.LongValue();
+                var result6 = service.TimeS(100000000);
                 //register your service interfacce for client
                 //var testServerModel = provider.RegisterClientServiceDynamic<ITestServerModel>();
                 //call server method and return value from your server to client

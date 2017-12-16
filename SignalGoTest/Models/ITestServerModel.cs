@@ -14,7 +14,11 @@ namespace SignalGoTest.Models
     [SignalGo.Shared.DataTypes.ServiceContract("TestServerModel", SignalGo.Shared.DataTypes.InstanceType.SingleInstance)]
     public interface ITestServerModel : ITestServerModelBase
     {
-        Tuple<string> HelloWorld(string yourName);
-        Tuple<string> WhoAmI();
+        string HelloWorld(string yourName);
+        string WhoAmI();
+        int MUL(int x, int y);
+        double Tagh(double x, double y);
+        System.TimeSpan TimeS (int x);
+        long LongValue ();
     }
 }

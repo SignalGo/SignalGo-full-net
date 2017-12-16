@@ -175,7 +175,7 @@ namespace SignalGo.Client
                 throw new TimeoutException();
             }
             var result = WaitedMethodsForResponse[callInfo.Guid].Value;
-            if (!result.IsException && callInfo.MethodName == "/RegisterService")
+            if (result != null && !result.IsException && callInfo.MethodName == "/RegisterService")
             {
                 connector.ClientId = ClientSerializationHelper.DeserializeObject<string>(result.Data);
                 result.Data = null;
@@ -183,7 +183,7 @@ namespace SignalGo.Client
             WaitedMethodsForResponse.Remove(callInfo.Guid);
             if (result == null)
             {
-                if (connector.IsDisposed)
+                if (connector.IsDisposed || !connector.IsConnected)
                     throw new Exception("client disconnected");
                 return null;
             }
