@@ -546,11 +546,12 @@ namespace SignalGo.Client
                     IStreamInfo iStream = null;
                     foreach (var item in args)
                     {
-                        callInfo.Parameters.Add(new Shared.Models.ParameterInfo() { Value = ClientSerializationHelper.SerializeObject(item) });
                         if (item is IStreamInfo)
                         {
                             iStream = (IStreamInfo)item;
+                            iStream.ClientId = ClientId;
                         }
+                        callInfo.Parameters.Add(new Shared.Models.ParameterInfo() { Value = ClientSerializationHelper.SerializeObject(item) });
                     }
                     callInfo.MethodName = method.Name;
                     var json = ClientSerializationHelper.SerializeObject(callInfo);

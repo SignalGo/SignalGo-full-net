@@ -13,8 +13,18 @@ using System.Text;
 
 namespace SignalGo.Shared.Models
 {
+    /// <summary>
+    /// interface of stream
+    /// </summary>
     public interface IStreamInfo : IDisposable
     {
+        /// <summary>
+        /// client id 
+        /// </summary>
+        string ClientId { get; set; }
+        /// <summary>
+        /// stream
+        /// </summary>
         Stream Stream { get; set; }
         /// <summary>
         /// length of stream
@@ -40,6 +50,10 @@ namespace SignalGo.Shared.Models
         /// </summary>
         [JsonIgnore()]
         internal Action GetStreamAction { get; set; }
+        /// <summary>
+        /// client id 
+        /// </summary>
+        public string ClientId { get; set; }
 
         Stream _Stream;
         /// <summary>
@@ -62,7 +76,6 @@ namespace SignalGo.Shared.Models
         /// length of stream
         /// </summary>
         public long Length { get; set; }
-
 
         /// <summary>
         /// close the connection

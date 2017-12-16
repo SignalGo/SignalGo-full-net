@@ -72,7 +72,7 @@ namespace SignalGo.Server.ServiceManager
         /// <summary>
         /// کلاینت ها
         /// </summary>
-        internal ConcurrentList<ClientInfo> Clients { get; set; } = new ConcurrentList<ClientInfo>();
+        internal ConcurrentDictionary<string, ClientInfo> Clients { get; set; } = new ConcurrentDictionary<string, ClientInfo>();
         internal ConcurrentDictionary<string, List<ClientInfo>> ClientsByIp { get; set; } = new ConcurrentDictionary<string, List<ClientInfo>>();
 
         /// <summary>
@@ -337,11 +337,11 @@ namespace SignalGo.Server.ServiceManager
                     client.ServerBase = this;
                     client.TcpClient = tcpClient;
                     client.IPAddress = ((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address.ToString().Replace("::ffff:", "");
-                    client.ClientId = Guid.NewGuid().ToString();
+                    client.ClientId = Guid.NewGuid().ToString() + "-" + Guid.NewGuid().ToString();
                     AutoLogger.LogText($"client connected : {client.IPAddress} {client.ClientId} {DateTime.Now.ToString()}");
                     Console.WriteLine($"client connected : {client.IPAddress} {client.ClientId} {DateTime.Now.ToString()} {ClientConnectedCallingCount}");
                     ClientConnectedCallingCount++;
-                    Clients.Add(client);
+                    Clients.TryAdd(client.ClientId, client);
                     if (ClientsByIp.ContainsKey(client.IPAddress))
                         ClientsByIp[client.IPAddress].Add(client);
                     else
@@ -1616,7 +1616,7 @@ namespace SignalGo.Server.ServiceManager
 
         private void ClientRemove(ClientInfo client)
         {
-            Clients.Remove(client);
+            Clients.Remove(client.ClientId);
             if (ClientsByIp.ContainsKey(client.IPAddress))
             {
                 ClientsByIp[client.IPAddress].Remove(client);
@@ -1697,19 +1697,8 @@ namespace SignalGo.Server.ServiceManager
 
         public ClientInfo GetClientByClientId(string sessionId)
         {
-            try
-            {
-                foreach (var item in Clients.ToArray())
-                {
-                    if (item.ClientId == sessionId)
-                        return item;
-                }
-            }
-            catch (Exception ex)
-            {
-                AutoLogger.LogError(ex, "GetClient By SessionId");
-            }
-            return null;
+            Clients.TryGetValue(sessionId, out ClientInfo clientInfo);
+            return clientInfo;
         }
 
         /// <summary>
@@ -3109,7 +3098,7 @@ namespace SignalGo.Server.ServiceManager
         {
             foreach (var item in Clients.ToList())
             {
-                DisposeClient(item);
+                DisposeClient(item.Value);
             }
             server.Stop();
             IsStarted = false;

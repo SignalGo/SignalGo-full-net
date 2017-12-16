@@ -35,7 +35,7 @@ namespace SignalGo.Server.Models
         {
             get
             {
-                return ServerBase.Clients.ToList();
+                return ServerBase.Clients.Values.ToList();
             }
         }
 
@@ -52,6 +52,11 @@ namespace SignalGo.Server.Models
             var attribute = typeof(T).GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault();
             ServerBase.SingleInstanceServices.TryGetValue(attribute.Name, out object result);
             return (T)result;
+        }
+
+        public ClientInfo GetClientInfoByClientId(string clientId)
+        {
+            return Current.ServerBase.GetClientByClientId(clientId);
         }
     }
 
@@ -106,7 +111,7 @@ namespace SignalGo.Server.Models
         /// </summary>
         /// <typeparam name="T">type of setting</typeparam>
         /// <returns></returns>
-        public static IEnumerable<T> GetSettings<T>()
+        public static IEnumerable<T> GetSettings()
         {
             var context = OperationContext.Current;
             if (SynchronizationContext.Current == null)
@@ -118,7 +123,7 @@ namespace SignalGo.Server.Models
             return null;
         }
 
-        public static IEnumerable<T> GetSettings<T>(ClientInfo client)
+        public static IEnumerable<T> GetSettings(ClientInfo client)
         {
             if (SavedSettings.TryGetValue(client, out HashSet<object> result))
             {
@@ -127,13 +132,27 @@ namespace SignalGo.Server.Models
             return null;
         }
 
-        public static T GetSetting<T>(ClientInfo client)
+        public static T GetSetting(ClientInfo client)
         {
             if (SavedSettings.TryGetValue(client, out HashSet<object> result))
             {
                 return (T)result.FirstOrDefault(x => x.GetType() == typeof(T));
             }
             return default(T);
+        }
+
+
+
+        public static IEnumerable<T> GetSettings(string clientId)
+        {
+            var clientInfo = OperationContext.Current.GetClientInfoByClientId(clientId);
+            return GetSettings(clientInfo);
+        }
+
+        public static T GetSetting(string clientId)
+        {
+            var clientInfo = OperationContext.Current.GetClientInfoByClientId(clientId);
+            return GetSetting(clientInfo);
         }
 
         public static IEnumerable<T> GetSettings<T>(IEnumerable<ClientInfo> clients, Func<T, bool> func)
@@ -312,7 +331,7 @@ namespace SignalGo.Server.Models
         //    {
         //        try
         //        {
-        //            throw new Exception($"context client not exist! {client.SessionId} {server.Callbacks.Count} {DateTime.Now}");
+        //            throw new Exception($"context client not exist! {client.clientId} {server.Callbacks.Count} {DateTime.Now}");
         //        }
         //        catch (Exception ex)
         //        {
@@ -354,7 +373,7 @@ namespace SignalGo.Server.Models
             var attribName = (typeof(T).GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault()).Name;
             var serviceType = context.ServerBase.GetRegisteredCallbacksTypeByName(attribName);
             List<ClientContext<T>> items = new List<ClientContext<T>>();
-            foreach (var item in context.ServerBase.Clients.ToArray())
+            foreach (var item in context.ServerBase.Clients.Values.ToArray())
             {
                 var find = FindClientCallback<T>(context.ServerBase, item, serviceType, attribName);
 
@@ -375,10 +394,8 @@ namespace SignalGo.Server.Models
             var attribName = (typeof(T).GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault()).Name;
             var serviceType = context.ServerBase.GetRegisteredCallbacksTypeByName(attribName);
             List<ClientContext<T>> items = new List<ClientContext<T>>();
-            foreach (var item in context.ServerBase.Clients.ToArray())
+            foreach (var item in context.ServerBase.Clients.Values.Where(x => x != context.Client).ToArray())
             {
-                if (item == context.Client)
-                    continue;
                 var find = FindClientCallback<T>(context.ServerBase, item, serviceType, attribName);
                 if (find != null)
                     items.Add(new ClientContext<T>(find, item));
@@ -391,9 +408,9 @@ namespace SignalGo.Server.Models
         /// </summary>
         /// <typeparam name="T">callback type</typeparam>
         /// <param name="context">client context</param>
-        /// <param name="sessionId">list of sessions</param>
+        /// <param name="clientId">list of sessions</param>
         /// <returns>list of callback context</returns>
-        public static ClientContext<T> GetClientCallbackOfClientContext<T>(this OperationContext context, string sessionId)
+        public static ClientContext<T> GetClientCallbackOfClientContext<T>(this OperationContext context, string clientId)
         {
 #if (NETSTANDARD1_6 || NETCOREAPP1_1)
             var attribName = ((ServiceContractAttribute)typeof(T).GetTypeInfo().GetCustomAttributes(typeof(ServiceContractAttribute), true).FirstOrDefault()).Name;
@@ -402,11 +419,11 @@ namespace SignalGo.Server.Models
 #endif
             var serviceType = context.ServerBase.GetRegisteredCallbacksTypeByName(attribName);
             List<ClientContext<T>> items = new List<ClientContext<T>>();
-            var client = (from x in context.ServerBase.Clients.ToArray() where sessionId == x.ClientId select x).FirstOrDefault();
-            if (client != null)
+            context.ServerBase.Clients.TryGetValue(clientId, out ClientInfo clientInfo);
+            if (clientInfo != null)
             {
-                var find = FindClientCallback<T>(context.ServerBase, client, serviceType, attribName);
-                return new ClientContext<T>(find, client);
+                var find = FindClientCallback<T>(context.ServerBase, clientInfo, serviceType, attribName);
+                return new ClientContext<T>(find, clientInfo);
             }
             return null;
         }
@@ -438,11 +455,11 @@ namespace SignalGo.Server.Models
         /// </summary>
         /// <typeparam name="T">callback type</typeparam>
         /// <param name="context">client context</param>
-        /// <param name="sessionIds">list of sessions</param>
+        /// <param name="clientIds">list of sessions</param>
         /// <returns>list of callback context</returns>
-        public static T GetClientCallback<T>(this OperationContext context, string sessionId)
+        public static T GetClientCallback<T>(this OperationContext context, string clientId)
         {
-            var client = GetClientCallbackOfClientContext<T>(context, sessionId);
+            var client = GetClientCallbackOfClientContext<T>(context, clientId);
             if (client != null)
                 return client.Service;
             return default(T);
@@ -494,9 +511,9 @@ namespace SignalGo.Server.Models
         /// </summary>
         /// <typeparam name="T">callback type</typeparam>
         /// <param name="context">client context</param>
-        /// <param name="sessionIds">list of sessions</param>
+        /// <param name="clientIds">list of sessions</param>
         /// <returns>list of callback context</returns>
-        public static List<ClientContext<T>> GetQueryClientCallbackListOfClientContext<T>(this OperationContext context, IEnumerable<string> sessionIds)
+        public static List<ClientContext<T>> GetQueryClientCallbackListOfClientContext<T>(this OperationContext context, IEnumerable<string> clientIds)
         {
 #if (NETSTANDARD1_6 || NETCOREAPP1_1)
             var attribName = ((ServiceContractAttribute)typeof(T).GetTypeInfo().GetCustomAttributes(typeof(ServiceContractAttribute), true).FirstOrDefault()).Name;
@@ -505,7 +522,8 @@ namespace SignalGo.Server.Models
 #endif
             var serviceType = context.ServerBase.GetRegisteredCallbacksTypeByName(attribName);
             List<ClientContext<T>> items = new List<ClientContext<T>>();
-            foreach (var item in (from x in context.ServerBase.Clients.ToArray() where sessionIds.Contains(x.ClientId) select x))
+
+            foreach (var item in (from x in context.ServerBase.Clients.ToArray() where clientIds.Contains(x.Key) select x.Value))
             {
                 var find = FindClientCallback<T>(context.ServerBase, item, serviceType, attribName);
 
@@ -520,9 +538,9 @@ namespace SignalGo.Server.Models
         /// </summary>
         /// <typeparam name="T">callback type</typeparam>
         /// <param name="context">client context</param>
-        /// <param name="sessionIds">list of sessions to ingore get</param>
+        /// <param name="clientIds">list of sessions to ingore get</param>
         /// <returns>list of callback context</returns>
-        public static List<ClientContext<T>> GetQueryClientCallbackWithoutListOfClientContext<T>(this OperationContext context, IEnumerable<string> sessionIds)
+        public static List<ClientContext<T>> GetQueryClientCallbackWithoutListOfClientContext<T>(this OperationContext context, IEnumerable<string> clientIds)
         {
 #if (NETSTANDARD1_6 || NETCOREAPP1_1)
             var attribName = ((ServiceContractAttribute)typeof(T).GetTypeInfo().GetCustomAttributes(typeof(ServiceContractAttribute), true).FirstOrDefault()).Name;
@@ -531,7 +549,7 @@ namespace SignalGo.Server.Models
 #endif
             var serviceType = context.ServerBase.GetRegisteredCallbacksTypeByName(attribName);
             List<ClientContext<T>> items = new List<ClientContext<T>>();
-            foreach (var item in (from x in context.ServerBase.Clients.ToArray() where !sessionIds.Contains(x.ClientId) select x))
+            foreach (var item in (from x in context.ServerBase.Clients.ToArray() where !clientIds.Contains(x.Key) select x.Value))
             {
                 var find = FindClientCallback<T>(context.ServerBase, item, serviceType, attribName);
                 if (find != null)
@@ -593,11 +611,11 @@ namespace SignalGo.Server.Models
         /// </summary>
         /// <typeparam name="T">callback type</typeparam>
         /// <param name="context">client context</param>
-        /// <param name="sessionIds">list of sessions</param>
+        /// <param name="clientIds">list of sessions</param>
         /// <returns>list of callback context</returns>
-        public static List<T> GetQueryClientCallbackList<T>(this OperationContext context, IEnumerable<string> sessionIds)
+        public static List<T> GetQueryClientCallbackList<T>(this OperationContext context, IEnumerable<string> clientIds)
         {
-            return (from x in GetQueryClientCallbackListOfClientContext<T>(context, sessionIds) select x.Service).ToList();
+            return (from x in GetQueryClientCallbackListOfClientContext<T>(context, clientIds) select x.Service).ToList();
         }
 
         /// <summary>
@@ -605,11 +623,11 @@ namespace SignalGo.Server.Models
         /// </summary>
         /// <typeparam name="T">callback type</typeparam>
         /// <param name="context">client context</param>
-        /// <param name="sessionIds">list of sessions to ingore get</param>
+        /// <param name="clientIds">list of sessions to ingore get</param>
         /// <returns>list of callback context</returns>
-        public static List<T> GetQueryClientCallbackWithoutList<T>(this OperationContext context, IEnumerable<string> sessionIds)
+        public static List<T> GetQueryClientCallbackWithoutList<T>(this OperationContext context, IEnumerable<string> clientIds)
         {
-            return (from x in GetQueryClientCallbackWithoutListOfClientContext<T>(context, sessionIds) select x.Service).ToList();
+            return (from x in GetQueryClientCallbackWithoutListOfClientContext<T>(context, clientIds) select x.Service).ToList();
         }
 
 
@@ -728,10 +746,8 @@ namespace SignalGo.Server.Models
             var attribName = (typeof(T).GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault()).Name;
             var serviceType = serverBase.GetRegisteredCallbacksTypeByName(attribName);
             List<ClientContext<T>> items = new List<ClientContext<T>>();
-            foreach (var item in serverBase.Clients.ToArray())
+            foreach (var item in serverBase.Clients.ToArray().Where(x => x.Value != client).Select(x => x.Value))
             {
-                if (item == client)
-                    continue;
                 var find = FindClientCallback<T>(serverBase, item, serviceType, attribName);
 
                 if (find != null)
@@ -745,9 +761,9 @@ namespace SignalGo.Server.Models
         /// </summary>
         /// <typeparam name="T">callback type</typeparam>
         /// <param name="context">client context</param>
-        /// <param name="sessionId">list of sessions</param>
+        /// <param name="clientId">list of sessions</param>
         /// <returns>list of callback context</returns>
-        public static ClientContext<T> GetClientCallbackOfClientContext<T>(this ServerBase serverBase, string sessionId)
+        public static ClientContext<T> GetClientCallbackOfClientContext<T>(this ServerBase serverBase, string clientId)
         {
 #if (NETSTANDARD1_6 || NETCOREAPP1_1)
             var attribName = ((ServiceContractAttribute)typeof(T).GetTypeInfo().GetCustomAttributes(typeof(ServiceContractAttribute), true).FirstOrDefault()).Name;
@@ -756,11 +772,11 @@ namespace SignalGo.Server.Models
 #endif
             var serviceType = serverBase.GetRegisteredCallbacksTypeByName(attribName);
             List<ClientContext<T>> items = new List<ClientContext<T>>();
-            var client = (from x in serverBase.Clients.ToArray() where sessionId == x.ClientId select x).FirstOrDefault();
-            if (client != null)
+            serverBase.Clients.TryGetValue(clientId, out ClientInfo clientInfo);
+            if (clientInfo != null)
             {
-                var find = FindClientCallback<T>(serverBase, client, serviceType, attribName);
-                return new ClientContext<T>(find, client);
+                var find = FindClientCallback<T>(serverBase, clientInfo, serviceType, attribName);
+                return new ClientContext<T>(find, clientInfo);
             }
             return null;
         }
@@ -771,11 +787,11 @@ namespace SignalGo.Server.Models
         /// </summary>
         /// <typeparam name="T">callback type</typeparam>
         /// <param name="context">client context</param>
-        /// <param name="sessionIds">list of sessions</param>
+        /// <param name="clientIds">list of sessions</param>
         /// <returns>list of callback context</returns>
-        public static T GetClientCallback<T>(this ServerBase serverBase, string sessionId)
+        public static T GetClientCallback<T>(this ServerBase serverBase, string clientId)
         {
-            var client = GetClientCallbackOfClientContext<T>(serverBase, sessionId);
+            var client = GetClientCallbackOfClientContext<T>(serverBase, clientId);
             if (client != null)
                 return client.Service;
             return default(T);
@@ -826,9 +842,9 @@ namespace SignalGo.Server.Models
         /// </summary>
         /// <typeparam name="T">callback type</typeparam>
         /// <param name="context">client context</param>
-        /// <param name="sessionIds">list of sessions</param>
+        /// <param name="clientIds">list of sessions</param>
         /// <returns>list of callback context</returns>
-        public static List<ClientContext<T>> GetQueryClientCallbackListOfClientContext<T>(this ServerBase serverBase, IEnumerable<string> sessionIds)
+        public static List<ClientContext<T>> GetQueryClientCallbackListOfClientContext<T>(this ServerBase serverBase, IEnumerable<string> clientIds)
         {
 #if (NETSTANDARD1_6 || NETCOREAPP1_1)
             var attribName = ((ServiceContractAttribute)typeof(T).GetTypeInfo().GetCustomAttributes(typeof(ServiceContractAttribute), true).FirstOrDefault()).Name;
@@ -837,7 +853,7 @@ namespace SignalGo.Server.Models
 #endif
             var serviceType = serverBase.GetRegisteredCallbacksTypeByName(attribName);
             List<ClientContext<T>> items = new List<ClientContext<T>>();
-            foreach (var item in (from x in serverBase.Clients.ToArray() where sessionIds.Contains(x.ClientId) select x))
+            foreach (var item in (from x in serverBase.Clients.ToArray() where clientIds.Contains(x.Key) select x.Value))
             {
                 var find = FindClientCallback<T>(serverBase, item, serviceType, attribName);
 
@@ -852,9 +868,9 @@ namespace SignalGo.Server.Models
         /// </summary>
         /// <typeparam name="T">callback type</typeparam>
         /// <param name="context">client context</param>
-        /// <param name="sessionIds">list of sessions to ingore get</param>
+        /// <param name="clientIds">list of sessions to ingore get</param>
         /// <returns>list of callback context</returns>
-        public static List<ClientContext<T>> GetQueryClientCallbackWithoutListOfClientContext<T>(this ServerBase serverBase, IEnumerable<string> sessionIds)
+        public static List<ClientContext<T>> GetQueryClientCallbackWithoutListOfClientContext<T>(this ServerBase serverBase, IEnumerable<string> clientIds)
         {
 #if (NETSTANDARD1_6 || NETCOREAPP1_1)
             var attribName = ((ServiceContractAttribute)typeof(T).GetTypeInfo().GetCustomAttributes(typeof(ServiceContractAttribute), true).FirstOrDefault()).Name;
@@ -863,7 +879,7 @@ namespace SignalGo.Server.Models
 #endif
             var serviceType = serverBase.GetRegisteredCallbacksTypeByName(attribName);
             List<ClientContext<T>> items = new List<ClientContext<T>>();
-            foreach (var item in (from x in serverBase.Clients.ToArray() where !sessionIds.Contains(x.ClientId) select x))
+            foreach (var item in (from x in serverBase.Clients.ToArray() where !clientIds.Contains(x.Key) select x.Value))
             {
                 var find = FindClientCallback<T>(serverBase, item, serviceType, attribName);
 
@@ -902,11 +918,11 @@ namespace SignalGo.Server.Models
         /// </summary>
         /// <typeparam name="T">callback type</typeparam>
         /// <param name="context">client context</param>
-        /// <param name="sessionIds">list of sessions</param>
+        /// <param name="clientIds">list of sessions</param>
         /// <returns>list of callback context</returns>
-        public static List<T> GetQueryClientCallbackList<T>(this ServerBase serverBase, IEnumerable<string> sessionIds)
+        public static List<T> GetQueryClientCallbackList<T>(this ServerBase serverBase, IEnumerable<string> clientIds)
         {
-            return (from x in GetQueryClientCallbackListOfClientContext<T>(serverBase, sessionIds) select x.Service).ToList();
+            return (from x in GetQueryClientCallbackListOfClientContext<T>(serverBase, clientIds) select x.Service).ToList();
         }
 
         /// <summary>
@@ -914,11 +930,11 @@ namespace SignalGo.Server.Models
         /// </summary>
         /// <typeparam name="T">callback type</typeparam>
         /// <param name="context">client context</param>
-        /// <param name="sessionIds">list of sessions to ingore get</param>
+        /// <param name="clientIds">list of sessions to ingore get</param>
         /// <returns>list of callback context</returns>
-        public static List<T> GetQueryClientCallbackWithoutList<T>(this ServerBase serverBase, IEnumerable<string> sessionIds)
+        public static List<T> GetQueryClientCallbackWithoutList<T>(this ServerBase serverBase, IEnumerable<string> clientIds)
         {
-            return (from x in GetQueryClientCallbackWithoutListOfClientContext<T>(serverBase, sessionIds) select x.Service).ToList();
+            return (from x in GetQueryClientCallbackWithoutListOfClientContext<T>(serverBase, clientIds) select x.Service).ToList();
         }
     }
 }

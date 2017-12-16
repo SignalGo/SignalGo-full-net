@@ -30,7 +30,7 @@ namespace SignalGo.Server.ServiceManager
 
             var serviceType = RegisteredServiceTypes[callInfo.ServiceName];
             var sessionId = callInfo.Data.ToString();
-            var clientInfo = (from x in Clients.ToArray() where x.ClientId == sessionId select x).FirstOrDefault();
+            var clientInfo = Clients[sessionId];
             if (clientInfo == null)
                 throw new Exception("RegisterFile client not found!");
             var service = FindClientServiceByType(clientInfo, serviceType, null);
@@ -91,7 +91,7 @@ namespace SignalGo.Server.ServiceManager
 
             var serviceType = RegisteredServiceTypes[callInfo.ServiceName];
             var sessionId = callInfo.Data.ToString();
-            var clientInfo = (from x in Clients.ToArray() where x.ClientId == sessionId select x).FirstOrDefault();
+            var clientInfo = Clients[sessionId];
             if (clientInfo == null)
                 throw new Exception("RegisterFile client not found!");
             var service = FindClientServiceByType(clientInfo, serviceType, null);
