@@ -120,6 +120,8 @@ namespace SignalGo.Shared.Models
         /// </summary>
         public long Length { get; set; }
 
+        public string ClientId { get; set; }
+
         /// <summary>
         /// dispose the stream
         /// </summary>

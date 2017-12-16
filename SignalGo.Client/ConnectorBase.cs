@@ -304,6 +304,8 @@ namespace SignalGo.Client
         internal void Connect(string address, int port)
 #endif
         {
+            if (IsDisposed)
+                throw new ObjectDisposedException("Connector");
             _address = address;
             _port = port;
             IsDisposed = false;
@@ -334,6 +336,8 @@ namespace SignalGo.Client
         /// <returns>return instance class for call methods</returns>
         public T RegisterClientService<T>()
         {
+            if (IsDisposed)
+                throw new ObjectDisposedException("Connector");
             var type = typeof(T);
             MethodCallInfo callInfo = new MethodCallInfo()
             {
@@ -382,6 +386,8 @@ namespace SignalGo.Client
         /// <returns>return instance of interface that client can call methods</returns>
         public T RegisterClientServiceInterface<T>() where T : class
         {
+            if (IsDisposed)
+                throw new ObjectDisposedException("Connector");
             var type = typeof(T);
             var name = type.GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault().Name;
             MethodCallInfo callInfo = new MethodCallInfo()
@@ -412,6 +418,8 @@ namespace SignalGo.Client
         /// <returns>return instance of interface that client can call methods</returns>
         public T RegisterClientServiceInterfaceWrapper<T>() where T : class
         {
+            if (IsDisposed)
+                throw new ObjectDisposedException("Connector");
             var type = typeof(T);
             var name = type.GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault().Name;
             MethodCallInfo callInfo = new MethodCallInfo()
@@ -496,6 +504,8 @@ namespace SignalGo.Client
         /// <returns>return instance of interface that client can call methods</returns>
         public T RegisterStreamServiceInterfaceWrapper<T>(string serverAddress = null, int? port = null) where T : class
         {
+            if (IsDisposed)
+                throw new ObjectDisposedException("Connector");
             if (string.IsNullOrEmpty(serverAddress))
                 serverAddress = _address;
             if (port == null)
@@ -613,6 +623,8 @@ namespace SignalGo.Client
 
         public void RegisterClientServiceInterface(string serviceName)
         {
+            if (IsDisposed)
+                throw new ObjectDisposedException("Connector");
             MethodCallInfo callInfo = new MethodCallInfo()
             {
                 ServiceName = serviceName,
@@ -631,6 +643,8 @@ namespace SignalGo.Client
         /// <returns>return interface type to call methods</returns>
         public T RegisterClientServiceDynamicInterface<T>() where T : class
         {
+            if (IsDisposed)
+                throw new ObjectDisposedException("Connector");
             var type = typeof(T);
             var name = type.GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault().Name;
             MethodCallInfo callInfo = new MethodCallInfo()
@@ -660,6 +674,8 @@ namespace SignalGo.Client
         /// <returns>return dynamic type to call methods</returns>
         public dynamic RegisterClientServiceDynamic<T>() where T : class
         {
+            if (IsDisposed)
+                throw new ObjectDisposedException("Connector");
             var type = typeof(T);
             var name = type.GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault().Name;
             MethodCallInfo callInfo = new MethodCallInfo()
@@ -688,6 +704,8 @@ namespace SignalGo.Client
         /// <returns>return dynamic type to call methods</returns>
         public dynamic RegisterClientServiceDynamic(string serviceName)
         {
+            if (IsDisposed)
+                throw new ObjectDisposedException("Connector");
             MethodCallInfo callInfo = new MethodCallInfo()
             {
                 ServiceName = serviceName,
@@ -712,6 +730,8 @@ namespace SignalGo.Client
         /// <returns>return instance if type</returns>
         public T RegisterServerCallback<T>()
         {
+            if (IsDisposed)
+                throw new ObjectDisposedException("Connector");
             var type = typeof(T);
             var objectInstance = Activator.CreateInstance(type);
             //var duplex = objectInstance as ClientDuplex;
@@ -1002,6 +1022,8 @@ namespace SignalGo.Client
         string getmethodParameterDetailsResult = "";
         public string GetMethodParameterDetial(MethodParameterDetails methodParameterDetails)
         {
+            if (IsDisposed)
+                throw new ObjectDisposedException("Connector");
             AsyncActions.Run(() =>
             {
                 string json = ClientSerializationHelper.SerializeObject(methodParameterDetails);
@@ -1029,33 +1051,42 @@ namespace SignalGo.Client
             return getmethodParameterDetailsResult;
         }
 
-
+        public void Disconnect()
+        {
+            if (IsDisposed)
+                throw new ObjectDisposedException("Connector");
+            foreach (var item in ConnectorExtension.WaitedMethodsForResponse)
+            {
+                item.Value.Key.Set();
+            }
+            if (_client != null)
+#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
+                    _client.Dispose();
+#else
+                _client.Close();
+#endif
+            if (IsConnected)
+                OnDisconnected?.Invoke();
+#if (NET35)
+                getServiceDetailEvent?.Close();
+#else
+            getServiceDetailEvent?.Dispose();
+#endif
+            IsConnected = false;
+        }
         /// <summary>
         /// close and dispose connector
         /// </summary>
         public void Dispose()
         {
+            if (IsDisposed)
+                throw new ObjectDisposedException("Connector");
             try
             {
                 AutoLogger.LogText("Disposing Client");
                 IsConnected = false;
                 IsDisposed = true;
-                foreach (var item in ConnectorExtension.WaitedMethodsForResponse)
-                {
-                    item.Value.Key.Set();
-                }
-                if (_client != null)
-#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
-                    _client.Dispose();
-#else
-                    _client.Close();
-#endif
-                OnDisconnected?.Invoke();
-#if (NET35)
-                getServiceDetailEvent?.Close();
-#else
-                getServiceDetailEvent?.Dispose();
-#endif
+                Disconnect();
             }
             catch (Exception ex)
             {
