@@ -1084,9 +1084,8 @@ namespace SignalGo.Client
             try
             {
                 AutoLogger.LogText("Disposing Client");
-                IsConnected = false;
-                IsDisposed = true;
                 Disconnect();
+                IsDisposed = true;
             }
             catch (Exception ex)
             {
