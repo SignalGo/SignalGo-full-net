@@ -26,33 +26,25 @@ namespace SignalGo.Client
     /// </summary>
     public static class ConnectorExtension
     {
-        //static ConnectorExtension()
-        //{
-        //    CSCodeInjection.InvokedClientMethodAction = (connector, serviceName, method, parameters) =>
-        //    {
-        //        if (method.ReturnType == typeof(Task))
-        //        {
-        //            var task = new Task(() =>
-        //            {
-        //                SendData((ConnectorBase)connector, serviceName, method.Name, parameters);
-        //            });
-        //            task.Start();
-        //        }
-        //        else
-        //        {
-        //            SendData((ConnectorBase)connector, serviceName, method.Name, parameters);
-        //        }
+        static ConnectorExtension()
+        {
+            CSCodeInjection.InvokedClientMethodAction = (client, method, parameters) =>
+            {
+                if (!(client is OperationCalls))
+                {
+                    AutoLogger.LogText($"cannot cast! {method.Name} params {parameters?.Length}");
+                }
+                SendDataInvoke((OperationCalls)client, method.Name, parameters);
+            };
 
-        //    };
-
-        //    CSCodeInjection.InvokedClientMethodFunction = (connector, serviceName, method, parameters) =>
-        //    {
-        //        var data = SendData((ConnectorBase)connector, serviceName, method.Name, parameters);
-        //        if (data == null)
-        //            return null;
-        //        return data is StreamInfo ? data : ClientSerializationHelper.DeserializeObject(data.ToString(), method.ReturnType);
-        //    };
-        //}
+            CSCodeInjection.InvokedClientMethodFunction = (client, method, parameters) =>
+            {
+                var data = SendData((OperationCalls)client, method.Name, "", parameters);
+                if (data == null)
+                    return null;
+                return data is StreamInfo ? data : ClientSerializationHelper.DeserializeObject(data.ToString(), method.ReturnType);
+            };
+        }
 
         /// <summary>
         /// call method wait for complete response from clients
@@ -64,12 +56,12 @@ namespace SignalGo.Client
         /// </summary>
         /// <typeparam name="T">return type data</typeparam>
         /// <param name="client">client for send data</param>
-        /// <param name="serviceName">method name</param>
+        /// <param name="callerName">method name</param>
         /// <param name="args">argumants of method</param>
         /// <returns></returns>
-        internal static T SendData<T>(ConnectorBase connector, string serviceName, params object[] args)
+        internal static T SendData<T>(this OperationCalls client, string callerName, params object[] args)
         {
-            var data = SendData(connector, serviceName, "", args);
+            var data = SendData(client, callerName, "", args);
             if (data == null || data.ToString() == "")
                 return default(T);
             return ClientSerializationHelper.DeserializeObject<T>(data.ToString());
@@ -88,48 +80,48 @@ namespace SignalGo.Client
                 return default(T);
             return ClientSerializationHelper.DeserializeObject<T>(data.ToString());
         }
-
-        ///// <summary>
-        ///// send data none return value
-        ///// </summary>
-        ///// <param name="client"></param>
-        ///// <param name="serviceName"></param>
-        ///// <param name="args"></param>
-        //internal static void SendDataInvoke(ConnectorBase connector, string serviceName, params object[] args)
-        //{
-        //    SendData(connector, serviceName, "", args);
-        //}
+        /// <summary>
+        /// send data none return value
+        /// </summary>
+        /// <param name="client"></param>
+        /// <param name="callerName"></param>
+        /// <param name="args"></param>
+        internal static void SendDataInvoke(this OperationCalls client, string callerName, params object[] args)
+        {
+            SendData(client, callerName, "", args);
+        }
 
         /// <summary>
         /// send data not use params by array object
         /// </summary>
         /// <param name="client"></param>
-        /// <param name="serviceName"></param>
-        /// <param name="methodName"></param>
+        /// <param name="callerName"></param>
+        /// <param name="attibName"></param>
         /// <param name="args"></param>
         /// <returns></returns>
-        internal static object SendDataNoParam(ConnectorBase connector, string serviceName, string methodName, object[] args)
+        internal static object SendDataNoParam(this OperationCalls client, string callerName, string attibName, object[] args)
         {
-            return SendData(connector, serviceName, methodName, args);
+            return SendData(client, callerName, attibName, args);
         }
 
-        ///// <summary>
-        ///// send data to server
-        ///// </summary>
-        ///// <param name="client">client is sended</param>
-        ///// <param name="serviceName">methos name</param>
-        ///// <param name="attibName">service name</param>
-        ///// <param name="args">method parameters</param>
-        ///// <returns></returns>
-        //internal static object SendData(ConnectorBase connector, string serviceName, string attibName, params object[] args)
-        //{
-        //    if (string.IsNullOrEmpty(attibName))
-        //        serviceName = client.GetType().GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault().Name;
-        //    else
-        //        serviceName = attibName;
+        /// <summary>
+        /// send data to server
+        /// </summary>
+        /// <param name="client">client is sended</param>
+        /// <param name="callerName">methos name</param>
+        /// <param name="attibName">service name</param>
+        /// <param name="args">method parameters</param>
+        /// <returns></returns>
+        internal static object SendData(this OperationCalls client, string callerName, string attibName, params object[] args)
+        {
+            string serviceName = "";
+            if (string.IsNullOrEmpty(attibName))
+                serviceName = client.GetType().GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault().Name;
+            else
+                serviceName = attibName;
 
-        //    return SendData(Connector, serviceName, serviceName, args);
-        //}
+            return SendData(client.Connector, serviceName, callerName, args);
+        }
 
         /// <summary>
         /// send data to server
@@ -355,9 +347,9 @@ namespace SignalGo.Client
             };
             var callback = this.SendData<MethodCallbackInfo>(callInfo);
             var objectInstance = Activator.CreateInstance(type);
-            //var duplex = objectInstance as OperationCalls;
-            //if (duplex != null)
-            //    duplex.Connector = this;
+            var duplex = objectInstance as OperationCalls;
+            if (duplex != null)
+                duplex.Connector = this;
             Services.TryAdd(callInfo.ServiceName, objectInstance);
             return (T)objectInstance;
         }
@@ -382,37 +374,37 @@ namespace SignalGo.Client
         {
             return default(T);
         }
-//#if (!NETSTANDARD1_6 && !NETCOREAPP1_1 && !NET35 && !PORTABLE)
-//        /// <summary>
-//        /// register service and method to server for client call thats
-//        /// </summary>
-//        /// <typeparam name="T">type of interface for create instanse</typeparam>
-//        /// <returns>return instance of interface that client can call methods</returns>
-//        public T RegisterClientServiceInterface<T>() where T : class
-//        {
-//            var type = typeof(T);
-//            var name = type.GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault().Name;
-//            MethodCallInfo callInfo = new MethodCallInfo()
-//            {
-//                ServiceName = name,
-//                MethodName = "/RegisterService",
-//                Guid = Guid.NewGuid().ToString()
-//            };
-//            var callback = this.SendData<MethodCallbackInfo>(callInfo);
+#if (!NETSTANDARD1_6 && !NETCOREAPP1_1 && !NET35 && !PORTABLE)
+        /// <summary>
+        /// register service and method to server for client call thats
+        /// </summary>
+        /// <typeparam name="T">type of interface for create instanse</typeparam>
+        /// <returns>return instance of interface that client can call methods</returns>
+        public T RegisterClientServiceInterface<T>() where T : class
+        {
+            var type = typeof(T);
+            var name = type.GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault().Name;
+            MethodCallInfo callInfo = new MethodCallInfo()
+            {
+                ServiceName = name,
+                MethodName = "/RegisterService",
+                Guid = Guid.NewGuid().ToString()
+            };
+            var callback = this.SendData<MethodCallbackInfo>(callInfo);
 
-//            var t = CSCodeInjection.GenerateInterfaceType(type, typeof(OperationCalls), new List<Type>() { typeof(ServiceContractAttribute), this.GetType() }, false);
+            var t = CSCodeInjection.GenerateInterfaceType(type, typeof(OperationCalls), new List<Type>() { typeof(ServiceContractAttribute), this.GetType() }, false);
 
-//            var objectInstance = Activator.CreateInstance(t);
-//            dynamic dobj = objectInstance;
-//            dobj.InvokedClientMethodAction = CSCodeInjection.InvokedClientMethodAction;
-//            dobj.InvokedClientMethodFunction = CSCodeInjection.InvokedClientMethodFunction;
+            var objectInstance = Activator.CreateInstance(t);
+            dynamic dobj = objectInstance;
+            dobj.InvokedClientMethodAction = CSCodeInjection.InvokedClientMethodAction;
+            dobj.InvokedClientMethodFunction = CSCodeInjection.InvokedClientMethodFunction;
 
-//            //var duplex = objectInstance as OperationCalls;
-//            //duplex.Connector = this;
-//            Services.TryAdd(name, objectInstance);
-//            return (T)objectInstance;
-//        }
-//#endif
+            var duplex = objectInstance as OperationCalls;
+            duplex.Connector = this;
+            Services.TryAdd(name, objectInstance);
+            return (T)objectInstance;
+        }
+#endif
         /// <summary>
         /// register service and method to server for client call thats
         /// </summary>
@@ -438,9 +430,9 @@ namespace SignalGo.Client
                     if (method.ReturnType == typeof(Task))
                     {
                         var task = new Task(() =>
-                        {
-                            ConnectorExtension.SendData(this, serviceName, method.Name, args);
-                        });
+                         {
+                             ConnectorExtension.SendData(this, serviceName, method.Name, args);
+                         });
                         task.Start();
                         return task;
                     }

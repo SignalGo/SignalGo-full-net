@@ -280,19 +280,19 @@ namespace SignalGo.Server.ServiceManager
         /// register stream service for download and upload stream or file
         /// </summary>
         /// <typeparam name="T"></typeparam>
-        //        public void RegisterStreamService<T>()
-        //        {
-        //            RegisterStreamService(typeof(T));
-        //        }
-        //#if (!NETSTANDARD1_6 && !NETCOREAPP1_1)
-        //        public void RegisterClientCallbackInterfaceService<T>()
-        //        {
-        //            Type type = typeof(T);
-        //            var name = type.GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault().Name;// (().GetCustomAttributes(typeof(ServiceContractAttribute), true).FirstOrDefault()).Name;
-        //            var obj = CSCodeInjection.GenerateInterfaceType(type, typeof(OperationCalls), new List<Type>() { typeof(ServiceContractAttribute), this.GetType() }, true);
-        //            RegisteredCallbacksTypes.TryAdd(name, obj);
-        //        }
-        //#endif
+        public void RegisterStreamService<T>()
+        {
+            RegisterStreamService(typeof(T));
+        }
+#if (!NETSTANDARD1_6 && !NETCOREAPP1_1)
+        public void RegisterClientCallbackInterfaceService<T>()
+        {
+            Type type = typeof(T);
+            var name = type.GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault().Name;// (().GetCustomAttributes(typeof(ServiceContractAttribute), true).FirstOrDefault()).Name;
+            var obj = CSCodeInjection.GenerateInterfaceType(type, typeof(OperationCalls), new List<Type>() { typeof(ServiceContractAttribute), this.GetType() }, true);
+            RegisteredCallbacksTypes.TryAdd(name, obj);
+        }
+#endif
 
         internal Type GetRegisteredCallbacksTypeByName(string name)
         {

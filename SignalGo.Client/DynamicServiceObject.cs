@@ -13,7 +13,7 @@ namespace SignalGo.Client
     /// <summary>
     /// helper of dynamic calls
     /// </summary>
-    internal class DynamicServiceObject : DynamicObject
+    internal class DynamicServiceObject : DynamicObject, OperationCalls
     {
         /// <summary>
         /// service name
@@ -35,12 +35,12 @@ namespace SignalGo.Client
             var type = ReturnTypes[binder.Name];
             if (type == typeof(void))
             {
-                ConnectorExtension.SendData(Connector, ServiceName, binder.Name, args);
+                this.SendDataNoParam(binder.Name, ServiceName, args);
                 result = null;
             }
             else
             {
-                var data = ConnectorExtension.SendData(Connector, ServiceName, binder.Name, args).ToString();
+                var data = this.SendDataNoParam(binder.Name, ServiceName, args).ToString();
                 result = Newtonsoft.Json.JsonConvert.DeserializeObject(data, type);
             }
             return true;
@@ -64,7 +64,7 @@ namespace SignalGo.Client
     /// <summary>
     /// helper of dynamic calls
     /// </summary>
-    internal class DynamicServiceObjectWitoutInterface : DynamicObject
+    internal class DynamicServiceObjectWitoutInterface : DynamicObject, OperationCalls
     {
         /// <summary>
         /// service name
@@ -78,7 +78,7 @@ namespace SignalGo.Client
 
         public override bool TryInvokeMember(InvokeMemberBinder binder, object[] args, out object result)
         {
-            result = ConnectorExtension.SendData(Connector, ServiceName, binder.Name, args);
+            result = this.SendDataNoParam(binder.Name, ServiceName, args);
             return true;
         }
     }
