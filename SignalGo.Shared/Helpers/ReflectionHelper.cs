@@ -293,5 +293,14 @@ namespace SignalGo.Shared.Helpers
             return type.GetGenericArguments();
 #endif
         }
+
+        public static Delegate CreateDelegate(Type type, MethodInfo method)
+        {
+#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
+            return method.CreateDelegate(type);
+#else
+            return  Delegate.CreateDelegate(type, method);
+#endif
+        }
     }
 }

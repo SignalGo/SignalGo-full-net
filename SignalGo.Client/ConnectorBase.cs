@@ -432,64 +432,65 @@ namespace SignalGo.Client
 
             var objectInstance = InterfaceWrapper.Wrap<T>((serviceName, method, args) =>
             {
-                try
+                //this is async action
+                if (method.ReturnType == typeof(Task))
                 {
-                    //this is async action
-                    if (method.ReturnType == typeof(Task))
+                    string methodName = method.Name;
+                    if (methodName.EndsWith("Async"))
+                        methodName = methodName.Substring(0, methodName.Length - 5);
+                    var task = new Task(() =>
                     {
-                        var task = new Task(() =>
-                         {
-                             ConnectorExtension.SendData(this, serviceName, method.Name, args);
-                         });
-                        task.Start();
-                        return task;
-                    }
-                    //this is async function
-                    else if (method.ReturnType.GetBaseType() == typeof(Task))
+                        ConnectorExtension.SendData(this, serviceName, methodName, args);
+                    });
+                    task.Start();
+                    return task;
+                }
+                //this is async function
+                else if (method.ReturnType.GetBaseType() == typeof(Task))
+                {
+                    string methodName = method.Name;
+                    if (methodName.EndsWith("Async"))
+                        methodName = methodName.Substring(0, methodName.Length - 5);
+                    var methodType = method.ReturnType.GetListOfGenericArguments().FirstOrDefault();
+                    var funcR = new Func<object>(() =>
                     {
-                        var func = new Func<object>(() =>
+                        var data = ConnectorExtension.SendData(this, serviceName, methodName, args);
+                        if (data == null)
+                            return null;
+                        if (data is StreamInfo)
+                            return data;
+                        else
                         {
-                            var data = ConnectorExtension.SendData(this, serviceName, method.Name, args);
-                            if (data == null)
-                                return null;
-                            if (data is StreamInfo)
-                                return data;
-                            else
-                            {
-                                var result = ClientSerializationHelper.DeserializeObject(data.ToString(), method.ReturnType.GetListOfGenericArguments().FirstOrDefault());
-                                return result;
-                            }
-                        });
-
-                        var task = (Task)Activator.CreateInstance(typeof(Task<>).MakeGenericType(typeof(object)), func);
-                        task.Start();
-                        return task;
+                            var result = ClientSerializationHelper.DeserializeObject(data.ToString(), methodType);
+                            return result;
+                        }
+                    });
+                    var mc_custom_type = typeof(FunctionCaster<>).MakeGenericType(methodType);
+                    var mc_instance = Activator.CreateInstance(mc_custom_type);
+                    var mc_custom_method = mc_custom_type.FindMethod("Do");
+                    return mc_custom_method.Invoke(mc_instance, new object[] { funcR
+    });
+                }
+                else
+                {
+                    if (typeof(void) == method.ReturnType)
+                    {
+                        ConnectorExtension.SendData(this, serviceName, method.Name, args);
+                        return null;
                     }
                     else
                     {
-                        if (typeof(void) == method.ReturnType)
-                        {
-                            ConnectorExtension.SendData(this, serviceName, method.Name, args);
+                        var data = ConnectorExtension.SendData(this, serviceName, method.Name, args);
+                        if (data == null)
                             return null;
-                        }
+                        if (data is StreamInfo)
+                            return data;
                         else
                         {
-                            var data = ConnectorExtension.SendData(this, serviceName, method.Name, args);
-                            if (data == null)
-                                return null;
-                            if (data is StreamInfo)
-                                return data;
-                            else
-                            {
-                                var result = ClientSerializationHelper.DeserializeObject(data.ToString(), method.ReturnType);
-                                return result;
-                            }
-                        };
-                    }
-                }
-                catch (Exception ex)
-                {
-                    return null;
+                            var result = ClientSerializationHelper.DeserializeObject(data.ToString(), method.ReturnType);
+                            return result;
+                        }
+                    };
                 }
             });
 
