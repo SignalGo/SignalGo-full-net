@@ -6,10 +6,10 @@
     <MinimumVisualStudioVersion>10.0</MinimumVisualStudioVersion>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <AssemblyVersion>2.5</AssemblyVersion>
-    <FileVersion>2.5</FileVersion>
-    <VersionPrefix>2.5</VersionPrefix>
-    <Version>2.5</Version>
+    <AssemblyVersion>3.0</AssemblyVersion>
+    <FileVersion>3.0</FileVersion>
+    <VersionPrefix>3.0</VersionPrefix>
+    <Version>3.0</Version>
     <!--<VersionSuffix>beta1</VersionSuffix>-->
     <Authors>Ali Yousefi</Authors>
     <Company></Company>
@@ -34,11 +34,20 @@
 
       8.call methods from http (GET and Post) protocol(like browser) with support upload files and manage Controllers like asp.net MVC
 
+      9.support async await methods
+
+      10.full logging systeam
+
+      11.manage data exchanger to customize model properties in send and receive data without create new class
       and other features...
     </Description>
     <Copyright>Copyright © ali.visual.studio@gmail.com 2016</Copyright>
     <Summary>
     </Summary>
+    <PackageReleaseNotes>
+      1.fix bugs and more improvement
+      2.support for async await methods
+    </PackageReleaseNotes>
     <NeutralLanguage>en-US</NeutralLanguage>
     <PackageId>SignalGo.Shared</PackageId>
     <PackageTags>SignalGo SignalR WCF Server Client Signal Sig RealTime Real-Time</PackageTags>

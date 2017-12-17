@@ -5,38 +5,46 @@
     <ProjectGuid>{8170E507-F79C-49C4-9EC2-9112C565A98B}</ProjectGuid>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <Copyright>Copyright © ali.visual.studio@gmail.com 2016</Copyright>
-    <Description>SignalGo is a library for Cross-Platform developers that makes it incredibly simple to add real-time web functionality to your applications. What is "real-time web" functionality? It's the ability to have your server-side code push content to the connected clients as it happens, in real-time. like WCF and SignalR
-Features:
+    <Description>
+      SignalGo is a library for Cross-Platform developers that makes it incredibly simple to add real-time web functionality to your applications. What is "real-time web" functionality? It's the ability to have your server-side code push content to the connected clients as it happens, in real-time. like WCF and SignalR
+      Features:
 
-1.Send and receive any data like class,object,parameters,methods,return types
+      1.Send and receive any data like class,object,parameters,methods,return types
 
-2.Send(upload) and receive(download) stream like file stream
+      2.Send(upload) and receive(download) stream like file stream
 
-3.Send and receive data with UDP connection for sound and video streamming
+      3.Send and receive data with UDP connection for sound and video streamming
 
-4.Return data from a method (client and server)
+      4.Return data from a method (client and server)
 
-5.Linq query to Clients for send or receive data
+      5.Linq query to Clients for send or receive data
 
-6.Setting for maximum and minimum and timeout data transport
+      6.Setting for maximum and minimum and timeout data transport
 
-7.Using best security algoritm for send or receive data
+      7.Using best security algoritm for send or receive data
 
-8.call methods from http (GET and Post) protocol(like browser) with support upload files and manage Controllers like asp.net MVC
+      8.call methods from http (GET and Post) protocol(like browser) with support upload files and manage Controllers like asp.net MVC
 
-and other features...</Description>
+      9.support async await methods
+
+      10.full logging systeam
+
+      11.manage data exchanger to customize model properties in send and receive data without create new class
+      and other features...
+    </Description>
     <PackageLicenseUrl>https://github.com/SignalGo/SignalGo-full-net/blob/master/LICENSE</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/SignalGo/SignalGo-full-net</PackageProjectUrl>
     <PackageIconUrl>http://cdn.persiangig.com/preview/v14ukL88fq/SignalGo.png</PackageIconUrl>
     <PackageTags>SignalGo SignalR WCF Server Client Signal Sig RealTime Real-Time</PackageTags>
     <AssemblyName>SignalGo.Server</AssemblyName>
-    <AssemblyVersion>2.5</AssemblyVersion>
-    <FileVersion>2.5</FileVersion>
-    <VersionPrefix>2.5</VersionPrefix>
-    <Version>2.5</Version>
-    <PackageReleaseNotes>1.fix bugs and more improvement
-2.support upload files with POST
-3.support for .net 3.5 , .net 4.0 , .net 4.5, .net core 1.1 , .net standard 1.6</PackageReleaseNotes>
+    <AssemblyVersion>3.0</AssemblyVersion>
+    <FileVersion>3.0</FileVersion>
+    <VersionPrefix>3.0</VersionPrefix>
+    <Version>3.0</Version>
+    <PackageReleaseNotes>
+      1.fix bugs and more improvement
+      2.support for async await methods
+    </PackageReleaseNotes>
   </PropertyGroup>
   <PropertyGroup>
     <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\SignalGo.Server.xml</DocumentationFile>

@@ -10,10 +10,10 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>SignalGo.Client</RootNamespace>
     <AssemblyName>SignalGo.Client</AssemblyName>
-    <AssemblyVersion>2.5</AssemblyVersion>
-    <FileVersion>2.5</FileVersion>
-    <VersionPrefix>2.5</VersionPrefix>
-    <Version>2.5</Version>
+    <AssemblyVersion>3.0</AssemblyVersion>
+    <FileVersion>3.0</FileVersion>
+    <VersionPrefix>3.0</VersionPrefix>
+    <Version>3.0</Version>
     <Copyright>Copyright © ali.visual.studio@gmail.com 2016</Copyright>
     <Description>
       SignalGo is a library for Cross-Platform developers that makes it incredibly simple to add real-time web functionality to your applications. What is "real-time web" functionality? It's the ability to have your server-side code push content to the connected clients as it happens, in real-time. like WCF and SignalR
@@ -35,6 +35,11 @@
 
       8.call methods from http (GET and Post) protocol(like browser) with support upload files and manage Controllers like asp.net MVC
 
+      9.support async await methods
+      
+      10.full logging systeam
+      
+      11.manage data exchanger to customize model properties in send and receive data without create new class
       and other features...
     </Description>
     <PackageLicenseUrl>https://github.com/SignalGo/SignalGo-full-net/blob/master/LICENSE</PackageLicenseUrl>
@@ -43,8 +48,7 @@
     <PackageTags>SignalGo SignalR WCF Server Client Signal Sig RealTime Real-Time</PackageTags>
     <PackageReleaseNotes>
       1.fix bugs and more improvement
-      2.support upload files with POST
-      3.support for .net 3.5 , .net 4.0 , .net 4.5, .net core 1.1 , .net standard 1.6
+      2.support for async await methods
     </PackageReleaseNotes>
   </PropertyGroup>
   <PropertyGroup>
