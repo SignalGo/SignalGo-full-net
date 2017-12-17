@@ -571,19 +571,25 @@ namespace SignalGo.Client
                     GoStreamWriter.WriteBlockToStream(stream, jsonBytes);
                     if (isUpload)
                     {
-                        long length = iStream.Length;
-                        long position = 0;
-                        int blockOfRead = 1024 * 10;
-                        while (length != position)
+                        if (iStream.WriteManually != null)
+                            iStream.WriteManually(stream);
+                        else
                         {
+                            long length = iStream.Length;
+                            long position = 0;
+                            int blockOfRead = 1024 * 10;
+                            while (length != position)
+                            {
 
-                            if (position + blockOfRead > length)
-                                blockOfRead = (int)(length - position);
-                            bytes = new byte[blockOfRead];
-                            var readCount = iStream.Stream.Read(bytes, 0, bytes.Length);
-                            position += readCount;
-                            stream.Write(bytes, 0, readCount);
+                                if (position + blockOfRead > length)
+                                    blockOfRead = (int)(length - position);
+                                bytes = new byte[blockOfRead];
+                                var readCount = iStream.Stream.Read(bytes, 0, bytes.Length);
+                                position += readCount;
+                                stream.Write(bytes, 0, readCount);
+                            }
                         }
+                        
                         var responseType = (DataType)GoStreamReader.ReadOneByte(readStream, CompressMode.None, ProviderSetting.MaximumReceiveStreamHeaderBlock, false);
                         var compressMode = (CompressMode)GoStreamReader.ReadOneByte(readStream, CompressMode.None, ProviderSetting.MaximumReceiveStreamHeaderBlock, false);
                     }

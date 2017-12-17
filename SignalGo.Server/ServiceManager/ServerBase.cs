@@ -267,7 +267,7 @@ namespace SignalGo.Server.ServiceManager
         public void RegisterStreamService(Type type)
         {
 #if (NETSTANDARD1_6 || NETCOREAPP1_1)
-            var name = ((ServiceContractAttribute)type.GetTypeInfo().GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault()).Name;
+            var name = ((ServiceContractAttribute)AttributeHelper.GetCustomAttributes<ServiceContractAttribute>(type, true).FirstOrDefault()).Name;
 #else
             var name = ((ServiceContractAttribute)type.GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault()).Name;
 #endif
@@ -359,6 +359,12 @@ namespace SignalGo.Server.ServiceManager
                             //"SignalGo/1.0";
                             client.IsWebSocket = false;
                             var b = GoStreamReader.ReadOneByte(tcpClient.GetStream(), CompressMode.None, 1, false);
+                            if (SynchronizationContext.Current == null)
+                                SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());
+                            //ClientDispatchers.TryAdd(client, SynchronizationContext.Current);
+                            AllDispatchers.Add(SynchronizationContext.Current, client);
+                            client.MainContext = SynchronizationContext.Current;
+                            client.MainThread = System.Threading.Thread.CurrentThread;
                             //upload from client and download from server
                             if (b == 0)
                             {

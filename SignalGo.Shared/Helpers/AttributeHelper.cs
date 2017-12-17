@@ -33,7 +33,45 @@ namespace System
             return GetCustomAttributes(type, typeof(T), inherit).Select(arg => (T)arg).ToArray();
         }
 
-        static ConcurrentDictionary<Type, object[]> CachedCustomAttributes = new ConcurrentDictionary<Type, object[]>();
+        /// <summary>Searches and returns attributes. The inheritance chain is not used to find the attributes.</summary>
+        /// <typeparam name="T">The type of attribute to search for.</typeparam>
+        /// <param name="type">The type which is searched for the attributes.</param>
+        /// <returns>Returns all attributes.</returns>
+        public static T[] GetCustomAttributes<T>(this FieldInfo type) where T : Attribute
+        {
+            return GetCustomAttributes(type, typeof(T), false).Select(arg => (T)arg).ToArray();
+        }
+
+        /// <summary>Searches and returns attributes.</summary>
+        /// <typeparam name="T">The type of attribute to search for.</typeparam>
+        /// <param name="type">The type which is searched for the attributes.</param>
+        /// <param name="inherit">Specifies whether to search this member's inheritance chain to find the attributes. Interfaces will be searched, too.</param>
+        /// <returns>Returns all attributes.</returns>
+        public static T[] GetCustomAttributes<T>(this FieldInfo type, bool inherit) where T : Attribute
+        {
+            return GetCustomAttributes(type, typeof(T), inherit).Select(arg => (T)arg).ToArray();
+        }
+
+        /// <summary>Searches and returns attributes. The inheritance chain is not used to find the attributes.</summary>
+        /// <typeparam name="T">The type of attribute to search for.</typeparam>
+        /// <param name="type">The type which is searched for the attributes.</param>
+        /// <returns>Returns all attributes.</returns>
+        public static T[] GetCustomAttributes<T>(this PropertyInfo type) where T : Attribute
+        {
+            return GetCustomAttributes(type, typeof(T), false).Select(arg => (T)arg).ToArray();
+        }
+
+        /// <summary>Searches and returns attributes.</summary>
+        /// <typeparam name="T">The type of attribute to search for.</typeparam>
+        /// <param name="type">The type which is searched for the attributes.</param>
+        /// <param name="inherit">Specifies whether to search this member's inheritance chain to find the attributes. Interfaces will be searched, too.</param>
+        /// <returns>Returns all attributes.</returns>
+        public static T[] GetCustomAttributes<T>(this PropertyInfo type, bool inherit) where T : Attribute
+        {
+            return GetCustomAttributes(type, typeof(T), inherit).Select(arg => (T)arg).ToArray();
+        }
+
+        static ConcurrentDictionary<object, object[]> CachedCustomAttributes = new ConcurrentDictionary<object, object[]>();
         /// <summary>Private helper for searching attributes.</summary>
         /// <param name="type">The type which is searched for the attribute.</param>
         /// <param name="attributeType">The type of attribute to search for.</param>
@@ -79,6 +117,52 @@ namespace System
             {
                 GetCustomAttributes(interfaceType, attributeType, true).Apply(attributeCollection.Add);
             }
+
+            var attributeArray = new object[attributeCollection.Count];
+            attributeCollection.CopyTo(attributeArray, 0);
+            if (!CachedCustomAttributes.ContainsKey(type))
+                CachedCustomAttributes.TryAdd(type, attributeArray);
+            return attributeArray;
+        }
+
+        private static object[] GetCustomAttributes(FieldInfo type, Type attributeType, bool inherit)
+        {
+            if (CachedCustomAttributes.ContainsKey(type))
+                return CachedCustomAttributes[type];
+            if (!inherit)
+            {
+                object[] cach = null;
+                cach = GetCustomAttributes(type, attributeType, false);
+                if (!CachedCustomAttributes.ContainsKey(type))
+                    CachedCustomAttributes.TryAdd(type, cach);
+                return cach;
+            }
+
+            var attributeCollection = new Collection<object>();
+            type.GetCustomAttributes(attributeType, true).Apply(attributeCollection.Add);
+
+            var attributeArray = new object[attributeCollection.Count];
+            attributeCollection.CopyTo(attributeArray, 0);
+            if (!CachedCustomAttributes.ContainsKey(type))
+                CachedCustomAttributes.TryAdd(type, attributeArray);
+            return attributeArray;
+        }
+
+        private static object[] GetCustomAttributes(PropertyInfo type, Type attributeType, bool inherit)
+        {
+            if (CachedCustomAttributes.ContainsKey(type))
+                return CachedCustomAttributes[type];
+            if (!inherit)
+            {
+                object[] cach = null;
+                cach = GetCustomAttributes(type, attributeType, false);
+                if (!CachedCustomAttributes.ContainsKey(type))
+                    CachedCustomAttributes.TryAdd(type, cach);
+                return cach;
+            }
+
+            var attributeCollection = new Collection<object>();
+            type.GetCustomAttributes(attributeType, true).Apply(attributeCollection.Add);
 
             var attributeArray = new object[attributeCollection.Count];
             attributeCollection.CopyTo(attributeArray, 0);

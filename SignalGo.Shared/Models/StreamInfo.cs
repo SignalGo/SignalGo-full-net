@@ -30,6 +30,10 @@ namespace SignalGo.Shared.Models
         /// length of stream
         /// </summary>
         long Length { get; set; }
+        /// <summary>
+        /// wrtie manually to stream
+        /// </summary>
+        Action<Stream> WriteManually { get; set; }
     }
     /// <summary>
     /// stream for upload and download
@@ -50,6 +54,11 @@ namespace SignalGo.Shared.Models
         /// </summary>
         [JsonIgnore()]
         internal Action GetStreamAction { get; set; }
+        /// <summary>
+        /// wrtie manually to stream
+        /// </summary>
+        [JsonIgnore()]
+        public Action<Stream> WriteManually { get; set; }
         /// <summary>
         /// client id 
         /// </summary>
@@ -115,6 +124,11 @@ namespace SignalGo.Shared.Models
         public Dictionary<string, object> Headers { get; set; } = new Dictionary<string, object>();
         [JsonIgnore()]
         public Stream Stream { get; set; }
+        /// <summary>
+        /// wrtie manually to stream
+        /// </summary>
+        [JsonIgnore()]
+        public Action<Stream> WriteManually { get; set; }
         /// <summary>
         /// length of stream
         /// </summary>

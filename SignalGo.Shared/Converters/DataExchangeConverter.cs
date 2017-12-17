@@ -324,6 +324,20 @@ namespace SignalGo.Shared.Converters
             }
         }
 
+        bool HasJsonIgnore(Type type)
+        {
+            return type != null && type.GetCustomAttributes<JsonIgnoreAttribute>(true).Any();
+        }
+
+        bool HasJsonIgnore(PropertyInfo property)
+        {
+            return property != null && AttributeHelper.GetCustomAttributes<JsonIgnoreAttribute>(property, true).Any();
+        }
+
+        bool HasJsonIgnore(FieldInfo field)
+        {
+            return field != null && AttributeHelper.GetCustomAttributes<JsonIgnoreAttribute>(field, true).Any();
+        }
         /// <summary>
         /// write json for serialize object
         /// </summary>
@@ -334,12 +348,14 @@ namespace SignalGo.Shared.Converters
         {
             try
             {
-                if (SerializeHelper.GetTypeCodeOfObject(value.GetType()) != SerializeObjectType.Object)
+                var type = value.GetType();
+                if (HasJsonIgnore(type))
+                    return;
+                if (SerializeHelper.GetTypeCodeOfObject(type) != SerializeObjectType.Object)
                 {
                     writer.WriteValue(value);
                     return;
                 }
-                var type = value.GetType();
                 SerializeHelper.HandleSerializingObjectList.TryGetValue(type, out Delegate serializeHandler);
                 if (serializeHandler != null)
                 {
@@ -486,6 +502,8 @@ namespace SignalGo.Shared.Converters
             {
                 if ((property != null && property.CanRead) || field != null)
                 {
+                    if (HasJsonIgnore(property) || HasJsonIgnore(field))
+                        return;
                     SkipDataExchangeAttribute implementICollection = null;
                     if (property != null)
                         implementICollection = (SkipDataExchangeAttribute)property.GetCustomAttributes(typeof(SkipDataExchangeAttribute), true).FirstOrDefault();
