@@ -52,11 +52,8 @@ namespace SignalGo.Shared.IO
                 lengthWrited += writeCount;
             }
         }
-#if (PORTABLE)
+
         public static void WriteToStream(System.IO.Stream stream, byte[] data, bool IsWebSocket)
-#else
-        public static void WriteToStream(NetworkStream stream, byte[] data, bool IsWebSocket)
-#endif
         {
             if (IsWebSocket)
             {
@@ -68,12 +65,8 @@ namespace SignalGo.Shared.IO
                 stream.Write(data, 0, data.Length);
             }
         }
-
-#if (PORTABLE)
+        
         public static void WriteBlockToStream(System.IO.Stream stream, byte[] data)
-#else
-        public static void WriteBlockToStream(NetworkStream stream, byte[] data)
-#endif
         {
             var size = BitConverter.GetBytes(data.Length);
             stream.Write(size, 0, size.Length);

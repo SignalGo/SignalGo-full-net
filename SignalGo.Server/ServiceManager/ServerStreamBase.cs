@@ -148,7 +148,7 @@ namespace SignalGo.Server.ServiceManager
                         parameters.Add(ServerSerializationHelper.Deserialize(item.Value, prms[index].ParameterType, this));
                         index++;
                     }
-                    var data = (IStreamInfo)parameters.FirstOrDefault(x=>x.GetType() == typeof(StreamInfo) || (x.GetType().GetIsGenericType() && x.GetType().GetGenericTypeDefinition() == typeof(StreamInfo<>)));
+                    var data = (IStreamInfo)parameters.FirstOrDefault(x => x.GetType() == typeof(StreamInfo) || (x.GetType().GetIsGenericType() && x.GetType().GetGenericTypeDefinition() == typeof(StreamInfo<>)));
                     //var upStream = new UploadStreamGo(stream);
                     data.Stream = stream;
                     //upStream.SetLengthOfBase(data.Length);
@@ -168,7 +168,7 @@ namespace SignalGo.Server.ServiceManager
                     //}
                 }
             }
-            catch(IOException ex)
+            catch (IOException ex)
             {
                 Shared.Log.AutoLogger.LogError(ex, "upload stream error");
                 DisposeClient(client);

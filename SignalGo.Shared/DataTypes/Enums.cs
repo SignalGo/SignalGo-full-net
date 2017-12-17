@@ -42,6 +42,10 @@ namespace SignalGo
         /// get details of method parameters
         /// </summary>
         GetMethodParameterDetails = 7,
+        /// <summary>
+        /// flush stream for client side to get position of upload file
+        /// </summary>
+        FlushStream = 8,
     }
 
     /// <summary>

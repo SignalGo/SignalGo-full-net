@@ -166,8 +166,7 @@ namespace SignalGo.Shared.Helpers
 #else
                 .GetProperties(BindingFlags.Public |
                           BindingFlags.NonPublic |
-                          BindingFlags.Instance |
-                          BindingFlags.DeclaredOnly);
+                          BindingFlags.Instance);
 #endif
         }
         /// <summary>

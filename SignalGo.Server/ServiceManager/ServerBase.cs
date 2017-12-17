@@ -146,6 +146,10 @@ namespace SignalGo.Server.ServiceManager
 #else
                     server.Server.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
 #endif
+                    server.Server.ReceiveBufferSize = 1024;
+                    server.Server.SendBufferSize = 1024;
+                    server.Server.NoDelay = true;
+
                     //server = new TcpListener(IPAddress.Parse(serverUrl), port);
                     foreach (var item in virtualUrl)
                     {

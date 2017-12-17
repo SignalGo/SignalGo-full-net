@@ -321,6 +321,7 @@ namespace SignalGo.Client
                 throw new TimeoutException();
 #else
             _client = new TcpClient(address, port);
+            _client.NoDelay = true;
 #endif
 
             IsConnected = true;
@@ -516,93 +517,121 @@ namespace SignalGo.Client
 
             var objectInstance = InterfaceWrapper.Wrap<T>((serviceName, method, args) =>
             {
-                try
-                {
 #if (NETSTANDARD1_6 || NETCOREAPP1_1)
                     var _newClient = new TcpClient();
                     bool isSuccess = _newClient.ConnectAsync(serverAddress, port.Value).Wait(new TimeSpan(0, 0, 5));
                     if (!isSuccess)
                         throw new TimeoutException();
+                    _newClient.ReceiveBufferSize = 1024;
+                    _newClient.SendBufferSize = 1024;
 #elif (PORTABLE)
                     var _newClient = new Sockets.Plugin.TcpSocketClient();
                     bool isSuccess = _newClient.ConnectAsync(serverAddress, port.Value).Wait(new TimeSpan(0, 0, 5));
                     if (!isSuccess)
                         throw new TimeoutException();
 #else
-                    var _newClient = new TcpClient(serverAddress, port.Value);
+                var _newClient = new TcpClient(serverAddress, port.Value);
+                _newClient.ReceiveBufferSize = 1024;
+                _newClient.SendBufferSize = 1024;
+                _newClient.NoDelay = true;
 #endif
 #if (PORTABLE)
                     var stream = _newClient.WriteStream;
                     var readStream = _newClient.ReadStream;
 #else
-                    var stream = _newClient.GetStream();
-                    var readStream = stream;
+                var stream = _newClient.GetStream();
+                var readStream = stream;
 #endif
-                    //var json = JsonConvert.SerializeObject(Data);
-                    //var jsonBytes = Encoding.UTF8.GetBytes(json);
-                    var header = "SignalGo-Stream/2.0\r\n";
-                    var bytes = Encoding.UTF8.GetBytes(header);
-                    stream.Write(bytes, 0, bytes.Length);
-                    bool isUpload = false;
-                    if (method.GetParameters().Any(x => x.ParameterType == typeof(StreamInfo) || (x.ParameterType.GetIsGenericType() && x.ParameterType.GetGenericTypeDefinition() == typeof(StreamInfo<>))))
+
+                //var json = JsonConvert.SerializeObject(Data);
+                //var jsonBytes = Encoding.UTF8.GetBytes(json);
+                var header = "SignalGo-Stream/2.0\r\n";
+                var bytes = Encoding.UTF8.GetBytes(header);
+                stream.Write(bytes, 0, bytes.Length);
+                bool isUpload = false;
+                if (method.GetParameters().Any(x => x.ParameterType == typeof(StreamInfo) || (x.ParameterType.GetIsGenericType() && x.ParameterType.GetGenericTypeDefinition() == typeof(StreamInfo<>))))
+                {
+                    isUpload = true;
+                    stream.Write(new byte[] { 0 }, 0, 1);
+                }
+                else
+                    stream.Write(new byte[] { 1 }, 0, 1);
+
+                MethodCallInfo callInfo = new MethodCallInfo();
+                callInfo.ServiceName = name;
+                BaseStreamInfo iStream = null;
+                foreach (var item in args)
+                {
+                    if (item is BaseStreamInfo)
                     {
-                        isUpload = true;
-                        stream.Write(new byte[] { 0 }, 0, 1);
+                        iStream = (BaseStreamInfo)item;
+                        iStream.ClientId = ClientId;
                     }
+                    callInfo.Parameters.Add(new Shared.Models.ParameterInfo() { Value = ClientSerializationHelper.SerializeObject(item) });
+                }
+                callInfo.MethodName = method.Name;
+                var json = ClientSerializationHelper.SerializeObject(callInfo);
+
+                var jsonBytes = Encoding.UTF8.GetBytes(json);
+                GoStreamWriter.WriteBlockToStream(stream, jsonBytes);
+                CompressMode compressMode = CompressMode.None;
+                if (isUpload)
+                {
+                    KeyValue<DataType, CompressMode> firstData = null;
+                    iStream.GetPositionFlush = () =>
+                    {
+                        if (firstData != null && firstData.Key != DataType.FlushStream)
+                            return -1;
+                        firstData = iStream.ReadFirstData(readStream, ProviderSetting.MaximumReceiveStreamHeaderBlock);
+                        if (firstData.Key == DataType.FlushStream)
+                        {
+                            var data = GoStreamReader.ReadBlockToEnd(readStream, firstData.Value, ProviderSetting.MaximumReceiveStreamHeaderBlock, false);
+                            return BitConverter.ToInt32(data, 0);
+                        }
+                        return -1;
+                    };
+                    if (iStream.WriteManually != null)
+                        iStream.WriteManually(stream);
                     else
-                        stream.Write(new byte[] { 1 }, 0, 1);
-
-                    MethodCallInfo callInfo = new MethodCallInfo();
-                    callInfo.ServiceName = name;
-                    IStreamInfo iStream = null;
-                    foreach (var item in args)
                     {
-                        if (item is IStreamInfo)
+                        long length = iStream.Length;
+                        long position = 0;
+                        int blockOfRead = 1024 * 10;
+                        while (length != position)
                         {
-                            iStream = (IStreamInfo)item;
-                            iStream.ClientId = ClientId;
+
+                            if (position + blockOfRead > length)
+                                blockOfRead = (int)(length - position);
+                            bytes = new byte[blockOfRead];
+                            var readCount = iStream.Stream.Read(bytes, 0, bytes.Length);
+                            position += readCount;
+                            stream.Write(bytes, 0, readCount);
                         }
-                        callInfo.Parameters.Add(new Shared.Models.ParameterInfo() { Value = ClientSerializationHelper.SerializeObject(item) });
                     }
-                    callInfo.MethodName = method.Name;
-                    var json = ClientSerializationHelper.SerializeObject(callInfo);
-
-                    var jsonBytes = Encoding.UTF8.GetBytes(json);
-                    GoStreamWriter.WriteBlockToStream(stream, jsonBytes);
-                    if (isUpload)
+                    if (firstData == null || firstData.Key == DataType.FlushStream)
                     {
-                        if (iStream.WriteManually != null)
-                            iStream.WriteManually(stream);
-                        else
+                        while (true)
                         {
-                            long length = iStream.Length;
-                            long position = 0;
-                            int blockOfRead = 1024 * 10;
-                            while (length != position)
+                            firstData = iStream.ReadFirstData(readStream, ProviderSetting.MaximumReceiveStreamHeaderBlock);
+                            if (firstData.Key == DataType.FlushStream)
                             {
-
-                                if (position + blockOfRead > length)
-                                    blockOfRead = (int)(length - position);
-                                bytes = new byte[blockOfRead];
-                                var readCount = iStream.Stream.Read(bytes, 0, bytes.Length);
-                                position += readCount;
-                                stream.Write(bytes, 0, readCount);
+                                var data = GoStreamReader.ReadBlockToEnd(readStream, firstData.Value, ProviderSetting.MaximumReceiveStreamHeaderBlock, false);
                             }
+                            else
+                                break;
                         }
-                        
-                        var responseType = (DataType)GoStreamReader.ReadOneByte(readStream, CompressMode.None, ProviderSetting.MaximumReceiveStreamHeaderBlock, false);
-                        var compressMode = (CompressMode)GoStreamReader.ReadOneByte(readStream, CompressMode.None, ProviderSetting.MaximumReceiveStreamHeaderBlock, false);
                     }
+                }
 
 
-                    var callBackBytes = GoStreamReader.ReadBlockToEnd(readStream, CompressMode.None, ProviderSetting.MaximumReceiveStreamHeaderBlock, false);
-                    var callbackInfo = ClientSerializationHelper.DeserializeObject<MethodCallbackInfo>(Encoding.UTF8.GetString(callBackBytes, 0, callBackBytes.Length));
+                var callBackBytes = GoStreamReader.ReadBlockToEnd(readStream, compressMode, ProviderSetting.MaximumReceiveStreamHeaderBlock, false);
+                var callbackInfo = ClientSerializationHelper.DeserializeObject<MethodCallbackInfo>(Encoding.UTF8.GetString(callBackBytes, 0, callBackBytes.Length));
 
-                    var result = ClientSerializationHelper.DeserializeObject(callbackInfo.Data, method.ReturnType);
-                    if (!isUpload)
-                    {
-                        result.GetType().GetPropertyInfo("Stream").SetValue(result, stream, null);
-                        result.GetType().GetPropertyInfo("GetStreamAction"
+                var result = ClientSerializationHelper.DeserializeObject(callbackInfo.Data, method.ReturnType);
+                if (!isUpload)
+                {
+                    result.GetType().GetPropertyInfo("Stream").SetValue(result, stream, null);
+                    result.GetType().GetPropertyInfo("GetStreamAction"
 #if (!PORTABLE)
                         , BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance
 #endif
@@ -615,14 +644,9 @@ namespace SignalGo.Client
 #endif
                             ).SetValue(result, null, null);
                         }), null);
-                    }
+                }
 
-                    return result;
-                }
-                catch (Exception ex)
-                {
-                    return null;
-                }
+                return result;
             });
 
             return (T)objectInstance;

@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using SignalGo.Shared.IO;
 using SignalGo.Shared.Log;
 using System;
 using System.Collections.Generic;
@@ -34,17 +35,19 @@ namespace SignalGo.Shared.Models
         /// wrtie manually to stream
         /// </summary>
         Action<Stream> WriteManually { get; set; }
+        /// <summary>
+        /// get position of flush stream
+        /// </summary>
+        Func<int> GetPositionFlush { get; set; }
     }
-    /// <summary>
-    /// stream for upload and download
-    /// </summary>
-    /// <typeparam name="T">data of stream</typeparam>
-    public class StreamInfo<T> : IStreamInfo
+
+    public class BaseStreamInfo : IStreamInfo
     {
         /// <summary>
-        /// data of stream
+        /// get position of flush stream
         /// </summary>
-        public T Data { get; set; }
+        [JsonIgnore()]
+        public Func<int> GetPositionFlush { get; set; }
         /// <summary>
         /// status of request
         /// </summary>
@@ -59,6 +62,7 @@ namespace SignalGo.Shared.Models
         /// </summary>
         [JsonIgnore()]
         public Action<Stream> WriteManually { get; set; }
+
         /// <summary>
         /// client id 
         /// </summary>
@@ -81,6 +85,7 @@ namespace SignalGo.Shared.Models
                 _Stream = value;
             }
         }
+
         /// <summary>
         /// length of stream
         /// </summary>
@@ -117,6 +122,37 @@ namespace SignalGo.Shared.Models
 #endif
             Stream.Dispose();
         }
+
+        public KeyValue<DataType, CompressMode> ReadFirstData(Stream stream, uint maximumReceiveStreamHeaderBlock)
+        {
+            var responseType = (DataType)GoStreamReader.ReadOneByte(stream, CompressMode.None, maximumReceiveStreamHeaderBlock, false);
+            var compressMode = (CompressMode)GoStreamReader.ReadOneByte(stream, CompressMode.None, maximumReceiveStreamHeaderBlock, false);
+            return new KeyValue<DataType, CompressMode>(responseType, compressMode);
+        }
+
+        /// <summary>
+        /// set position of flush stream
+        /// </summary>
+        public void SetPositionFlush(int position)
+        {
+            DataType dataType = DataType.FlushStream;
+            CompressMode compressMode = CompressMode.None;
+            GoStreamWriter.WriteToStream(Stream, new byte[] { (byte)dataType, (byte)compressMode }, false);
+            byte[] data = BitConverter.GetBytes(position);
+            GoStreamWriter.WriteBlockToStream(Stream, data);
+        }
+    }
+
+    /// <summary>
+    /// stream for upload and download
+    /// </summary>
+    /// <typeparam name="T">data of stream</typeparam>
+    public class StreamInfo<T> : BaseStreamInfo
+    {
+        /// <summary>
+        /// data of stream
+        /// </summary>
+        public T Data { get; set; }
     }
 
     public class StreamInfo : IStreamInfo
@@ -135,6 +171,45 @@ namespace SignalGo.Shared.Models
         public long Length { get; set; }
 
         public string ClientId { get; set; }
+
+        public Stream FlushStream
+        {
+            get
+            {
+                throw new NotImplementedException();
+            }
+
+            set
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        public Func<int> GetPositionFlush
+        {
+            get
+            {
+                throw new NotImplementedException();
+            }
+
+            set
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        public Action<int> SetPositionFlush
+        {
+            get
+            {
+                throw new NotImplementedException();
+            }
+
+            set
+            {
+                throw new NotImplementedException();
+            }
+        }
 
         /// <summary>
         /// dispose the stream
