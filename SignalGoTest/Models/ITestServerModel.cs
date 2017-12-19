@@ -15,23 +15,12 @@ namespace SignalGoTest.Models
     public interface ITestServerModel : ITestServerModelBase
     {
         string HelloWorld(string yourName);
-        string WhoAmI();
-        int MUL(int x, int y);
-        double Tagh(double x, double y);
-        System.TimeSpan TimeS (int x);
-        long LongValue ();
     }
 
     [SignalGo.Shared.DataTypes.ServiceContract("TestServerModel", SignalGo.Shared.DataTypes.InstanceType.SingleInstance)]
-    public interface ITestClientServerModel : ITestServerModelBase
+    public interface ITestClientServerModel
     {
-        Task<string> HelloWorld(string yourName);
-        Task<string> WhoAmI();
-        Task<int> MUL(int x, int y);
-        double Tagh(double x, double y);
-        double Tagha(double x, double y);
-        Task<double> TaghAsync(double x, double y);
-        Task<System.TimeSpan> TimeS(int x);
-        Task<long> LongValue();
+        string HelloWorld(string yourName);
+        Task<string> HelloWorldAsync(string yourName);
     }
 }

@@ -152,6 +152,7 @@ namespace SignalGo.Shared.Converters
         /// </summary>
         public LimitExchangeType Mode { get; set; }
 
+
         /// <summary>
         /// can convert or not
         /// </summary>
@@ -162,7 +163,63 @@ namespace SignalGo.Shared.Converters
             return true;
         }
 
+        List<object> SerializedObjects = new List<object>();
 
+
+        bool? CanIgnoreCustomDataExchanger(Type type, object instance)
+        {
+            CustomDataExchangerAttribute implementICollection = null;
+            implementICollection = ExchangerTypes == null ? null : ExchangerTypes.Where(x => x.Type == type && (x.LimitationMode == Mode || x.LimitationMode == LimitExchangeType.Both)).FirstOrDefault();
+            if (implementICollection == null)
+                implementICollection = type.GetCustomAttributes<CustomDataExchangerAttribute>(true).Where(x => x.LimitationMode == Mode || x.LimitationMode == LimitExchangeType.Both).FirstOrDefault();
+
+            bool? canIgnore = implementICollection == null ? null : implementICollection.CanIgnore(instance, null, null, type, Server, Client);
+            if ((canIgnore ?? false))
+                return true;
+            else if (implementICollection != null && implementICollection.ExchangeType == CustomDataExchangerType.Ignore && implementICollection.Properties == null && (implementICollection.LimitationMode == LimitExchangeType.Both || implementICollection.LimitationMode == Mode))
+                return true;
+            return false;
+        }
+
+        CustomDataExchangerAttribute GetCustomDataExchanger(Type type, object instance)
+        {
+            CustomDataExchangerAttribute implementICollection = null;
+            implementICollection = ExchangerTypes == null ? null : ExchangerTypes.Where(x => x.Type == type && (x.LimitationMode == Mode || x.LimitationMode == LimitExchangeType.Both)).FirstOrDefault();
+            if (implementICollection == null)
+                implementICollection = type.GetCustomAttributes<CustomDataExchangerAttribute>(true).Where(x => x.LimitationMode == Mode || x.LimitationMode == LimitExchangeType.Both).FirstOrDefault();
+
+            return implementICollection;
+        }
+
+        bool? CanIgnoreCustomDataExchanger(Type type, PropertyInfo property, object instance)
+        {
+            CustomDataExchangerAttribute implementICollection = null;
+            implementICollection = ExchangerTypes == null ? null : ExchangerTypes.Where(x => x.Type == type && (x.LimitationMode == Mode || x.LimitationMode == LimitExchangeType.Both)).FirstOrDefault();
+            if (implementICollection == null)
+                implementICollection = property.GetCustomAttributes<CustomDataExchangerAttribute>(true).Where(x => x.LimitationMode == Mode || x.LimitationMode == LimitExchangeType.Both).FirstOrDefault();
+
+            bool? canIgnore = implementICollection == null ? null : implementICollection.CanIgnore(instance, property, null, type, Server, Client);
+            if ((canIgnore ?? false))
+                return true;
+            else if (implementICollection != null && implementICollection.ExchangeType == CustomDataExchangerType.Ignore && (implementICollection.LimitationMode == LimitExchangeType.Both || implementICollection.LimitationMode == Mode))
+                return true;
+            return false;
+        }
+
+        bool? CanIgnoreCustomDataExchanger(Type type, FieldInfo fieldInfo, object instance)
+        {
+            CustomDataExchangerAttribute implementICollection = null;
+            implementICollection = ExchangerTypes == null ? null : ExchangerTypes.Where(x => x.Type == type && (x.LimitationMode == Mode || x.LimitationMode == LimitExchangeType.Both)).FirstOrDefault();
+            if (implementICollection == null)
+                implementICollection = fieldInfo.GetCustomAttributes<CustomDataExchangerAttribute>(true).Where(x => x.LimitationMode == Mode || x.LimitationMode == LimitExchangeType.Both).FirstOrDefault();
+
+            bool? canIgnore = implementICollection == null ? null : implementICollection.CanIgnore(instance, null, fieldInfo, type, Server, Client);
+            if ((canIgnore ?? false))
+                return true;
+            else if (implementICollection != null && implementICollection.ExchangeType == CustomDataExchangerType.Ignore && (implementICollection.LimitationMode == LimitExchangeType.Both || implementICollection.LimitationMode == Mode))
+                return true;
+            return false;
+        }
 
         /// <summary>
         /// read json for deseralize object
@@ -174,24 +231,8 @@ namespace SignalGo.Shared.Converters
         /// <returns></returns>
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
-#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
-            var implementICollection = (SkipDataExchangeAttribute)objectType.GetTypeInfo().GetCustomAttributes(typeof(SkipDataExchangeAttribute), true).FirstOrDefault();
-#else
-            var implementICollection = (SkipDataExchangeAttribute)objectType.GetCustomAttributes(typeof(SkipDataExchangeAttribute), true).FirstOrDefault();
-
-#endif
-            bool? canIgnore = implementICollection == null ? (bool?)null : implementICollection.CanIgnore(null, null, null, objectType, implementICollection);
-            if (canIgnore.HasValue)
-            {
-                if (canIgnore.Value)
-                {
-                    return null;
-                }
-            }
-            else if (implementICollection != null && (implementICollection.Mode == LimitExchangeType.Both || implementICollection.Mode == Mode))
-            {
+            if ((CanIgnoreCustomDataExchanger(objectType, existingValue) ?? false))
                 return null;
-            }
 
             var jToken = JToken.Load(reader);
             JsonSerializer sz = new JsonSerializer()
@@ -217,22 +258,22 @@ namespace SignalGo.Shared.Converters
             return obj;
         }
 
-        void MergeExchangeTypes(Type type, LimitExchangeType limitExchangeType)
-        {
-            if (ExchangerTypes == null || ExchangerTypes.Length == 0 || ExchangerTypes.Any(x => x.Type == type))
-            {
-                var customDataExchanger = type.GetCustomAttributes<CustomDataExchangerAttribute>(true).ToList();
-                foreach (var exchanger in customDataExchanger)
-                {
-                    exchanger.Type = type;
-                }
-                customDataExchanger.RemoveAll(x => (x.LimitationMode != LimitExchangeType.Both && x.LimitationMode != limitExchangeType) || !x.IsEnabled(Client, Server, null, type) || !x.GetExchangerByUserCustomization(Client));
-                if (ExchangerTypes != null)
-                    customDataExchanger.AddRange(ExchangerTypes);
-                if (customDataExchanger.Count > 0)
-                    ExchangerTypes = customDataExchanger.ToArray();
-            }
-        }
+        //void MergeExchangeTypes(Type type, LimitExchangeType limitExchangeType)
+        //{
+        //    if (ExchangerTypes == null || ExchangerTypes.Length == 0 || ExchangerTypes.Any(x => x.Type == type))
+        //    {
+        //        var customDataExchanger = type.GetCustomAttributes<CustomDataExchangerAttribute>(true).ToList();
+        //        foreach (var exchanger in customDataExchanger)
+        //        {
+        //            exchanger.Type = type;
+        //        }
+        //        customDataExchanger.RemoveAll(x => (x.LimitationMode != LimitExchangeType.Both && x.LimitationMode != limitExchangeType) || !(x.CanIgnore(null, null, null, type, Client, Server) ?? false) || !x.GetExchangerByUserCustomization(Client));
+        //        if (ExchangerTypes != null)
+        //            customDataExchanger.AddRange(ExchangerTypes);
+        //        if (customDataExchanger.Count > 0)
+        //            ExchangerTypes = customDataExchanger.ToArray();
+        //    }
+        //}
 
         /// <summary>
         /// generate properties of object for deserialze
@@ -243,7 +284,7 @@ namespace SignalGo.Shared.Converters
             if (instance == null)
                 return;
             var type = instance.GetType();
-            MergeExchangeTypes(type, LimitExchangeType.IncomingCall);
+            //MergeExchangeTypes(type, Mode);
             if (SerializeHelper.GetTypeCodeOfObject(instance.GetType()) != SerializeObjectType.Object)
             {
                 return;
@@ -252,35 +293,38 @@ namespace SignalGo.Shared.Converters
             {
                 if (property.CanRead)
                 {
-                    var implementICollection = (SkipDataExchangeAttribute)property.GetCustomAttributes(typeof(SkipDataExchangeAttribute), true).FirstOrDefault();
-                    var canIgnore = implementICollection == null ? (bool?)null : implementICollection.CanIgnore(instance, property, null, type, implementICollection);
-                    bool isIgnored = false;
-                    if (canIgnore.HasValue)
-                    {
-                        if (canIgnore.Value)
-                        {
-                            isIgnored = true;
-                        }
-                    }
-                    else if (implementICollection != null && (implementICollection.Mode == LimitExchangeType.Both || implementICollection.Mode == Mode))
-                    {
-                        isIgnored = true;
-                    }
+                    //var implementICollection = property.GetCustomAttributes<CustomDataExchangerAttribute>(true).Where(x => x.LimitationMode == Mode || x.LimitationMode == LimitExchangeType.Both).FirstOrDefault();
+                    //var canIgnore = implementICollection == null ? (bool?)null : implementICollection.CanIgnore(instance, property, null, type, Server, Client);
+                    //bool isIgnored = false;
+                    //if (canIgnore.HasValue)
+                    //{
+                    //    if (canIgnore.Value)
+                    //    {
+                    //        isIgnored = true;
+                    //    }
+                    //}
+                    //else if (implementICollection != null && (implementICollection.LimitationMode == LimitExchangeType.Both || implementICollection.LimitationMode == Mode))
+                    //{
+                    //    isIgnored = true;
+                    //}
+                    var isIgnored = CanIgnoreCustomDataExchanger(type, property, instance) ?? false;
+
                     if (!isIgnored)
                     {
                         if (ExchangerTypes != null)
                         {
-                            var find = ExchangerTypes.FirstOrDefault(x => x.Type == type && (x.LimitationMode == LimitExchangeType.Both || x.LimitationMode == LimitExchangeType.IncomingCall));
+                            var find = ExchangerTypes.FirstOrDefault(x => x.Type == type && (x.LimitationMode == LimitExchangeType.Both || x.LimitationMode == Mode));
                             if (find != null && find.Properties != null)
                             {
-                                if (find.CustomDataExchangerType == CustomDataExchangerType.Take)
+                                var manualCanIngnore = find.CanIgnore(instance, property, null, type, Client, Server);
+                                if (find.ExchangeType == CustomDataExchangerType.Take)
                                 {
-                                    if (find.Properties != null && !find.Properties.Contains(property.Name) && find.IsEnabled(Client, Server, property.Name, type))
+                                    if (find.Properties != null && !find.Properties.Contains(property.Name) && (manualCanIngnore ?? false))
                                         isIgnored = true;
                                 }
                                 else
                                 {
-                                    if (find.Properties != null && find.Properties.Contains(property.Name) && find.IsEnabled(Client, Server, property.Name, type))
+                                    if (find.Properties != null && find.Properties.Contains(property.Name) && (manualCanIngnore ?? false))
                                         isIgnored = true;
                                 }
                             }
@@ -313,10 +357,6 @@ namespace SignalGo.Shared.Converters
                                 {
                                     GenerateProperties(item);
                                 }
-                            }
-                            else if (property.PropertyType == typeof(ICollection<>))
-                            {
-
                             }
                         }
                     }
@@ -356,6 +396,13 @@ namespace SignalGo.Shared.Converters
                     writer.WriteValue(value);
                     return;
                 }
+                //else
+                //{
+                //    if (SerializedObjects.Contains(value))
+                //        return;
+                //    else
+                //        SerializedObjects.Add(value);
+                //}
                 SerializeHelper.HandleSerializingObjectList.TryGetValue(type, out Delegate serializeHandler);
                 if (serializeHandler != null)
                 {
@@ -369,7 +416,7 @@ namespace SignalGo.Shared.Converters
                 }
 
 
-                MergeExchangeTypes(type, LimitExchangeType.OutgoingCall);
+                //MergeExchangeTypes(type, Mode);
 
 #if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
                 if (type.GetTypeInfo().BaseType != null && type.Namespace == "System.Data.Entity.DynamicProxies")
@@ -383,21 +430,24 @@ namespace SignalGo.Shared.Converters
                 }
 #endif
 
-#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
-                var implementICollection = (SkipDataExchangeAttribute)type.GetTypeInfo().GetCustomAttributes(typeof(SkipDataExchangeAttribute), true).FirstOrDefault();
-#else
-                var implementICollection = (SkipDataExchangeAttribute)type.GetCustomAttributes(typeof(SkipDataExchangeAttribute), true).FirstOrDefault();
-#endif
-                bool? canIgnore = implementICollection == null ? (bool?)null : implementICollection.CanIgnore(value, null, null, type, implementICollection);
-                if (canIgnore.HasValue)
+                //var implementICollection = type.GetCustomAttributes<CustomDataExchangerAttribute>(true).Where(x => x.LimitationMode == Mode || x.LimitationMode == LimitExchangeType.Both).FirstOrDefault();
+                //bool? canIgnore = implementICollection == null ? (bool?)null : implementICollection.CanIgnore(value, null, null, type, Server, Client);
+                //if (canIgnore.HasValue)
+                //{
+                //    if (canIgnore.Value)
+                //    {
+                //        return;
+                //    }
+                //}
+                //else if (implementICollection != null && implementICollection.Type == type && (implementICollection.LimitationMode == LimitExchangeType.Both || implementICollection.LimitationMode == Mode))
+                //{
+                //    return;
+                //}
+                if ((CanIgnoreCustomDataExchanger(type, value) ?? false))
                 {
-                    if (canIgnore.Value)
-                    {
-                        return;
-                    }
-                }
-                else if (implementICollection != null && (implementICollection.Mode == LimitExchangeType.Both || implementICollection.Mode == Mode))
-                {
+                    if (writer.WriteState == WriteState.Property)
+                        writer.WriteValue((object)null);
+                    //    writer.WriteEnd();
                     return;
                 }
 
@@ -410,53 +460,17 @@ namespace SignalGo.Shared.Converters
                     writer.WriteStartObject();
                 if (isDictionary)
                 {
-                    foreach (DictionaryEntry item in (IDictionary)value)
-                    {
-                        JToken jTokenKey = JToken.FromObject(item.Key);
-                        JToken jTokenValue = JToken.FromObject(item.Value);
-
-                        writer.WritePropertyName(item.Key.ToString());
-
-                        if (jTokenValue.Type == JTokenType.Object || jTokenValue.Type == JTokenType.Array)
-                        {
-                            serializer.Serialize(writer, item.Value);
-                        }
-                        else
-                        {
-                            writer.WriteValue(item.Value);
-                        }
-                    }
+                    GenerateDictionary(value, writer, serializer);
                 }
                 else if (isArray)
                 {
-                    foreach (var item in (IEnumerable)value)
-                    {
-                        if (item == null)
-                            continue;
-                        var itemType = item.GetType();
-                        bool isPropertyArray = typeof(IEnumerable).GetIsAssignableFrom(itemType) && itemType != typeof(string);
-                        bool isPropertyDictionary = typeof(IDictionary).GetIsAssignableFrom(itemType);
-                        if (isPropertyArray || isPropertyDictionary)
-                            serializer.Serialize(writer, item);
-                        else
-                        {
-#if (NETSTANDARD1_6 || NETCOREAPP1_1)
-                            bool canWriteFast = itemType == typeof(string) || !(itemType.GetTypeInfo().IsClass || itemType.GetTypeInfo().IsInterface);
-#else
-                            bool canWriteFast = itemType == typeof(string) || !(itemType.GetIsClass() || itemType.GetIsInterface());
-#endif
-                            if (canWriteFast)
-                                writer.WriteValue(item);
-                            else
-                                serializer.Serialize(writer, item);
-                        }
-                    }
+                    GenerateArray(value, writer, serializer);
                 }
                 else
                 {
                     WriteData(type, value, writer, serializer);
                 }
-
+                //writer.WriteEnd();
                 if (isArray && !isDictionary)
                 {
                     writer.WriteEndArray();
@@ -471,6 +485,71 @@ namespace SignalGo.Shared.Converters
 
         }
 
+        void GenerateDictionary(object value, JsonWriter writer, JsonSerializer serializer)
+        {
+            List<DictionaryEntry> items = new List<DictionaryEntry>();
+            foreach (DictionaryEntry item in (IDictionary)value)
+            {
+                if (item.Value == null)
+                    continue;
+                var itemJsonType = SerializeHelper.GetTypeCodeOfObject(item.Value.GetType());
+                if (itemJsonType == SerializeObjectType.Object)
+                {
+                    if (SerializedObjects.Contains(item.Value))
+                        continue;
+                    else
+                        SerializedObjects.Add(item.Value);
+                    items.Add(item);
+                }
+                else
+                {
+                    writer.WritePropertyName(item.Key.ToString());
+                    writer.WriteValue(item.Value);
+
+                }
+            }
+            foreach (var item in items)
+            {
+                serializer.Serialize(writer, item.Value);
+            }
+        }
+
+        void GenerateArray(object value, JsonWriter writer, JsonSerializer serializer)
+        {
+            List<object> objects = new List<object>();
+            foreach (var item in (IEnumerable)value)
+            {
+                if (item == null)
+                    continue;
+                var itemType = item.GetType();
+                var itemJsonType = SerializeHelper.GetTypeCodeOfObject(item.GetType());
+                if (itemJsonType == SerializeObjectType.Object)
+                {
+                    if (SerializedObjects.Contains(item))
+                        continue;
+                    else
+                        SerializedObjects.Add(item);
+                    objects.Add(item);
+                }
+                else
+                {
+#if (NETSTANDARD1_6 || NETCOREAPP1_1)
+                    bool canWriteFast = itemType == typeof(string) || !(itemType.GetTypeInfo().IsClass || itemType.GetTypeInfo().IsInterface);
+#else
+                    bool canWriteFast = itemType == typeof(string) || !(itemType.GetIsClass() || itemType.GetIsInterface());
+#endif
+                    if (canWriteFast)
+                        writer.WriteValue(item);
+                    else
+                        serializer.Serialize(writer, item);
+                }
+            }
+            foreach (var item in objects)
+            {
+                serializer.Serialize(writer, item);
+            }
+        }
+
         /// <summary>
         /// write data and convert to json for serialize
         /// </summary>
@@ -482,14 +561,55 @@ namespace SignalGo.Shared.Converters
         {
             try
             {
+                //#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
+                //                if (baseType.GetTypeInfo().BaseType != null && baseType.Namespace == "System.Data.Entity.DynamicProxies")
+                //                {
+                //                    baseType = baseType.GetTypeInfo().BaseType;
+                //                }
+                //#else
+                //                if (baseType.GetBaseType() != null && baseType.Namespace == "System.Data.Entity.DynamicProxies")
+                //                {
+                //                    baseType = baseType.GetBaseType();
+                //                }
+                //#endif
+                //var implementICollection = baseType.GetCustomAttributes<CustomDataExchangerAttribute>(true).Where(x => x.LimitationMode == Mode || x.LimitationMode == LimitExchangeType.Both).FirstOrDefault();
+                //var canIgnore = implementICollection == null ? (bool?)null : implementICollection.CanIgnore(instance, null, null, baseType, Server, Client);
+                //if (canIgnore.HasValue)
+                //{
+                //    if (canIgnore.Value)
+                //        return;
+                //}
+                //else if (implementICollection != null && implementICollection.Type == baseType && (implementICollection.LimitationMode == LimitExchangeType.Both || implementICollection.LimitationMode == Mode))
+                //{
+                //    return;
+                //}
+                var implementICollection = GetCustomDataExchanger(baseType, instance);
+                if ((CanIgnoreCustomDataExchanger(baseType, instance) ?? false))
+                    return;
+
                 foreach (var property in baseType.GetListOfProperties())
                 {
+                    if (implementICollection != null)
+                    {
+                        if (implementICollection.ExchangeType == CustomDataExchangerType.Ignore && implementICollection.ContainsProperty(property.Name))
+                            continue;
+                        else if (implementICollection.ExchangeType == CustomDataExchangerType.Take && !implementICollection.ContainsProperty(property.Name))
+                            continue;
+                    }
+
                     GenerateValue(property, null);
                 }
                 foreach (var field in baseType.GetListOfFields())
                 {
                     if (field.DeclaringType == baseType)
                         continue;
+                    if (implementICollection != null)
+                    {
+                        if (implementICollection.ExchangeType == CustomDataExchangerType.Ignore && implementICollection.ContainsProperty(field.Name))
+                            continue;
+                        else if (implementICollection.ExchangeType == CustomDataExchangerType.Take && !implementICollection.ContainsProperty(field.Name))
+                            continue;
+                    }
                     GenerateValue(null, field);
                 }
             }
@@ -504,43 +624,49 @@ namespace SignalGo.Shared.Converters
                 {
                     if (HasJsonIgnore(property) || HasJsonIgnore(field))
                         return;
-                    SkipDataExchangeAttribute implementICollection = null;
-                    if (property != null)
-                        implementICollection = (SkipDataExchangeAttribute)property.GetCustomAttributes(typeof(SkipDataExchangeAttribute), true).FirstOrDefault();
-                    else if (field != null)
-                        implementICollection = (SkipDataExchangeAttribute)field.GetCustomAttributes(typeof(SkipDataExchangeAttribute), true).FirstOrDefault();
-
-                    var canIgnore = implementICollection == null ? (bool?)null : implementICollection.CanIgnore(instance, property, field, baseType, implementICollection);
                     bool isIgnored = false;
-                    if (canIgnore.HasValue)
-                    {
-                        if (canIgnore.Value)
-                        {
-                            isIgnored = true;
-                        }
-                    }
-                    else if (implementICollection != null && (implementICollection.Mode == LimitExchangeType.Both || implementICollection.Mode == Mode))
-                    {
-                        isIgnored = true;
-                    }
+                    if (property != null)
+                        isIgnored = CanIgnoreCustomDataExchanger(baseType, property, instance) ?? false;
+                    if (field != null)
+                        isIgnored = CanIgnoreCustomDataExchanger(baseType, field, instance) ?? false;
+                    //CustomDataExchangerAttribute implementICollection = null;
+                    //if (property != null)
+                    //    implementICollection = property.GetCustomAttributes<CustomDataExchangerAttribute>(true).Where(x => x.LimitationMode == Mode || x.LimitationMode == LimitExchangeType.Both).FirstOrDefault();
+                    //else if (field != null)
+                    //    implementICollection = field.GetCustomAttributes<CustomDataExchangerAttribute>(true).Where(x => x.LimitationMode == Mode || x.LimitationMode == LimitExchangeType.Both).FirstOrDefault();
+
+                    //var canIgnore = implementICollection == null ? (bool?)null : implementICollection.CanIgnore(instance, property, field, baseType, Server, Client);
+                    //bool isIgnored = false;
+                    //if (canIgnore.HasValue)
+                    //{
+                    //    if (canIgnore.Value)
+                    //    {
+                    //        isIgnored = true;
+                    //    }
+                    //}
+                    //else if (implementICollection != null && (implementICollection.LimitationMode == LimitExchangeType.Both || implementICollection.LimitationMode == Mode))
+                    //{
+                    //    isIgnored = true;
+                    //}
                     if (!isIgnored)
                     {
                         if (ExchangerTypes != null)
                         {
-                            var find = ExchangerTypes.FirstOrDefault(x => x.Type == baseType && (x.LimitationMode == LimitExchangeType.Both || x.LimitationMode == LimitExchangeType.OutgoingCall));
+                            var find = ExchangerTypes.FirstOrDefault(x => x.Type == baseType && (x.LimitationMode == LimitExchangeType.Both || x.LimitationMode == Mode));
                             if (find != null && find.Properties != null)
                             {
-                                if (find.CustomDataExchangerType == CustomDataExchangerType.Take)
+                                var manualCanIngnore = find.CanIgnore(instance, property, field, baseType, Client, Server);
+                                if (find.ExchangeType == CustomDataExchangerType.Take)
                                 {
                                     if (property != null)
                                     {
-                                        if (find.Properties != null && !find.Properties.Contains(property.Name) && find.IsEnabled(Client, Server, property.Name, baseType))
+                                        if (find.Properties != null && !find.Properties.Contains(property.Name) && (manualCanIngnore ?? false))
                                             isIgnored = true;
                                     }
 
                                     else if (field != null)
                                     {
-                                        if (find.Properties != null && !find.Properties.Contains(field.Name) && find.IsEnabled(Client, Server, field.Name, baseType))
+                                        if (find.Properties != null && !find.Properties.Contains(field.Name) && (manualCanIngnore ?? false))
                                             isIgnored = true;
                                     }
                                 }
@@ -548,12 +674,12 @@ namespace SignalGo.Shared.Converters
                                 {
                                     if (property != null)
                                     {
-                                        if (find.Properties != null && find.Properties.Contains(property.Name) && find.IsEnabled(Client, Server, property.Name, baseType))
+                                        if (find.Properties != null && find.Properties.Contains(property.Name) && (manualCanIngnore ?? false))
                                             isIgnored = true;
                                     }
                                     else if (field != null)
                                     {
-                                        if (find.Properties != null && find.Properties.Contains(field.Name) && find.IsEnabled(Client, Server, field.Name, baseType))
+                                        if (find.Properties != null && find.Properties.Contains(field.Name) && (manualCanIngnore ?? false))
                                             isIgnored = true;
                                     }
                                 }
@@ -592,6 +718,14 @@ namespace SignalGo.Shared.Converters
                             {
                                 try
                                 {
+                                    var itemJsonType = SerializeHelper.GetTypeCodeOfObject(propValue.GetType());
+                                    if (itemJsonType == SerializeObjectType.Object)
+                                    {
+                                        if (SerializedObjects.Contains(propValue))
+                                            return;
+                                        else
+                                            SerializedObjects.Add(propValue);
+                                    }
                                     if (property != null)
                                         writer.WritePropertyName(property.Name);
                                     else if (field != null)
@@ -615,16 +749,42 @@ namespace SignalGo.Shared.Converters
                                 if (property != null)
                                 {
                                     value = property.GetValue(instance, null);
+                                    SerializeHelper.HandleSerializingObjectList.TryGetValue(property.PropertyType, out Delegate serializeHandler);
+                                    if (serializeHandler != null)
+                                        value = serializeHandler.DynamicInvoke(value);
+                                    if (value == null)
+                                        return;
+                                    var itemJsonType = SerializeHelper.GetTypeCodeOfObject(value.GetType());
+                                    if (itemJsonType == SerializeObjectType.Object)
+                                    {
+                                        if (SerializedObjects.Contains(value))
+                                            return;
+                                        else
+                                            SerializedObjects.Add(value);
+                                    }
+                                    //if (SerializeHelper.GetTypeCodeOfObject(value.GetType()) != SerializeObjectType.Object)
                                     writer.WritePropertyName(property.Name);
                                 }
                                 else if (field != null)
                                 {
                                     value = field.GetValue(instance);
+                                    SerializeHelper.HandleSerializingObjectList.TryGetValue(property.PropertyType, out Delegate serializeHandler);
+                                    if (serializeHandler != null)
+                                        value = serializeHandler.DynamicInvoke(value);
+                                    if (value == null)
+                                        return;
+                                    var itemJsonType = SerializeHelper.GetTypeCodeOfObject(value.GetType());
+                                    if (itemJsonType == SerializeObjectType.Object)
+                                    {
+                                        if (SerializedObjects.Contains(value))
+                                            return;
+                                        else
+                                            SerializedObjects.Add(value);
+                                    }
+                                    // if (SerializeHelper.GetTypeCodeOfObject(value.GetType()) != SerializeObjectType.Object)
                                     writer.WritePropertyName(field.Name);
+
                                 }
-                                SerializeHelper.HandleSerializingObjectList.TryGetValue(property.PropertyType, out Delegate serializeHandler);
-                                if (serializeHandler != null)
-                                    value = serializeHandler.DynamicInvoke(value);
                                 //if (value != instance)//loop handling
                                 serializer.Serialize(writer, value);
                             }

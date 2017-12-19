@@ -1,4 +1,5 @@
 ﻿using SignalGo.Shared.Helpers;
+using SignalGo.Shared.Models;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -71,7 +72,7 @@ namespace System
             return GetCustomAttributes(type, typeof(T), inherit).Select(arg => (T)arg).ToArray();
         }
 
-        static ConcurrentDictionary<object, object[]> CachedCustomAttributes = new ConcurrentDictionary<object, object[]>();
+        static HashMapDictionary<object, object> CachedCustomAttributes = new HashMapDictionary<object, object>();
         /// <summary>Private helper for searching attributes.</summary>
         /// <param name="type">The type which is searched for the attribute.</param>
         /// <param name="attributeType">The type of attribute to search for.</param>
@@ -85,7 +86,7 @@ namespace System
             var typeInfo = type;
 #endif
             if (CachedCustomAttributes.ContainsKey(type))
-                return CachedCustomAttributes[type];
+                return CachedCustomAttributes.GetObjectValues(type).Where(x=> x.GetType() == attributeType).ToArray();
             if (!inherit)
             {
                 object[] cach = null;
@@ -95,7 +96,10 @@ namespace System
                 cach = typeInfo.GetCustomAttributes(attributeType, false);
 #endif
                 if (!CachedCustomAttributes.ContainsKey(type))
-                    CachedCustomAttributes.TryAdd(type, cach);
+                {
+                    foreach (var item in cach)
+                        CachedCustomAttributes.Add(type, item);
+                }
                 return cach;
             }
 
@@ -121,20 +125,27 @@ namespace System
             var attributeArray = new object[attributeCollection.Count];
             attributeCollection.CopyTo(attributeArray, 0);
             if (!CachedCustomAttributes.ContainsKey(type))
-                CachedCustomAttributes.TryAdd(type, attributeArray);
+            {
+                foreach (var item in attributeArray)
+                    CachedCustomAttributes.Add(type, item);
+            }
+
             return attributeArray;
         }
 
         private static object[] GetCustomAttributes(FieldInfo type, Type attributeType, bool inherit)
         {
             if (CachedCustomAttributes.ContainsKey(type))
-                return CachedCustomAttributes[type];
+                return CachedCustomAttributes.GetObjectValues(type).Where(x => x.GetType() == attributeType).ToArray();
             if (!inherit)
             {
                 object[] cach = null;
                 cach = GetCustomAttributes(type, attributeType, false);
                 if (!CachedCustomAttributes.ContainsKey(type))
-                    CachedCustomAttributes.TryAdd(type, cach);
+                {
+                    foreach (var item in cach)
+                        CachedCustomAttributes.Add(type, item);
+                }
                 return cach;
             }
 
@@ -144,20 +155,29 @@ namespace System
             var attributeArray = new object[attributeCollection.Count];
             attributeCollection.CopyTo(attributeArray, 0);
             if (!CachedCustomAttributes.ContainsKey(type))
-                CachedCustomAttributes.TryAdd(type, attributeArray);
+            {
+                foreach (var item in attributeArray)
+                    CachedCustomAttributes.Add(type, item);
+            }
             return attributeArray;
         }
 
         private static object[] GetCustomAttributes(PropertyInfo type, Type attributeType, bool inherit)
         {
+            if (type.Name == "TokenPassword" && attributeType == typeof(SignalGo.Shared.DataTypes.CustomDataExchangerAttribute))
+            {
+            }
             if (CachedCustomAttributes.ContainsKey(type))
-                return CachedCustomAttributes[type];
+                return CachedCustomAttributes.GetObjectValues(type).Where(x => x.GetType() == attributeType).ToArray();
             if (!inherit)
             {
                 object[] cach = null;
                 cach = GetCustomAttributes(type, attributeType, false);
                 if (!CachedCustomAttributes.ContainsKey(type))
-                    CachedCustomAttributes.TryAdd(type, cach);
+                {
+                    foreach (var item in cach)
+                        CachedCustomAttributes.Add(type, item);
+                }
                 return cach;
             }
 
@@ -167,7 +187,10 @@ namespace System
             var attributeArray = new object[attributeCollection.Count];
             attributeCollection.CopyTo(attributeArray, 0);
             if (!CachedCustomAttributes.ContainsKey(type))
-                CachedCustomAttributes.TryAdd(type, attributeArray);
+            {
+                foreach (var item in attributeArray)
+                    CachedCustomAttributes.Add(type, item);
+            }
             return attributeArray;
         }
 

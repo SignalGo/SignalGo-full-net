@@ -522,8 +522,6 @@ namespace SignalGo.Client
                     bool isSuccess = _newClient.ConnectAsync(serverAddress, port.Value).Wait(new TimeSpan(0, 0, 5));
                     if (!isSuccess)
                         throw new TimeoutException();
-                    _newClient.ReceiveBufferSize = 1024;
-                    _newClient.SendBufferSize = 1024;
 #elif (PORTABLE)
                     var _newClient = new Sockets.Plugin.TcpSocketClient();
                     bool isSuccess = _newClient.ConnectAsync(serverAddress, port.Value).Wait(new TimeSpan(0, 0, 5));
@@ -531,8 +529,6 @@ namespace SignalGo.Client
                         throw new TimeoutException();
 #else
                 var _newClient = new TcpClient(serverAddress, port.Value);
-                _newClient.ReceiveBufferSize = 1024;
-                _newClient.SendBufferSize = 1024;
                 _newClient.NoDelay = true;
 #endif
 #if (PORTABLE)

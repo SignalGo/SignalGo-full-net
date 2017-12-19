@@ -146,8 +146,6 @@ namespace SignalGo.Server.ServiceManager
 #else
                     server.Server.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
 #endif
-                    server.Server.ReceiveBufferSize = 1024;
-                    server.Server.SendBufferSize = 1024;
                     server.Server.NoDelay = true;
 
                     //server = new TcpListener(IPAddress.Parse(serverUrl), port);
@@ -711,6 +709,13 @@ namespace SignalGo.Server.ServiceManager
                                     values.Add(new Tuple<string, string>(keyValue.Length == 2 ? keyValue[0] : "", Uri.UnescapeDataString(keyValue.Last())));
                                 }
                             }
+//                            if (!string.IsNullOrEmpty(content))
+//                            {
+//#if (NET35)
+//#else
+//                                content = System.Net.WebUtility.HtmlDecode(content);
+//#endif
+//                            }
                         }
 
 
@@ -1351,7 +1356,7 @@ namespace SignalGo.Server.ServiceManager
             }
         }
 
-        #endregion
+#endregion
 
 
         /// <summary>

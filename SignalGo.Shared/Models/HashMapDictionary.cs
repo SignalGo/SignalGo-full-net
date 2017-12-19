@@ -79,9 +79,37 @@ namespace SignalGo.Shared.Models
             return _keyValue.TryGetValue(key, out value);
         }
 
+        public ConcurrentHash<T2> GetValues(T1 key)
+        {
+            if (_keyValue.TryGetValue(key, out ConcurrentHash<T2> value))
+                return value;
+            return null;
+        }
+
+        public object[] GetObjectValues(T1 key)
+        {
+            if (_keyValue.TryGetValue(key, out ConcurrentHash<T2> value))
+                return value.Cast<object>().ToArray();
+            return new object[0];
+        }
+
         public bool TryGetKeys(T2 value, out ConcurrentHash<T1> key)
         {
             return _valueKey.TryGetValue(value, out key);
+        }
+
+        public ConcurrentHash<T1> GetKeys(T2 key)
+        {
+            if (_valueKey.TryGetValue(key, out ConcurrentHash<T1> value))
+                return value;
+            return null;
+        }
+
+        public object[] GetObjectKeys(T2 key)
+        {
+            if (_valueKey.TryGetValue(key, out ConcurrentHash<T1> value))
+                return value.Cast<object>().ToArray();
+            return new object[0];
         }
 
         public bool ContainsKey(T1 key)

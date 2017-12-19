@@ -10,25 +10,13 @@ namespace SignalGo.Shared.DataTypes
     /// <summary>
     /// system custom data exchanger help you to ignore or take custom properties to serialize data
     /// </summary>
-    [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class, AllowMultiple = true)]
+    [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class | AttributeTargets.Property | AttributeTargets.Field, AllowMultiple = true)]
     public class CustomDataExchangerAttribute : Attribute
     {
-        /// <summary>
-        /// type of data exchanger you need to ignore that peroperties or take
-        /// </summary>
-        public CustomDataExchangerType CustomDataExchangerType { get; set; } = CustomDataExchangerType.Take;
-        /// <summary>
-        /// limitation mode in incoming call or outgoingCall or both
-        /// </summary>
-        public LimitExchangeType LimitationMode { get; set; } = LimitExchangeType.Both;
-        /// <summary>
-        /// type of your class to ignore or take properties for serialize
-        /// </summary>
-        public Type Type { get; set; }
-        /// <summary>
-        /// property names that you need to ignore or take for serialize
-        /// </summary>
-        public string[] Properties { get; set; } = null;
+        public CustomDataExchangerAttribute()
+        {
+
+        }
         /// <summary>
         /// default constructor for data exchanger
         /// </summary>
@@ -49,6 +37,12 @@ namespace SignalGo.Shared.DataTypes
         {
             Properties = properties;
         }
+
+        public CustomDataExchangerAttribute(LimitExchangeType limitExchangeType)
+        {
+            LimitationMode = limitExchangeType;
+        }
+
 
         /// <summary>
         /// default constructor for data exchanger
@@ -80,6 +74,35 @@ namespace SignalGo.Shared.DataTypes
         {
             Properties = GetProperties(properties).ToArray();
         }
+        /// <summary>
+        /// type of data exchanger you need to ignore that peroperties or take
+        /// </summary>
+        public CustomDataExchangerType ExchangeType { get; set; } = CustomDataExchangerType.Take;
+        /// <summary>
+        /// limitation mode in incoming call or outgoingCall or both
+        /// </summary>
+        public LimitExchangeType LimitationMode { get; set; } = LimitExchangeType.Both;
+        /// <summary>
+        /// type of your class to ignore or take properties for serialize
+        /// </summary>
+        public Type Type { get; set; }
+        /// <summary>
+        /// inverse LimitationMode for client side
+        /// </summary>
+        public bool InverseLimitationForClientSide { get; set; } = true;
+        /// <summary>
+        /// property names that you need to ignore or take for serialize
+        /// </summary>
+        public string[] Properties { get; set; } = null;
+
+        public bool ContainsProperty(string name)
+        {
+            if (Properties == null)
+                return true;
+            return Properties.Contains(name);
+        }
+
+       
         /// <summary>
         /// get list of methods of type
         /// </summary>
@@ -119,9 +142,27 @@ namespace SignalGo.Shared.DataTypes
         /// you can customize enable and disable ignorable
         /// </summary>
         /// <returns>if you return false system force skip to ignore property</returns>
-        public virtual bool IsEnabled(object client, object server, string propertyName, Type type)
+        //public virtual bool IsEnabled(object client, object server, string propertyName, Type type)
+        //{
+        //    return true;
+        //}
+
+        /// <summary>
+        /// you can create your custom skipper with override this method
+        /// when you want to skip to serialize or deserialize your object return true else return false
+        /// default value is null, if you want to system use LimitExchangeType for ignore or not ignore object return null
+        /// </summary>
+        /// <param name="model">object model that want to serialize or deserialize</param>
+        /// <param name="property">property of type that want serialize or deserialize,if it is null parameter type is fill</param>
+        /// <param name="fieldInfo"></param>
+        /// <param name="type">type that want serialize or deserialize</param>
+        /// <param name="client"></param>
+        /// <param name="server"></param>
+        /// <param name="attribute">attribute</param>
+        /// <returns></returns>
+        public virtual bool? CanIgnore(object model, PropertyInfo property, FieldInfo fieldInfo, Type type, object client, object server)
         {
-            return true;
+            return null;
         }
 
         /// <summary>
