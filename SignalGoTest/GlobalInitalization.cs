@@ -39,14 +39,14 @@ namespace SignalGoTest
 
                 try
                 {
-                    var result = await service.HelloWorld("ali");
-                    var result1 = await service.MUL(10, 20);
-                    var result3 = await service.WhoAmI();
-                    var result40 = service.Tagh(10, 3);
-                    //var result41 = service.Tagha(10, 3);
-                    var result4 = await service.TaghAsync(10, 3);
-                    var result5 = await service.LongValue();
-                    var result6 = await service.TimeS(100000000);
+                    //var result = await service.HelloWorld("ali");
+                    //var result1 = await service.MUL(10, 20);
+                    //var result3 = await service.WhoAmI();
+                    //var result40 = service.Tagh(10, 3);
+                    ////var result41 = service.Tagha(10, 3);
+                    //var result4 = await service.TaghAsync(10, 3);
+                    //var result5 = await service.LongValue();
+                    //var result6 = await service.TimeS(100000000);
                 }
                 catch (Exception ex)
                 {

@@ -709,13 +709,13 @@ namespace SignalGo.Server.ServiceManager
                                     values.Add(new Tuple<string, string>(keyValue.Length == 2 ? keyValue[0] : "", Uri.UnescapeDataString(keyValue.Last())));
                                 }
                             }
-//                            if (!string.IsNullOrEmpty(content))
-//                            {
-//#if (NET35)
-//#else
-//                                content = System.Net.WebUtility.HtmlDecode(content);
-//#endif
-//                            }
+                            //                            if (!string.IsNullOrEmpty(content))
+                            //                            {
+                            //#if (NET35)
+                            //#else
+                            //                                content = System.Net.WebUtility.HtmlDecode(content);
+                            //#endif
+                            //                            }
                         }
 
 
@@ -1356,7 +1356,7 @@ namespace SignalGo.Server.ServiceManager
             }
         }
 
-#endregion
+        #endregion
 
 
         /// <summary>
@@ -1702,17 +1702,17 @@ namespace SignalGo.Server.ServiceManager
         /// <summary>
         /// close client by session
         /// </summary>
-        /// <param name="sessionId">client session id</param>
-        public void CloseClient(string sessionId)
+        /// <param name="clientId">client session id</param>
+        public void CloseClient(string clientId)
         {
-            var client = GetClientByClientId(sessionId);
+            var client = GetClientByClientId(clientId);
             if (client != null)
                 CloseClient(client);
         }
 
-        public ClientInfo GetClientByClientId(string sessionId)
+        public ClientInfo GetClientByClientId(string clientId)
         {
-            Clients.TryGetValue(sessionId, out ClientInfo clientInfo);
+            Clients.TryGetValue(clientId, out ClientInfo clientInfo);
             return clientInfo;
         }
 

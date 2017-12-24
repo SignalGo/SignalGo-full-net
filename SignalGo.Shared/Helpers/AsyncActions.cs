@@ -54,7 +54,14 @@ namespace SignalGo.Shared
                 throw new Exception("UI thread not initialized please call AsyncActions.InitializeUIThread in your ui thread to initialize");
             UIThread.Post((state) =>
             {
-                action();
+                try
+                {
+                    action();
+                }
+                catch (Exception ex)
+                {
+
+                }
             }, null);
         }
 #endif

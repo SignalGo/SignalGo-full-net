@@ -45,7 +45,7 @@ namespace SignalGo.Shared.Log
         /// </summary>
         public bool CanWriteToFile { get; set; }
         /// <summary>
-        /// client sessionId
+        /// client clientId
         /// </summary>
         public string ClientId { get; set; }
         /// <summary>
@@ -88,6 +88,7 @@ namespace SignalGo.Shared.Log
         /// </summary>
         public MethodInfo Method { get; set; }
     }
+
     /// <summary>
     /// log of callbacks
     /// </summary>
@@ -231,29 +232,29 @@ namespace SignalGo.Shared.Log
 
         static ConcurrentQueue<BaseLogInformation> Logs = new ConcurrentQueue<BaseLogInformation>();
 
-        public static CallMethodLogInformation AddCallMethodLog(string sessionId, string ipAddress, DateTime connectedDateTime, string serviceName, MethodInfo method, List<Models.ParameterInfo> parameters)
+        public static CallMethodLogInformation AddCallMethodLog(string clientId, string ipAddress, DateTime connectedDateTime, string serviceName, MethodInfo method, List<Models.ParameterInfo> parameters)
         {
             if (isStop)
                 return null;
-            var log = new CallMethodLogInformation() { DateTimeStartMethod = DateTime.Now.ToLocalTime(), Method = method, Parameters = parameters, ServiceName = serviceName, ConnectedDateTime = connectedDateTime, IPAddress = ipAddress, ClientId = sessionId, MethodName = method?.Name };
+            var log = new CallMethodLogInformation() { DateTimeStartMethod = DateTime.Now.ToLocalTime(), Method = method, Parameters = parameters, ServiceName = serviceName, ConnectedDateTime = connectedDateTime, IPAddress = ipAddress, ClientId = clientId, MethodName = method?.Name };
             Logs.Enqueue(log);
             return log;
         }
 
-        public static HttpCallMethodLogInformation AddHttpMethodLog(string sessionId, string ipAddress, DateTime connectedDateTime, string address, MethodInfo method, List<string> parameters)
+        public static HttpCallMethodLogInformation AddHttpMethodLog(string clientId, string ipAddress, DateTime connectedDateTime, string address, MethodInfo method, List<string> parameters)
         {
             if (isStop)
                 return null;
-            var log = new HttpCallMethodLogInformation() { DateTimeStartMethod = DateTime.Now.ToLocalTime(), Method = method, Parameters = parameters, Address = address, ConnectedDateTime = connectedDateTime, IPAddress = ipAddress, ClientId = sessionId, MethodName = method?.Name };
+            var log = new HttpCallMethodLogInformation() { DateTimeStartMethod = DateTime.Now.ToLocalTime(), Method = method, Parameters = parameters, Address = address, ConnectedDateTime = connectedDateTime, IPAddress = ipAddress, ClientId = clientId, MethodName = method?.Name };
             Logs.Enqueue(log);
             return log;
         }
 
-        public static CallClientMethodLogInformation AddCallClientMethodLog(string sessionId, string ipAddress, DateTime connectedDateTime, string serviceName, string methodName, List<Models.ParameterInfo> parameters)
+        public static CallClientMethodLogInformation AddCallClientMethodLog(string clientId, string ipAddress, DateTime connectedDateTime, string serviceName, string methodName, List<Models.ParameterInfo> parameters)
         {
             if (isStop)
                 return null;
-            var log = new CallClientMethodLogInformation() { DateTimeStartMethod = DateTime.Now.ToLocalTime(), MethodName = methodName, Parameters = parameters, ServiceName = serviceName, ConnectedDateTime = connectedDateTime, IPAddress = ipAddress, ClientId = sessionId };
+            var log = new CallClientMethodLogInformation() { DateTimeStartMethod = DateTime.Now.ToLocalTime(), MethodName = methodName, Parameters = parameters, ServiceName = serviceName, ConnectedDateTime = connectedDateTime, IPAddress = ipAddress, ClientId = clientId };
             Logs.Enqueue(log);
             return log;
         }
@@ -325,7 +326,7 @@ namespace SignalGo.Shared.Log
             build.AppendLine("########################################");
             build.AppendLine("Client Information:");
             build.AppendLine($"	Ip Address:	{log.IPAddress}");
-            build.AppendLine($"	SessionId:	{log.ClientId}");
+            build.AppendLine($"	ClientId:	{log.ClientId}");
             build.AppendLine($"	Connected Time:	{GetDateTimeString(log.ConnectedDateTime)}");
             build.AppendLine("");
             build.AppendLine($"Call Information:");
@@ -393,7 +394,7 @@ namespace SignalGo.Shared.Log
             build.AppendLine("########################################");
             build.AppendLine("Client Information:");
             build.AppendLine($"	Ip Address:	{log.IPAddress}");
-            build.AppendLine($"	SessionId:	{log.ClientId}");
+            build.AppendLine($"	ClientId:	{log.ClientId}");
             build.AppendLine($"	Connected Time:	{GetDateTimeString(log.ConnectedDateTime)}");
             build.AppendLine("");
             build.AppendLine($"Call Information:");
@@ -460,7 +461,7 @@ namespace SignalGo.Shared.Log
             build.AppendLine("########################################");
             build.AppendLine("Client Information:");
             build.AppendLine($"	Ip Address:	{log.IPAddress}");
-            build.AppendLine($"	SessionId:	{log.ClientId}");
+            build.AppendLine($"	ClientId:	{log.ClientId}");
             build.AppendLine($"	Connected Time:	{GetDateTimeString(log.ConnectedDateTime)}");
             build.AppendLine("");
             build.AppendLine($"Call Information:");

@@ -601,8 +601,6 @@ namespace SignalGo.Shared.Converters
                 }
                 foreach (var field in baseType.GetListOfFields())
                 {
-                    if (field.DeclaringType == baseType)
-                        continue;
                     if (implementICollection != null)
                     {
                         if (implementICollection.ExchangeType == CustomDataExchangerType.Ignore && implementICollection.ContainsProperty(field.Name))
@@ -768,7 +766,7 @@ namespace SignalGo.Shared.Converters
                                 else if (field != null)
                                 {
                                     value = field.GetValue(instance);
-                                    SerializeHelper.HandleSerializingObjectList.TryGetValue(property.PropertyType, out Delegate serializeHandler);
+                                    SerializeHelper.HandleSerializingObjectList.TryGetValue(field.FieldType, out Delegate serializeHandler);
                                     if (serializeHandler != null)
                                         value = serializeHandler.DynamicInvoke(value);
                                     if (value == null)

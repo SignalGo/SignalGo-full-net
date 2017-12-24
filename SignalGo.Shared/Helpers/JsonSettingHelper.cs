@@ -58,7 +58,8 @@ namespace SignalGo.Shared.Helpers
                 {
                     MissingMemberHandling = MissingMemberHandling.Ignore,
                     Error = new EventHandler<ErrorEventArgs>(HandleDeserializationError),
-                    NullValueHandling = NullValueHandling.Ignore
+                    NullValueHandling = NullValueHandling.Ignore,
+                    ReferenceLoopHandling = ReferenceLoopHandling.Ignore
                 };
                 setting.Converters.Add(new ToLocalDateTimeConvertor());
                 return setting;

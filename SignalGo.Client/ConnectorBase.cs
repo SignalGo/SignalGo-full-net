@@ -469,8 +469,7 @@ namespace SignalGo.Client
                     var mc_custom_type = typeof(FunctionCaster<>).MakeGenericType(methodType);
                     var mc_instance = Activator.CreateInstance(mc_custom_type);
                     var mc_custom_method = mc_custom_type.FindMethod("Do");
-                    return mc_custom_method.Invoke(mc_instance, new object[] { funcR
-    });
+                    return mc_custom_method.Invoke(mc_instance, new object[] { funcR });
                 }
                 else
                 {
