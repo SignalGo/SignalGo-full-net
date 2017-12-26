@@ -385,7 +385,8 @@ namespace SignalGo.Server.ServiceManager
                             //"SignalGo/1.0";
                             //"SignalGo/1.0";
                             client.IsWebSocket = false;
-                            tcpClient.Client.Send(System.Text.Encoding.UTF8.GetBytes("OK"));
+                            var countSend = tcpClient.Client.Send(System.Text.Encoding.UTF8.GetBytes("OK"));
+                            Console.WriteLine("write ok: " + countSend);
                         }
                         else if (headerResponse.Contains("HTTP/1.1"))
                         {
@@ -1649,6 +1650,7 @@ namespace SignalGo.Server.ServiceManager
         {
             try
             {
+                Console.WriteLine("Client disposed " + client.ClientId);
                 if (client != null && client.TcpClient != null)
                 {
                     CloseClient(client);
