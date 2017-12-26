@@ -93,18 +93,11 @@ namespace SignalGo.Shared.Helpers
         {
             if (!type.IsInterface)
                 throw new Exception("type must be interface");
-            var attribs = type.GetCustomAttributes(false);
+            var attribs = type.GetCustomAttributes<ServiceContractAttribute>(true);
             bool isServiceContract = false;
-            ServiceContractAttribute attrib = null;
-            foreach (var item in attribs)
-            {
-                if (item.GetType() == typeof(ServiceContractAttribute))
-                {
-                    attrib = (ServiceContractAttribute)item;
-                    isServiceContract = true;
-                    break;
-                }
-            }
+            ServiceContractAttribute attrib = attribs.FirstOrDefault();
+            isServiceContract = attrib != null;
+
             if (!isServiceContract)
                 throw new Exception("your class is not used ServiceContractAttribute");
 

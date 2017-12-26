@@ -73,8 +73,8 @@ namespace SignalGo.Shared.IO
 #if (!PORTABLE)
                 if (!CheckDataAvalable(isFirst))
                     break;
-#endif
                 isFirst = false;
+#endif
                 int data = CurrentStream.ReadByte();
                 LastByteRead = data;
                 if (data == -1)

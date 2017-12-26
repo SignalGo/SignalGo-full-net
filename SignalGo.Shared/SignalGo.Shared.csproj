@@ -2,14 +2,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
-    <TargetFrameworks>net45;net40;net35;netstandard1.6;portable45-net45+win8;portable-net45+win8+wpa81;netcoreapp1.1</TargetFrameworks>
+    <TargetFrameworks>net45;net40;net35;netstandard1.6;netcoreapp1.1;portable45-net45+win8;portable-net45+win8+wpa81</TargetFrameworks>
+    <!---->
     <MinimumVisualStudioVersion>10.0</MinimumVisualStudioVersion>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <AssemblyVersion>3.0</AssemblyVersion>
-    <FileVersion>3.0</FileVersion>
-    <VersionPrefix>3.0</VersionPrefix>
-    <Version>3.0</Version>
+    <AssemblyVersion>3.1</AssemblyVersion>
+    <FileVersion>3.1</FileVersion>
+    <VersionPrefix>3.1</VersionPrefix>
+    <Version>3.1</Version>
     <!--<VersionSuffix>beta1</VersionSuffix>-->
     <Authors>Ali Yousefi</Authors>
     <Company></Company>
@@ -45,8 +46,7 @@
     <Summary>
     </Summary>
     <PackageReleaseNotes>
-      1.fix bugs and more improvement
-      2.support for async await methods
+      fix bugs and more improvement
     </PackageReleaseNotes>
     <NeutralLanguage>en-US</NeutralLanguage>
     <PackageId>SignalGo.Shared</PackageId>
@@ -58,7 +58,7 @@
     <RepositoryType>git</RepositoryType>
     <RootNamespace>SignalGo.Shared</RootNamespace>
     <AssemblyName>SignalGo.Shared</AssemblyName>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <NetStandardImplicitPackageVersion>1.6.1</NetStandardImplicitPackageVersion>
     <MinClientVersion>2.12</MinClientVersion>
   </PropertyGroup>
@@ -88,7 +88,7 @@
   </ItemGroup>
 
   <PropertyGroup>
-    <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\SignalGo.Shared.xml</DocumentationFile>
+    <DocumentationFile></DocumentationFile>
   </PropertyGroup>
 
 
@@ -153,7 +153,7 @@
     <Reference Include="System.Xml" />
     <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
   </ItemGroup>
-  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard1.6'" >
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard1.6'">
     <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
     <PackageReference Include="System.Diagnostics.StackTrace" Version="4.3.0" />
     <PackageReference Include="System.Xml.XmlSerializer" Version="4.3.0" />
@@ -169,14 +169,16 @@
     <PackageReference Include="System.Reflection.TypeExtensions" Version="4.4.0" />
     <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
   </ItemGroup>
-  <ItemGroup Condition="'$(TargetFramework)' == 'portable45-net45+win8'">
+  <ItemGroup Condition="'$(TargetFramework)' == 'portable45-net45+win8W'">
     <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
     <PackageReference Include="rda.SocketsForPCL" Version="2.0.2" />
     <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
+    <!--<PackageReference Include="runtime.win8-arm.Microsoft.NETCore.Jit" Version="2.0.0-preview1-25301-02" />-->
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'portable-net45+win8+wpa81'">
     <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
     <PackageReference Include="rda.SocketsForPCL" Version="2.0.2" />
     <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
+    <!--<PackageReference Include="runtime.win8-arm.Microsoft.NETCore.Jit" Version="2.0.0-preview1-25301-02" />-->
   </ItemGroup>
 </Project>

@@ -17,7 +17,6 @@ namespace SignalGoTest.Models
         public string HelloWorld(string yourName)
         {
             OperationContext<TestSetting>.CurrentSetting = new TestSetting() { Name = yourName };
-
             return "hello: " + yourName;
         }
 

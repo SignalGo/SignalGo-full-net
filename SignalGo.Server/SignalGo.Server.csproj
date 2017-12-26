@@ -37,13 +37,12 @@
     <PackageIconUrl>http://cdn.persiangig.com/preview/v14ukL88fq/SignalGo.png</PackageIconUrl>
     <PackageTags>SignalGo SignalR WCF Server Client Signal Sig RealTime Real-Time</PackageTags>
     <AssemblyName>SignalGo.Server</AssemblyName>
-    <AssemblyVersion>3.0</AssemblyVersion>
-    <FileVersion>3.0</FileVersion>
-    <VersionPrefix>3.0</VersionPrefix>
-    <Version>3.0</Version>
+    <AssemblyVersion>3.1</AssemblyVersion>
+    <FileVersion>3.1</FileVersion>
+    <VersionPrefix>3.1</VersionPrefix>
+    <Version>3.1</Version>
     <PackageReleaseNotes>
-      1.fix bugs and more improvement
-      2.support for async await methods
+      fix bugs and more improvement
     </PackageReleaseNotes>
   </PropertyGroup>
   <PropertyGroup>
