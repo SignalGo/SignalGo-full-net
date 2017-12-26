@@ -67,10 +67,10 @@ namespace SignalGo.Shared.IO
         public string ReadLine()
         {
             List<byte> result = new List<byte>();
-            bool isFirst = true;
             do
             {
 #if (!PORTABLE)
+                bool isFirst = true;
                 if (!CheckDataAvalable(isFirst))
                     break;
                 isFirst = false;

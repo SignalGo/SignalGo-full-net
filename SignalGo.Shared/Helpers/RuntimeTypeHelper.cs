@@ -17,7 +17,6 @@ namespace SignalGo.Shared.Helpers
         /// </summary>
         /// <param name="serviceType"></param>
         /// <param name="callInfo"></param>
-        /// <param name="streamType"></param>
         /// <returns></returns>
         public static List<Type> GetMethodTypes(Type serviceType, MethodCallInfo callInfo)
         {

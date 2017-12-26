@@ -18,9 +18,9 @@ namespace SignalGo.Shared.IO
         /// write a block to end of udpClient
         /// </summary>
         /// <param name="udpClient">client</param>
-        /// <param name="iPEndPoint">address to write</param>
         /// <param name="data">bytes of data to write</param>
 #if (NETSTANDARD1_6 || NETCOREAPP1_1)
+        /// <param name="iPEndPoint">address to write</param>
         public static async void WriteToEnd(UdpClient udpClient, IPEndPoint iPEndPoint, byte[] data)
 #elif (PORTABLE)
         public static async void WriteToEnd(Sockets.Plugin.UdpSocketClient udpClient, byte[] data)
