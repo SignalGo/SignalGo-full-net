@@ -150,6 +150,24 @@ namespace SignalGo.Shared.Helpers
                 .GetMethod(name);
 #endif
         }
+
+#if (!PORTABLE)
+        /// <summary>
+        /// get method
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="name"></param>
+        /// <param name="flags"></param>
+        /// <returns></returns>
+        public static MethodInfo FindMethod(this Type type, string name, BindingFlags flags)
+        {
+            return type
+#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
+                .GetTypeInfo()
+#endif
+                .GetMethod(name, flags);
+        }
+#endif
         /// <summary>
         /// get list of properties
         /// </summary>
@@ -295,7 +313,7 @@ namespace SignalGo.Shared.Helpers
 #if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
             return method.CreateDelegate(type);
 #else
-            return  Delegate.CreateDelegate(type, method);
+            return Delegate.CreateDelegate(type, method);
 #endif
         }
     }

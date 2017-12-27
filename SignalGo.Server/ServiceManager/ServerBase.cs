@@ -173,7 +173,7 @@ namespace SignalGo.Server.ServiceManager
                 }
             })
             {
-                IsBackground = true
+                IsBackground = false
             };
 #if (NETSTANDARD1_6 || NETCOREAPP1_1)
 #else

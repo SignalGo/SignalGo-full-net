@@ -225,7 +225,7 @@ namespace SignalGo.Shared.Log
                 waitForDispose.Set();
                 isStop = true;
             });
-            _thread.IsBackground = true;
+            _thread.IsBackground = false;
             _thread.Start();
 #endif
         }

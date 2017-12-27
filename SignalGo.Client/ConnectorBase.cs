@@ -142,6 +142,21 @@ namespace SignalGo.Client
             return SendData(connector, callInfo, args.Length == 1 && args[0] != null && args[0].GetType() == typeof(StreamInfo) ? (StreamInfo)args[0] : null);
         }
 
+        internal static Task<T> SendDataTask<T>(ConnectorBase connector, string serviceName, string methodName, params object[] args)
+        {
+            MethodCallInfo callInfo = new MethodCallInfo();
+            callInfo.ServiceName = serviceName;
+
+            callInfo.MethodName = methodName;
+            foreach (var item in args)
+            {
+                callInfo.Parameters.Add(new Shared.Models.ParameterInfo() { Value = ClientSerializationHelper.SerializeObject(item), Type = item?.GetType().FullName });
+            }
+            var guid = Guid.NewGuid().ToString();
+            callInfo.Guid = guid;
+            return SendDataAsync<T>(connector, callInfo);
+        }
+
         static object SendData(this ConnectorBase connector, MethodCallInfo callInfo, StreamInfo streamInfo)
         {
             var added = WaitedMethodsForResponse.TryAdd(callInfo.Guid, new KeyValue<AutoResetEvent, MethodCallbackInfo>(new AutoResetEvent(false), null));
@@ -164,7 +179,9 @@ namespace SignalGo.Client
                 return null;
             }
             else
+            {
                 connector.SendData(callInfo);
+            }
 
 
             var seted = WaitedMethodsForResponse[callInfo.Guid].Key.WaitOne(connector.ProviderSetting.SendDataTimeout);
@@ -193,6 +210,50 @@ namespace SignalGo.Client
                 throw new Exception("server permission denied exception.");
 
             return result.Data;
+        }
+
+        static Task<T> SendDataAsync<T>(this ConnectorBase connector, MethodCallInfo callInfo)
+        {
+            return Task<T>.Factory.StartNew(() =>
+            {
+                var added = WaitedMethodsForResponse.TryAdd(callInfo.Guid, new KeyValue<AutoResetEvent, MethodCallbackInfo>(new AutoResetEvent(false), null));
+                var service = connector.Services.ContainsKey(callInfo.ServiceName) ? connector.Services[callInfo.ServiceName] : null;
+#if (PORTABLE)
+            var method = service?.GetType().FindMethod(callInfo.MethodName);
+#else
+                var method = service?.GetType().GetMethod(callInfo.MethodName, RuntimeTypeHelper.GetMethodTypes(service.GetType(), callInfo).ToArray());
+#endif
+                connector.SendDataSync(callInfo);
+
+                var seted = WaitedMethodsForResponse[callInfo.Guid].Key.WaitOne(connector.ProviderSetting.SendDataTimeout);
+
+
+                if (!seted)
+                {
+                    if (connector.SettingInfo != null && connector.SettingInfo.IsDisposeClientWhenTimeout)
+                        connector.Dispose();
+                    throw new TimeoutException();
+                }
+                var result = WaitedMethodsForResponse[callInfo.Guid].Value;
+                if (result != null && !result.IsException && callInfo.MethodName == "/RegisterService")
+                {
+                    connector.ClientId = ClientSerializationHelper.DeserializeObject<string>(result.Data);
+                    result.Data = null;
+                }
+                WaitedMethodsForResponse.Remove(callInfo.Guid);
+                if (result == null)
+                {
+                    if (connector.IsDisposed || !connector.IsConnected)
+                        throw new Exception("client disconnected");
+                    return default(T);
+                }
+                if (result.IsException)
+                    throw new Exception("server exception:" + ClientSerializationHelper.DeserializeObject<string>(result.Data));
+                else if (result.IsAccessDenied && result.Data == null)
+                    throw new Exception("server permission denied exception.");
+                var deserialeResult = ClientSerializationHelper.DeserializeObject(result.Data, typeof(T));
+                return (T)deserialeResult;
+            });
         }
 
         public static string SendRequest(this ConnectorBase connector, string serviceName, ServiceDetailsMethod serviceDetailMethod, out string json)
@@ -439,37 +500,46 @@ namespace SignalGo.Client
                     string methodName = method.Name;
                     if (methodName.EndsWith("Async"))
                         methodName = methodName.Substring(0, methodName.Length - 5);
-                    var task = new Task(() =>
+                    var task = Task.Factory.StartNew(() =>
                     {
                         ConnectorExtension.SendData(this, serviceName, methodName, args);
                     });
-                    task.Start();
                     return task;
                 }
                 //this is async function
                 else if (method.ReturnType.GetBaseType() == typeof(Task))
                 {
                     string methodName = method.Name;
-                    if (methodName.EndsWith("Async"))
+                    if (methodName.ToLower().EndsWith("async"))
                         methodName = methodName.Substring(0, methodName.Length - 5);
+#if (!PORTABLE)
+                    // ConnectorExtension.SendDataAsync<object>()
+                    var findMethod = typeof(ConnectorExtension).FindMethod("SendDataTask", BindingFlags.Static | BindingFlags.NonPublic);
                     var methodType = method.ReturnType.GetListOfGenericArguments().FirstOrDefault();
-                    var funcR = new Func<object>(() =>
-                    {
-                        var data = ConnectorExtension.SendData(this, serviceName, methodName, args);
-                        if (data == null)
-                            return null;
-                        if (data is StreamInfo)
-                            return data;
-                        else
-                        {
-                            var result = ClientSerializationHelper.DeserializeObject(data.ToString(), methodType);
-                            return result;
-                        }
-                    });
-                    var mc_custom_type = typeof(FunctionCaster<>).MakeGenericType(methodType);
-                    var mc_instance = Activator.CreateInstance(mc_custom_type);
-                    var mc_custom_method = mc_custom_type.FindMethod("Do");
-                    return mc_custom_method.Invoke(mc_instance, new object[] { funcR });
+                    var madeMethod = findMethod.MakeGenericMethod(methodType);
+                    return madeMethod.Invoke(this, new object[] { this, serviceName, methodName, args });
+
+#else
+                    throw new NotSupportedException();
+#endif
+
+                    //var funcR = new Func<object>(() =>
+                    //{
+                    //    var data = ConnectorExtension.SendDataAsync(this, serviceName, methodName, args);
+                    //    if (data == null)
+                    //        return null;
+                    //    if (data is StreamInfo)
+                    //        return data;
+                    //    else
+                    //    {
+                    //        var result = ClientSerializationHelper.DeserializeObject(data.ToString(), methodType);
+                    //        return result;
+                    //    }
+                    //});
+                    //var mc_custom_type = typeof(FunctionCaster<>).MakeGenericType(methodType);
+                    //var mc_instance = Activator.CreateInstance(mc_custom_type);
+                    //var mc_custom_method = mc_custom_type.FindMethod("Do");
+                    //return mc_custom_method.Invoke(mc_instance, new object[] { funcR });
                 }
                 else
                 {
@@ -890,38 +960,43 @@ namespace SignalGo.Client
         /// send data to call server method
         /// </summary>
         /// <param name="Data"></param>
-        internal void SendData(MethodCallInfo Data)
+        internal void SendData(MethodCallInfo data)
         {
             AsyncActions.Run(() =>
             {
-                try
-                {
+                SendDataSync(data);
+            });
+        }
+
+        internal void SendDataSync(MethodCallInfo data)
+        {
+            try
+            {
 #if (PORTABLE)
-                    var stream = _client.WriteStream;
+                var stream = _client.WriteStream;
 #else
-                    var stream = _client.GetStream();
+                var stream = _client.GetStream();
 #endif
-                    var json = ClientSerializationHelper.SerializeObject(Data);
-                    List<byte> bytes = new List<byte>
+                var json = ClientSerializationHelper.SerializeObject(data);
+                List<byte> bytes = new List<byte>
                     {
                         (byte)DataType.CallMethod,
                         (byte)CompressMode.None
                     };
-                    var jsonBytes = Encoding.UTF8.GetBytes(json);
-                    if (SecuritySettings != null)
-                        jsonBytes = EncryptBytes(jsonBytes);
-                    byte[] dataLen = BitConverter.GetBytes(jsonBytes.Length);
-                    bytes.AddRange(dataLen);
-                    bytes.AddRange(jsonBytes);
-                    if (bytes.Count > ProviderSetting.MaximumSendDataBlock)
-                        throw new Exception("SendData data length is upper than MaximumSendDataBlock");
-                    GoStreamWriter.WriteToStream(stream, bytes.ToArray(), IsWebSocket);
-                }
-                catch (Exception ex)
-                {
-                    AutoLogger.LogError(ex, "ConnectorBase SendData");
-                }
-            });
+                var jsonBytes = Encoding.UTF8.GetBytes(json);
+                if (SecuritySettings != null)
+                    jsonBytes = EncryptBytes(jsonBytes);
+                byte[] dataLen = BitConverter.GetBytes(jsonBytes.Length);
+                bytes.AddRange(dataLen);
+                bytes.AddRange(jsonBytes);
+                if (bytes.Count > ProviderSetting.MaximumSendDataBlock)
+                    throw new Exception("SendData data length is upper than MaximumSendDataBlock");
+                GoStreamWriter.WriteToStream(stream, bytes.ToArray(), IsWebSocket);
+            }
+            catch (Exception ex)
+            {
+                AutoLogger.LogError(ex, "ConnectorBase SendData");
+            }
         }
 
         internal abstract StreamInfo RegisterFileStreamToDownload(MethodCallInfo Data);

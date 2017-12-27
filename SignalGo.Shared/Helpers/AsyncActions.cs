@@ -81,20 +81,19 @@ namespace SignalGo.Shared
 #endif
         {
 #if (PORTABLE)
-            System.Threading.Tasks.Task thread = new System.Threading.Tasks.Task(() =>
-            {
-                try
-                {
-                    action();
-                }
-                catch (Exception ex)
-                {
-                    onException?.Invoke(ex);
-                    AutoLogger.LogError(ex, "AsyncActions Run");
-                    OnActionException?.Invoke(ex);
-                }
-            });
-            thread.Start();
+            var thread = System.Threading.Tasks.Task.Factory.StartNew(() =>
+              {
+                  try
+                  {
+                      action();
+                  }
+                  catch (Exception ex)
+                  {
+                      onException?.Invoke(ex);
+                      AutoLogger.LogError(ex, "AsyncActions Run");
+                      OnActionException?.Invoke(ex);
+                  }
+              });
 #else
             Thread thread = new Thread(() =>
             {
