@@ -312,8 +312,21 @@ namespace SignalGo.Shared.Converters
             {
 
             }
-            if (obj == null)
-                obj = JsonConvert.DeserializeObject(jToken.ToString(), objectType);
+            try
+            {
+                if (obj == null)
+                    obj = JsonConvert.DeserializeObject(jToken.ToString(), objectType, new JsonSerializerSettings()
+                    {
+                        Error = (o, x) =>
+                        {
+
+                        }
+                    });
+            }
+            catch (Exception ex)
+            {
+
+            }
             GenerateProperties(obj);
             return obj;
         }
