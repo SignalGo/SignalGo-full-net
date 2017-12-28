@@ -4,15 +4,74 @@ using Newtonsoft.Json.Linq;
 using SignalGo.Shared.DataTypes;
 using SignalGo.Shared.Helpers;
 using SignalGo.Shared.Log;
+using SignalGo.Shared.Models;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Text;
 
 namespace SignalGo.Shared.Converters
 {
+    internal class DefaultReferenceResolver
+    {
+        private int _referenceCount;
+
+        //private BidirectionalDictionary<string, object> GetMappings(object context)
+        //{
+        //    JsonSerializerInternalBase internalSerializer = context as JsonSerializerInternalBase;
+        //    if (internalSerializer == null)
+        //    {
+        //        JsonSerializerProxy proxy = context as JsonSerializerProxy;
+        //        if (proxy != null)
+        //        {
+        //            internalSerializer = proxy.GetInternalSerializer();
+        //        }
+        //        else
+        //        {
+        //            throw new JsonException("The DefaultReferenceResolver can only be used internally.");
+        //        }
+        //    }
+
+        //    return internalSerializer.DefaultReferenceMappings;
+        //}
+
+        //public object ResolveReference(object context, string reference)
+        //{
+        //    object value;
+        //    GetMappings(context).TryGetByFirst(reference, out value);
+        //    return value;
+        //}
+        BidirectionalDictionary<string, object> mappings = new BidirectionalDictionary<string, object>();
+        public string GetReference(object context, object value)
+        {
+
+
+            string reference;
+            if (!mappings.TryGetBySecond(value, out reference))
+            {
+                _referenceCount++;
+                reference = _referenceCount.ToString(CultureInfo.InvariantCulture);
+                mappings.Set(reference, value);
+            }
+
+            return reference;
+        }
+
+        public void AddReference(object context, string reference, object value)
+        {
+            mappings.Set(reference, value);
+        }
+
+        public bool IsReferenced(object context, object value)
+        {
+            string reference;
+            return mappings.TryGetBySecond(value, out reference);
+        }
+    }
+
     /// <summary>
     /// Creates a ICollection object.
     /// this will help you to convert entity framework ICollections
@@ -123,6 +182,7 @@ namespace SignalGo.Shared.Converters
     /// </summary>
     public class DataExchangeConverter : JsonConverter
     {
+        private DefaultReferenceResolver ReferenceResolver { get; set; } = new DefaultReferenceResolver();
         /// <summary>
         /// server of signalGo that called exchanger
         /// </summary>
@@ -388,6 +448,8 @@ namespace SignalGo.Shared.Converters
         {
             try
             {
+                if (!SerializedObjects.Contains(value))
+                    SerializedObjects.Add(value);
                 var type = value.GetType();
                 if (HasJsonIgnore(type))
                     return;
@@ -455,25 +517,42 @@ namespace SignalGo.Shared.Converters
                 bool isDictionary = typeof(IDictionary).GetIsAssignableFrom(type);
 
                 if (isArray && !isDictionary)
-                    writer.WriteStartArray();
-                else
+                {
                     writer.WriteStartObject();
+                    WriteReferenceProperty(writer, type, value, "$id");
+                    WriteReferenceJustPropertyName(writer, type, value, "$values");
+                    writer.WriteStartArray();
+                }
+                else
+                {
+                    writer.WriteStartObject();
+                    WriteReferenceProperty(writer, type, value, "$id");
+                }
+
+
                 if (isDictionary)
                 {
+                    //writer.WriteEndObject();
+                    //if (!SerializedObjects.Contains(value))
                     GenerateDictionary(value, writer, serializer);
                 }
                 else if (isArray)
                 {
+                    //if (!SerializedObjects.Contains(value))
                     GenerateArray(value, writer, serializer);
+                    //else
+
                 }
                 else
                 {
                     WriteData(type, value, writer, serializer);
                 }
+
                 //writer.WriteEnd();
                 if (isArray && !isDictionary)
                 {
                     writer.WriteEndArray();
+                    writer.WriteEndObject();
                 }
                 else
                     writer.WriteEndObject();
@@ -485,9 +564,32 @@ namespace SignalGo.Shared.Converters
 
         }
 
+        private void WriteReferenceProperty(JsonWriter writer, Type type, object value, string flag)
+        {
+            string reference = GetReference(writer, value);
+
+            writer.WritePropertyName(flag, false);
+            writer.WriteValue(reference);
+        }
+
+        private void WriteReferenceJustPropertyName(JsonWriter writer, Type type, object value, string flag)
+        {
+            string reference = GetReference(writer, value);
+
+            writer.WritePropertyName(flag, false);
+        }
+
+        private string GetReference(JsonWriter writer, object value)
+        {
+            string reference = ReferenceResolver.GetReference(this, value);
+
+            return reference;
+        }
+
         void GenerateDictionary(object value, JsonWriter writer, JsonSerializer serializer)
         {
             List<DictionaryEntry> items = new List<DictionaryEntry>();
+            List<DictionaryEntry> existObjects = new List<DictionaryEntry>();
             foreach (DictionaryEntry item in (IDictionary)value)
             {
                 if (item.Value == null)
@@ -495,10 +597,14 @@ namespace SignalGo.Shared.Converters
                 var itemJsonType = SerializeHelper.GetTypeCodeOfObject(item.Value.GetType());
                 if (itemJsonType == SerializeObjectType.Object)
                 {
-                    if (SerializedObjects.Contains(item.Value))
-                        continue;
+                    if (existObjects.Contains(item))
+                    {
+                        writer.WriteStartObject();
+                        WriteReferenceProperty(writer, item.Value.GetType(), item.Value, "$ref");
+                        writer.WriteEndObject();
+                    }
                     else
-                        SerializedObjects.Add(item.Value);
+                        existObjects.Add(item);
                     items.Add(item);
                 }
                 else
@@ -510,6 +616,16 @@ namespace SignalGo.Shared.Converters
             }
             foreach (var item in items)
             {
+                if (!SerializedObjects.Contains(item.Value))
+                    SerializedObjects.Add(item.Value);
+                else
+                {
+                    writer.WriteStartObject();
+                    WriteReferenceProperty(writer, item.Value.GetType(), item.Value, "$ref");
+                    writer.WriteEndObject();
+                    continue;
+                }
+                writer.WritePropertyName(item.Key.GetType().FullName);
                 serializer.Serialize(writer, item.Value);
             }
         }
@@ -517,6 +633,7 @@ namespace SignalGo.Shared.Converters
         void GenerateArray(object value, JsonWriter writer, JsonSerializer serializer)
         {
             List<object> objects = new List<object>();
+            List<object> existObjects = new List<object>();
             foreach (var item in (IEnumerable)value)
             {
                 if (item == null)
@@ -525,10 +642,17 @@ namespace SignalGo.Shared.Converters
                 var itemJsonType = SerializeHelper.GetTypeCodeOfObject(item.GetType());
                 if (itemJsonType == SerializeObjectType.Object)
                 {
-                    if (SerializedObjects.Contains(item))
-                        continue;
+                    if (existObjects.Contains(item))
+                    {
+                        if (SerializedObjects.Contains(item))
+                        {
+                            writer.WriteStartObject();
+                            WriteReferenceProperty(writer, item.GetType(), item, "$ref");
+                            writer.WriteEndObject();
+                        }
+                    }
                     else
-                        SerializedObjects.Add(item);
+                        existObjects.Add(item);
                     objects.Add(item);
                 }
                 else
@@ -546,6 +670,15 @@ namespace SignalGo.Shared.Converters
             }
             foreach (var item in objects)
             {
+                if (!SerializedObjects.Contains(item))
+                    SerializedObjects.Add(item);
+                else
+                {
+                    writer.WriteStartObject();
+                    WriteReferenceProperty(writer, item.GetType(), item, "$ref");
+                    writer.WriteEndObject();
+                    continue;
+                }
                 serializer.Serialize(writer, item);
             }
         }
@@ -720,7 +853,13 @@ namespace SignalGo.Shared.Converters
                                     if (itemJsonType == SerializeObjectType.Object)
                                     {
                                         if (SerializedObjects.Contains(propValue))
+                                        {
+                                            writer.WritePropertyName(property.Name);
+                                            writer.WriteStartObject();
+                                            WriteReferenceProperty(writer, propValue.GetType(), propValue, "$ref");
+                                            writer.WriteEndObject();
                                             return;
+                                        }
                                         else
                                             SerializedObjects.Add(propValue);
                                     }
@@ -756,7 +895,13 @@ namespace SignalGo.Shared.Converters
                                     if (itemJsonType == SerializeObjectType.Object)
                                     {
                                         if (SerializedObjects.Contains(value))
+                                        {
+                                            writer.WritePropertyName(property.Name);
+                                            writer.WriteStartObject();
+                                            WriteReferenceProperty(writer, value.GetType(), value, "$ref");
+                                            writer.WriteEndObject();
                                             return;
+                                        }
                                         else
                                             SerializedObjects.Add(value);
                                     }
@@ -775,7 +920,13 @@ namespace SignalGo.Shared.Converters
                                     if (itemJsonType == SerializeObjectType.Object)
                                     {
                                         if (SerializedObjects.Contains(value))
+                                        {
+                                            writer.WritePropertyName(property.Name);
+                                            writer.WriteStartObject();
+                                            WriteReferenceProperty(writer, value.GetType(), value, "$ref");
+                                            writer.WriteEndObject();
                                             return;
+                                        }
                                         else
                                             SerializedObjects.Add(value);
                                     }
