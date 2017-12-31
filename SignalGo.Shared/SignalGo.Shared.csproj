@@ -171,5 +171,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Remove="Log\MethodCallsLogger.cs" />
+    <Compile Remove="Log\MethodCallsLogLoader.cs" />
   </ItemGroup>
 </Project>

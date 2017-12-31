@@ -27,6 +27,5 @@ namespace SignalGo.Shared.Events
 
         public static BeginClientMethodCallAction BeginClientMethodCallAction;
         public static EndClientMethodCallAction EndClientMethodCallAction;
-
     }
 }
