@@ -129,6 +129,21 @@ namespace SignalGo.Server.Log
     }
 
     /// <summary>
+    /// log of stream services
+    /// </summary>
+    public class StreamCallMethodLogInformation : BaseLogInformation
+    {
+        /// <summary>
+        /// address of http call
+        /// </summary>
+        public string ServiceName { get; set; }
+        /// <summary>
+        /// parameters
+        /// </summary>
+        public List<SignalGo.Shared.Models.ParameterInfo> Parameters { get; set; }
+    }
+
+    /// <summary>
     /// signalGo log system manager
     /// </summary>
     public class ServerMethodCallsLogger : IDisposable
@@ -145,6 +160,10 @@ namespace SignalGo.Server.Log
         /// when a http method called from client
         /// </summary>
         public Action<HttpCallMethodLogInformation> OnHttpServiceMethodCalledAction { get; set; }
+        /// <summary>
+        /// when a stream method called from client
+        /// </summary>
+        public Action<StreamCallMethodLogInformation> OnStreamServiceMethodCalledAction { get; set; }
 
         /// <summary>
         /// initialize events and start service
@@ -154,10 +173,12 @@ namespace SignalGo.Server.Log
             MethodsCallHandler.BeginClientMethodCallAction += new BeginClientMethodCallAction(BeginClientMethodCallAction);
             MethodsCallHandler.BeginHttpMethodCallAction += new BeginHttpCallAction(BeginHttpMethodCallAction);
             MethodsCallHandler.BeginMethodCallAction += new BeginMethodCallAction(BeginMethodCallAction);
+            MethodsCallHandler.BeginStreamCallAction += new BeginStreamCallAction(BeginStreamCallAction);
 
             MethodsCallHandler.EndClientMethodCallAction += new EndClientMethodCallAction(EndClientMethodCallAction);
             MethodsCallHandler.EndHttpMethodCallAction += new EndHttpCallAction(EndHttpMethodCallAction);
             MethodsCallHandler.EndMethodCallAction += new EndMethodCallAction(EndMethodCallAction);
+            MethodsCallHandler.EndStreamCallAction += new EndStreamCallAction(EndStreamCallAction);
             StartEngine();
         }
 
@@ -179,18 +200,28 @@ namespace SignalGo.Server.Log
             AddCallMethodLog(client.ClientId, client.IPAddress, client.ConnectedDateTime, serviceName, method, values).CallerGuid = callGuid;
         }
 
+        void BeginStreamCallAction(object clientInfo, string callGuid, string serviceName, string methodName, List<SignalGo.Shared.Models.ParameterInfo> values)
+        {
+            ClientInfo client = (ClientInfo)clientInfo;
+            AddStreamCallMethodLog(client.ClientId, client.IPAddress, client.ConnectedDateTime, serviceName, methodName, values).CallerGuid = callGuid;
+        }
 
         void EndClientMethodCallAction(object clientInfo, string callGuid, string serviceName, string methodName, object[] values, string result, Exception exception)
         {
             var find = Logs.FirstOrDefault(x => x.CallerGuid == callGuid);
             if (find != null)
+            {
+                find.Exception = exception;
                 FinishLog((CallClientMethodLogInformation)find, result);
+            }
         }
 
         void EndHttpMethodCallAction(object clientInfo, string callGuid, string address, System.Reflection.MethodInfo method, List<string> values, ActionResult result, Exception exception)
         {
             var find = Logs.FirstOrDefault(x => x.CallerGuid == callGuid);
             if (find != null)
+            {
+                find.Exception = exception;
                 FinishLog((HttpCallMethodLogInformation)find, result == null ? "" : JsonConvert.SerializeObject(result, new JsonSerializerSettings()
                 {
                     NullValueHandling = NullValueHandling.Ignore,
@@ -200,15 +231,28 @@ namespace SignalGo.Server.Log
 
                     }
                 }));
+            }
         }
 
         void EndMethodCallAction(object clientInfo, string callGuid, string serviceName, System.Reflection.MethodInfo method, List<SignalGo.Shared.Models.ParameterInfo> values, string result, Exception exception)
         {
             var find = Logs.FirstOrDefault(x => x.CallerGuid == callGuid);
             if (find != null)
+            {
+                find.Exception = exception;
                 FinishLog((CallMethodLogInformation)find, result);
+            }
         }
 
+        void EndStreamCallAction(object clientInfo, string callGuid, string serviceName, string methodName, List<SignalGo.Shared.Models.ParameterInfo> values, string result, Exception exception)
+        {
+            var find = Logs.FirstOrDefault(x => x.CallerGuid == callGuid);
+            if (find != null)
+            {
+                find.Exception = exception;
+                FinishLog((StreamCallMethodLogInformation)find, result);
+            }
+        }
 
 
         /// <summary>
@@ -260,6 +304,8 @@ namespace SignalGo.Server.Log
                                     WriteToFile((HttpCallMethodLogInformation)nextLog);
                                 else if (nextLog is CallClientMethodLogInformation)
                                     WriteToFile((CallClientMethodLogInformation)nextLog);
+                                else if (nextLog is StreamCallMethodLogInformation)
+                                    WriteToFile((StreamCallMethodLogInformation)nextLog);
                             }
                             else
                             {
@@ -310,6 +356,15 @@ namespace SignalGo.Server.Log
             return log;
         }
 
+        public StreamCallMethodLogInformation AddStreamCallMethodLog(string clientId, string ipAddress, DateTime connectedDateTime, string serviceName, string methodName, List<SignalGo.Shared.Models.ParameterInfo> parameters)
+        {
+            if (isStop)
+                return null;
+            var log = new StreamCallMethodLogInformation() { DateTimeStartMethod = DateTime.Now.ToLocalTime(), MethodName = methodName, Parameters = parameters, ServiceName = serviceName, ConnectedDateTime = connectedDateTime, IPAddress = ipAddress, ClientId = clientId };
+            Logs.Enqueue(log);
+            return log;
+        }
+
         public void FinishLog(CallMethodLogInformation log, string result)
         {
             if (isStop)
@@ -346,6 +401,19 @@ namespace SignalGo.Server.Log
             if (log.Exception == null)
                 log.Result = result;
             OnServiceCallbackMethodCalledAction?.Invoke(log);
+            log.CanWriteToFile = true;
+        }
+
+        public void FinishLog(StreamCallMethodLogInformation log, string result)
+        {
+            if (isStop)
+                return;
+            if (log == null)
+                return;
+            log.DateTimeEndMethod = DateTime.Now.ToLocalTime();
+            if (log.Exception == null)
+                log.Result = result;
+            OnStreamServiceMethodCalledAction?.Invoke(log);
             log.CanWriteToFile = true;
         }
 
@@ -543,6 +611,75 @@ namespace SignalGo.Server.Log
                 build.AppendLine($"Exception:");
                 build.AppendLine("			" + log.Exception.ToString());
             }
+            build.AppendLine($"Invoked Time:");
+            build.AppendLine($"			{GetDateTimeString(log.DateTimeStartMethod)}");
+            build.AppendLine($"Result Time:");
+            build.AppendLine($"			{GetDateTimeString(log.DateTimeEndMethod)}");
+            build.AppendLine("----------------------------------------------------------------------------------------");
+            build.AppendLine("");
+            using (var stream = new System.IO.FileStream(path, FileMode.OpenOrCreate, FileAccess.ReadWrite))
+            {
+                stream.Seek(0, System.IO.SeekOrigin.End);
+                byte[] bytes = Encoding.UTF8.GetBytes(build.ToString());
+                stream.Write(bytes, 0, bytes.Length);
+            }
+#endif
+        }
+
+        void WriteToFile(StreamCallMethodLogInformation log)
+        {
+#if (PORTABLE)
+            throw new NotSupportedException();
+#else
+#if (NET35)
+            string path = CombinePath(AutoLogger.ApplicationDirectory, "Logs", log.DateTimeStartMethod.Year.ToString(), log.DateTimeStartMethod.Month.ToString(), log.DateTimeStartMethod.Day.ToString());
+#else
+            string path = System.IO.Path.Combine(AutoLogger.ApplicationDirectory, "Logs", log.DateTimeStartMethod.Year.ToString(), log.DateTimeStartMethod.Month.ToString(), log.DateTimeStartMethod.Day.ToString());
+#endif
+            if (!System.IO.Directory.Exists(path))
+                System.IO.Directory.CreateDirectory(path);
+            path = System.IO.Path.Combine(path, $"Stream-{log.DateTimeStartMethod.Year}-{log.DateTimeStartMethod.Month}-{log.DateTimeStartMethod.Day} {log.DateTimeStartMethod.ToLocalTime().Hour}.log");
+
+            StringBuilder build = new StringBuilder();
+            build.AppendLine("########################################");
+            build.AppendLine("Client Information:");
+            build.AppendLine($"	Ip Address:	{log.IPAddress}");
+            build.AppendLine($"	ClientId:	{log.ClientId}");
+            build.AppendLine($"	Connected Time:	{GetDateTimeString(log.ConnectedDateTime)}");
+            build.AppendLine("");
+            build.AppendLine($"Call Information:");
+            build.AppendLine($"	Service Name:	{log.ServiceName}");
+            build.Append($"	Method:		{log.MethodName}");
+            //build.Append($"	Method:		{log.Method.Name}(");
+            //bool isFirst = true;
+            //foreach (var parameter in log.Method.GetParameters())
+            //{
+            //    build.Append((isFirst ? "" : ",") + parameter.ParameterType.Name + " " + parameter.Name);
+            //    isFirst = false;
+            //}
+            //build.AppendLine(")");
+
+            build.AppendLine($"	With Values:");
+            foreach (var parameter in log.Parameters)
+            {
+                build.AppendLine("			" + (parameter.Value == null ? "Null" : JsonConvert.SerializeObject(parameter.Value, Formatting.None, new JsonSerializerSettings() { Formatting = Formatting.None }).Replace(@"\""", "")));
+            }
+            build.AppendLine("");
+
+            if (log.Exception == null)
+            {
+                build.AppendLine($"Result Information:");
+                build.AppendLine("			" + log.Result);
+                build.AppendLine("");
+            }
+            else
+            {
+                build.AppendLine($"Exception:");
+                build.AppendLine("			" + log.Exception.ToString());
+                build.AppendLine("");
+            }
+
+
             build.AppendLine($"Invoked Time:");
             build.AppendLine($"			{GetDateTimeString(log.DateTimeStartMethod)}");
             build.AppendLine($"Result Time:");
