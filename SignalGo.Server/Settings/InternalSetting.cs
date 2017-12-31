@@ -8,5 +8,6 @@ namespace SignalGo.Server.Settings
     public class InternalSetting
     {
         public bool IsEnabledDataExchanger { get; set; }
+        public bool IsEnabledReferenceResolver { get; set; } = true;
     }
 }

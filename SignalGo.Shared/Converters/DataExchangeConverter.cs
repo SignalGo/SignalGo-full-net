@@ -182,6 +182,10 @@ namespace SignalGo.Shared.Converters
     /// </summary>
     public class DataExchangeConverter : JsonConverter
     {
+        /// <summary>
+        /// enable refrence serializing when duplicate object detected
+        /// </summary>
+        public bool IsEnabledReferenceResolver { get; set; } = true;
         private DefaultReferenceResolver ReferenceResolver { get; set; } = new DefaultReferenceResolver();
         /// <summary>
         /// server of signalGo that called exchanger
@@ -315,13 +319,18 @@ namespace SignalGo.Shared.Converters
             try
             {
                 if (obj == null)
-                    obj = JsonConvert.DeserializeObject(jToken.ToString(), objectType, new JsonSerializerSettings()
+                {
+                    var str = jToken.ToString();
+                    obj = JsonConvert.DeserializeObject(str, objectType, new JsonSerializerSettings()
                     {
                         Error = (o, x) =>
                         {
 
-                        }
+                        },
+                        NullValueHandling = NullValueHandling.Ignore
                     });
+                }
+
             }
             catch (Exception ex)
             {
@@ -531,15 +540,19 @@ namespace SignalGo.Shared.Converters
 
                 if (isArray && !isDictionary)
                 {
-                    writer.WriteStartObject();
-                    WriteReferenceProperty(writer, type, value, "$id");
-                    WriteReferenceJustPropertyName(writer, type, value, "$values");
+                    if (IsEnabledReferenceResolver)
+                    {
+                        writer.WriteStartObject();
+                        WriteReferenceProperty(writer, type, value, "$id");
+                        WriteReferenceJustPropertyName(writer, type, value, "$values");
+                    }
                     writer.WriteStartArray();
                 }
                 else
                 {
                     writer.WriteStartObject();
-                    WriteReferenceProperty(writer, type, value, "$id");
+                    if (IsEnabledReferenceResolver)
+                        WriteReferenceProperty(writer, type, value, "$id");
                 }
 
 
@@ -565,7 +578,8 @@ namespace SignalGo.Shared.Converters
                 if (isArray && !isDictionary)
                 {
                     writer.WriteEndArray();
-                    writer.WriteEndObject();
+                    if (IsEnabledReferenceResolver)
+                        writer.WriteEndObject();
                 }
                 else
                     writer.WriteEndObject();
@@ -612,9 +626,13 @@ namespace SignalGo.Shared.Converters
                 {
                     if (existObjects.Contains(item))
                     {
-                        writer.WriteStartObject();
-                        WriteReferenceProperty(writer, item.Value.GetType(), item.Value, "$ref");
-                        writer.WriteEndObject();
+                        if (IsEnabledReferenceResolver)
+                        {
+                            writer.WriteStartObject();
+                            WriteReferenceProperty(writer, item.Value.GetType(), item.Value, "$ref");
+                            writer.WriteEndObject();
+                        }
+
                     }
                     else
                         existObjects.Add(item);
@@ -633,12 +651,16 @@ namespace SignalGo.Shared.Converters
                     SerializedObjects.Add(item.Value);
                 else
                 {
-                    writer.WriteStartObject();
-                    WriteReferenceProperty(writer, item.Value.GetType(), item.Value, "$ref");
-                    writer.WriteEndObject();
+                    if (IsEnabledReferenceResolver)
+                    {
+                        writer.WritePropertyName(item.Key.ToString());
+                        writer.WriteStartObject();
+                        WriteReferenceProperty(writer, item.Value.GetType(), item.Value, "$ref");
+                        writer.WriteEndObject();
+                    }
                     continue;
                 }
-                writer.WritePropertyName(item.Key.GetType().FullName);
+                writer.WritePropertyName(item.Key.ToString());
                 serializer.Serialize(writer, item.Value);
             }
         }
@@ -657,7 +679,7 @@ namespace SignalGo.Shared.Converters
                 {
                     if (existObjects.Contains(item))
                     {
-                        if (SerializedObjects.Contains(item))
+                        if (SerializedObjects.Contains(item) && IsEnabledReferenceResolver)
                         {
                             writer.WriteStartObject();
                             WriteReferenceProperty(writer, item.GetType(), item, "$ref");
@@ -687,9 +709,13 @@ namespace SignalGo.Shared.Converters
                     SerializedObjects.Add(item);
                 else
                 {
-                    writer.WriteStartObject();
-                    WriteReferenceProperty(writer, item.GetType(), item, "$ref");
-                    writer.WriteEndObject();
+                    if (IsEnabledReferenceResolver)
+                    {
+                        if (writer.WriteState != WriteState.Object)
+                            writer.WriteStartObject();
+                        WriteReferenceProperty(writer, item.GetType(), item, "$ref");
+                        writer.WriteEndObject();
+                    }
                     continue;
                 }
                 serializer.Serialize(writer, item);
@@ -867,10 +893,13 @@ namespace SignalGo.Shared.Converters
                                     {
                                         if (SerializedObjects.Contains(propValue))
                                         {
-                                            writer.WritePropertyName(property.Name);
-                                            writer.WriteStartObject();
-                                            WriteReferenceProperty(writer, propValue.GetType(), propValue, "$ref");
-                                            writer.WriteEndObject();
+                                            if (IsEnabledReferenceResolver)
+                                            {
+                                                writer.WritePropertyName(property.Name);
+                                                writer.WriteStartObject();
+                                                WriteReferenceProperty(writer, propValue.GetType(), propValue, "$ref");
+                                                writer.WriteEndObject();
+                                            }
                                             return;
                                         }
                                         else
@@ -909,10 +938,13 @@ namespace SignalGo.Shared.Converters
                                     {
                                         if (SerializedObjects.Contains(value))
                                         {
-                                            writer.WritePropertyName(property.Name);
-                                            writer.WriteStartObject();
-                                            WriteReferenceProperty(writer, value.GetType(), value, "$ref");
-                                            writer.WriteEndObject();
+                                            if (IsEnabledReferenceResolver)
+                                            {
+                                                writer.WritePropertyName(property.Name);
+                                                writer.WriteStartObject();
+                                                WriteReferenceProperty(writer, value.GetType(), value, "$ref");
+                                                writer.WriteEndObject();
+                                            }
                                             return;
                                         }
                                         else
@@ -934,10 +966,13 @@ namespace SignalGo.Shared.Converters
                                     {
                                         if (SerializedObjects.Contains(value))
                                         {
-                                            writer.WritePropertyName(property.Name);
-                                            writer.WriteStartObject();
-                                            WriteReferenceProperty(writer, value.GetType(), value, "$ref");
-                                            writer.WriteEndObject();
+                                            if (IsEnabledReferenceResolver)
+                                            {
+                                                writer.WritePropertyName(property.Name);
+                                                writer.WriteStartObject();
+                                                WriteReferenceProperty(writer, value.GetType(), value, "$ref");
+                                                writer.WriteEndObject();
+                                            }
                                             return;
                                         }
                                         else
