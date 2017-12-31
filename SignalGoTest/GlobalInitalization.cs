@@ -39,7 +39,7 @@ namespace SignalGoTest
 
                 try
                 {
-                    //var result = await service.HelloWorld("ali");
+                    var result = service.HelloWorld("ali");
                     //var result1 = await service.MUL(10, 20);
                     //var result3 = await service.WhoAmI();
                     //var result40 = service.Tagh(10, 3);

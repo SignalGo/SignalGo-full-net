@@ -169,4 +169,7 @@
     <PackageReference Include="rda.SocketsForPCL" Version="2.0.2" />
     <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="Log\MethodCallsLogger.cs" />
+  </ItemGroup>
 </Project>

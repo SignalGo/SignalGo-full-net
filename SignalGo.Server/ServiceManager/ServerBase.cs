@@ -7,6 +7,7 @@ using SignalGo.Server.Models;
 using SignalGo.Server.Settings;
 using SignalGo.Shared;
 using SignalGo.Shared.DataTypes;
+using SignalGo.Shared.Events;
 using SignalGo.Shared.Helpers;
 using SignalGo.Shared.Http;
 using SignalGo.Shared.IO;
@@ -668,8 +669,11 @@ namespace SignalGo.Server.ServiceManager
                 address = address.TrimEnd('/').ToLower();
                 if (RegisteredHttpServiceTypes.ContainsKey(address))
                 {
-                    HttpCallMethodLogInformation logInfo = null;
                     ActionResult result = null;
+                    MethodInfo method = null;
+                    List<string> valueitems = null;
+                    Exception exception = null;
+                    string callGuid = Guid.NewGuid().ToString();
                     try
                     {
                         ClientConnectedCallingCount++;
@@ -720,7 +724,7 @@ namespace SignalGo.Server.ServiceManager
                         }
 
 
-                        var method = (from x in methods where x.GetParameters().Length == values.Count select x).FirstOrDefault();
+                        method = (from x in methods where x.GetParameters().Length == values.Count select x).FirstOrDefault();
 
 
                         if (method == null)
@@ -806,8 +810,8 @@ namespace SignalGo.Server.ServiceManager
                             }
                             index++;
                         }
-                        if (MethodCallsLogger.IsStart)
-                            logInfo = MethodCallsLogger.AddHttpMethodLog(client.ClientId, client.IPAddress, client.ConnectedDateTime, address, method, values.Select(x => x.Item2).ToList());
+                        valueitems = values.Select(x => x.Item2).ToList();
+                        MethodsCallHandler.BeginHttpMethodCallAction?.Invoke(client, callGuid, address, method, valueitems);
 
                         bool isStaticLock = method.GetCustomAttributes(typeof(StaticLockAttribute), true).Count() > 0;
                         if (isStaticLock)
@@ -833,8 +837,7 @@ namespace SignalGo.Server.ServiceManager
                     }
                     catch (Exception ex)
                     {
-                        if (logInfo != null)
-                            logInfo.Exception = ex;
+                        exception = ex;
                         string data = newLine + ex.ToString() + address + newLine;
                         sendInternalErrorMessage(data);
                         AutoLogger.LogError(ex, "RunHttpGETRequest");
@@ -842,8 +845,7 @@ namespace SignalGo.Server.ServiceManager
                     finally
                     {
                         ClientConnectedCallingCount--;
-                        if (MethodCallsLogger.IsStart)
-                            MethodCallsLogger.FinishLog(logInfo, result);
+                        MethodsCallHandler.EndHttpMethodCallAction?.Invoke(client, callGuid, address, method, valueitems, result, exception);
                     }
                 }
                 else
@@ -1022,8 +1024,11 @@ namespace SignalGo.Server.ServiceManager
                 address = address.TrimEnd('/').ToLower();
                 if (RegisteredHttpServiceTypes.ContainsKey(address))
                 {
-                    HttpCallMethodLogInformation logInfo = null;
                     ActionResult result = null;
+                    MethodInfo method = null;
+                    List<string> valueitems = null;
+                    Exception exception = null;
+                    string callGuid = Guid.NewGuid().ToString();
                     try
                     {
                         ClientConnectedCallingCount++;
@@ -1067,7 +1072,7 @@ namespace SignalGo.Server.ServiceManager
                         }
 
 
-                        var method = (from x in methods where x.GetParameters().Length == values.Count select x).FirstOrDefault();
+                        method = (from x in methods where x.GetParameters().Length == values.Count select x).FirstOrDefault();
 
 
                         if (method == null)
@@ -1152,8 +1157,8 @@ namespace SignalGo.Server.ServiceManager
                             }
                             index++;
                         }
-                        if (MethodCallsLogger.IsStart)
-                            logInfo = MethodCallsLogger.AddHttpMethodLog(client.ClientId, client.IPAddress, client.ConnectedDateTime, address, method, values.Select(x => x.Item2).ToList());
+                        valueitems = values.Select(x => x.Item2).ToList();
+                        MethodsCallHandler.BeginHttpMethodCallAction?.Invoke(client, callGuid, address, method, valueitems);
 
                         bool isStaticLock = method.GetCustomAttributes(typeof(StaticLockAttribute), true).Count() > 0;
                         if (isStaticLock)
@@ -1179,8 +1184,7 @@ namespace SignalGo.Server.ServiceManager
                     }
                     catch (Exception ex)
                     {
-                        if (logInfo != null)
-                            logInfo.Exception = ex;
+                        exception = ex;
                         string data = newLine + ex.ToString() + address + newLine;
                         sendInternalErrorMessage(data);
                         AutoLogger.LogError(ex, "RunHttpGETRequest");
@@ -1188,8 +1192,7 @@ namespace SignalGo.Server.ServiceManager
                     finally
                     {
                         ClientConnectedCallingCount--;
-                        if (MethodCallsLogger.IsStart)
-                            MethodCallsLogger.FinishLog(logInfo, result);
+                        MethodsCallHandler.EndHttpMethodCallAction?.Invoke(client, callGuid, address, method, valueitems, result, exception);
                     }
                 }
                 else
@@ -1880,7 +1883,7 @@ namespace SignalGo.Server.ServiceManager
         {
             AsyncActions.Run((Action)(() =>
             {
-                CallMethodLogInformation logInfo = null;
+
                 if (SynchronizationContext.Current == null)
                     SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());
                 if (!AllDispatchers.ContainsKey(SynchronizationContext.Current))
@@ -1889,6 +1892,10 @@ namespace SignalGo.Server.ServiceManager
                 {
                     Guid = callInfo.Guid
                 };
+
+                object result = null;
+                MethodInfo method = null;
+                Exception exception = null;
                 try
                 {
                     ClientConnectedCallingCount++;
@@ -1901,23 +1908,23 @@ namespace SignalGo.Server.ServiceManager
                     if (service == null)
                         throw new Exception($"{client.IPAddress} {client.ClientId} service {callInfo.ServiceName} not found");
 
-                    var method = GetMethod(callInfo, serviceType);// serviceType.GetMethod(callInfo.MethodName, RuntimeTypeHelper.GetMethodTypes(serviceType, callInfo).ToArray());
+                    method = GetMethod(callInfo, serviceType);// serviceType.GetMethod(callInfo.MethodName, RuntimeTypeHelper.GetMethodTypes(serviceType, callInfo).ToArray());
                     if (method == null)
                     {
-                        StringBuilder result = new StringBuilder();
-                        result.AppendLine("<Exception>");
-                        result.AppendLine($"method {callInfo.MethodName} not found");
-                        result.AppendLine("<Parameters>");
+                        StringBuilder exceptionResult = new StringBuilder();
+                        exceptionResult.AppendLine("<Exception>");
+                        exceptionResult.AppendLine($"method {callInfo.MethodName} not found");
+                        exceptionResult.AppendLine("<Parameters>");
                         foreach (var item in callInfo.Parameters)
                         {
-                            result.AppendLine((item.Value ?? "null;") + " type: " + (item.Type ?? "no type"));
+                            exceptionResult.AppendLine((item.Value ?? "null;") + " type: " + (item.Type ?? "no type"));
                         }
-                        result.AppendLine("</Parameters>");
-                        result.AppendLine("<JSON>");
-                        result.AppendLine(json);
-                        result.AppendLine("</JSON>");
-                        result.AppendLine("</Exception>");
-                        throw new Exception($"{client.IPAddress} {client.ClientId} " + result.ToString());
+                        exceptionResult.AppendLine("</Parameters>");
+                        exceptionResult.AppendLine("<JSON>");
+                        exceptionResult.AppendLine(json);
+                        exceptionResult.AppendLine("</JSON>");
+                        exceptionResult.AppendLine("</Exception>");
+                        throw new Exception($"{client.IPAddress} {client.ClientId} " + exceptionResult.ToString());
                     }
 
                     var serviceMethod = serviceType.GetMethod(method.Name, method.GetParameters().Select(p => p.ParameterType).ToArray());
@@ -1977,8 +1984,11 @@ namespace SignalGo.Server.ServiceManager
 
                     //when method have static locl attribute calling is going to lock
                     bool isStaticLock = serviceMethod.GetCustomAttributes(typeof(StaticLockAttribute), true).Count() > 0 || method.GetCustomAttributes(typeof(StaticLockAttribute), true).Count() > 0;
-                    if (MethodCallsLogger.IsStart)
-                        logInfo = MethodCallsLogger.AddCallMethodLog(client.ClientId, client.IPAddress, client.ConnectedDateTime, callInfo.ServiceName, method, callInfo.Parameters);
+
+                    //if (MethodCallsLogger.IsStart)
+                    //    logInfo = MethodCallsLogger.AddCallMethodLog(client.ClientId, client.IPAddress, client.ConnectedDateTime, callInfo.ServiceName, method, callInfo.Parameters);
+
+                    MethodsCallHandler.BeginMethodCallAction?.Invoke(client, callInfo.Guid, callInfo.ServiceName, method, callInfo.Parameters);
 
                     //check if client have permissions for call method
                     bool canCall = true;
@@ -2012,7 +2022,6 @@ namespace SignalGo.Server.ServiceManager
                         }
                         else
                         {
-                            object data = null;
                             if (ErrorHandlingFunction != null)
                             {
                                 try
@@ -2020,14 +2029,14 @@ namespace SignalGo.Server.ServiceManager
                                     if (isStaticLock)
                                         lock (StaticLockObject)
                                         {
-                                            data = method.Invoke(service, parameters.ToArray());
+                                            result = method.Invoke(service, parameters.ToArray());
                                         }
                                     else
-                                        data = method.Invoke(service, parameters.ToArray());
+                                        result = method.Invoke(service, parameters.ToArray());
                                 }
                                 catch (Exception ex)
                                 {
-                                    data = ErrorHandlingFunction(ex);
+                                    result = ErrorHandlingFunction(ex);
                                 }
                             }
                             else
@@ -2035,20 +2044,19 @@ namespace SignalGo.Server.ServiceManager
                                 if (isStaticLock)
                                     lock (StaticLockObject)
                                     {
-                                        data = method.Invoke(service, parameters.ToArray());
+                                        result = method.Invoke(service, parameters.ToArray());
                                     }
                                 else
-                                    data = method.Invoke(service, parameters.ToArray());
+                                    result = method.Invoke(service, parameters.ToArray());
                             }
 
-                            callback.Data = data == null ? null : ServerSerializationHelper.SerializeObject(data, this, customDataExchanger: customDataExchanger.ToArray(), client: client);
+                            callback.Data = result == null ? null : ServerSerializationHelper.SerializeObject(result, this, customDataExchanger: customDataExchanger.ToArray(), client: client);
                         }
                     }
                 }
                 catch (Exception ex)
                 {
-                    if (logInfo != null)
-                        logInfo.Exception = ex;
+                    exception = ex;
                     SignalGo.Shared.Log.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase CallMethod: {callInfo.MethodName}");
                     callback.IsException = true;
                     callback.Data = ServerSerializationHelper.SerializeObject(ex.ToString(), this);
@@ -2056,8 +2064,7 @@ namespace SignalGo.Server.ServiceManager
                 finally
                 {
                     ClientConnectedCallingCount--;
-                    if (MethodCallsLogger.IsStart)
-                        MethodCallsLogger.FinishLog(logInfo, callback?.Data);
+                    MethodsCallHandler.EndMethodCallAction?.Invoke(client, callInfo.Guid, callInfo.ServiceName, method, callInfo.Parameters, callback?.Data, exception);
                 }
                 SendCallbackData(callback, client);
             }));
@@ -2260,9 +2267,9 @@ namespace SignalGo.Server.ServiceManager
         {
             AsyncActions.Run(() =>
             {
-                CallClientMethodLogInformation log = null;
-                if (MethodCallsLogger.IsStart)
-                    log = MethodCallsLogger.AddCallClientMethodLog(client.ClientId, client.IPAddress, client.ConnectedDateTime, callInfo.ServiceName, callInfo.MethodName, callInfo.Parameters);
+                MethodsCallHandler.BeginClientMethodCallAction?.Invoke(client, callInfo.Guid, callInfo.ServiceName, callInfo.MethodName, callInfo.Parameters);
+
+                Exception exception = null;
                 try
                 {
                     ClientConnectedCallingCount++;
@@ -2317,15 +2324,13 @@ namespace SignalGo.Server.ServiceManager
                 }
                 catch (Exception ex)
                 {
-                    if (log != null)
-                        log.Exception = ex;
+                    exception = ex;
                     AutoLogger.LogError(ex, "CallClientMethod");
                 }
                 finally
                 {
                     ClientConnectedCallingCount--;
-                    if (MethodCallsLogger.IsStart)
-                        MethodCallsLogger.FinishLog(log, null);
+                    //MethodsCallHandler.EndClientMethodCallAction?.Invoke(client, callInfo.ServiceName, callInfo.MethodName, callInfo.Parameters, null, exception);
                 }
             });
         }
