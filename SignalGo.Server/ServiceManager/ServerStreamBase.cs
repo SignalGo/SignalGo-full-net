@@ -3,6 +3,7 @@ using SignalGo;
 using SignalGo.Server.Helpers;
 using SignalGo.Server.IO;
 using SignalGo.Server.Models;
+using SignalGo.Shared.Events;
 using SignalGo.Shared.Helpers;
 using SignalGo.Shared.IO;
 using SignalGo.Shared.Models;
@@ -123,12 +124,22 @@ namespace SignalGo.Server.ServiceManager
         public override void DownloadStreamFromClient(NetworkStream stream, ClientInfo client)
         {
             MethodCallbackInfo callback = new MethodCallbackInfo();
+            string guid = Guid.NewGuid().ToString();
+            Exception exception = null;
+            string serviceName = null;
+            string methodName = null;
+            string jsonResult = null;
+            List<SignalGo.Shared.Models.ParameterInfo> values = null;
             try
             {
                 var bytes = GoStreamReader.ReadBlockToEnd(stream, CompressMode.None, ProviderSetting.MaximumReceiveStreamHeaderBlock, false);
                 var json = Encoding.UTF8.GetString(bytes);
                 MethodCallInfo callInfo = ServerSerializationHelper.Deserialize<MethodCallInfo>(json, this);
-                var service = FindStreamServiceByName(callInfo.ServiceName);
+                serviceName = callInfo.ServiceName;
+                methodName = callInfo.MethodName;
+                values = callInfo.Parameters;
+                var service = FindStreamServiceByName(serviceName);
+                MethodsCallHandler.BeginStreamCallAction?.Invoke(client, guid, serviceName, methodName, values);
                 if (service == null)
                     DisposeClient(client);
                 else
@@ -136,14 +147,14 @@ namespace SignalGo.Server.ServiceManager
                     //, typeof(StreamInfo<>)
                     var serviceType = service.GetType();
 #if (NETSTANDARD1_6 || NETCOREAPP1_1)
-                    var method = serviceType.GetTypeInfo().GetMethod(callInfo.MethodName, RuntimeTypeHelper.GetMethodTypes(serviceType, callInfo).ToArray());
+                    var method = serviceType.GetTypeInfo().GetMethod(methodName, RuntimeTypeHelper.GetMethodTypes(serviceType, callInfo).ToArray());
 #else
-                    var method = serviceType.GetMethod(callInfo.MethodName, RuntimeTypeHelper.GetMethodTypes(serviceType, callInfo).ToArray());
+                    var method = serviceType.GetMethod(methodName, RuntimeTypeHelper.GetMethodTypes(serviceType, callInfo).ToArray());
 #endif
                     List<object> parameters = new List<object>();
                     int index = 0;
                     var prms = method.GetParameters();
-                    foreach (var item in callInfo.Parameters)
+                    foreach (var item in values)
                     {
                         parameters.Add(ServerSerializationHelper.Deserialize(item.Value, prms[index].ParameterType, this));
                         index++;
@@ -160,7 +171,7 @@ namespace SignalGo.Server.ServiceManager
                     else
                     {
                         var result = method.Invoke(service, parameters.ToArray());
-                        callback.Data = ServerSerializationHelper.SerializeObject(result);
+                        jsonResult = callback.Data = ServerSerializationHelper.SerializeObject(result);
                     }
                     //if (!upStream.IsFinished)
                     //{
@@ -170,14 +181,20 @@ namespace SignalGo.Server.ServiceManager
             }
             catch (IOException ex)
             {
+                exception = ex;
                 Shared.Log.AutoLogger.LogError(ex, "upload stream error");
                 DisposeClient(client);
                 return;
             }
             catch (Exception ex)
             {
+                exception = ex;
                 callback.IsException = true;
                 callback.Data = ServerSerializationHelper.SerializeObject(ex);
+            }
+            finally
+            {
+                MethodsCallHandler.EndStreamCallAction?.Invoke(client, guid, serviceName, methodName, values, jsonResult, exception);
             }
             SendCallbackData(callback, client);
         }
@@ -191,26 +208,38 @@ namespace SignalGo.Server.ServiceManager
             MethodCallbackInfo callback = new MethodCallbackInfo();
             IDisposable userStreamDisposable = null;
             Stream userStream = null;
+
+            string guid = Guid.NewGuid().ToString();
+            Exception exception = null;
+            string serviceName = null;
+            string methodName = null;
+            string jsonResult = null;
+            List<SignalGo.Shared.Models.ParameterInfo> values = null;
+
             try
             {
                 var bytes = GoStreamReader.ReadBlockToEnd(stream, CompressMode.None, ProviderSetting.MaximumReceiveStreamHeaderBlock, false);
                 var json = Encoding.UTF8.GetString(bytes);
                 MethodCallInfo callInfo = ServerSerializationHelper.Deserialize<MethodCallInfo>(json, this);
-                var service = FindStreamServiceByName(callInfo.ServiceName);
+                serviceName = callInfo.ServiceName;
+                methodName = callInfo.MethodName;
+                values = callInfo.Parameters;
+                var service = FindStreamServiceByName(serviceName);
+                MethodsCallHandler.BeginStreamCallAction?.Invoke(client, guid, serviceName, methodName, values);
                 if (service == null)
                     DisposeClient(client);
                 else
                 {
                     var serviceType = service.GetType();
 #if (NETSTANDARD1_6 || NETCOREAPP1_1)
-                    var method = serviceType.GetTypeInfo().GetMethod(callInfo.MethodName, RuntimeTypeHelper.GetMethodTypes(serviceType, callInfo).ToArray());
+                    var method = serviceType.GetTypeInfo().GetMethod(methodName, RuntimeTypeHelper.GetMethodTypes(serviceType, callInfo).ToArray());
 #else
-                    var method = serviceType.GetMethod(callInfo.MethodName, RuntimeTypeHelper.GetMethodTypes(serviceType, callInfo).ToArray());
+                    var method = serviceType.GetMethod(methodName, RuntimeTypeHelper.GetMethodTypes(serviceType, callInfo).ToArray());
 #endif
                     List<object> parameters = new List<object>();
                     int index = 0;
                     var prms = method.GetParameters();
-                    foreach (var item in callInfo.Parameters)
+                    foreach (var item in values)
                     {
                         parameters.Add(ServerSerializationHelper.Deserialize(item.Value, prms[index].ParameterType, this));
                         index++;
@@ -220,7 +249,7 @@ namespace SignalGo.Server.ServiceManager
                     userStream = (Stream)userStreamDisposable.GetType().GetPropertyInfo("Stream").GetValue(userStreamDisposable, null);
                     long len = (long)userStreamDisposable.GetType().GetPropertyInfo("Length").GetValue(userStreamDisposable, null);
 
-                    callback.Data = ServerSerializationHelper.SerializeObject(userStreamDisposable);
+                    jsonResult = callback.Data = ServerSerializationHelper.SerializeObject(userStreamDisposable);
 
                     json = ServerSerializationHelper.SerializeObject(callback, this);
                     bytes = Encoding.UTF8.GetBytes(json);
@@ -263,6 +292,7 @@ namespace SignalGo.Server.ServiceManager
             }
             catch (Exception ex)
             {
+                exception = ex;
                 if (userStreamDisposable == null)
                     userStreamDisposable.Dispose();
                 stream.Dispose();
@@ -274,6 +304,10 @@ namespace SignalGo.Server.ServiceManager
                 callback.IsException = true;
                 callback.Data = ServerSerializationHelper.SerializeObject(ex);
                 SendCallbackData(callback, client);
+            }
+            finally
+            {
+                MethodsCallHandler.EndStreamCallAction?.Invoke(client, guid, serviceName, methodName, values, jsonResult, exception);
             }
         }
 

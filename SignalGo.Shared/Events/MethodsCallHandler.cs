@@ -17,6 +17,9 @@ namespace SignalGo.Shared.Events
     public delegate void BeginClientMethodCallAction(object clientInfo, string callGuid, string serviceName, string methodName, List<ParameterInfo> values);
     public delegate void EndClientMethodCallAction(object clientInfo, string callGuid, string serviceName, string methodName, object[] values, string result, Exception exception);
 
+    public delegate void BeginStreamCallAction(object clientInfo, string callGuid, string serviceName, string methodName, List<ParameterInfo> values);
+    public delegate void EndStreamCallAction(object clientInfo, string callGuid, string serviceName, string methodName, List<ParameterInfo> values, string result, Exception exception);
+
     public static class MethodsCallHandler
     {
         public static BeginHttpCallAction BeginHttpMethodCallAction;
@@ -27,5 +30,8 @@ namespace SignalGo.Shared.Events
 
         public static BeginClientMethodCallAction BeginClientMethodCallAction;
         public static EndClientMethodCallAction EndClientMethodCallAction;
+
+        public static BeginStreamCallAction BeginStreamCallAction;
+        public static EndStreamCallAction EndStreamCallAction;
     }
 }
