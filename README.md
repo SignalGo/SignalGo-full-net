@@ -1,13 +1,12 @@
 # [You can read Wiki by click here](https://github.com/SignalGo/SignalGo-full-net/wiki)
 
-# server-net
-Server version of SignalGo for .Net Framework
+# Signal Go
 
-SignalGo is a library for Cross-Platform developers that makes it incredibly simple to add real-time web functionality to your applications. What is "real-time web" functionality? It's the ability to have your server-side code push content to the connected clients as it happens, in real-time. like WCF and SignalR
+SignalGo is a library for Cross-Platform developers that makes it incredibly simple and easy to add real-time web functionality to your applications. What is "real-time web" functionality? It's the ability to have your server-side code push content to the connected clients as it happens, in real-time. like WCF and SignalR
 
 
 ## Features:
-1.Send and receive any data like class,object,parameters,methods,return types
+1.Send and receive any data like class,object,struct and complex object
 
 2.Send(upload) and receive(download) stream like file stream
 
@@ -23,151 +22,92 @@ SignalGo is a library for Cross-Platform developers that makes it incredibly sim
 
 8.call methods from http GET and POST protocol (like call from browser) or upload and download files and manage Controllers like asp.net MVC
 
+9.support async await methods
+     
+10.full logging systeam
+     
+11.manage data exchanger to customize model properties in send and receive data without create new class
+
+12.Ip limitation for call methods
+
+13.easy to manage permissions with attribute you can customize your permissions before client call methods
+
+14.Automatic handle object references and pointers in serialize and deserialize system
+
 and other fetures...
 
+After you learn it [ServiceContractAttribute](https://github.com/SignalGo/SignalGo-full-net/wiki/ServiceContract-(Attribute)) you can create your simple Service with this attribute.
 
-### Quick Usage Client-Side:
+for example we have an interface that is our sevice level methods.
 
 ```csharp
-    class Program
+    [SignalGo.Shared.DataTypes.ServiceContract("TestServerModel")]
+    public interface ITestServerModel
     {
-        static void Main(string[] args)
-        {
-            ClientProvider connector = new ClientProvider();
-            connector.Connect("http://localhost:1199/SignalGoTestServicesProject");
-            var callbacks = connector.RegisterServerCallback<ClientCallback>();
-            var service = connector.RegisterClientServiceInterface<ISignalGoServerMethods>();
-            var result = service.Login("admin", "admin");
-
-        }
+        Tuple<string> HelloWorld(string yourName);
     }
 
-    [ServiceContract("SignalGoTestClientService")]
-    public class ClientCallback
+    public class TestServerModel : ITestServerModel
     {
-        public ConnectorBase Connector
+        public Tuple<string> HelloWorld(string yourName)
         {
-            get
-            {
-                return OperationContract.GetConnector<ConnectorBase>(this);
-            }
-        }
-
-        public string GetMeSignalGo(string value)
-        {
-            return "GetMeSignalGo :" + value;
-        }
-
-        public void HelloSignalGo(string hello)
-        {
+            return new Tuple<string>("hello: " + yourName);
         }
     }
-
-    [ServiceContract("SignalGoTestService")]
-    public interface ISignalGoServerMethods
-    {
-        bool Login(string userName, string password);
-    }
-
 ```
 
-### Quick Usage Server-Side:
+# How to start  my service?
+
+After create your service classes you must start your service listener in your Main method console project or your windows service project or ...
+
+for example:
 
 ```csharp
-    class Program
-    {
-        static void Main(string[] args)
+static void Main(string[] args)
         {
-            var server = new SignalGo.Server.ServiceManager.ServerProvider();
-            server.Start("http://localhost:1199/SignalGoTestServicesProject");
-            server.InitializeService(typeof(SignalGoServerMethods));
-            server.RegisterClientCallbackInterfaceService<ISignalGoClientMethods>();
-        }
-    }
-
-    [ServiceContract("SignalGoTestService")]
-    public class SignalGoServerMethods
-    {
-        public ISignalGoClientMethods callback = null;
-        OperationContext currentContext = null;
-        public SignalGoServerMethods()
-        {
-            currentContext = OperationContext.Current;
-            callback = currentContext.GetClientCallback<ISignalGoClientMethods>();
-        }
-
-        public bool Login(string userName, string password)
-        {
-
-            //get all clients call interface list
-            foreach (var call in currentContext.GetAllClientCallbackList<ISignalGoClientMethods>())
-            {
-                //call GetMeSignalGo method
-                var result = call.GetMeSignalGo("test");
-
-                //call HelloSignalGo method
-                call.HelloSignalGo("hello signalGo");
-            }
-
-            if (userName == "admin" && password == "admin")
-                return true;
-            return false;
-        }
-    }
-
-    [ServiceContract("SignalGoTestClientService")]
-    public interface ISignalGoClientMethods
-    {
-        void HelloSignalGo(string hello);
-        string GetMeSignalGo(string value);
-    }
-```
-## How to send and receive stream?
-
-for download a file from server you must add a method that must return StreamInfo class for example:
-
-#### server-side:
-
-```csharp
-        public StreamInfo DownloadFile(string fileName)
-        {
-            var streamInfo = new StreamInfo() { Headers = new Dictionary<string, object>() { { "Size", 1024 } }};
-            streamInfo.Stream = new FileStream(@"D:\SignalGo-Sample.rar", FileMode.Open, FileAccess.Read);
-            return streamInfo;
+            // create instance of your server listener
+            SignalGo.Server.ServiceManager.ServerProvider server = new SignalGo.Server.ServiceManager.ServerProvider();
+            //register your service class that have implemented methods (not interfaces)
+            server.InitializeService<TestServerModel>();
+            //start your server provider (your server address is important for client to connect)
+            server.Start("http://localhost:1132/SignalGoTestService");
+            //this code hold windows close and don't let him to close after read one line this will be close.
+            Console.ReadLine();
         }
 ```
 
-#### client-side:
-```csharp
-        using (var stream = service.DownloadFile("test message"))
-        {
-            ///code to read stream
-        }
-```
+## Client Providers (Client Side Example)
 
-for upload a file to server you must add a method that not have return type (is void) and must have one parameter that type is StreamInfo for example:
+After create your [server side project](Service-Providers-(Server-Side-Example)) you must create your client side project for connect to your server.
 
-#### server-side:
+In the client side you just need your interface service not your service class that have implemented methods.
+So I think this is better for you if your service interface project be separated from your service class projects because you dont need create your service interfaces again for your client side this will make easy way for you to manage your services when you just add reference from service interface project to your client project.
 
 ```csharp
-        public void UploadFile(StreamInfo streamUpload)
-        {
-            byte[] dataRead = new byte[1024];
-            var readCount = streamUpload.Stream.Read(dataRead, 0, dataRead.Length);
-            var rrr = streamUpload.Stream.ReadByte();
-            Console.WriteLine("server read uploaded bytes: " + readCount);
-        }
+                //your client connector that will be connect to your server
+                ClientProvider provider = new ClientProvider();
+                //connect to your server must have full address that your server is listen
+                provider.Connect("http://localhost:1132/SignalGoTestService");
+                //register your service interfacce for client
+                var testServerModel = provider.RegisterClientServiceInterfaceWrapper<ITestServerModel>();
+                //call server method and return value from your server to client
+                var result = testServerModel.HelloWorld("ali");
+                //print your result to console
+                Console.WriteLine(result.Item1);
 ```
 
-#### client-side:
+SignalGo have another way to register your service interface like:
+
 ```csharp
-        using (StreamInfo stream = new StreamInfo() { Headers = new Dictionary<string, object>() { { "size", 1000 } } })
-        {
-            service.UploadFile(stream);
-            var bytesToUpload = new byte[] { 1, 2, 3, 4, 5, 10 };
-            stream.Stream.Write(bytesToUpload, 0, bytesToUpload.Length);
-        }
+var testServerModel = provider.RegisterClientServiceDynamic<ITestServerModel>();
+//or
+var testServerModel = provider.RegisterClientServiceDynamic("TestServerModel");
 ```
+
+### [You can read more Wiki by click here](https://github.com/SignalGo/SignalGo-full-net/wiki)
+
+### [C# sample source project](https://github.com/SignalGo/csharp-sample)
+
 
 ## How to use security setting (just C# .net version is currently available)?
 
