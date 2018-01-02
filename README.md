@@ -6,6 +6,7 @@ SignalGo is a library for Cross-Platform developers that makes it incredibly sim
 
 
 ## Features:
+
 1.Send and receive any data like class,object,struct and complex object
 
 2.Send(upload) and receive(download) stream like file stream
@@ -20,21 +21,23 @@ SignalGo is a library for Cross-Platform developers that makes it incredibly sim
 
 7.Using best security algoritm for send or receive data
 
-8.call methods from http GET and POST protocol (like call from browser) or upload and download files and manage Controllers like asp.net MVC
+8.Call methods from http GET and POST protocol (like call from browser) or upload and download files and manage Controllers like asp.net MVC
 
-9.support async await methods
+9.Support async await methods
      
-10.full logging systeam
+10.Full logging systeam
      
-11.manage data exchanger to customize model properties in send and receive data without create new class
+11.Manage data exchanger to customize model properties in send and receive data without create new class
 
 12.Ip limitation for call methods
 
-13.easy to manage permissions with attribute you can customize your permissions before client call methods
+13.Easy to manage permissions with attribute you can customize your permissions before client call methods
 
 14.Automatic handle object references and pointers in serialize and deserialize system
 
 and other fetures...
+
+## Simple Usage:
 
 After you learn it [ServiceContractAttribute](https://github.com/SignalGo/SignalGo-full-net/wiki/ServiceContract-(Attribute)) you can create your simple Service with this attribute.
 
