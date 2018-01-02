@@ -72,7 +72,32 @@ namespace System
             return GetCustomAttributes(type, typeof(T), inherit).Select(arg => (T)arg).ToArray();
         }
 
+        static HashMapDictionary<object, object> InheritCachedCustomAttributes = new HashMapDictionary<object, object>();
         static HashMapDictionary<object, object> CachedCustomAttributes = new HashMapDictionary<object, object>();
+        static void AddCach(object type, object item, bool inherit)
+        {
+            if (inherit)
+                InheritCachedCustomAttributes.Add(type, item);
+            else
+                CachedCustomAttributes.Add(type, item);
+        }
+
+        static bool ContainsCachKey(object type, bool inherit)
+        {
+            if (inherit)
+                return InheritCachedCustomAttributes.ContainsKey(type);
+            else
+                return CachedCustomAttributes.ContainsKey(type);
+        }
+
+        static object[] GetCachValues(object type, bool inherit)
+        {
+            if (inherit)
+                return InheritCachedCustomAttributes.GetObjectValues(type);
+            else
+                return CachedCustomAttributes.GetObjectValues(type);
+        }
+
         /// <summary>Private helper for searching attributes.</summary>
         /// <param name="type">The type which is searched for the attribute.</param>
         /// <param name="attributeType">The type of attribute to search for.</param>
@@ -85,20 +110,20 @@ namespace System
 #else
             var typeInfo = type;
 #endif
-            if (CachedCustomAttributes.ContainsKey(type))
-                return CachedCustomAttributes.GetObjectValues(type).Where(x=> x.GetType() == attributeType).ToArray();
+            if (ContainsCachKey(type, inherit))
+                return GetCachValues(type, inherit).Where(x => x.GetType() == attributeType).ToArray();
             if (!inherit)
             {
                 object[] cach = null;
 #if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
-                cach= typeInfo.GetCustomAttributes(attributeType, false).Cast<object>().ToArray();
+                cach = typeInfo.GetCustomAttributes(attributeType, false).Cast<object>().ToArray();
 #else
                 cach = typeInfo.GetCustomAttributes(attributeType, false);
 #endif
-                if (!CachedCustomAttributes.ContainsKey(type))
+                if (!ContainsCachKey(type, inherit))
                 {
                     foreach (var item in cach)
-                        CachedCustomAttributes.Add(type, item);
+                        AddCach(type, item, inherit);
                 }
                 return cach;
             }
@@ -124,10 +149,10 @@ namespace System
 
             var attributeArray = new object[attributeCollection.Count];
             attributeCollection.CopyTo(attributeArray, 0);
-            if (!CachedCustomAttributes.ContainsKey(type))
+            if (!ContainsCachKey(type, inherit))
             {
                 foreach (var item in attributeArray)
-                    CachedCustomAttributes.Add(type, item);
+                    AddCach(type, item, inherit);
             }
 
             return attributeArray;
@@ -135,16 +160,16 @@ namespace System
 
         private static object[] GetCustomAttributes(FieldInfo type, Type attributeType, bool inherit)
         {
-            if (CachedCustomAttributes.ContainsKey(type))
-                return CachedCustomAttributes.GetObjectValues(type).Where(x => x.GetType() == attributeType).ToArray();
+            if (ContainsCachKey(type, inherit))
+                return GetCachValues(type, inherit).Where(x => x.GetType() == attributeType).ToArray();
             if (!inherit)
             {
                 object[] cach = null;
                 cach = GetCustomAttributes(type, attributeType, false);
-                if (!CachedCustomAttributes.ContainsKey(type))
+                if (!ContainsCachKey(type, inherit))
                 {
                     foreach (var item in cach)
-                        CachedCustomAttributes.Add(type, item);
+                        AddCach(type, item, inherit);
                 }
                 return cach;
             }
@@ -154,10 +179,10 @@ namespace System
 
             var attributeArray = new object[attributeCollection.Count];
             attributeCollection.CopyTo(attributeArray, 0);
-            if (!CachedCustomAttributes.ContainsKey(type))
+            if (!ContainsCachKey(type, inherit))
             {
                 foreach (var item in attributeArray)
-                    CachedCustomAttributes.Add(type, item);
+                    AddCach(type, item, inherit);
             }
             return attributeArray;
         }
@@ -167,16 +192,16 @@ namespace System
             if (type.Name == "TokenPassword" && attributeType == typeof(SignalGo.Shared.DataTypes.CustomDataExchangerAttribute))
             {
             }
-            if (CachedCustomAttributes.ContainsKey(type))
-                return CachedCustomAttributes.GetObjectValues(type).Where(x => x.GetType() == attributeType).ToArray();
+            if (ContainsCachKey(type, inherit))
+                return GetCachValues(type, inherit).Where(x => x.GetType() == attributeType).ToArray();
             if (!inherit)
             {
                 object[] cach = null;
                 cach = GetCustomAttributes(type, attributeType, false);
-                if (!CachedCustomAttributes.ContainsKey(type))
+                if (!ContainsCachKey(type, inherit))
                 {
                     foreach (var item in cach)
-                        CachedCustomAttributes.Add(type, item);
+                        AddCach(type, item, inherit);
                 }
                 return cach;
             }
@@ -186,10 +211,10 @@ namespace System
 
             var attributeArray = new object[attributeCollection.Count];
             attributeCollection.CopyTo(attributeArray, 0);
-            if (!CachedCustomAttributes.ContainsKey(type))
+            if (!ContainsCachKey(type, inherit))
             {
                 foreach (var item in attributeArray)
-                    CachedCustomAttributes.Add(type, item);
+                    AddCach(type, item, inherit);
             }
             return attributeArray;
         }

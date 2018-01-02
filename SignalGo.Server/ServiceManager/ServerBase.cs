@@ -1322,6 +1322,15 @@ namespace SignalGo.Server.ServiceManager
         /// add a http service class
         /// </summary>
         /// <param name="httpService">a service class that inheritance HttpRequestController and using HttpSupport attribute</param>
+        public void AddHttpService<T>()
+        {
+            AddHttpService(typeof(T));
+        }
+
+        /// <summary>
+        /// add a http service class
+        /// </summary>
+        /// <param name="httpService">a service class that inheritance HttpRequestController and using HttpSupport attribute</param>
         public void AddHttpService(Type httpService)
         {
             var attributes = httpService.GetCustomAttributes<HttpSupportAttribute>();
@@ -2357,6 +2366,7 @@ namespace SignalGo.Server.ServiceManager
                         ProviderDetailsInfo result = new ProviderDetailsInfo() { Id = id };
                         foreach (var service in RegisteredServiceTypes)
                         {
+                            
                             id++;
                             var serviceDetail = new ServiceDetailsInfo()
                             {
@@ -2380,6 +2390,8 @@ namespace SignalGo.Server.ServiceManager
 
                             foreach (var serviceType in types)
                             {
+                                if (serviceType == typeof(object))
+                                    continue;
                                 var methods = serviceType.GetMethods().Where(x => !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_")))).ToList();
                                 if (methods.Count == 0)
                                     continue;
