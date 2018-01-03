@@ -69,5 +69,35 @@ namespace SignalGo.Shared.Helpers
                 }
             }
         }
+        /// <summary>
+        /// Get friendly name of type
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public static string GetFriendlyName(this Type type)
+        {
+            if (type == typeof(int))
+                return "int";
+            else if (type == typeof(short))
+                return "short";
+            else if (type == typeof(byte))
+                return "byte";
+            else if (type == typeof(bool))
+                return "bool";
+            else if (type == typeof(long))
+                return "long";
+            else if (type == typeof(float))
+                return "float";
+            else if (type == typeof(double))
+                return "double";
+            else if (type == typeof(decimal))
+                return "decimal";
+            else if (type == typeof(string))
+                return "string";
+            else if (type.GetIsGenericType())
+                return type.Name.Split('`')[0] + "<" + string.Join(", ", type.GetListOfGenericArguments().Select(x => GetFriendlyName(x)).ToArray()) + ">";
+            else
+                return type.Name;
+        }
     }
 }

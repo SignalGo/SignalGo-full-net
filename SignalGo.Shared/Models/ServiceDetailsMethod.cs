@@ -64,5 +64,6 @@ namespace SignalGo.Shared.Models
         public string MethodName { get; set; }
         public int ParameterIndex { get; set; }
         public int ParametersCount { get; set; }
+        public bool IsFull { get; set; }
     }
 }

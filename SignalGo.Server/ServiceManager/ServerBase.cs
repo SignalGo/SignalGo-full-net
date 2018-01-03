@@ -2366,7 +2366,7 @@ namespace SignalGo.Server.ServiceManager
                         ProviderDetailsInfo result = new ProviderDetailsInfo() { Id = id };
                         foreach (var service in RegisteredServiceTypes)
                         {
-                            
+
                             id++;
                             var serviceDetail = new ServiceDetailsInfo()
                             {
@@ -2451,7 +2451,7 @@ namespace SignalGo.Server.ServiceManager
                                     {
                                         MethodName = method.Name,
                                         Parameters = new List<ServiceDetailsParameterInfo>(),
-                                        ReturnType = method.ReturnType.FullName,
+                                        ReturnType = method.ReturnType.GetFriendlyName(),
                                         Comment = methodComment?.Summery,
                                         ReturnComment = methodComment?.Returns,
                                         ExceptionsComment = exceptions,
@@ -2472,7 +2472,7 @@ namespace SignalGo.Server.ServiceManager
                                         ServiceDetailsParameterInfo p = new ServiceDetailsParameterInfo()
                                         {
                                             Name = paramInfo.Name,
-                                            Type = paramInfo.ParameterType.Name,
+                                            Type = paramInfo.ParameterType.GetFriendlyName(),
                                             FullTypeName = paramInfo.ParameterType.FullName,
                                             Comment = parameterComment,
                                             Id = id
@@ -2564,7 +2564,7 @@ namespace SignalGo.Server.ServiceManager
                                 {
                                     MethodName = method.Name,
                                     Parameters = new List<ServiceDetailsParameterInfo>(),
-                                    ReturnType = method.ReturnType.FullName,
+                                    ReturnType = method.ReturnType.GetFriendlyName(),
                                     Comment = methodComment?.Summery,
                                     ReturnComment = methodComment?.Returns,
                                     ExceptionsComment = exceptions,
@@ -2585,7 +2585,7 @@ namespace SignalGo.Server.ServiceManager
                                     ServiceDetailsParameterInfo p = new ServiceDetailsParameterInfo()
                                     {
                                         Name = paramInfo.Name,
-                                        Type = paramInfo.ParameterType.Name,
+                                        Type = paramInfo.ParameterType.GetFriendlyName(),
                                         FullTypeName = paramInfo.ParameterType.FullName,
                                         Comment = parameterComment,
                                         Id = id
@@ -2665,7 +2665,7 @@ namespace SignalGo.Server.ServiceManager
                                     Id = id,
                                     MethodName = method.Name,
                                     Parameters = new List<ServiceDetailsParameterInfo>(),
-                                    ReturnType = method.ReturnType.FullName,
+                                    ReturnType = method.ReturnType.GetFriendlyName(),
                                     Comment = methodComment?.Summery,
                                     ReturnComment = methodComment?.Returns,
                                     ExceptionsComment = exceptions,
@@ -2849,7 +2849,7 @@ namespace SignalGo.Server.ServiceManager
                         foreach (var item in refactorResult.Properties())
                         {
                             var find = type.GetProperties().FirstOrDefault(x => x.Name == item.Name);
-                            refactorResult[item.Name] = find.PropertyType.FullName;
+                            refactorResult[item.Name] = find.PropertyType.GetFriendlyName();
                         }
                         jsonResult = JsonConvert.SerializeObject(refactorResult, Formatting.Indented, new JsonSerializerSettings() { NullValueHandling = NullValueHandling.Include });
 
@@ -2952,8 +2952,10 @@ namespace SignalGo.Server.ServiceManager
                         if (method.Name == detail.MethodName && detail.ParametersCount == method.GetParameters().Length)
                         {
                             var parameterType = method.GetParameters()[detail.ParameterIndex].ParameterType;
-
-                            json = SimpleTypeToJsonString(parameterType);
+                            if (detail.IsFull)
+                                json = TypeToJsonString(parameterType);
+                            else
+                                json = SimpleTypeToJsonString(parameterType);
                             break;
                         }
                     }
@@ -2979,7 +2981,19 @@ namespace SignalGo.Server.ServiceManager
 
         string SimpleTypeToJsonString(Type type)
         {
-            return ServerSerializationHelper.SerializeObject(Activator.CreateInstance(type), null, NullValueHandling.Include);
+            object instance = null;
+
+            try
+            {
+                instance = Activator.CreateInstance(type);
+            }
+            catch (Exception ex)
+            {
+
+            }
+            if (instance == null)
+                return "cannot create instance of this type!";
+            return ServerSerializationHelper.SerializeObject(instance, null, NullValueHandling.Include);
         }
 
         string TypeToJsonString(Type type)
