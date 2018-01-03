@@ -219,7 +219,7 @@ namespace SignalGo.Client
                 var added = WaitedMethodsForResponse.TryAdd(callInfo.Guid, new KeyValue<AutoResetEvent, MethodCallbackInfo>(new AutoResetEvent(false), null));
                 var service = connector.Services.ContainsKey(callInfo.ServiceName) ? connector.Services[callInfo.ServiceName] : null;
 #if (PORTABLE)
-            var method = service?.GetType().FindMethod(callInfo.MethodName);
+                var method = service?.GetType().FindMethod(callInfo.MethodName);
 #else
                 var method = service?.GetType().GetMethod(callInfo.MethodName, RuntimeTypeHelper.GetMethodTypes(service.GetType(), callInfo).ToArray());
 #endif
@@ -568,6 +568,7 @@ namespace SignalGo.Client
             return (T)objectInstance;
         }
 
+        ConcurrentDictionary<string, object> InstancesOfRegisterStreamService = new ConcurrentDictionary<string, object>();
         /// <summary>
         /// register service and method to server for file or stream download and upload
         /// </summary>
@@ -577,32 +578,42 @@ namespace SignalGo.Client
         {
             if (IsDisposed)
                 throw new ObjectDisposedException("Connector");
+
             if (string.IsNullOrEmpty(serverAddress))
                 serverAddress = _address;
+
             if (port == null)
                 port = _port;
+
+            string callKey = typeof(T).FullName + serverAddress + ":" + port.Value;
+            
+            if (InstancesOfRegisterStreamService.TryGetValue(callKey, out object instance))
+            {
+                return (T)instance;
+            }
+           
             var type = typeof(T);
             var name = type.GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault().Name;
 
             var objectInstance = InterfaceWrapper.Wrap<T>((serviceName, method, args) =>
             {
 #if (NETSTANDARD1_6 || NETCOREAPP1_1)
-                    var _newClient = new TcpClient();
-                    bool isSuccess = _newClient.ConnectAsync(serverAddress, port.Value).Wait(new TimeSpan(0, 0, 5));
-                    if (!isSuccess)
-                        throw new TimeoutException();
+                var _newClient = new TcpClient();
+                bool isSuccess = _newClient.ConnectAsync(serverAddress, port.Value).Wait(new TimeSpan(0, 0, 5));
+                if (!isSuccess)
+                    throw new TimeoutException();
 #elif (PORTABLE)
-                    var _newClient = new Sockets.Plugin.TcpSocketClient();
-                    bool isSuccess = _newClient.ConnectAsync(serverAddress, port.Value).Wait(new TimeSpan(0, 0, 5));
-                    if (!isSuccess)
-                        throw new TimeoutException();
+                var _newClient = new Sockets.Plugin.TcpSocketClient();
+                bool isSuccess = _newClient.ConnectAsync(serverAddress, port.Value).Wait(new TimeSpan(0, 0, 5));
+                if (!isSuccess)
+                    throw new TimeoutException();
 #else
                 var _newClient = new TcpClient(serverAddress, port.Value);
                 _newClient.NoDelay = true;
 #endif
 #if (PORTABLE)
-                    var stream = _newClient.WriteStream;
-                    var readStream = _newClient.ReadStream;
+                var stream = _newClient.WriteStream;
+                var readStream = _newClient.ReadStream;
 #else
                 var stream = _newClient.GetStream();
                 var readStream = stream;
@@ -713,7 +724,7 @@ namespace SignalGo.Client
 
                 return result;
             });
-
+            InstancesOfRegisterStreamService.TryAdd(callKey, objectInstance);
             return (T)objectInstance;
         }
 
@@ -1162,7 +1173,7 @@ namespace SignalGo.Client
             }
             if (_client != null)
 #if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
-                    _client.Dispose();
+                _client.Dispose();
 #else
                 _client.Close();
 #endif
