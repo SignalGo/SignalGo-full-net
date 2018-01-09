@@ -314,6 +314,42 @@ namespace SignalGo.Server.ServiceManager
                 _ClientConnectedCallingCount = value;
             }
         }
+        //#if (NET45 || NET35 || NET4)
+        //        public static bool ValidateServerCertificate(
+        //              object sender,
+        //              System.Security.Cryptography.X509Certificates.X509Certificate certificate,
+        //              System.Security.Cryptography.X509Certificates.X509Chain chain,
+        //              System.Net.Security.SslPolicyErrors sslPolicyErrors)
+        //        {
+        //            return true;
+        //            if (sslPolicyErrors == System.Net.Security.SslPolicyErrors.None)
+        //                return true;
+
+        //            Console.WriteLine("Certificate error: {0}", sslPolicyErrors);
+
+        //            // Do not allow this client to communicate with unauthenticated servers.
+        //            return false;
+        //        }
+        //        static System.Security.Cryptography.X509Certificates.X509Certificate2 GetRandomCertificate()
+        //        {
+        //            System.Security.Cryptography.X509Certificates.X509Store st = new System.Security.Cryptography.X509Certificates.X509Store(System.Security.Cryptography.X509Certificates.StoreName.My, System.Security.Cryptography.X509Certificates.StoreLocation.CurrentUser);
+        //            st.Open(System.Security.Cryptography.X509Certificates.OpenFlags.ReadOnly);
+        //            try
+        //            {
+        //                var certCollection = st.Certificates;
+
+        //                if (certCollection.Count == 0)
+        //                {
+        //                    return null;
+        //                }
+        //                return certCollection[0];
+        //            }
+        //            finally
+        //            {
+        //                st.Close();
+        //            }
+        //        }
+        //#endif
         /// <summary>
         /// when client connected to server
         /// </summary>
@@ -352,7 +388,16 @@ namespace SignalGo.Server.ServiceManager
                     //Services.TryAdd(client, new ConcurrentList<object>());
                     WaitedMethodsForResponse.TryAdd(client, new ConcurrentDictionary<string, KeyValue<AutoResetEvent, MethodCallbackInfo>>());
                     ClientRegistredMethods.TryAdd(client, new ConcurrentDictionary<string, ConcurrentList<string>>());
-
+                    //#if (NET45 || NET35 || NET4)
+                    //                    System.Net.Security.SslStream sslStream = new System.Net.Security.SslStream(
+                    //                tcpClient.GetStream(), false);
+                    //                    //sslStream.AuthenticateAsServer(new System.Security.Cryptography.X509Certificates.X509Certificate2(@"D:\Github\websockets\websocket-sharp\ConsoleTest\bin\Debug\ConsoleTest_TemporaryKey.pfx", "3773284")
+                    //                    //    , false, System.Security.Authentication.SslProtocols.Tls, false);
+                    //                    sslStream.AuthenticateAsClient(server.LocalEndpoint.ToString());
+                    //                    var sslBytes = new byte[1027 * 1024];
+                    //                    var sslReadCount = sslStream.Read(sslBytes, 0, sslBytes.Length);
+                    //                    var ttttttt = System.Text.Encoding.UTF8.GetString(sslBytes, 0, sslReadCount);
+                    //#endif
                     using (var reader = new CustomStreamReader(tcpClient.GetStream()))
                     {
                         headerResponse = reader.ReadLine();
@@ -386,8 +431,8 @@ namespace SignalGo.Server.ServiceManager
                             //"SignalGo/1.0";
                             //"SignalGo/1.0";
                             client.IsWebSocket = false;
-                            var countSend = tcpClient.Client.Send(System.Text.Encoding.UTF8.GetBytes("OK"));
-                            Console.WriteLine("write ok: " + countSend);
+                            var bytes = System.Text.Encoding.UTF8.GetBytes("OK");
+                            tcpClient.GetStream().Write(bytes,0, bytes.Length);
                         }
                         else if (headerResponse.Contains("HTTP/1.1"))
                         {
@@ -400,16 +445,21 @@ namespace SignalGo.Server.ServiceManager
                             }
                             if (headerResponse.Contains("Sec-WebSocket-Key"))
                             {
+                                //Console.WriteLine($"WebSocket client detected : {client.IPAddress} {client.ClientId} {DateTime.Now.ToString()} {ClientConnectedCallingCount}");
+
                                 client.IsWebSocket = true;
                                 var key = headerResponse.Replace("ey:", "`").Split('`')[1].Replace("\r", "").Split('\n')[0].Trim();
                                 var acceptKey = AcceptKey(ref key);
                                 var newLine = "\r\n";
 
-                                var response = "HTTP/1.1 101 Switching Protocols" + newLine
+                                //var response = "HTTP/1.1 101 Switching Protocols" + newLine
+                                var response = "HTTP/1.0 101 Switching Protocols" + newLine
                                      + "Upgrade: websocket" + newLine
                                      + "Connection: Upgrade" + newLine
                                      + "Sec-WebSocket-Accept: " + acceptKey + newLine + newLine;
-                                tcpClient.Client.Send(System.Text.Encoding.UTF8.GetBytes(response));
+                                var bytes = System.Text.Encoding.UTF8.GetBytes(response);
+                                tcpClient.GetStream().Write(bytes, 0, bytes.Length);
+                                //Console.WriteLine($"WebSocket client send reponse success size:{bytes.Length} sended{count}");
                             }
                             else
                             {
@@ -489,6 +539,7 @@ namespace SignalGo.Server.ServiceManager
                         headerResponse = "";
                     AutoLogger.LogText($"AddClient Error msg : {headerResponse} {client.IPAddress}");
                     AutoLogger.LogError(ex, "AddClient");
+                    Console.WriteLine(ex);
                     DisposeClient(client);
                 }
             });
@@ -1482,6 +1533,7 @@ namespace SignalGo.Server.ServiceManager
                     }
                     if (!isVerify)
                     {
+                        Console.WriteLine($"client is not verify: {client.ClientId}");
                         DisposeClient(client);
                         return;
                     }
@@ -1622,6 +1674,7 @@ namespace SignalGo.Server.ServiceManager
                 }
                 catch (Exception ex)
                 {
+                    Console.WriteLine(ex);
                     SignalGo.Shared.Log.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase StartToReadingClientData");
                     DisposeClient(client);
                 }

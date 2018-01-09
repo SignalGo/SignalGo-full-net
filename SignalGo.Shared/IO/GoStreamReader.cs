@@ -28,6 +28,14 @@ namespace SignalGo.Shared.IO
             {
                 ulong size = 0;
                 var bytes = GetLengthOfWebSocket(stream, ref size);
+//#if (!PORTABLE)
+//                Console.WriteLine("read webSocket converted bytes: " + bytes.Count);
+//                foreach (var item in bytes)
+//                {
+//                    Console.WriteLine(item);
+//                }
+//                Console.WriteLine("end webSocket converted bytes");
+//#endif
                 var newBytes = ReadBlockSize(stream, size);
                 List<byte> b = new List<byte>();
                 b.AddRange(bytes);
@@ -119,6 +127,14 @@ namespace SignalGo.Shared.IO
             List<byte> bytes = new List<byte>();
 
             bytes.AddRange(ReadBlockSize(stream, 2));
+//#if (!PORTABLE)
+//            Console.WriteLine("read block bytes: " + bytes.Count);
+//            foreach (var item in bytes)
+//            {
+//                Console.WriteLine(item);
+//            }
+//            Console.WriteLine("end read block bytes");
+//#endif
 
             if (bytes[1] - 128 <= 125)
             {
@@ -158,6 +174,9 @@ namespace SignalGo.Shared.IO
                 {
                     countToRead = count - lengthReaded;
                 }
+//#if (!PORTABLE)
+//                Console.WriteLine("countToRead: " + countToRead);
+//#endif
                 byte[] readBytes = new byte[countToRead];
                 var readCount = stream.Read(readBytes, 0, (int)countToRead);
                 if (readCount <= 0)

@@ -228,6 +228,7 @@ namespace SignalGo.Shared.Converters
         }
 
         List<object> SerializedObjects = new List<object>();
+        Dictionary<int, object> SerializedReferencedObjects = new Dictionary<int, object>();
 
 
         bool? CanIgnoreCustomDataExchanger(Type type, object instance)
@@ -285,6 +286,10 @@ namespace SignalGo.Shared.Converters
             return false;
         }
 
+        const string refProperty = "$ref";
+        const string idProperty = "$id";
+        const string valuesProperty = "$values";
+
         /// <summary>
         /// read json for deseralize object
         /// </summary>
@@ -298,46 +303,382 @@ namespace SignalGo.Shared.Converters
             if ((CanIgnoreCustomDataExchanger(objectType, existingValue) ?? false))
                 return null;
 
-            var jToken = JToken.Load(reader);
-            JsonSerializer sz = new JsonSerializer()
-            {
-                MissingMemberHandling = MissingMemberHandling.Ignore,
-                NullValueHandling = NullValueHandling.Ignore
-            };
-            sz.Converters.Add(new CustomICollectionCreationConverter() { });
+            //var jToken = JToken.Load(reader);
+            //JsonSerializer sz = new JsonSerializer()
+            //{
+            //    MissingMemberHandling = MissingMemberHandling.Ignore,
+            //    NullValueHandling = NullValueHandling.Ignore
+            //};
+            //sz.Converters.Add(new CustomICollectionCreationConverter() { });
 
-            object obj = null;
+            //object obj = null;
+
+            //try
+            //{
+            //    obj = jToken.ToObject(objectType, sz);
+            //}
+            //catch (Exception ex)
+            //{
+
+            //}
+            //try
+            //{
+            //    if (obj == null)
+            //    {
+            //        var str = jToken.ToString();
+            //        obj = JsonConvert.DeserializeObject(str, objectType, new JsonSerializerSettings()
+            //        {
+            //            Error = (o, x) =>
+            //            {
+
+            //            },
+            //            NullValueHandling = NullValueHandling.Ignore
+            //        });
+            //    }
+
+            //}
+            //catch (Exception ex)
+            //{
+
+            //}
+            //GenerateProperties(obj);
+            //return obj;
 
             try
             {
-                obj = jToken.ToObject(objectType, sz);
+                if (reader.TokenType == JsonToken.StartObject)
+                {
+                    var instance = ReadNewObject(reader, objectType, existingValue, serializer);
+                    while (reader.Read())
+                    {
+
+                    }
+                    //var instance = Activator.CreateInstance(objectType);
+                    //while (reader.Read())
+                    //{
+                    //    if (reader.TokenType == JsonToken.PropertyName)
+                    //    {
+                    //        ReadNewProperty(instance, reader, objectType, existingValue, serializer);
+                    //    }
+                    //}
+                    return instance;
+                }
+                else if (reader.TokenType == JsonToken.StartArray)
+                {
+                    var instance = ReadNewArray(null, reader, objectType, existingValue, serializer);
+                    return instance;
+                }
+                else
+                {
+                    return SerializeHelper.ConvertType(objectType, reader.Value);
+                }
             }
             catch (Exception ex)
             {
-
+#if (!PORTABLE)
+                Console.WriteLine(ex);
+#endif
+                AutoLogger.LogError(ex, "ReadJson");
             }
-            try
-            {
-                if (obj == null)
-                {
-                    var str = jToken.ToString();
-                    obj = JsonConvert.DeserializeObject(str, objectType, new JsonSerializerSettings()
-                    {
-                        Error = (o, x) =>
-                        {
 
-                        },
-                        NullValueHandling = NullValueHandling.Ignore
-                    });
+            return null;
+            if (reader.TokenType == JsonToken.Null)
+                return null;
+
+            else if (reader.TokenType == JsonToken.StartArray)
+            {
+                // No $ref.  Deserialize as a List<T> to avoid infinite recursion and return as an array.
+                var elementType = objectType.GetElementType();
+                var listType = typeof(List<>).MakeGenericType(elementType);
+                var list = (IList)serializer.Deserialize(reader, listType);
+                if (list == null)
+                    return null;
+                var array = Array.CreateInstance(elementType, list.Count);
+                list.CopyTo(array, 0);
+                return array;
+            }
+            else if (reader.TokenType == JsonToken.StartObject)
+            {
+                var instance = Activator.CreateInstance(objectType);
+                serializer.Populate(reader, instance);
+                return instance;
+            }
+            else
+            {
+                //var instance = Activator.CreateInstance(objectType);
+
+
+                return reader.Value;
+                //var obj = JObject.Load(reader);
+                //var refId = (string)obj[refProperty];
+                //if (refId != null)
+                //{
+                //    var reference = serializer.ReferenceResolver.ResolveReference(serializer, refId);
+                //    if (reference != null)
+                //        return reference;
+                //}
+                //var values = obj[valuesProperty];
+                //if (values == null || values.Type == JTokenType.Null)
+                //    return null;
+                //if (!(values is JArray))
+                //{
+                //    throw new JsonSerializationException(string.Format("{0} was not an array", values));
+                //}
+                //var count = ((JArray)values).Count;
+
+                //var elementType = objectType.GetElementType();
+                //var array = Array.CreateInstance(elementType, count);
+
+                //var objId = (string)obj[idProperty];
+                //if (objId != null)
+                //{
+                //    // Add the empty array into the reference table BEFORE poppulating it,
+                //    // to handle recursive references.
+                //    serializer.ReferenceResolver.AddReference(serializer, objId, array);
+                //}
+
+                //var listType = typeof(List<>).MakeGenericType(elementType);
+                //using (var subReader = values.CreateReader())
+                //{
+                //    var list = (IList)serializer.Deserialize(subReader, listType);
+                //    list.CopyTo(array, 0);
+                //}
+
+                //return array;
+            }
+        }
+
+        object CreateInstance(Type type)
+        {
+            if (type.IsArray)
+                return Activator.CreateInstance(type, 0);
+            else
+            {
+                if (type.GetIsGenericType() && type.GetGenericTypeDefinition() == typeof(ICollection<>))
+                {
+                    var generic = type.GetListOfGenericArguments().FirstOrDefault();
+                    return Activator.CreateInstance(typeof(List<>).MakeGenericType(generic));
+                }
+                return Activator.CreateInstance(type);
+            }
+        }
+
+        object ReadNewObject(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+        {
+            object instance = null;
+            while (reader.Read())
+            {
+                if (reader.TokenType == JsonToken.PropertyName)
+                {
+                    string propertyName = reader.Value.ToString();
+                    if (propertyName == refProperty)
+                    {
+                        reader.Read();
+                        var value = reader.Value.ToString();
+                        reader.Read();
+                        return SerializedReferencedObjects[int.Parse(value)];
+                    }
+                    else if (propertyName == valuesProperty)
+                    {
+                        var value = ReadNewArray(instance, reader, objectType, reader.Value, serializer);
+                        instance = value;
+                        continue;
+                    }
+                    if (instance == null)
+                        instance = CreateInstance(objectType);
+                    ReadNewProperty(instance, reader, objectType, existingValue, serializer);
+                }
+                else if (reader.TokenType == JsonToken.StartArray)
+                {
+                    var value = ReadNewArray(null, reader, objectType, reader.Value, serializer);
+                }
+                else if (reader.TokenType == JsonToken.EndObject)
+                    break;
+                else
+                {
+
                 }
 
             }
-            catch (Exception ex)
+            return instance;
+        }
+
+        static void ResizeArray(ref System.Array array, int newSize)
+        {
+            Type elementType = array.GetType().GetElementType();
+            Array newArray = Array.CreateInstance(elementType, newSize);
+            Array.Copy(array, newArray, Math.Min(array.Length, newArray.Length));
+            array = newArray;
+
+            //var method = typeof(System.Array).FindMethod("Resize");
+            //System.Type elementType = oldArray.GetType().GetElementType();
+            //var newMethod = method.MakeGenericMethod(elementType);
+            //newMethod.Invoke(null, new object[] { oldArray, newSize });
+            //int oldSize = oldArray.Length;
+            //System.Array newArray = System.Array.CreateInstance(elementType, newSize);
+
+            //int preserveLength = System.Math.Min(oldSize, newSize);
+
+            //if (preserveLength > 0)
+            //    System.Array.Copy(oldArray, newArray, preserveLength);
+
+            //return newArray;
+        }
+
+        object ReadNewArray(object instance, JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+        {
+            if (instance == null)
+                instance = CreateInstance(objectType);
+            var addMethod = instance.GetType().FindMethod("Add");
+            Array array = null;
+            Type elementType = null;
+            if (objectType.IsArray)
             {
+                array = (Array)instance;
+                elementType = array.GetType().GetElementType();
+            }
+            else
+            {
+                if (addMethod != null)
+                {
+                    elementType = addMethod.GetParameters().FirstOrDefault().ParameterType;
+                }
+                else
+                {
+
+                }
+            }
+            //read value of property
+            while (reader.Read())
+            {
+                if (reader.TokenType == JsonToken.PropertyName)
+                {
+                    ReadNewProperty(instance, reader, elementType, existingValue, serializer);
+                }
+                else if (reader.TokenType == JsonToken.StartObject)
+                {
+                    if (array != null)
+                    {
+                        var obj = ReadNewObject(reader, elementType, existingValue, serializer);
+                        ResizeArray(ref array, array.Length + 1);
+                        array.SetValue(obj, array.Length - 1);
+                    }
+                    else
+                    {
+                        if (addMethod == null)
+                        {
+
+                        }
+                        else
+                        {
+                            var obj = ReadNewObject(reader, elementType, existingValue, serializer);
+                            addMethod.Invoke(instance, new object[] { obj });
+                        }
+
+                    }
+                }
+                else if (reader.TokenType == JsonToken.EndArray)
+                    break;
+                else
+                {
+                    if (reader.Value == null)
+                        continue;
+                    if (array != null)
+                    {
+                        var value = SerializeHelper.ConvertType(elementType, reader.Value);
+                        ResizeArray(ref array, array.Length + 1);
+                        array.SetValue(value, array.Length - 1);
+                    }
+                    else
+                    {
+                        if (addMethod == null)
+                        {
+
+                        }
+                        else
+                        {
+                            var value = SerializeHelper.ConvertType(elementType, reader.Value);
+                            addMethod.Invoke(instance, new object[] { value });
+                        }
+                    }
+                    //
+                    //if (array != null)
+
+
+                }
 
             }
-            GenerateProperties(obj);
-            return obj;
+            if (array != null)
+                return array;
+            return instance;
+        }
+
+        void ReadNewProperty(object instance, JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+        {
+            //bool isDictionary= typeof(IDictionary).GetIsAssignableFrom(type);
+            //value of property
+            string propertyName = (string)reader.Value;
+
+            if (reader.Read())
+            {
+                if (propertyName == idProperty)
+                {
+                    SerializedReferencedObjects.Add(int.Parse(reader.Value.ToString()), instance);
+                }
+                else if (propertyName == valuesProperty)
+                {
+
+                }
+                else if (propertyName == refProperty)
+                {
+
+                }
+                else if (reader.TokenType == JsonToken.StartArray)
+                {
+                    var property = objectType.GetPropertyInfo(propertyName);
+                    if (property == null)
+                    {
+                        AutoLogger.LogText($"property {propertyName} not found in {objectType.FullName}");
+                        return;
+                    }
+                    var array = ReadNewArray(null, reader, property.PropertyType, existingValue, serializer);
+                    property.SetValue(instance, array, null);
+                }
+                else
+                {
+                    var property = objectType.GetPropertyInfo(propertyName);
+                    if (property != null)
+                    {
+                        if (reader.TokenType == JsonToken.StartObject)
+                        {
+                            var value = ReadNewObject(reader, property.PropertyType, reader.Value, serializer);
+                            property.SetValue(instance, value, null);
+                        }
+                        else
+                        {
+                            var value = SerializeHelper.ConvertType(property.PropertyType, reader.Value);
+                            property.SetValue(instance, value, null);
+                        }
+                    }
+                    else
+                    {
+                        var field = objectType.GetFieldInfo(propertyName);
+                        if (field != null)
+                        {
+                            if (reader.TokenType == JsonToken.StartObject)
+                            {
+                                var value = ReadNewObject(reader, field.FieldType, reader.Value, serializer);
+                                field.SetValue(instance, value);
+                            }
+                            else
+                            {
+                                var value = SerializeHelper.ConvertType(field.FieldType, reader.Value);
+                                field.SetValue(instance, value);
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         //void MergeExchangeTypes(Type type, LimitExchangeType limitExchangeType)

@@ -112,7 +112,7 @@ namespace SignalGo.Shared.Helpers
 #if (PORTABLE)
                 .GetDeclaredProperty(name);
 #else
-                .GetProperty(name);
+                .GetProperty(name, BindingFlags.IgnoreCase | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
 #endif
         }
 #if (!PORTABLE)
@@ -129,7 +129,7 @@ namespace SignalGo.Shared.Helpers
 #if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
                 .GetTypeInfo()
 #endif
-                .GetProperty(name, flags);
+                .GetProperty(name, flags | BindingFlags.IgnoreCase);
         }
 #endif
         /// <summary>
@@ -147,7 +147,7 @@ namespace SignalGo.Shared.Helpers
 #if (PORTABLE)
                 .GetDeclaredMethod(name);
 #else
-                .GetMethod(name);
+                .GetMethod(name, BindingFlags.IgnoreCase | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic |  BindingFlags.Static);
 #endif
         }
 
@@ -165,7 +165,7 @@ namespace SignalGo.Shared.Helpers
 #if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
                 .GetTypeInfo()
 #endif
-                .GetMethod(name, flags);
+                .GetMethod(name, flags | BindingFlags.IgnoreCase);
         }
 #endif
         /// <summary>
@@ -183,7 +183,7 @@ namespace SignalGo.Shared.Helpers
                 .DeclaredProperties;
 #else
                 .GetProperties(BindingFlags.Public |
-                          BindingFlags.Instance);
+                          BindingFlags.Instance | BindingFlags.IgnoreCase);
 #endif
         }
         /// <summary>
@@ -201,9 +201,24 @@ namespace SignalGo.Shared.Helpers
                 .DeclaredFields;
 #else
                 .GetFields(BindingFlags.Public |
-                          BindingFlags.Instance);
+                          BindingFlags.Instance | BindingFlags.IgnoreCase);
 #endif
         }
+
+        public static FieldInfo GetFieldInfo(this Type type, string name)
+        {
+            return type
+#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
+                .GetTypeInfo()
+#endif
+#if (PORTABLE)
+                .GetDeclaredField(name);
+#else
+                .GetField(name, BindingFlags.Public |
+                          BindingFlags.Instance | BindingFlags.IgnoreCase);
+#endif
+        }
+
         /// <summary>
         /// IsAssignableFrom
         /// </summary>
