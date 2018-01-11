@@ -57,6 +57,25 @@ namespace System
         /// <typeparam name="T">The type of attribute to search for.</typeparam>
         /// <param name="type">The type which is searched for the attributes.</param>
         /// <returns>Returns all attributes.</returns>
+        public static T[] GetCustomAttributes<T>(this MethodInfo type) where T : Attribute
+        {
+            return GetCustomAttributes(type, typeof(T), false).Select(arg => (T)arg).ToArray();
+        }
+
+        /// <summary>Searches and returns attributes.</summary>
+        /// <typeparam name="T">The type of attribute to search for.</typeparam>
+        /// <param name="type">The type which is searched for the attributes.</param>
+        /// <param name="inherit">Specifies whether to search this member's inheritance chain to find the attributes. Interfaces will be searched, too.</param>
+        /// <returns>Returns all attributes.</returns>
+        public static T[] GetCustomAttributes<T>(this MethodInfo type, bool inherit) where T : Attribute
+        {
+            return GetCustomAttributes(type, typeof(T), inherit).Select(arg => (T)arg).ToArray();
+        }
+
+        /// <summary>Searches and returns attributes. The inheritance chain is not used to find the attributes.</summary>
+        /// <typeparam name="T">The type of attribute to search for.</typeparam>
+        /// <param name="type">The type which is searched for the attributes.</param>
+        /// <returns>Returns all attributes.</returns>
         public static T[] GetCustomAttributes<T>(this PropertyInfo type) where T : Attribute
         {
             return GetCustomAttributes(type, typeof(T), false).Select(arg => (T)arg).ToArray();
@@ -187,6 +206,39 @@ namespace System
             return attributeArray;
         }
 
+        private static object[] GetCustomAttributes(MethodInfo type, Type attributeType, bool inherit)
+        {
+            if (ContainsCachKey(type, inherit))
+                return GetCachValues(type, inherit).Where(x => x.GetType() == attributeType).ToArray();
+            if (!inherit)
+            {
+                object[] cach = null;
+#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
+                cach = type.GetCustomAttributes(attributeType, false).Cast<object>().ToArray();
+#else
+                cach = type.GetCustomAttributes(attributeType, false);
+#endif
+                if (!ContainsCachKey(type, inherit))
+                {
+                    foreach (var item in cach)
+                        AddCach(type, item, inherit);
+                }
+                return cach;
+            }
+
+            var attributeCollection = new Collection<object>();
+            type.GetCustomAttributes(attributeType, true).Apply(attributeCollection.Add);
+
+            var attributeArray = new object[attributeCollection.Count];
+            attributeCollection.CopyTo(attributeArray, 0);
+            if (!ContainsCachKey(type, inherit))
+            {
+                foreach (var item in attributeArray)
+                    AddCach(type, item, inherit);
+            }
+            return attributeArray;
+        }
+
         private static object[] GetCustomAttributes(PropertyInfo type, Type attributeType, bool inherit)
         {
             if (type.Name == "TokenPassword" && attributeType == typeof(SignalGo.Shared.DataTypes.CustomDataExchangerAttribute))
@@ -197,7 +249,11 @@ namespace System
             if (!inherit)
             {
                 object[] cach = null;
-                cach = GetCustomAttributes(type, attributeType, false);
+#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
+                cach = type.GetCustomAttributes(attributeType, false).Cast<object>().ToArray();
+#else
+                cach = type.GetCustomAttributes(attributeType, false);
+#endif
                 if (!ContainsCachKey(type, inherit))
                 {
                     foreach (var item in cach)

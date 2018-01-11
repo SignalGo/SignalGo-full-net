@@ -46,6 +46,10 @@ namespace SignalGo
         /// flush stream for client side to get position of upload file
         /// </summary>
         FlushStream = 8,
+        /// <summary>
+        /// request to get client id from server
+        /// </summary>
+        GetClientId = 9
     }
 
     /// <summary>

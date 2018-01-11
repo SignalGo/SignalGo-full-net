@@ -218,7 +218,12 @@ namespace SignalGo.Server.ServiceManager
 
             if (attribute.InstanceType == InstanceType.SingleInstance)
             {
-                SingleInstanceServices.TryGetValue(attribute.Name, out object result);
+                if (!SingleInstanceServices.TryGetValue(attribute.Name, out object result))
+                {
+                    if (ProviderSetting.AutoDetectRegisterServices)
+                        RegisterServiceForClient(attribute, client);
+                    SingleInstanceServices.TryGetValue(attribute.Name, out result);
+                }
                 return result;
             }
             if (!Services.ContainsKey(client))
@@ -228,6 +233,10 @@ namespace SignalGo.Server.ServiceManager
             {
                 if (serviceName == item.GetType().GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault().Name)
                     return item;
+            }
+            if (ProviderSetting.AutoDetectRegisterServices)
+            {
+                return RegisterServiceForClient(attribute, client);
             }
             return null;
         }
@@ -432,7 +441,7 @@ namespace SignalGo.Server.ServiceManager
                             //"SignalGo/1.0";
                             client.IsWebSocket = false;
                             var bytes = System.Text.Encoding.UTF8.GetBytes("OK");
-                            tcpClient.GetStream().Write(bytes,0, bytes.Length);
+                            tcpClient.GetStream().Write(bytes, 0, bytes.Length);
                         }
                         else if (headerResponse.Contains("HTTP/1.1"))
                         {
@@ -973,12 +982,13 @@ namespace SignalGo.Server.ServiceManager
                     var boundary = headers["content-type"].Split('=').Last();
                     var fileHeaderCount = 0;
                     string response = "";
-                    fileHeaderCount = GetHttpFileFileHeader(client.TcpClient.GetStream(), boundary, len, out response);
+                    fileHeaderCount = GetHttpFileFileHeader(client.TcpClient.GetStream(), ref boundary, len, out response);
+                    boundary = boundary.TrimStart('-');
                     string contentType = "";
                     string fileName = "";
                     string name = "";
-
-                    foreach (var data in response.Split(new string[] { "--" + boundary }, StringSplitOptions.RemoveEmptyEntries))
+                    bool findFile = false;
+                    foreach (var data in response.Split(new string[] { "------" + boundary }, StringSplitOptions.RemoveEmptyEntries))
                     {
                         if (data.ToLower().Contains("content-disposition"))
                         {
@@ -1000,6 +1010,7 @@ namespace SignalGo.Server.ServiceManager
                                         if (disp.Parameters.ContainsKey("name"))
                                             name = disp.Parameters["name"];
                                     }
+                                    findFile = true;
                                 }
                                 break;
                             }
@@ -1040,10 +1051,10 @@ namespace SignalGo.Server.ServiceManager
                             }
                         }
                     }
-                    if (multiPartParameter.Count == 0)
+                    if (findFile)
                     {
                         var stream = new StreamGo(client.TcpClient.GetStream());
-                        stream.SetOfStreamLength(len - content.Length - fileHeaderCount, boundary.Length + 6);
+                        stream.SetOfStreamLength(len - content.Length - fileHeaderCount, boundary.Length + 12);// + 6
                         fileInfo = new HttpPostedFileInfo()
                         {
                             Name = name,
@@ -1255,7 +1266,7 @@ namespace SignalGo.Server.ServiceManager
             }
         }
 
-        int GetHttpFileFileHeader(Stream stream, string boundary, int maxLen, out string response)
+        int GetHttpFileFileHeader(Stream stream, ref string boundary, int maxLen, out string response)
         {
             List<byte> bytes = new List<byte>();
             byte findNextlvl = 0;
@@ -1297,6 +1308,12 @@ namespace SignalGo.Server.ServiceManager
                 }
             }
             response = Encoding.UTF8.GetString(bytes.ToArray());
+            if (response.Contains("--"))
+            {
+                var lastEnter = response.IndexOf("\r\n");
+                if (lastEnter > 0)
+                    boundary = response.Substring(response.LastIndexOf("--") + 2, lastEnter - 6);
+            }
             return bytes.Count;
         }
 
@@ -1590,7 +1607,7 @@ namespace SignalGo.Server.ServiceManager
                                 SendCallbackData(new MethodCallbackInfo() { Guid = callInfo.Guid, Data = ServerSerializationHelper.SerializeObject(true, this) }, client);
                             //کلاسی کالبکی که سمت سرور جدید میشه
                             else if (callInfo.MethodName == "/RegisterService")
-                                RegisterClassForClient(callInfo, client);
+                                CalculateRegisterServiceForClient(callInfo, client);
                             //متد هایی که لازمه برای کلاینت کال بشه
                             else if (callInfo.MethodName == "/RegisterClientMethods")
                             {
@@ -1662,6 +1679,24 @@ namespace SignalGo.Server.ServiceManager
                             var json = Encoding.UTF8.GetString(bytes);
                             var detail = ServerSerializationHelper.Deserialize<MethodParameterDetails>(json, this);
                             SendMethodParameterDetail(client, detail);
+                        }
+                        else if (dataType == DataType.GetClientId)
+                        {
+                            byte[] bytes = Encoding.UTF8.GetBytes(client.ClientId);
+                            if (ClientsSettings.ContainsKey(client))
+                                bytes = EncryptBytes(bytes, client);
+                            byte[] len = BitConverter.GetBytes(bytes.Length);
+                            List<byte> data = new List<byte>
+                            {
+                                (byte)DataType.GetClientId,
+                                (byte)CompressMode.None
+                            };
+                            data.AddRange(len);
+                            data.AddRange(bytes);
+                            if (data.Count > ProviderSetting.MaximumSendDataBlock)
+                                throw new Exception($"{client.IPAddress} {client.ClientId} GetClientId data length is upper than MaximumSendDataBlock");
+
+                            GoStreamWriter.WriteToStream(client.TcpClient.GetStream(), data.ToArray(), client.IsWebSocket);
                         }
                         else
                         {
@@ -1788,7 +1823,7 @@ namespace SignalGo.Server.ServiceManager
         /// </summary>
         /// <param name="callInfo"></param>
         /// <param name="client"></param>
-        public void RegisterClassForClient(MethodCallInfo callInfo, ClientInfo client)
+        public void CalculateRegisterServiceForClient(MethodCallInfo callInfo, ClientInfo client)
         {
             MethodCallbackInfo callback = new MethodCallbackInfo()
             {
@@ -1809,15 +1844,7 @@ namespace SignalGo.Server.ServiceManager
                 }
                 else if (service == null)
                 {
-                    var objectInstance = Activator.CreateInstance(serviceType);
-                    if (serviceTypeAttribute.InstanceType == InstanceType.MultipeInstance)
-                    {
-                        if (!Services.ContainsKey(client))
-                            Services.TryAdd(client, new ConcurrentList<object>());
-                        this.Services[client].Add(objectInstance);
-                    }
-                    else
-                        SingleInstanceServices.TryAdd(serviceTypeAttribute.Name, objectInstance);
+                    RegisterServiceForClient(serviceTypeAttribute, client);
                 }
 
                 //جلوگیری از هنگ
@@ -1831,6 +1858,21 @@ namespace SignalGo.Server.ServiceManager
                 callback.Data = ServerSerializationHelper.SerializeObject(ex.ToString(), this);
             }
             SendCallbackData(callback, client);
+        }
+
+        public object RegisterServiceForClient(ServiceContractAttribute serviceAttribute, ClientInfo client)
+        {
+            var serviceType = RegisteredServiceTypes[serviceAttribute.Name];
+            var objectInstance = Activator.CreateInstance(serviceType);
+            if (serviceAttribute.InstanceType == InstanceType.MultipeInstance)
+            {
+                if (!Services.ContainsKey(client))
+                    Services.TryAdd(client, new ConcurrentList<object>());
+                this.Services[client].Add(objectInstance);
+            }
+            else
+                SingleInstanceServices.TryAdd(serviceAttribute.Name, objectInstance);
+            return objectInstance;
         }
 
         public void RegisterMethodsForClient(MethodCallInfo callInfo, ClientInfo client)
@@ -1963,6 +2005,7 @@ namespace SignalGo.Server.ServiceManager
                     ClientConnectedCallingCount++;
                     if (!RegisteredServiceTypes.ContainsKey(callInfo.ServiceName))
                         throw new Exception($"{client.IPAddress} {client.ClientId} Service {callInfo.ServiceName} not found");
+
                     var serviceType = RegisteredServiceTypes[callInfo.ServiceName];
                     if (serviceType == null)
                         throw new Exception($"{client.IPAddress} {client.ClientId} serviceType {callInfo.ServiceName} not found");

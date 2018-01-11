@@ -50,7 +50,6 @@ namespace SignalGo.Client
         /// call method wait for complete response from clients
         /// </summary>
         internal static ConcurrentDictionary<string, KeyValue<AutoResetEvent, MethodCallbackInfo>> WaitedMethodsForResponse { get; set; } = new ConcurrentDictionary<string, KeyValue<AutoResetEvent, MethodCallbackInfo>>();
-
         /// <summary>
         /// send data to client
         /// </summary>
@@ -75,8 +74,8 @@ namespace SignalGo.Client
         /// <returns></returns>
         internal static T SendData<T>(this ConnectorBase connector, MethodCallInfo callInfo)
         {
-            var data = SendData(connector, callInfo, null);
-            if (data == null || data.ToString() == "")
+            var data = SendData(connector, callInfo);
+            if (string.IsNullOrEmpty(data))
                 return default(T);
             return ClientSerializationHelper.DeserializeObject<T>(data.ToString());
         }
@@ -127,7 +126,7 @@ namespace SignalGo.Client
         /// send data to server
         /// </summary>
         /// <returns></returns>
-        internal static object SendData(ConnectorBase connector, string serviceName, string methodName, params object[] args)
+        internal static string SendData(ConnectorBase connector, string serviceName, string methodName, params object[] args)
         {
             MethodCallInfo callInfo = new MethodCallInfo();
             callInfo.ServiceName = serviceName;
@@ -139,7 +138,7 @@ namespace SignalGo.Client
             }
             var guid = Guid.NewGuid().ToString();
             callInfo.Guid = guid;
-            return SendData(connector, callInfo, args.Length == 1 && args[0] != null && args[0].GetType() == typeof(StreamInfo) ? (StreamInfo)args[0] : null);
+            return SendData(connector, callInfo);
         }
 
         internal static Task<T> SendDataTask<T>(ConnectorBase connector, string serviceName, string methodName, params object[] args)
@@ -157,81 +156,33 @@ namespace SignalGo.Client
             return SendDataAsync<T>(connector, callInfo);
         }
 
-        static object SendData(this ConnectorBase connector, MethodCallInfo callInfo, StreamInfo streamInfo)
+        static string SendData(this ConnectorBase connector, MethodCallInfo callInfo)
         {
-            var added = WaitedMethodsForResponse.TryAdd(callInfo.Guid, new KeyValue<AutoResetEvent, MethodCallbackInfo>(new AutoResetEvent(false), null));
-            var service = connector.Services.ContainsKey(callInfo.ServiceName) ? connector.Services[callInfo.ServiceName] : null;
-#if (PORTABLE)
-            var method = service?.GetType().FindMethod(callInfo.MethodName);
-#else
-            var method = service?.GetType().GetMethod(callInfo.MethodName, RuntimeTypeHelper.GetMethodTypes(service.GetType(), callInfo).ToArray());
-#endif
-            if (method != null && method.ReturnType == typeof(StreamInfo))
-            {
-                callInfo.Data = connector.ClientId;
-                StreamInfo stream = connector.RegisterFileStreamToDownload(callInfo);
-                return stream;
-            }
-            else if (method != null && streamInfo != null && method.ReturnType == typeof(void) && method.GetParameters().Length == 1 && method.GetParameters()[0].ParameterType == typeof(StreamInfo))
-            {
-                callInfo.Data = connector.ClientId;
-                connector.RegisterFileStreamToUpload(streamInfo, callInfo);
-                return null;
-            }
-            else
-            {
-                connector.SendData(callInfo);
-            }
-
-
-            var seted = WaitedMethodsForResponse[callInfo.Guid].Key.WaitOne(connector.ProviderSetting.SendDataTimeout);
-            if (!seted)
-            {
-                if (connector.SettingInfo != null && connector.SettingInfo.IsDisposeClientWhenTimeout)
-                    connector.Dispose();
-                throw new TimeoutException();
-            }
-            var result = WaitedMethodsForResponse[callInfo.Guid].Value;
-            if (result != null && !result.IsException && callInfo.MethodName == "/RegisterService")
-            {
-                connector.ClientId = ClientSerializationHelper.DeserializeObject<string>(result.Data);
-                result.Data = null;
-            }
-            WaitedMethodsForResponse.Remove(callInfo.Guid);
-            if (result == null)
-            {
-                if (connector.IsDisposed || !connector.IsConnected)
-                    throw new Exception("client disconnected");
-                return null;
-            }
-            if (result.IsException)
-                throw new Exception("server exception:" + ClientSerializationHelper.DeserializeObject<string>(result.Data));
-            else if (result.IsAccessDenied && result.Data == null)
-                throw new Exception("server permission denied exception.");
-
-            return result.Data;
-        }
-
-        static Task<T> SendDataAsync<T>(this ConnectorBase connector, MethodCallInfo callInfo)
-        {
-            return Task<T>.Factory.StartNew(() =>
+            TryAgain:
+            bool isIgnorePriority = false;
+            try
             {
                 var added = WaitedMethodsForResponse.TryAdd(callInfo.Guid, new KeyValue<AutoResetEvent, MethodCallbackInfo>(new AutoResetEvent(false), null));
                 var service = connector.Services.ContainsKey(callInfo.ServiceName) ? connector.Services[callInfo.ServiceName] : null;
 #if (PORTABLE)
-                var method = service?.GetType().FindMethod(callInfo.MethodName);
+            var method = service?.GetType().FindMethod(callInfo.MethodName);
 #else
                 var method = service?.GetType().GetMethod(callInfo.MethodName, RuntimeTypeHelper.GetMethodTypes(service.GetType(), callInfo).ToArray());
 #endif
-                connector.SendDataSync(callInfo);
+                isIgnorePriority = method?.GetCustomAttributes<PriorityCallAttribute>().Count() > 0;
+
+                connector.SendData(callInfo);
+
 
                 var seted = WaitedMethodsForResponse[callInfo.Guid].Key.WaitOne(connector.ProviderSetting.SendDataTimeout);
-
-
                 if (!seted)
                 {
-                    if (connector.SettingInfo != null && connector.SettingInfo.IsDisposeClientWhenTimeout)
-                        connector.Dispose();
+                    if (connector.IsDisposed)
+                        throw new ObjectDisposedException("Provider");
+                    if (!connector.IsConnected)
+                        throw new Exception("client disconnected");
+                    if (connector.ProviderSetting.DisconnectClientWhenTimeout)
+                        connector.Disconnect();
                     throw new TimeoutException();
                 }
                 var result = WaitedMethodsForResponse[callInfo.Guid].Value;
@@ -243,15 +194,48 @@ namespace SignalGo.Client
                 WaitedMethodsForResponse.Remove(callInfo.Guid);
                 if (result == null)
                 {
-                    if (connector.IsDisposed || !connector.IsConnected)
+                    if (connector.IsDisposed)
+                        throw new ObjectDisposedException("Provider");
+                    if (!connector.IsConnected)
                         throw new Exception("client disconnected");
-                    return default(T);
+                    return null;
                 }
                 if (result.IsException)
                     throw new Exception("server exception:" + ClientSerializationHelper.DeserializeObject<string>(result.Data));
                 else if (result.IsAccessDenied && result.Data == null)
                     throw new Exception("server permission denied exception.");
-                var deserialeResult = ClientSerializationHelper.DeserializeObject(result.Data, typeof(T));
+
+                return result.Data;
+
+            }
+            catch (Exception ex)
+            {
+                if (connector.ProviderSetting.AutoReconnect && connector.ProviderSetting.HoldMethodCallsWhenDisconnected && !connector.IsConnected && !isIgnorePriority)
+                {
+                    AutoResetEvent resetEvent = new AutoResetEvent(true);
+                    connector.HoldMethodsToReconnect.Add(resetEvent);
+                    if (connector.IsConnected)
+                    {
+                        connector.HoldMethodsToReconnect.Remove(resetEvent);
+                        goto TryAgain;
+                    }
+                    else
+                    {
+                        resetEvent.WaitOne();
+                        goto TryAgain;
+                    }
+                }
+                throw ex;
+            }
+
+        }
+
+        static Task<T> SendDataAsync<T>(this ConnectorBase connector, MethodCallInfo callInfo)
+        {
+            return Task<T>.Factory.StartNew(() =>
+            {
+                var result = SendData(connector, callInfo);
+                var deserialeResult = ClientSerializationHelper.DeserializeObject(result, typeof(T));
                 return (T)deserialeResult;
             });
         }
@@ -280,8 +264,8 @@ namespace SignalGo.Client
             var seted = WaitedMethodsForResponse[callInfo.Guid].Key.WaitOne(connector.ProviderSetting.SendDataTimeout);
             if (!seted)
             {
-                if (connector.SettingInfo != null && connector.SettingInfo.IsDisposeClientWhenTimeout)
-                    connector.Dispose();
+                if (connector.ProviderSetting.DisconnectClientWhenTimeout)
+                    connector.Disconnect();
                 throw new TimeoutException();
             }
             var result = WaitedMethodsForResponse[callInfo.Guid].Value;
@@ -311,6 +295,8 @@ namespace SignalGo.Client
     /// </summary>
     public abstract class ConnectorBase : IDisposable
     {
+        internal ConcurrentList<AutoResetEvent> HoldMethodsToReconnect = new ConcurrentList<AutoResetEvent>();
+        internal ConcurrentList<Delegate> PriorityActionsAfterConnected = new ConcurrentList<Delegate>();
         /// <summary>
         /// is WebSocket data provider
         /// </summary>
@@ -323,14 +309,36 @@ namespace SignalGo.Client
         /// connector is disposed
         /// </summary>
         public bool IsDisposed { get; internal set; }
+
+        bool _IsConnected = false;
         /// <summary>
         /// if provider is connected
         /// </summary>
-        public bool IsConnected { get; set; }
+        public bool IsConnected
+        {
+            get
+            {
+                return _IsConnected;
+            }
+            internal set
+            {
+                _IsConnected = value;
+                OnConnectionChanged?.Invoke(value);
+            }
+        }
         /// <summary>
-        /// after client disconnected call this action
+        /// is signalgo system on reconnecting to server in while
         /// </summary>
-        public Action OnDisconnected { get; set; }
+        public bool IsAutoReconnecting { get; internal set; }
+        /// <summary>
+        /// after client connect or disconnected call this action
+        /// bool value is IsConnected property value
+        /// </summary>
+        public Action<bool> OnConnectionChanged { get; set; }
+        /// <summary>
+        /// when provider is reconnecting
+        /// </summary>
+        public Action OnAutoReconnecting { get; set; }
         /// <summary>
         /// settings of connector
         /// </summary>
@@ -348,28 +356,28 @@ namespace SignalGo.Client
         /// </summary>
         internal ConcurrentDictionary<string, KeyValue<SynchronizationContext, object>> Callbacks { get; set; } = new ConcurrentDictionary<string, KeyValue<SynchronizationContext, object>>();
         internal ConcurrentDictionary<string, object> Services { get; set; } = new ConcurrentDictionary<string, object>();
+        internal AutoResetEvent AutoReconnectDelayResetEvent { get; set; } = new AutoResetEvent(true);
 
         internal SecuritySettingsInfo SecuritySettings { get; set; } = null;
-        internal SettingInfo SettingInfo { get; set; } = null;
 
         internal string _address = "";
         internal int _port = 0;
+        object _connectLock = new object();
         /// <summary>
         /// connect to server
         /// </summary>
         /// <param name="address">server address</param>
         /// <param name="port">server port</param>
-#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
         internal void Connect(string address, int port)
-#else
-        internal void Connect(string address, int port)
-#endif
         {
-            if (IsDisposed)
-                throw new ObjectDisposedException("Connector");
-            _address = address;
-            _port = port;
-            IsDisposed = false;
+            lock (_connectLock)
+            {
+                if (IsConnected)
+                    throw new Exception("client is connected!");
+                if (IsDisposed)
+                    throw new ObjectDisposedException("Connector");
+                _address = address;
+                _port = port;
 #if (NETSTANDARD1_6 || NETCOREAPP1_1)
             _client = new TcpClient();
             bool isSuccess = _client.ConnectAsync(address, port).Wait(new TimeSpan(0, 0, 5));
@@ -381,12 +389,29 @@ namespace SignalGo.Client
             if (!isSuccess)
                 throw new TimeoutException();
 #else
-            _client = new TcpClient(address, port);
-            _client.NoDelay = true;
+                _client = new TcpClient(address, port);
+                _client.NoDelay = true;
 #endif
 
-            IsConnected = true;
-
+                IsConnected = true;
+                foreach (var item in PriorityActionsAfterConnected)
+                {
+                    if (item is Action)
+                        ((Action)item)();
+                    else if (item is Func<bool>)
+                    {
+                        do
+                        {
+#if (PORTABLE)
+                            Task.Delay(ProviderSetting.PriorityFunctionDelayTime).Wait();
+#else
+                            Thread.Sleep(ProviderSetting.PriorityFunctionDelayTime);
+#endif
+                        }
+                        while (!((Func<bool>)item)());
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -484,13 +509,16 @@ namespace SignalGo.Client
                 throw new ObjectDisposedException("Connector");
             var type = typeof(T);
             var name = type.GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault().Name;
-            MethodCallInfo callInfo = new MethodCallInfo()
+            if (!ProviderSetting.AutoDetectRegisterServices)
             {
-                ServiceName = name,
-                MethodName = "/RegisterService",
-                Guid = Guid.NewGuid().ToString()
-            };
-            var callback = this.SendData<MethodCallbackInfo>(callInfo);
+                MethodCallInfo callInfo = new MethodCallInfo()
+                {
+                    ServiceName = name,
+                    MethodName = "/RegisterService",
+                    Guid = Guid.NewGuid().ToString()
+                };
+                var callback = this.SendData<MethodCallbackInfo>(callInfo);
+            }
 
             var objectInstance = InterfaceWrapper.Wrap<T>((serviceName, method, args) =>
             {
@@ -586,12 +614,12 @@ namespace SignalGo.Client
                 port = _port;
 
             string callKey = typeof(T).FullName + serverAddress + ":" + port.Value;
-            
+
             if (InstancesOfRegisterStreamService.TryGetValue(callKey, out object instance))
             {
                 return (T)instance;
             }
-           
+
             var type = typeof(T);
             var name = type.GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault().Name;
 
@@ -927,11 +955,18 @@ namespace SignalGo.Client
                             getServiceDetailEvent.Set();
                             getServiceDetailEvent.Reset();
                         }
+                        else if (dataType == DataType.GetClientId)
+                        {
+                            var bytes = GoStreamReader.ReadBlockToEnd(stream, compresssMode, ProviderSetting.MaximumReceiveDataBlock, IsWebSocket);
+                            if (SecuritySettings != null)
+                                bytes = DecryptBytes(bytes);
+                            ClientId = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
+                        }
                         else
                         {
                             //incorrect data! :|
                             SignalGo.Shared.Log.AutoLogger.LogText("StartToReadingClientData Incorrect Data!");
-                            Dispose();
+                            Disconnect();
                             break;
                         }
                     }
@@ -939,7 +974,7 @@ namespace SignalGo.Client
                 catch (Exception ex)
                 {
                     SignalGo.Shared.Log.AutoLogger.LogError(ex, "StartToReadingClientData");
-                    Dispose();
+                    Disconnect();
                 }
             });
         }
@@ -1163,31 +1198,85 @@ namespace SignalGo.Client
             return getmethodParameterDetailsResult;
         }
 
+        /// <summary>
+        /// calls this actions after connected and befor holded methods
+        /// </summary>
+        /// <param name="action"></param>
+        public void AddPriorityAction(Action action)
+        {
+            PriorityActionsAfterConnected.Add(action);
+        }
+
+        /// <summary>
+        /// calls this function after connected and befor holded methods
+        /// if you return false this will hold methods and call this function again after a time until you return true
+        /// </summary>
+        /// <param name="function"></param>
+        public void AddPriorityFunction(Func<bool> function)
+        {
+            PriorityActionsAfterConnected.Add(function);
+        }
+
+        object _autoReconnectLock = new object();
+
         public void Disconnect()
         {
             if (IsDisposed)
                 throw new ObjectDisposedException("Connector");
-            foreach (var item in ConnectorExtension.WaitedMethodsForResponse)
-            {
-                item.Value.Key.Set();
-            }
+
             if (_client != null)
 #if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
                 _client.Dispose();
 #else
                 _client.Close();
 #endif
+            foreach (var item in ConnectorExtension.WaitedMethodsForResponse)
+            {
+                item.Value.Key.Set();
+            }
+            ConnectorExtension.WaitedMethodsForResponse.Clear();
             if (IsConnected)
             {
                 IsConnected = false;
-                OnDisconnected?.Invoke();
             }
 #if (NET35)
-                getServiceDetailEvent?.Close();
+            getServiceDetailEvent?.Close();
 #else
             getServiceDetailEvent?.Dispose();
 #endif
+            lock (_autoReconnectLock)
+            {
+                if (ProviderSetting.AutoReconnect && !IsAutoReconnecting)
+                {
+                    IsAutoReconnecting = true;
+                    while (!IsConnected)
+                    {
+                        try
+                        {
+                            OnAutoReconnecting?.Invoke();
+                            Connect(_address, _port);
+                        }
+                        catch (Exception ex)
+                        {
+
+                        }
+                        finally
+                        {
+                            AutoReconnectDelayResetEvent.Reset();
+                            AutoReconnectDelayResetEvent.WaitOne(ProviderSetting.AutoReconnectTime);
+                        }
+                    }
+                    foreach (var item in HoldMethodsToReconnect.ToList())
+                    {
+                        item.Set();
+                    }
+                    HoldMethodsToReconnect.Clear();
+                    IsAutoReconnecting = false;
+                }
+            }
         }
+
+
         /// <summary>
         /// close and dispose connector
         /// </summary>

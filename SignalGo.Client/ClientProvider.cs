@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using SignalGo.Shared;
 using SignalGo.Shared.Helpers;
 using SignalGo.Shared.IO;
 using SignalGo.Shared.Models;
@@ -25,11 +26,8 @@ namespace SignalGo.Client
         /// connect to server
         /// </summary>
         /// <param name="url">server url address</param>
-#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
+        /// <param name="isWebsocket"></param>
         public void Connect(string url, bool isWebsocket = false)
-#else
-        public void Connect(string url, bool isWebsocket = false)
-#endif
         {
             IsWebSocket = isWebsocket;
             if (!Uri.TryCreate(url, UriKind.Absolute, out Uri uri))
@@ -75,6 +73,7 @@ namespace SignalGo.Client
 #endif
             Connect();
             ConnectToUrl(uri.AbsolutePath);
+            GetClientIdIfNeed();
             StartToReadingClientData();
             var isConnected = ConnectorExtension.SendData<bool>(this, new Shared.Models.MethodCallInfo() { Guid = Guid.NewGuid().ToString(), ServiceName = "/CheckConnection" });
 #if (!PORTABLE)
@@ -82,12 +81,68 @@ namespace SignalGo.Client
 #endif
             if (!isConnected)
             {
-                Dispose();
+                Disconnect();
                 throw new Exception("server is available but connection address is not true");
             }
 
         }
 
+        volatile bool _oneTimeConnectedAsyncCalledWithAutoReconnect = false;
+        /// <summary>
+        /// connect to server is background Thread
+        /// </summary>
+        /// <param name="url">url of server to connect</param>
+        /// <param name="connectedAction">call this action after connect successfully</param>
+        /// <param name="isAutoRecconect">if you want system try to reConnect when server or network is not avalable</param>
+        /// <param name="isHoldMethodCallsWhenDisconnected">hold method calls when provider is disconnected and call all after connected</param>
+        /// <param name="isWebsocket">is web socket system</param>
+        public void ConnectAsync(string url, Action<bool> connectedAction, bool isAutoRecconect, bool isHoldMethodCallsWhenDisconnected, bool isWebsocket = false)
+        {
+            AsyncActions.Run(() =>
+            {
+                ProviderSetting.AutoReconnect = isAutoRecconect;
+                ProviderSetting.HoldMethodCallsWhenDisconnected = isHoldMethodCallsWhenDisconnected;
+                Connect(url, isWebsocket);
+                connectedAction(true);
+            }, (ex) =>
+            {
+                Disconnect();
+                connectedAction(false);
+            });
+        }
+
+        object _connectAsyncAutoReconnectLock = new object();
+        /// <summary>
+        /// connect to server is background Thread
+        /// </summary>
+        /// <param name="url">url of server to connect</param>
+        /// <param name="connectedAction">call this action after connect successfully</param>
+        /// <param name="isWebsocket">is web socket system</param>
+        public void ConnectAsyncAutoReconnect(string url, Action<bool> connectedAction, bool isWebsocket = false)
+        {
+            lock (_connectAsyncAutoReconnectLock)
+            {
+                if (_oneTimeConnectedAsyncCalledWithAutoReconnect)
+                {
+                    AutoReconnectDelayResetEvent.Set();
+                }
+                else
+                {
+                    _oneTimeConnectedAsyncCalledWithAutoReconnect = true;
+                    ConnectAsync(url, connectedAction, true, true, isWebsocket);
+                }
+            }
+        }
+
+        public void TryAutoReconnect()
+        {
+            AutoReconnectDelayResetEvent.Set();
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="securitySettings"></param>
         public void SetSecuritySettings(SecuritySettingsInfo securitySettings)
         {
             SecuritySettings = null;
@@ -106,11 +161,6 @@ namespace SignalGo.Client
                 SecuritySettings = new SecuritySettingsInfo() { Data = new RSAAESEncryptionData() { Key = RSASecurity.Decrypt(result.Data.Key, RSASecurity.StringToKey(keys.PrivateKey)), IV = RSASecurity.Decrypt(result.Data.IV, RSASecurity.StringToKey(keys.PrivateKey)) }, SecurityMode = securitySettings.SecurityMode };
 #endif
             }
-        }
-
-        public void SetSetting(SettingInfo settingInfo)
-        {
-            SettingInfo = settingInfo;
         }
 
         void Connect()
@@ -162,6 +212,24 @@ namespace SignalGo.Client
 #if (!PORTABLE)
             Console.WriteLine("write complete:" + bytes.Count);
 #endif
+        }
+
+        void GetClientIdIfNeed()
+        {
+            if (ProviderSetting.AutoDetectRegisterServices)
+            {
+                var data = new byte[]
+                {
+                    (byte)DataType.GetClientId,
+                    (byte)CompressMode.None
+                };
+#if (PORTABLE)
+                var stream = _client.WriteStream;
+#else
+                var stream = _client.GetStream();
+#endif
+                GoStreamWriter.WriteToStream(stream, data.ToArray(), IsWebSocket);
+            }
         }
     }
 }

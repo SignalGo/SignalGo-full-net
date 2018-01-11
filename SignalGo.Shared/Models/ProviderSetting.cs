@@ -30,5 +30,31 @@ namespace SignalGo.Shared.Models
         /// maximum header of stream for download from client
         /// </summary>
         public uint MaximumReceiveStreamHeaderBlock { get; set; } = 65536;
+        /// <summary>
+        /// automatic try to reconnect after disconnect
+        /// </summary>
+        public bool AutoReconnect { get; set; }
+        /// <summary>
+        /// millisecound of wait for reconnect system
+        /// </summary>
+        public int AutoReconnectTime { get; set; } = 1000;
+
+        /// <summary>
+        /// hold method calls when provider is disconnected and call all after connected
+        /// </summary>
+        public bool HoldMethodCallsWhenDisconnected { get; set; }
+        /// <summary>
+        /// if true, when client get timeout error when calling server method client force diconnect from signalgo
+        /// </summary>
+        public bool DisconnectClientWhenTimeout { get; set; }
+        /// <summary>
+        /// Auto detect register services without send and receive /RegisterService to server and get accept
+        /// </summary>
+        public bool AutoDetectRegisterServices { get; set; } = true;
+        /// <summary>
+        /// call again priority func<bool> for get return true
+        /// </summary>
+        public int PriorityFunctionDelayTime { get; set; } = 2000;
+
     }
 }

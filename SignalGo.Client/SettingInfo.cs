@@ -10,9 +10,6 @@ namespace SignalGo.Client
     /// </summary>
     public class SettingInfo
     {
-        /// <summary>
-        /// if true, when client get timeout error when calling server method client force disposed from signalgo
-        /// </summary>
-        public bool IsDisposeClientWhenTimeout { get; set; }
+
     }
 }
