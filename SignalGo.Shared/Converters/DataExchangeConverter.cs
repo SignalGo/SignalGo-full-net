@@ -500,6 +500,8 @@ namespace SignalGo.Shared.Converters
                 }
 
             }
+            if (instance == null)
+                instance = CreateInstance(objectType);
             return instance;
         }
 
