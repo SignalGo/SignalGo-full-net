@@ -212,7 +212,15 @@ namespace SignalGo.Shared.Helpers
             }
             else if (targetPropertyType == SerializeObjectType.Enum)
             {
-                return Enum.Parse(toType, value.ToString());
+                if (value == null)
+                {
+                    var values = Enum.GetValues(toType);
+                    if (values.Length > 0)
+                        return Enum.GetValues(toType).GetValue(0);
+                    else
+                        return null;
+                }
+                return Enum.Parse(toType, value.ToString(), true);
             }
             else if (targetPropertyType == SerializeObjectType.EnumNullable)
             {

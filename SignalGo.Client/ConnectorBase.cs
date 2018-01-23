@@ -162,7 +162,8 @@ namespace SignalGo.Client
             bool isIgnorePriority = false;
             try
             {
-                var added = WaitedMethodsForResponse.TryAdd(callInfo.Guid, new KeyValue<AutoResetEvent, MethodCallbackInfo>(new AutoResetEvent(false), null));
+                var valueData = new KeyValue<AutoResetEvent, MethodCallbackInfo>(new AutoResetEvent(false), null);
+                var added = WaitedMethodsForResponse.TryAdd(callInfo.Guid, valueData);
                 var service = connector.Services.ContainsKey(callInfo.ServiceName) ? connector.Services[callInfo.ServiceName] : null;
 #if (PORTABLE)
             var method = service?.GetType().FindMethod(callInfo.MethodName);
@@ -185,7 +186,8 @@ namespace SignalGo.Client
                         connector.Disconnect();
                     throw new TimeoutException();
                 }
-                var result = WaitedMethodsForResponse[callInfo.Guid].Value;
+
+                var result = valueData.Value;
                 if (result != null && !result.IsException && callInfo.MethodName == "/RegisterService")
                 {
                     connector.ClientId = ClientSerializationHelper.DeserializeObject<string>(result.Data);
@@ -210,6 +212,10 @@ namespace SignalGo.Client
             }
             catch (Exception ex)
             {
+                if (connector.IsConnected && !connector.SendPingAndWaitToReceive())
+                {
+                    connector.Disconnect();
+                }
                 if (connector.ProviderSetting.AutoReconnect && connector.ProviderSetting.HoldMethodCallsWhenDisconnected && !connector.IsConnected && !isIgnorePriority)
                 {
                     AutoResetEvent resetEvent = new AutoResetEvent(true);
@@ -306,9 +312,20 @@ namespace SignalGo.Client
         /// </summary>
         public string ClientId { get; set; }
         /// <summary>
+        /// 
+        /// </summary>
+        public bool IsPriorityEnabled { get; set; } = true;
+
+        /// <summary>
         /// connector is disposed
         /// </summary>
         public bool IsDisposed { get; internal set; }
+
+        internal string ServerUrl { get; set; }
+        public virtual void Connect(string url, bool isWebsocket = false)
+        {
+
+        }
 
         bool _IsConnected = false;
         /// <summary>
@@ -357,6 +374,7 @@ namespace SignalGo.Client
         internal ConcurrentDictionary<string, KeyValue<SynchronizationContext, object>> Callbacks { get; set; } = new ConcurrentDictionary<string, KeyValue<SynchronizationContext, object>>();
         internal ConcurrentDictionary<string, object> Services { get; set; } = new ConcurrentDictionary<string, object>();
         internal AutoResetEvent AutoReconnectDelayResetEvent { get; set; } = new AutoResetEvent(true);
+        internal AutoResetEvent HoldAllPrioritiesResetEvent { get; set; } = new AutoResetEvent(true);
 
         internal SecuritySettingsInfo SecuritySettings { get; set; } = null;
 
@@ -394,23 +412,6 @@ namespace SignalGo.Client
 #endif
 
                 IsConnected = true;
-                foreach (var item in PriorityActionsAfterConnected)
-                {
-                    if (item is Action)
-                        ((Action)item)();
-                    else if (item is Func<bool>)
-                    {
-                        do
-                        {
-#if (PORTABLE)
-                            Task.Delay(ProviderSetting.PriorityFunctionDelayTime).Wait();
-#else
-                            Thread.Sleep(ProviderSetting.PriorityFunctionDelayTime);
-#endif
-                        }
-                        while (!((Func<bool>)item)());
-                    }
-                }
             }
         }
 
@@ -456,6 +457,57 @@ namespace SignalGo.Client
 #else
             return this.GetType().FindMethod("GetDefaultGeneric").MakeGenericMethod(t).Invoke(this, null);
 #endif
+        }
+
+        internal void RunPriorities()
+        {
+            if (!IsPriorityEnabled)
+                return;
+            foreach (var item in PriorityActionsAfterConnected)
+            {
+                if (!IsPriorityEnabled)
+                    break;
+                if (item is Action)
+                    ((Action)item)();
+                else if (item is Func<PriorityAction>)
+                {
+                    var priorityAction = PriorityAction.TryAgain;
+                    do
+                    {
+#if (PORTABLE)
+                        Task.Delay(ProviderSetting.PriorityFunctionDelayTime).Wait();
+#else
+                        Thread.Sleep(ProviderSetting.PriorityFunctionDelayTime);
+#endif
+                        priorityAction = ((Func<PriorityAction>)item)();
+                        if (priorityAction == PriorityAction.BreakAll)
+                            break;
+                        else if (priorityAction == PriorityAction.HoldAll)
+                        {
+                            HoldAllPrioritiesResetEvent.Reset();
+                            HoldAllPrioritiesResetEvent.WaitOne();
+                        }
+                    }
+                    while (IsPriorityEnabled && priorityAction == PriorityAction.TryAgain);
+                    if (priorityAction == PriorityAction.BreakAll)
+                        break;
+                }
+            }
+        }
+
+        public void DisablePriority()
+        {
+            IsPriorityEnabled = false;
+        }
+
+        public void EnablePriority()
+        {
+            IsPriorityEnabled = true;
+        }
+
+        public void UnHoldPriority()
+        {
+            HoldAllPrioritiesResetEvent.Set();
         }
         /// <summary>
         /// get default value from type
@@ -625,6 +677,11 @@ namespace SignalGo.Client
 
             var objectInstance = InterfaceWrapper.Wrap<T>((serviceName, method, args) =>
             {
+                if (string.IsNullOrEmpty(serverAddress))
+                    serverAddress = _address;
+
+                if (port == null || port.Value == 0)
+                    port = _port;
 #if (NETSTANDARD1_6 || NETCOREAPP1_1)
                 var _newClient = new TcpClient();
                 bool isSuccess = _newClient.ConnectAsync(serverAddress, port.Value).Wait(new TimeSpan(0, 0, 5));
@@ -896,6 +953,11 @@ namespace SignalGo.Client
                     {
                         //first byte is DataType
                         var dataType = (DataType)stream.ReadByte();
+                        if (dataType == DataType.PingPong)
+                        {
+                            PingAndWaitForPong.Set();
+                            continue;
+                        }
                         //secound byte is compress mode
                         var compresssMode = (CompressMode)stream.ReadByte();
 
@@ -977,6 +1039,27 @@ namespace SignalGo.Client
                     Disconnect();
                 }
             });
+        }
+
+        ManualResetEvent PingAndWaitForPong = new ManualResetEvent(true);
+        public bool SendPingAndWaitToReceive()
+        {
+            try
+            {
+                PingAndWaitForPong.Reset();
+#if (PORTABLE)
+                var stream = _client.WriteStream;
+#else
+                var stream = _client.GetStream();
+#endif
+                GoStreamWriter.WriteToStream(stream,new byte[] { (byte)DataType.PingPong }, IsWebSocket);
+                return PingAndWaitForPong.WaitOne(new TimeSpan(0, 0, 3));
+            }
+            catch (Exception ex)
+            {
+                AutoLogger.LogError(ex, "ConnectorBase SendData");
+                return false;
+            }
         }
 
         internal byte[] DecryptBytes(byte[] bytes)
@@ -1212,7 +1295,7 @@ namespace SignalGo.Client
         /// if you return false this will hold methods and call this function again after a time until you return true
         /// </summary>
         /// <param name="function"></param>
-        public void AddPriorityFunction(Func<bool> function)
+        public void AddPriorityFunction(Func<PriorityAction> function)
         {
             PriorityActionsAfterConnected.Add(function);
         }
@@ -1254,7 +1337,7 @@ namespace SignalGo.Client
                         try
                         {
                             OnAutoReconnecting?.Invoke();
-                            Connect(_address, _port);
+                            Connect(ServerUrl);
                         }
                         catch (Exception ex)
                         {

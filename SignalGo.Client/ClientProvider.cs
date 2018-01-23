@@ -22,12 +22,13 @@ namespace SignalGo.Client
         {
             JsonSettingHelper.Initialize();
         }
+
         /// <summary>
         /// connect to server
         /// </summary>
         /// <param name="url">server url address</param>
         /// <param name="isWebsocket"></param>
-        public void Connect(string url, bool isWebsocket = false)
+        public override void Connect(string url, bool isWebsocket = false)
         {
             IsWebSocket = isWebsocket;
             if (!Uri.TryCreate(url, UriKind.Absolute, out Uri uri))
@@ -38,6 +39,7 @@ namespace SignalGo.Client
             {
                 throw new Exception("port is not valid");
             }
+            ServerUrl = url;
             string Host = "";
             if (Uri.CheckHostName(uri.Host) == UriHostNameType.IPv4 || Uri.CheckHostName(uri.Host) == UriHostNameType.IPv6)
             {
@@ -79,12 +81,12 @@ namespace SignalGo.Client
 #if (!PORTABLE)
             Console.WriteLine("isConnected " + isConnected);
 #endif
-            if (!isConnected)
+            if (!isConnected && !ProviderSetting.AutoDetectRegisterServices)
             {
                 Disconnect();
                 throw new Exception("server is available but connection address is not true");
             }
-
+            RunPriorities();
         }
 
         volatile bool _oneTimeConnectedAsyncCalledWithAutoReconnect = false;
