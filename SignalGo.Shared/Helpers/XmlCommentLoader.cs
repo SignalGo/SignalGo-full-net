@@ -230,6 +230,7 @@ namespace SignalGo.Shared.Helpers
             else
                 return type.FullName;
         }
+
         private XmlElement GetElementFromName(Type type, char prefix, string name)
         {
             string nodeName;
@@ -248,17 +249,22 @@ namespace SignalGo.Shared.Helpers
                 return null;
             XmlElement findElement = null;
 
-            foreach (XmlElement xmlElement in xmlDocument["doc"]["members"])
+            foreach (var xmlElement in xmlDocument["doc"]["members"])
             {
-                if (xmlElement.Attributes["name"].Value.Equals(nodeName))
+                if (xmlElement is XmlElement)
                 {
-                    if (findElement != null)
+                    var element = xmlElement as XmlElement;
+                    if (element.Attributes["name"].Value.Equals(nodeName))
                     {
-                        continue;
-                    }
+                        if (findElement != null)
+                        {
+                            continue;
+                        }
 
-                    findElement = xmlElement;
+                        findElement = element;
+                    }
                 }
+               
             }
 
             if (findElement == null)

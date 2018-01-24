@@ -952,14 +952,16 @@ namespace SignalGo.Client
                     while (true)
                     {
                         //first byte is DataType
-                        var dataType = (DataType)stream.ReadByte();
+                        var dataTypeByte = stream.ReadByte();
+                        var dataType = (DataType)dataTypeByte;
                         if (dataType == DataType.PingPong)
                         {
                             PingAndWaitForPong.Set();
                             continue;
                         }
                         //secound byte is compress mode
-                        var compresssMode = (CompressMode)stream.ReadByte();
+                        var compressModeByte = stream.ReadByte();
+                        var compresssMode = (CompressMode)compressModeByte;
 
                         // server is called client method
                         if (dataType == DataType.CallMethod)
@@ -1322,11 +1324,7 @@ namespace SignalGo.Client
             {
                 IsConnected = false;
             }
-#if (NET35)
-            getServiceDetailEvent?.Close();
-#else
-            getServiceDetailEvent?.Dispose();
-#endif
+            getServiceDetailEvent?.Reset();
             lock (_autoReconnectLock)
             {
                 if (ProviderSetting.AutoReconnect && !IsAutoReconnecting)

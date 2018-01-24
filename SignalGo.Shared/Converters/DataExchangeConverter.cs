@@ -654,12 +654,22 @@ namespace SignalGo.Shared.Converters
                         if (reader.TokenType == JsonToken.StartObject)
                         {
                             var value = ReadNewObject(reader, property.PropertyType, reader.Value, serializer);
-                            property.SetValue(instance, value, null);
+                            if (property.CanWrite)
+                                property.SetValue(instance, value, null);
+                            else
+                            {
+                                AutoLogger.LogText($"property {property.Name} cannot write");
+                            }
                         }
                         else
                         {
                             var value = SerializeHelper.ConvertType(property.PropertyType, reader.Value);
-                            property.SetValue(instance, value, null);
+                            if (property.CanWrite)
+                                property.SetValue(instance, value, null);
+                            else
+                            {
+                                AutoLogger.LogText($"property {property.Name} cannot write");
+                            }
                         }
                     }
                     else

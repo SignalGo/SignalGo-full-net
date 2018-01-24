@@ -81,7 +81,10 @@ namespace SignalGo
         /// </summary>
         RSA_AESSecurity = 1,
     }
+}
 
+namespace SignalGo.Shared.DataTypes
+{
     /// <summary>
     /// ignore a property or class in call or receive method
     /// </summary>

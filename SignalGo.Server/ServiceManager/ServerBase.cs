@@ -432,7 +432,7 @@ namespace SignalGo.Server.ServiceManager
                             {
                                 UploadStreamToClient(tcpClient.GetStream(), client);
                             }
-                            DisposeClient(client);
+                            DisposeClient(client, "AddClient end signalgo stream");
                             return;
                         }
                         else if (headerResponse.Contains("SignalGo/1.0"))
@@ -491,7 +491,7 @@ namespace SignalGo.Server.ServiceManager
                                     {
                                         var headers = GetHttpHeaders(lines.Skip(1).ToArray());
                                         RunHttpRequest(address, "GET", "", headers, client);
-                                        DisposeClient(client);
+                                        DisposeClient(client, "AddClient finish get call");
                                         return;
                                     }
                                     else if (methodName.ToLower() == "post" && !string.IsNullOrEmpty(address) && address != "/")
@@ -512,7 +512,7 @@ namespace SignalGo.Server.ServiceManager
                                         {
                                             RunHttpRequest(address, "POST", content, headers, client);
                                         }
-                                        DisposeClient(client);
+                                        DisposeClient(client, "AddClient finish post call");
                                         return;
                                     }
                                 }
@@ -523,7 +523,7 @@ namespace SignalGo.Server.ServiceManager
                                      + "Content-Type: text/html" + newLine
                                      + "Connection: Close" + newLine;
                                 tcpClient.Client.Send(System.Text.Encoding.ASCII.GetBytes(response + newLine + "SignalGo Server OK" + newLine));
-                                DisposeClient(client);
+                                DisposeClient(client, "AddClient http ok signalGo");
                                 return;
                             }
 
@@ -534,7 +534,7 @@ namespace SignalGo.Server.ServiceManager
                                 headerResponse = "";
                             AutoLogger.LogText($"Header not suport msg: {headerResponse} {client.IPAddress} IsConnected:{client.TcpClient.Connected} LastByte:{reader.LastByteRead}");
 
-                            DisposeClient(client);
+                            DisposeClient(client, "AddClient header not support");
                             return;
                         }
 
@@ -549,7 +549,7 @@ namespace SignalGo.Server.ServiceManager
                     AutoLogger.LogText($"AddClient Error msg : {headerResponse} {client.IPAddress}");
                     AutoLogger.LogError(ex, "AddClient");
                     Console.WriteLine(ex);
-                    DisposeClient(client);
+                    DisposeClient(client, "AddClient exception");
                 }
             });
         }
@@ -1551,7 +1551,7 @@ namespace SignalGo.Server.ServiceManager
                     if (!isVerify)
                     {
                         Console.WriteLine($"client is not verify: {client.ClientId}");
-                        DisposeClient(client);
+                        DisposeClient(client, "StartToReadingClientData client is not verify");
                         return;
                     }
                     client.IsVerification = true;
@@ -1705,13 +1705,13 @@ namespace SignalGo.Server.ServiceManager
                             break;
                         }
                     }
-                    DisposeClient(client);
+                    DisposeClient(client, "StartToReadingClientData while break");
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine(ex);
                     SignalGo.Shared.Log.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase StartToReadingClientData");
-                    DisposeClient(client);
+                    DisposeClient(client, "StartToReadingClientData exception");
                 }
             })
             {
@@ -1727,7 +1727,7 @@ namespace SignalGo.Server.ServiceManager
         public void CheckClient(ClientInfo client)
         {
             if (client != null && !client.TcpClient.Connected)
-                DisposeClient(client);
+                DisposeClient(client, "CheckClient");
         }
 
         private void ClientRemove(ClientInfo client)
@@ -1746,14 +1746,22 @@ namespace SignalGo.Server.ServiceManager
             Callbacks.Remove(client);
         }
 
-        internal void DisposeClient(ClientInfo client)
+        internal void DisposeClient(ClientInfo client, string reason)
         {
             try
             {
-                Console.WriteLine("Client disposed " + client.ClientId);
-                if (client != null && client.TcpClient != null)
+                Console.WriteLine("Client disposed " + client.ClientId + " reason: " + reason);
+                try
                 {
-                    CloseClient(client);
+#if (NETSTANDARD1_6 || NETCOREAPP1_1)
+                    client.TcpClient.Dispose();
+#else
+                    client.TcpClient.Close();
+#endif
+                }
+                catch (Exception ex)
+                {
+                    AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} CloseCllient");
                 }
                 ClientRemove(client);
 
@@ -1788,18 +1796,7 @@ namespace SignalGo.Server.ServiceManager
         /// <param name="client">client info</param>
         public void CloseClient(ClientInfo client)
         {
-            try
-            {
-#if (NETSTANDARD1_6 || NETCOREAPP1_1)
-                client.TcpClient.Dispose();
-#else
-                client.TcpClient.Close();
-#endif
-            }
-            catch (Exception ex)
-            {
-                AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} CloseCllient");
-            }
+            DisposeClient(client, "manualy called CloseClient");
         }
         /// <summary>
         /// close client by session
@@ -1809,7 +1806,7 @@ namespace SignalGo.Server.ServiceManager
         {
             var client = GetClientByClientId(clientId);
             if (client != null)
-                CloseClient(client);
+                DisposeClient(client, "manualy called CloseClient 2");
         }
 
         public ClientInfo GetClientByClientId(string clientId)
@@ -2255,7 +2252,7 @@ namespace SignalGo.Server.ServiceManager
             {
                 SignalGo.Shared.Log.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase SetSettings");
                 if (!client.TcpClient.Connected)
-                    DisposeClient(client);
+                    DisposeClient(client, "SetSettings exception");
             }
         }
 
@@ -2337,7 +2334,7 @@ namespace SignalGo.Server.ServiceManager
             {
                 SignalGo.Shared.Log.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase SendCallbackData");
                 if (!client.TcpClient.Connected)
-                    DisposeClient(client);
+                    DisposeClient(client, "SendCallbackData exception");
             }
             finally
             {
@@ -3242,7 +3239,7 @@ namespace SignalGo.Server.ServiceManager
         {
             foreach (var item in Clients.ToList())
             {
-                DisposeClient(item.Value);
+                DisposeClient(item.Value,"server stopped");
             }
             server.Stop();
             IsStarted = false;

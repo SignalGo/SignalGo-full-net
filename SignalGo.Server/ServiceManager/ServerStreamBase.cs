@@ -141,7 +141,7 @@ namespace SignalGo.Server.ServiceManager
                 var service = FindStreamServiceByName(serviceName);
                 MethodsCallHandler.BeginStreamCallAction?.Invoke(client, guid, serviceName, methodName, values);
                 if (service == null)
-                    DisposeClient(client);
+                    DisposeClient(client, "DownloadStreamFromClient service not found!");
                 else
                 {
                     //, typeof(StreamInfo<>)
@@ -183,7 +183,7 @@ namespace SignalGo.Server.ServiceManager
             {
                 exception = ex;
                 Shared.Log.AutoLogger.LogError(ex, "upload stream error");
-                DisposeClient(client);
+                DisposeClient(client, "DownloadStreamFromClient exception");
                 return;
             }
             catch (Exception ex)
@@ -197,6 +197,10 @@ namespace SignalGo.Server.ServiceManager
                 MethodsCallHandler.EndStreamCallAction?.Invoke(client, guid, serviceName, methodName, values, jsonResult, exception);
             }
             SendCallbackData(callback, client);
+            if (callback.IsException)
+            {
+                DisposeClient(client, "DownloadStreamFromClient exception 2");
+            }
         }
         /// <summary>
         /// this method calll when client want to download file or stream from your server
@@ -227,7 +231,7 @@ namespace SignalGo.Server.ServiceManager
                 var service = FindStreamServiceByName(serviceName);
                 MethodsCallHandler.BeginStreamCallAction?.Invoke(client, guid, serviceName, methodName, values);
                 if (service == null)
-                    DisposeClient(client);
+                    DisposeClient(client, "UploadStreamToClient service not found");
                 else
                 {
                     var serviceType = service.GetType();
@@ -308,6 +312,10 @@ namespace SignalGo.Server.ServiceManager
             finally
             {
                 MethodsCallHandler.EndStreamCallAction?.Invoke(client, guid, serviceName, methodName, values, jsonResult, exception);
+            }
+            if (callback.IsException)
+            {
+                DisposeClient(client, "UploadStreamToClient exception");
             }
         }
 
