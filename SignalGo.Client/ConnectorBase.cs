@@ -30,6 +30,7 @@ namespace SignalGo.Client
         {
             CSCodeInjection.InvokedClientMethodAction = (client, method, parameters) =>
             {
+                //Console.WriteLine($"CSCodeInjection.InvokedClientMethodAction {method.Name}");
                 if (!(client is OperationCalls))
                 {
                     AutoLogger.LogText($"cannot cast! {method.Name} params {parameters?.Length}");
@@ -39,6 +40,7 @@ namespace SignalGo.Client
 
             CSCodeInjection.InvokedClientMethodFunction = (client, method, parameters) =>
             {
+                //Console.WriteLine($"CSCodeInjection.InvokedClientMethodFunction {method.Name}");
                 var data = SendData((OperationCalls)client, method.Name, "", parameters);
                 if (data == null)
                     return null;

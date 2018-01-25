@@ -26,6 +26,7 @@ namespace SignalGo.Server.ServiceManager
         {
             CSCodeInjection.InvokedServerMethodAction = (client, method, parameters) =>
             {
+                //Console.WriteLine($"CSCodeInjection.InvokedServerMethodAction {method.Name}");
                 OperationCalls op = (OperationCalls)client;
                 SendToClientDataInvoke(op, method.Name, parameters);
                 //MethodsCallHandler.EndClientMethodCallAction?.Invoke(op.CurrentClient, null, method.Name, parameters, null, null);
@@ -33,6 +34,7 @@ namespace SignalGo.Server.ServiceManager
 
             CSCodeInjection.InvokedServerMethodFunction = (client, method, parameters) =>
             {
+                //Console.WriteLine($"CSCodeInjection.InvokedServerMethodFunction {method.Name}");
                 OperationCalls op = (OperationCalls)client;
                 var data = SendToClientData((OperationCalls)client, method.Name, parameters);
                 var result = ServerSerializationHelper.Deserialize(data.ToString(), method.ReturnType, ((OperationCalls)client).ServerBase);
