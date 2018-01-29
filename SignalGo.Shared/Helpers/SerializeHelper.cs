@@ -153,6 +153,8 @@ namespace SignalGo.Shared.Helpers
 
         internal static object ConvertType(Type toType, object value)
         {
+            if (value == null)
+                return null;
             var targetPropertyType = GetTypeCodeOfObject(toType);
             if (targetPropertyType == SerializeObjectType.Boolean)
             {
@@ -160,7 +162,9 @@ namespace SignalGo.Shared.Helpers
             }
             else if (targetPropertyType == SerializeObjectType.BooleanNullable)
             {
-                return value == null ? null : (bool?)Convert.ToBoolean(value);
+                if (value.ToString() == "null")
+                    return null;
+                return (bool?)Convert.ToBoolean(value);
             }
             else if (targetPropertyType == SerializeObjectType.Byte)
             {
@@ -168,7 +172,9 @@ namespace SignalGo.Shared.Helpers
             }
             else if (targetPropertyType == SerializeObjectType.ByteNullable)
             {
-                return value == null ? null : (byte?)Convert.ToByte(value);
+                if (value.ToString() == "null")
+                    return null;
+                return (byte?)Convert.ToByte(value);
             }
             else if (targetPropertyType == SerializeObjectType.Char)
             {
@@ -176,7 +182,9 @@ namespace SignalGo.Shared.Helpers
             }
             else if (targetPropertyType == SerializeObjectType.CharNullable)
             {
-                return value == null ? null : (char?)Convert.ToChar(value);
+                if (value.ToString() == "null")
+                    return null;
+                return (char?)Convert.ToChar(value);
             }
             else if (targetPropertyType == SerializeObjectType.DateTime)
             {
@@ -184,7 +192,9 @@ namespace SignalGo.Shared.Helpers
             }
             else if (targetPropertyType == SerializeObjectType.DateTimeNullable)
             {
-                return value == null ? null : (DateTime?)Convert.ToDateTime(value);
+                if (value.ToString() == "null")
+                    return null;
+                return (DateTime?)Convert.ToDateTime(value);
             }
             else if (targetPropertyType == SerializeObjectType.DateTimeOffset)
             {
@@ -192,7 +202,9 @@ namespace SignalGo.Shared.Helpers
             }
             else if (targetPropertyType == SerializeObjectType.DateTimeOffsetNullable)
             {
-                return value == null ? null : (DateTimeOffset?)new DateTimeOffset(Convert.ToDateTime(value));
+                if (value.ToString() == "null")
+                    return null;
+                return (DateTimeOffset?)new DateTimeOffset(Convert.ToDateTime(value));
             }
             else if (targetPropertyType == SerializeObjectType.Decimal)
             {
@@ -200,7 +212,9 @@ namespace SignalGo.Shared.Helpers
             }
             else if (targetPropertyType == SerializeObjectType.DecimalNullable)
             {
-                return value == null ? null : (decimal?)Convert.ToDecimal(value);
+                if (value.ToString() == "null")
+                    return null;
+                return (decimal?)Convert.ToDecimal(value);
             }
             else if (targetPropertyType == SerializeObjectType.Double)
             {
@@ -208,7 +222,9 @@ namespace SignalGo.Shared.Helpers
             }
             else if (targetPropertyType == SerializeObjectType.DoubleNullable)
             {
-                return value == null ? null : (double?)Convert.ToDouble(value);
+                if (value.ToString() == "null")
+                    return null;
+                return (double?)Convert.ToDouble(value);
             }
             else if (targetPropertyType == SerializeObjectType.Enum)
             {
@@ -226,8 +242,10 @@ namespace SignalGo.Shared.Helpers
             {
                 try
                 {
+                    if (value.ToString() == "null")
+                        return null;
                     Type nullableType = Nullable.GetUnderlyingType(toType);
-                    return value == null ? null : Enum.Parse(nullableType, value.ToString());
+                    return Enum.Parse(nullableType, value.ToString());
                 }
                 catch (Exception ex)
                 {
@@ -244,7 +262,9 @@ namespace SignalGo.Shared.Helpers
             }
             else if (targetPropertyType == SerializeObjectType.Int16Nullable)
             {
-                return value == null ? null : (short?)Convert.ToInt16(value);
+                if (value.ToString() == "null")
+                    return null;
+                return (short?)Convert.ToInt16(value);
             }
             else if (targetPropertyType == SerializeObjectType.Int32)
             {
@@ -252,7 +272,9 @@ namespace SignalGo.Shared.Helpers
             }
             else if (targetPropertyType == SerializeObjectType.Int32Nullable)
             {
-                return value == null ? null : (int?)Convert.ToInt32(value);
+                if (value.ToString() == "null")
+                    return null;
+                return (int?)Convert.ToInt32(value);
             }
             else if (targetPropertyType == SerializeObjectType.Int64)
             {
@@ -260,7 +282,9 @@ namespace SignalGo.Shared.Helpers
             }
             else if (targetPropertyType == SerializeObjectType.Int64Nullable)
             {
-                return value == null ? null : (long?)Convert.ToInt64(value);
+                if (value.ToString() == "null")
+                    return null;
+                return (long?)Convert.ToInt64(value);
             }
             else if (targetPropertyType == SerializeObjectType.UInt16)
             {
@@ -268,7 +292,9 @@ namespace SignalGo.Shared.Helpers
             }
             else if (targetPropertyType == SerializeObjectType.UInt16Nullable)
             {
-                return value == null ? null : (ushort?)Convert.ToUInt16(value);
+                if (value.ToString() == "null")
+                    return null;
+                return (ushort?)Convert.ToUInt16(value);
             }
             else if (targetPropertyType == SerializeObjectType.UInt32)
             {
@@ -276,7 +302,9 @@ namespace SignalGo.Shared.Helpers
             }
             else if (targetPropertyType == SerializeObjectType.UInt32Nullable)
             {
-                return value == null ? null : (uint?)Convert.ToUInt32(value);
+                if (value.ToString() == "null")
+                    return null;
+                return (uint?)Convert.ToUInt32(value);
             }
             else if (targetPropertyType == SerializeObjectType.UInt64)
             {
@@ -284,7 +312,9 @@ namespace SignalGo.Shared.Helpers
             }
             else if (targetPropertyType == SerializeObjectType.UInt64Nullable)
             {
-                return value == null ? null : (ulong?)Convert.ToUInt64(value);
+                if (value.ToString() == "null")
+                    return null;
+                return (ulong?)Convert.ToUInt64(value);
             }
             else if (targetPropertyType == SerializeObjectType.SByte)
             {
@@ -292,7 +322,9 @@ namespace SignalGo.Shared.Helpers
             }
             else if (targetPropertyType == SerializeObjectType.SByteNullable)
             {
-                return value == null ? null : (sbyte?)Convert.ToSByte(value);
+                if (value.ToString() == "null")
+                    return null;
+                return (sbyte?)Convert.ToSByte(value);
             }
             else if (targetPropertyType == SerializeObjectType.Single)
             {
@@ -300,11 +332,15 @@ namespace SignalGo.Shared.Helpers
             }
             else if (targetPropertyType == SerializeObjectType.FloatNullable)
             {
-                return value == null ? null : (float?)Convert.ToSingle(value);
+                if (value.ToString() == "null")
+                    return null;
+                return (float?)Convert.ToSingle(value);
             }
             else if (targetPropertyType == SerializeObjectType.String)
             {
-                return value == null ? null : value.ToString();
+                if (value.ToString() == "null")
+                    return null;
+                return value.ToString();
             }
             else if (targetPropertyType == SerializeObjectType.TimeSpan)
             {
@@ -312,7 +348,9 @@ namespace SignalGo.Shared.Helpers
             }
             else if (targetPropertyType == SerializeObjectType.TimeSpanNullable)
             {
-                return value == null ? null : (TimeSpan?)TimeSpan.Parse(value.ToString());
+                if (value.ToString() == "null")
+                    return null;
+                return (TimeSpan?)TimeSpan.Parse(value.ToString());
             }
             else if (targetPropertyType == SerializeObjectType.Uri)
             {

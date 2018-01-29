@@ -67,6 +67,7 @@ namespace SignalGo.Server.Models
     public class OperationContext<T> where T : class
     {
         internal static ConcurrentDictionary<ClientInfo, HashSet<object>> SavedSettings { get; set; } = new ConcurrentDictionary<ClientInfo, HashSet<object>>();
+        internal static ConcurrentDictionary<string, HashSet<object>> CustomClientSavedSettings { get; set; } = new ConcurrentDictionary<string, HashSet<object>>();
         static T _Current = null;
         /// <summary>
         /// get seeting of one type that you set it
@@ -153,6 +154,54 @@ namespace SignalGo.Server.Models
         {
             var clientInfo = OperationContext.Current.GetClientInfoByClientId(clientId);
             return GetSetting(clientInfo);
+        }
+
+        public static void SetCustomClientSetting(string customClientId, object setting)
+        {
+            if (setting == null || string.IsNullOrEmpty(customClientId))
+                throw new Exception("setting is null or empty! please fill all parameters");
+            if (!CustomClientSavedSettings.ContainsKey(customClientId))
+                CustomClientSavedSettings.TryAdd(customClientId, new HashSet<object>() { setting });
+            else if (CustomClientSavedSettings.TryGetValue(customClientId, out HashSet<object> result) && !result.Contains(setting))
+                result.Add(setting);
+        }
+
+        /// <summary>
+        /// get setting of your custom client id or sessions or etc
+        /// </summary>
+        /// <param name="customClientId"></param>
+        /// <returns></returns>
+        public static T GetCustomClientSetting(string customClientId)
+        {
+            if (string.IsNullOrEmpty(customClientId))
+                throw new Exception("customClientId parameter is null or empty!");
+            if (CustomClientSavedSettings.TryGetValue(customClientId, out HashSet<object> result))
+            {
+                return (T)result.FirstOrDefault(x => x.GetType() == typeof(T));
+            }
+            return default(T);
+        }
+
+        public static T RemoveCustomClientSetting(string customClientId)
+        {
+            if (string.IsNullOrEmpty(customClientId))
+                throw new Exception("customClientId parameter is null or empty!");
+            if (CustomClientSavedSettings.TryRemove(customClientId, out HashSet<object> result))
+            {
+                return (T)result.FirstOrDefault(x => x.GetType() == typeof(T));
+            }
+            return default(T);
+        }
+
+        public static IEnumerable<T> GetCustomClientSettings(string customClientId)
+        {
+            if (string.IsNullOrEmpty(customClientId))
+                throw new Exception("customClientId parameter is null or empty!");
+            if (CustomClientSavedSettings.TryGetValue(customClientId, out HashSet<object> result))
+            {
+                return result.Where(x => x.GetType() == typeof(T)).Select(x => (T)x);
+            }
+            return null;
         }
 
         public static IEnumerable<T> GetSettings<T>(IEnumerable<ClientInfo> clients, Func<T, bool> func)
