@@ -9,5 +9,6 @@ namespace SignalGo.Server.Settings
     {
         public bool IsEnabledDataExchanger { get; set; }
         public bool IsEnabledReferenceResolver { get; set; } = true;
+        public bool IsEnabledReferenceResolverForArray { get; set; } = true;
     }
 }
