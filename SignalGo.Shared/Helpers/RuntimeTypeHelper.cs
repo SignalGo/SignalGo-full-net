@@ -31,7 +31,8 @@ namespace SignalGo.Shared.Helpers
             {
                 if (item.Name == callInfo.MethodName)
                 {
-                    if (item.GetParameters().Length != callInfo.Parameters.Count)
+                    var plength = item.GetParameters().Length;
+                    if (plength != callInfo.Parameters.Count)
                         continue;
                     foreach (var p in item.GetParameters())
                     {

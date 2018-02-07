@@ -1015,12 +1015,12 @@ namespace SignalGo.Server.ServiceManager
                     var fileHeaderCount = 0;
                     string response = "";
                     fileHeaderCount = GetHttpFileFileHeader(client.TcpClient.GetStream(), ref boundary, len, out response);
-                    boundary = boundary.TrimStart('-');
+                    //boundary = boundary.TrimStart('-');
                     string contentType = "";
                     string fileName = "";
                     string name = "";
                     bool findFile = false;
-                    foreach (var data in response.Split(new string[] { "------" + boundary }, StringSplitOptions.RemoveEmptyEntries))
+                    foreach (var data in response.Split(new string[] { "--" + boundary }, StringSplitOptions.RemoveEmptyEntries))
                     {
                         if (data.ToLower().Contains("content-disposition"))
                         {
@@ -1056,6 +1056,7 @@ namespace SignalGo.Server.ServiceManager
                                     header = data.Substring(index, headLen);
                                     //var byteData = GoStreamReader.ReadBlockSize(client.TcpClient.GetStream(), (ulong)(len - content.Length - fileHeaderCount));
                                     string newData = data.Substring(headLen + 4);//Encoding.UTF8.GetString(byteData);
+                                    newData = newData.Trim(Environment.NewLine.ToCharArray());
                                     //var newData = text.Substring(0, text.IndexOf(boundary) - 4);
                                     if (header.ToLower().IndexOf("content-disposition:") == 0)
                                     {
@@ -2604,7 +2605,9 @@ namespace SignalGo.Server.ServiceManager
                                     ServiceDetailsMethod info = new ServiceDetailsMethod()
                                     {
                                         MethodName = method.Name,
-                                        Parameters = new List<ServiceDetailsParameterInfo>(),
+#if (!NET35)
+                                        Requests = new System.Collections.ObjectModel.ObservableCollection<ServiceDetailsRequestInfo>() { new ServiceDetailsRequestInfo() { Name = "Default", Parameters = new List<ServiceDetailsParameterInfo>(), IsSelected = true } },
+#endif
                                         ReturnType = method.ReturnType.GetFriendlyName(),
                                         Comment = methodComment?.Summery,
                                         ReturnComment = methodComment?.Returns,
@@ -2631,7 +2634,9 @@ namespace SignalGo.Server.ServiceManager
                                             Comment = parameterComment,
                                             Id = id
                                         };
-                                        info.Parameters.Add(p);
+#if (!NET35)
+                                        info.Requests.First().Parameters.Add(p);
+#endif
                                         RuntimeTypeHelper.GetListOfUsedTypes(paramInfo.ParameterType, ref modelTypes);
                                     }
                                     serviceMethods.Add(info);
@@ -2717,7 +2722,9 @@ namespace SignalGo.Server.ServiceManager
                                 ServiceDetailsMethod info = new ServiceDetailsMethod()
                                 {
                                     MethodName = method.Name,
-                                    Parameters = new List<ServiceDetailsParameterInfo>(),
+#if (!NET35)
+                                    Requests = new System.Collections.ObjectModel.ObservableCollection<ServiceDetailsRequestInfo>() { new ServiceDetailsRequestInfo() { Name = "Default", Parameters = new List<ServiceDetailsParameterInfo>(), IsSelected = true } },
+#endif
                                     ReturnType = method.ReturnType.GetFriendlyName(),
                                     Comment = methodComment?.Summery,
                                     ReturnComment = methodComment?.Returns,
@@ -2744,7 +2751,9 @@ namespace SignalGo.Server.ServiceManager
                                         Comment = parameterComment,
                                         Id = id
                                     };
-                                    info.Parameters.Add(p);
+#if (!NET35)
+                                    info.Requests.First().Parameters.Add(p);
+#endif
                                     RuntimeTypeHelper.GetListOfUsedTypes(paramInfo.ParameterType, ref modelTypes);
                                 }
                                 serviceMethods.Add(info);
@@ -2818,7 +2827,9 @@ namespace SignalGo.Server.ServiceManager
                                 {
                                     Id = id,
                                     MethodName = method.Name,
-                                    Parameters = new List<ServiceDetailsParameterInfo>(),
+#if (!NET35)
+                                    Requests = new System.Collections.ObjectModel.ObservableCollection<ServiceDetailsRequestInfo>() { new ServiceDetailsRequestInfo() { Name = "Default", Parameters = new List<ServiceDetailsParameterInfo>(), IsSelected = true } },
+#endif
                                     ReturnType = method.ReturnType.GetFriendlyName(),
                                     Comment = methodComment?.Summery,
                                     ReturnComment = methodComment?.Returns,
@@ -2846,7 +2857,9 @@ namespace SignalGo.Server.ServiceManager
                                         FullTypeName = paramInfo.ParameterType.FullName,
                                         Comment = parameterComment
                                     };
-                                    info.Parameters.Add(p);
+#if (!NET35)
+                                    info.Requests.First().Parameters.Add(p);
+#endif
                                     if (string.IsNullOrEmpty(testExampleParams))
                                         testExampleParams += "?";
                                     else

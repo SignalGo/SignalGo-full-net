@@ -1,6 +1,7 @@
 ﻿using SignalGo.Shared.Helpers;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 
@@ -40,9 +41,11 @@ namespace SignalGo.Shared.Models
         /// </summary>
         public string TestExample { get; set; }
         /// <summary>
-        /// list of parameters
+        /// requests of method
         /// </summary>
-        public List<ServiceDetailsParameterInfo> Parameters { get; set; }
+#if (!NET35)
+        public ObservableCollection<ServiceDetailsRequestInfo> Requests { get; set; }
+#endif
         /// <summary>
         /// if item is exanded from treeview
         /// </summary>
@@ -51,11 +54,27 @@ namespace SignalGo.Shared.Models
         /// if item is selected from treeview
         /// </summary>
         public bool IsSelected { get; set; }
+#if (!NET35)
         public ServiceDetailsMethod Clone()
         {
-            return new ServiceDetailsMethod() { Id = Id, Comment = Comment, ExceptionsComment = ExceptionsComment, MethodName = MethodName, Parameters = new List<ServiceDetailsParameterInfo>(), ReturnComment = ReturnComment, ReturnType = ReturnType, TestExample = TestExample, IsSelected = IsSelected, IsExpanded = IsExpanded };
+            return new ServiceDetailsMethod() { Id = Id, Comment = Comment, ExceptionsComment = ExceptionsComment, MethodName = MethodName, Requests = new ObservableCollection<ServiceDetailsRequestInfo>(), ReturnComment = ReturnComment, ReturnType = ReturnType, TestExample = TestExample, IsSelected = IsSelected, IsExpanded = IsExpanded };
         }
+#endif
+    }
 
+    public class ServiceDetailsRequestInfo
+    {
+        public bool IsSelected { get; set; }
+        public string Name { get; set; }
+        /// <summary>
+        /// list of parameters
+        /// </summary>
+        public List<ServiceDetailsParameterInfo> Parameters { get; set; }
+
+        public ServiceDetailsRequestInfo Clone()
+        {
+            return new ServiceDetailsRequestInfo() { Name = Name, Parameters = new List<ServiceDetailsParameterInfo>() };
+        }
     }
 
     public class MethodParameterDetails

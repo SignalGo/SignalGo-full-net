@@ -248,14 +248,14 @@ namespace SignalGo.Client
             });
         }
 
-        public static string SendRequest(this ConnectorBase connector, string serviceName, ServiceDetailsMethod serviceDetailMethod, out string json)
+        public static string SendRequest(this ConnectorBase connector, string serviceName, ServiceDetailsMethod serviceDetailMethod,ServiceDetailsRequestInfo  requestInfo, out string json)
         {
             MethodCallInfo callInfo = new MethodCallInfo()
             {
                 ServiceName = serviceName,
                 MethodName = serviceDetailMethod.MethodName
             };
-            foreach (var item in serviceDetailMethod.Parameters)
+            foreach (var item in requestInfo.Parameters)
             {
                 callInfo.Parameters.Add(new Shared.Models.ParameterInfo() { Value = item.Value.ToString(), Type = item.FullTypeName });
             }
@@ -396,6 +396,7 @@ namespace SignalGo.Client
                     throw new Exception("client is connected!");
                 if (IsDisposed)
                     throw new ObjectDisposedException("Connector");
+                _ManulyDisconnected = false;
                 _address = address;
                 _port = port;
 #if (NETSTANDARD1_6 || NETCOREAPP1_1)
@@ -686,12 +687,12 @@ namespace SignalGo.Client
                     port = _port;
 #if (NETSTANDARD1_6 || NETCOREAPP1_1)
                 var _newClient = new TcpClient();
-                bool isSuccess = _newClient.ConnectAsync(serverAddress, port.Value).Wait(new TimeSpan(0, 0, 5));
+                bool isSuccess = _newClient.ConnectAsync(serverAddress, port.Value).Wait(new TimeSpan(0, 0, 10));
                 if (!isSuccess)
                     throw new TimeoutException();
 #elif (PORTABLE)
                 var _newClient = new Sockets.Plugin.TcpSocketClient();
-                bool isSuccess = _newClient.ConnectAsync(serverAddress, port.Value).Wait(new TimeSpan(0, 0, 5));
+                bool isSuccess = _newClient.ConnectAsync(serverAddress, port.Value).Wait(new TimeSpan(0, 0, 10));
                 if (!isSuccess)
                     throw new TimeoutException();
 #else
@@ -1136,6 +1137,10 @@ namespace SignalGo.Client
         internal abstract void RegisterFileStreamToUpload(StreamInfo streamInfo, MethodCallInfo Data);
 
         /// <summary>
+        /// when server called a client methods this action will call
+        /// </summary>
+        public Action <MethodCallInfo> OnCalledMethodAction { get; set; }
+        /// <summary>
         /// call a method of client from server
         /// </summary>
         /// <param name="callInfo">method call data</param>
@@ -1147,6 +1152,7 @@ namespace SignalGo.Client
             };
             try
             {
+                OnCalledMethodAction?.Invoke(callInfo);
                 var service = Callbacks[callInfo.ServiceName].Value;
 #if (PORTABLE)
                 var method = service.GetType().FindMethod(callInfo.MethodName);
@@ -1305,9 +1311,12 @@ namespace SignalGo.Client
         }
 
         object _autoReconnectLock = new object();
-
+        bool _ManulyDisconnected = false;
         public void Disconnect()
         {
+            if (_ManulyDisconnected)
+                return;
+            _ManulyDisconnected = true;
             if (IsDisposed)
                 throw new ObjectDisposedException("Connector");
 

@@ -103,9 +103,17 @@ namespace SignalGo.Shared
                 }
                 catch (Exception ex)
                 {
-                    onException?.Invoke(ex);
-                    AutoLogger.LogError(ex, "AsyncActions Run");
-                    OnActionException?.Invoke(ex);
+                    try
+                    {
+                        onException?.Invoke(ex);
+                        AutoLogger.LogError(ex, "AsyncActions Run");
+                        OnActionException?.Invoke(ex);
+                    }
+                    catch (Exception ex2)
+                    {
+                        AutoLogger.LogError(ex2, "AsyncActions Run 2");
+
+                    }
                 }
             })
             {
