@@ -345,108 +345,108 @@ namespace SignalGo.Shared.Converters
             //GenerateProperties(obj);
             //return obj;
 
-            try
+            //try
+            //{
+            if (reader.TokenType == JsonToken.StartObject)
             {
-                if (reader.TokenType == JsonToken.StartObject)
+                var instance = ReadNewObject(reader, objectType, existingValue, serializer);
+                while (reader.Read())
                 {
-                    var instance = ReadNewObject(reader, objectType, existingValue, serializer);
-                    while (reader.Read())
-                    {
 
-                    }
-                    //var instance = Activator.CreateInstance(objectType);
-                    //while (reader.Read())
-                    //{
-                    //    if (reader.TokenType == JsonToken.PropertyName)
-                    //    {
-                    //        ReadNewProperty(instance, reader, objectType, existingValue, serializer);
-                    //    }
-                    //}
-                    return instance;
                 }
-                else if (reader.TokenType == JsonToken.StartArray)
-                {
-                    var instance = ReadNewArray(null, reader, objectType, existingValue, serializer);
-                    return instance;
-                }
-                else
-                {
-                    return SerializeHelper.ConvertType(objectType, reader.Value);
-                }
+                //var instance = Activator.CreateInstance(objectType);
+                //while (reader.Read())
+                //{
+                //    if (reader.TokenType == JsonToken.PropertyName)
+                //    {
+                //        ReadNewProperty(instance, reader, objectType, existingValue, serializer);
+                //    }
+                //}
+                return instance;
             }
-            catch (Exception ex)
-            {
-#if (!PORTABLE)
-                Console.WriteLine(ex);
-#endif
-                AutoLogger.LogError(ex, "ReadJson");
-            }
-
-            return null;
-            if (reader.TokenType == JsonToken.Null)
-                return null;
-
             else if (reader.TokenType == JsonToken.StartArray)
             {
-                // No $ref.  Deserialize as a List<T> to avoid infinite recursion and return as an array.
-                var elementType = objectType.GetElementType();
-                var listType = typeof(List<>).MakeGenericType(elementType);
-                var list = (IList)serializer.Deserialize(reader, listType);
-                if (list == null)
-                    return null;
-                var array = Array.CreateInstance(elementType, list.Count);
-                list.CopyTo(array, 0);
-                return array;
-            }
-            else if (reader.TokenType == JsonToken.StartObject)
-            {
-                var instance = Activator.CreateInstance(objectType);
-                serializer.Populate(reader, instance);
+                var instance = ReadNewArray(null, reader, objectType, existingValue, serializer);
                 return instance;
             }
             else
             {
-                //var instance = Activator.CreateInstance(objectType);
-
-
-                return reader.Value;
-                //var obj = JObject.Load(reader);
-                //var refId = (string)obj[refProperty];
-                //if (refId != null)
-                //{
-                //    var reference = serializer.ReferenceResolver.ResolveReference(serializer, refId);
-                //    if (reference != null)
-                //        return reference;
-                //}
-                //var values = obj[valuesProperty];
-                //if (values == null || values.Type == JTokenType.Null)
-                //    return null;
-                //if (!(values is JArray))
-                //{
-                //    throw new JsonSerializationException(string.Format("{0} was not an array", values));
-                //}
-                //var count = ((JArray)values).Count;
-
-                //var elementType = objectType.GetElementType();
-                //var array = Array.CreateInstance(elementType, count);
-
-                //var objId = (string)obj[idProperty];
-                //if (objId != null)
-                //{
-                //    // Add the empty array into the reference table BEFORE poppulating it,
-                //    // to handle recursive references.
-                //    serializer.ReferenceResolver.AddReference(serializer, objId, array);
-                //}
-
-                //var listType = typeof(List<>).MakeGenericType(elementType);
-                //using (var subReader = values.CreateReader())
-                //{
-                //    var list = (IList)serializer.Deserialize(subReader, listType);
-                //    list.CopyTo(array, 0);
-                //}
-
-                //return array;
+                return SerializeHelper.ConvertType(objectType, reader.Value);
             }
+            //            }
+            //            catch (Exception ex)
+            //            {
+            //#if (!PORTABLE)
+            //                Console.WriteLine(ex);
+            //#endif
+            //                AutoLogger.LogError(ex, "ReadJson");
+            //            }
+
+            ////return null;
+            //if (reader.TokenType == JsonToken.Null)
+            //    return null;
+
+            //else if (reader.TokenType == JsonToken.StartArray)
+            //{
+            //    // No $ref.  Deserialize as a List<T> to avoid infinite recursion and return as an array.
+            //    var elementType = objectType.GetElementType();
+            //    var listType = typeof(List<>).MakeGenericType(elementType);
+            //    var list = (IList)serializer.Deserialize(reader, listType);
+            //    if (list == null)
+            //        return null;
+            //    var array = Array.CreateInstance(elementType, list.Count);
+            //    list.CopyTo(array, 0);
+            //    return array;
+            //}
+            //else if (reader.TokenType == JsonToken.StartObject)
+            //{
+            //    var instance = Activator.CreateInstance(objectType);
+            //    serializer.Populate(reader, instance);
+            //    return instance;
+            //}
+            //else
+            //{
+            //    //var instance = Activator.CreateInstance(objectType);
+
+
+            //    return reader.Value;
+            //    //var obj = JObject.Load(reader);
+            //    //var refId = (string)obj[refProperty];
+            //    //if (refId != null)
+            //    //{
+            //    //    var reference = serializer.ReferenceResolver.ResolveReference(serializer, refId);
+            //    //    if (reference != null)
+            //    //        return reference;
+            //    //}
+            //    //var values = obj[valuesProperty];
+            //    //if (values == null || values.Type == JTokenType.Null)
+            //    //    return null;
+            //    //if (!(values is JArray))
+            //    //{
+            //    //    throw new JsonSerializationException(string.Format("{0} was not an array", values));
+            //    //}
+            //    //var count = ((JArray)values).Count;
+
+            //    //var elementType = objectType.GetElementType();
+            //    //var array = Array.CreateInstance(elementType, count);
+
+            //    //var objId = (string)obj[idProperty];
+            //    //if (objId != null)
+            //    //{
+            //    //    // Add the empty array into the reference table BEFORE poppulating it,
+            //    //    // to handle recursive references.
+            //    //    serializer.ReferenceResolver.AddReference(serializer, objId, array);
+            //    //}
+
+            //    //var listType = typeof(List<>).MakeGenericType(elementType);
+            //    //using (var subReader = values.CreateReader())
+            //    //{
+            //    //    var list = (IList)serializer.Deserialize(subReader, listType);
+            //    //    list.CopyTo(array, 0);
+            //    //}
+
+            //    //return array;
+            //}
         }
 
         object CreateInstance(Type type)
@@ -663,7 +663,7 @@ namespace SignalGo.Shared.Converters
                         else
                             AutoLogger.LogText($"property {propertyName} not found in {objectType.FullName}");
                     }
-                   
+
                 }
                 else
                 {
@@ -840,39 +840,39 @@ namespace SignalGo.Shared.Converters
         /// <param name="serializer"></param>
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
-            try
+            //try
+            //{
+            if (!SerializedObjects.Contains(value))
+                SerializedObjects.Add(value);
+            var type = value.GetType();
+            if (HasJsonIgnore(type))
+                return;
+            if (SerializeHelper.GetTypeCodeOfObject(type) != SerializeObjectType.Object)
             {
-                if (!SerializedObjects.Contains(value))
-                    SerializedObjects.Add(value);
-                var type = value.GetType();
-                if (HasJsonIgnore(type))
-                    return;
-                if (SerializeHelper.GetTypeCodeOfObject(type) != SerializeObjectType.Object)
+                writer.WriteValue(value);
+                return;
+            }
+            //else
+            //{
+            //    if (SerializedObjects.Contains(value))
+            //        return;
+            //    else
+            //        SerializedObjects.Add(value);
+            //}
+            SerializeHelper.HandleSerializingObjectList.TryGetValue(type, out Delegate serializeHandler);
+            if (serializeHandler != null)
+            {
+                value = serializeHandler.DynamicInvoke(value);
+                type = value.GetType();
+                if (SerializeHelper.GetTypeCodeOfObject(value.GetType()) != SerializeObjectType.Object)
                 {
                     writer.WriteValue(value);
                     return;
                 }
-                //else
-                //{
-                //    if (SerializedObjects.Contains(value))
-                //        return;
-                //    else
-                //        SerializedObjects.Add(value);
-                //}
-                SerializeHelper.HandleSerializingObjectList.TryGetValue(type, out Delegate serializeHandler);
-                if (serializeHandler != null)
-                {
-                    value = serializeHandler.DynamicInvoke(value);
-                    type = value.GetType();
-                    if (SerializeHelper.GetTypeCodeOfObject(value.GetType()) != SerializeObjectType.Object)
-                    {
-                        writer.WriteValue(value);
-                        return;
-                    }
-                }
+            }
 
 
-                //MergeExchangeTypes(type, Mode);
+            //MergeExchangeTypes(type, Mode);
 
 #if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
                 if (type.GetTypeInfo().BaseType != null && type.Namespace == "System.Data.Entity.DynamicProxies")
@@ -880,86 +880,86 @@ namespace SignalGo.Shared.Converters
                     type = type.GetTypeInfo().BaseType;
                 }
 #else
-                if (type.GetBaseType() != null && type.Namespace == "System.Data.Entity.DynamicProxies")
-                {
-                    type = type.GetBaseType();
-                }
+            if (type.GetBaseType() != null && type.Namespace == "System.Data.Entity.DynamicProxies")
+            {
+                type = type.GetBaseType();
+            }
 #endif
 
-                //var implementICollection = type.GetCustomAttributes<CustomDataExchangerAttribute>(true).Where(x => x.LimitationMode == Mode || x.LimitationMode == LimitExchangeType.Both).FirstOrDefault();
-                //bool? canIgnore = implementICollection == null ? (bool?)null : implementICollection.CanIgnore(value, null, null, type, Server, Client);
-                //if (canIgnore.HasValue)
-                //{
-                //    if (canIgnore.Value)
-                //    {
-                //        return;
-                //    }
-                //}
-                //else if (implementICollection != null && implementICollection.Type == type && (implementICollection.LimitationMode == LimitExchangeType.Both || implementICollection.LimitationMode == Mode))
-                //{
-                //    return;
-                //}
-                if ((CanIgnoreCustomDataExchanger(type, value) ?? false))
-                {
-                    if (writer.WriteState == WriteState.Property)
-                        writer.WriteValue((object)null);
-                    //    writer.WriteEnd();
-                    return;
-                }
+            //var implementICollection = type.GetCustomAttributes<CustomDataExchangerAttribute>(true).Where(x => x.LimitationMode == Mode || x.LimitationMode == LimitExchangeType.Both).FirstOrDefault();
+            //bool? canIgnore = implementICollection == null ? (bool?)null : implementICollection.CanIgnore(value, null, null, type, Server, Client);
+            //if (canIgnore.HasValue)
+            //{
+            //    if (canIgnore.Value)
+            //    {
+            //        return;
+            //    }
+            //}
+            //else if (implementICollection != null && implementICollection.Type == type && (implementICollection.LimitationMode == LimitExchangeType.Both || implementICollection.LimitationMode == Mode))
+            //{
+            //    return;
+            //}
+            if ((CanIgnoreCustomDataExchanger(type, value) ?? false))
+            {
+                if (writer.WriteState == WriteState.Property)
+                    writer.WriteValue((object)null);
+                //    writer.WriteEnd();
+                return;
+            }
 
-                bool isArray = typeof(IEnumerable).GetIsAssignableFrom(type) && !(value is string);
-                bool isDictionary = typeof(IDictionary).GetIsAssignableFrom(type);
+            bool isArray = typeof(IEnumerable).GetIsAssignableFrom(type) && !(value is string);
+            bool isDictionary = typeof(IDictionary).GetIsAssignableFrom(type);
 
-                if (isArray && !isDictionary)
-                {
-                    if (IsEnabledReferenceResolverForArray)
-                    {
-                        writer.WriteStartObject();
-                        WriteReferenceProperty(writer, type, value, idProperty);
-                        WriteReferenceJustPropertyName(writer, type, value, valuesProperty);
-                    }
-                    writer.WriteStartArray();
-                }
-                else
+            if (isArray && !isDictionary)
+            {
+                if (IsEnabledReferenceResolverForArray)
                 {
                     writer.WriteStartObject();
-                    if (IsEnabledReferenceResolver)
-                        WriteReferenceProperty(writer, type, value, idProperty);
+                    WriteReferenceProperty(writer, type, value, idProperty);
+                    WriteReferenceJustPropertyName(writer, type, value, valuesProperty);
                 }
+                writer.WriteStartArray();
+            }
+            else
+            {
+                writer.WriteStartObject();
+                if (IsEnabledReferenceResolver)
+                    WriteReferenceProperty(writer, type, value, idProperty);
+            }
 
 
-                if (isDictionary)
-                {
-                    //writer.WriteEndObject();
-                    //if (!SerializedObjects.Contains(value))
-                    GenerateDictionary(value, writer, serializer);
-                }
-                else if (isArray)
-                {
-                    //if (!SerializedObjects.Contains(value))
-                    GenerateArray(value, writer, serializer);
-                    //else
+            if (isDictionary)
+            {
+                //writer.WriteEndObject();
+                //if (!SerializedObjects.Contains(value))
+                GenerateDictionary(value, writer, serializer);
+            }
+            else if (isArray)
+            {
+                //if (!SerializedObjects.Contains(value))
+                GenerateArray(value, writer, serializer);
+                //else
 
-                }
-                else
-                {
-                    WriteData(type, value, writer, serializer);
-                }
+            }
+            else
+            {
+                WriteData(type, value, writer, serializer);
+            }
 
-                //writer.WriteEnd();
-                if (isArray && !isDictionary)
-                {
-                    writer.WriteEndArray();
-                    if (IsEnabledReferenceResolverForArray)
-                        writer.WriteEndObject();
-                }
-                else
+            //writer.WriteEnd();
+            if (isArray && !isDictionary)
+            {
+                writer.WriteEndArray();
+                if (IsEnabledReferenceResolverForArray)
                     writer.WriteEndObject();
             }
-            catch (Exception ex)
-            {
-                AutoLogger.LogError(ex, "WriteJson");
-            }
+            else
+                writer.WriteEndObject();
+            //}
+            //catch (Exception ex)
+            //{
+            //    AutoLogger.LogError(ex, "WriteJson");
+            //}
 
         }
 
