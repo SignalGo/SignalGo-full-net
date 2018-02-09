@@ -248,7 +248,7 @@ namespace SignalGo.Client
             });
         }
 
-        public static string SendRequest(this ConnectorBase connector, string serviceName, ServiceDetailsMethod serviceDetailMethod,ServiceDetailsRequestInfo  requestInfo, out string json)
+        public static string SendRequest(this ConnectorBase connector, string serviceName, ServiceDetailsMethod serviceDetailMethod, ServiceDetailsRequestInfo requestInfo, out string json)
         {
             MethodCallInfo callInfo = new MethodCallInfo()
             {
@@ -342,7 +342,6 @@ namespace SignalGo.Client
             internal set
             {
                 _IsConnected = value;
-                OnConnectionChanged?.Invoke(value);
             }
         }
         /// <summary>
@@ -353,7 +352,7 @@ namespace SignalGo.Client
         /// after client connect or disconnected call this action
         /// bool value is IsConnected property value
         /// </summary>
-        public Action<bool> OnConnectionChanged { get; set; }
+        public Action<ConnectionStatus> OnConnectionChanged { get; set; }
         /// <summary>
         /// when provider is reconnecting
         /// </summary>
@@ -413,8 +412,6 @@ namespace SignalGo.Client
                 _client = new TcpClient(address, port);
                 _client.NoDelay = true;
 #endif
-
-                IsConnected = true;
             }
         }
 
@@ -1057,7 +1054,7 @@ namespace SignalGo.Client
 #else
                 var stream = _client.GetStream();
 #endif
-                GoStreamWriter.WriteToStream(stream,new byte[] { (byte)DataType.PingPong }, IsWebSocket);
+                GoStreamWriter.WriteToStream(stream, new byte[] { (byte)DataType.PingPong }, IsWebSocket);
                 return PingAndWaitForPong.WaitOne(new TimeSpan(0, 0, 3));
             }
             catch (Exception ex)
@@ -1139,7 +1136,7 @@ namespace SignalGo.Client
         /// <summary>
         /// when server called a client methods this action will call
         /// </summary>
-        public Action <MethodCallInfo> OnCalledMethodAction { get; set; }
+        public Action<MethodCallInfo> OnCalledMethodAction { get; set; }
         /// <summary>
         /// call a method of client from server
         /// </summary>
@@ -1335,6 +1332,8 @@ namespace SignalGo.Client
             {
                 IsConnected = false;
             }
+            OnConnectionChanged?.Invoke(ConnectionStatus.Disconnected);
+
             getServiceDetailEvent?.Reset();
             lock (_autoReconnectLock)
             {
@@ -1345,6 +1344,7 @@ namespace SignalGo.Client
                     {
                         try
                         {
+                            OnConnectionChanged?.Invoke(ConnectionStatus.Reconnecting);
                             OnAutoReconnecting?.Invoke();
                             Connect(ServerUrl);
                         }

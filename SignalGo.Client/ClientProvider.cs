@@ -40,38 +40,38 @@ namespace SignalGo.Client
                 throw new Exception("port is not valid");
             }
             ServerUrl = url;
-            string Host = "";
-            if (Uri.CheckHostName(uri.Host) == UriHostNameType.IPv4 || Uri.CheckHostName(uri.Host) == UriHostNameType.IPv6)
-            {
-                Host = uri.Host;
-            }
-            else
-            {
-#if (NETSTANDARD1_6 || NETCOREAPP1_1)
-                var addresses = Dns.GetHostEntryAsync(uri.Host).Result;
-                Host = addresses.AddressList.Length == 0 ? uri.Host : addresses.AddressList.FirstOrDefault().ToString();
-#elif (PORTABLE)
-                // Bind to a Domain Name Server
-                DNS.Client.DnsClient client = new DNS.Client.DnsClient("8.8.8.8");
+            string hostName = uri.Host;
+            //            if (Uri.CheckHostName(uri.Host) == UriHostNameType.IPv4 || Uri.CheckHostName(uri.Host) == UriHostNameType.IPv6)
+            //            {
+            //                Host = uri.Host;
+            //            }
+            //            else
+            //            {
+            //#if (NETSTANDARD1_6 || NETCOREAPP1_1)
+            //                var addresses = Dns.GetHostEntryAsync(uri.Host).Result;
+            //                Host = addresses.AddressList.Length == 0 ? uri.Host : addresses.AddressList.FirstOrDefault().ToString();
+            //#elif (PORTABLE)
+            //                // Bind to a Domain Name Server
+            //                DNS.Client.DnsClient client = new DNS.Client.DnsClient("8.8.8.8");
 
-                // Create request bound to 8.8.8.8
-                DNS.Client.ClientRequest request = client.Create();
+            //                // Create request bound to 8.8.8.8
+            //                DNS.Client.ClientRequest request = client.Create();
 
-                // Returns a list of IPs
-                IList<DNS.Protocol.IPAddress> ips = client.Lookup(uri.Host).Result;
-                Host = ips.FirstOrDefault().ToString();
-#else
-                var addresses = Dns.GetHostEntry(uri.Host);
-                Host = addresses.AddressList.Length == 0 ? uri.Host : addresses.AddressList.FirstOrDefault().ToString();
-#endif
-            }
+            //                // Returns a list of IPs
+            //                IList<DNS.Protocol.IPAddress> ips = client.Lookup(uri.Host).Result;
+            //                Host = ips.FirstOrDefault().ToString();
+            //#else
+            //                var addresses = Dns.GetHostEntry(uri.Host);
+            //                Host = addresses.AddressList.Length == 0 ? uri.Host : addresses.AddressList.FirstOrDefault().ToString();
+            //#endif
+            //            }
 
             //IPHostEntry server = Dns.Resolve(uri.Host);
 #if (PORTABLE)
-            base.Connect(Host, uri.Port);
+            base.Connect(hostName, uri.Port);
 
 #else
-            base.Connect(Host, uri.Port);
+            base.Connect(hostName, uri.Port);
 #endif
             Connect();
             ConnectToUrl(uri.AbsolutePath);
@@ -87,6 +87,10 @@ namespace SignalGo.Client
                 throw new Exception("server is available but connection address is not true");
             }
             RunPriorities();
+            if (IsAutoReconnecting)
+                OnConnectionChanged?.Invoke(ConnectionStatus.Reconnected);
+            else
+                OnConnectionChanged?.Invoke(ConnectionStatus.Connected);
         }
 
         volatile bool _oneTimeConnectedAsyncCalledWithAutoReconnect = false;
