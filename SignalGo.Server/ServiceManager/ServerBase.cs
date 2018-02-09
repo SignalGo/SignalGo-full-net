@@ -2030,7 +2030,7 @@ namespace SignalGo.Server.ServiceManager
                 var service = FindClientServiceByType(client, serviceType, serviceTypeAttribute);
                 if (service != null && serviceTypeAttribute.InstanceType == InstanceType.MultipeInstance)
                 {
-                    throw new Exception($"{client.IPAddress} {client.ClientId} this service for this client exist, type: {serviceType.FullName} : serviceName:{callInfo.ServiceName}");
+                    AutoLogger.LogText($"{client.IPAddress} {client.ClientId} this service for this client exist, type: {serviceType.FullName} : serviceName:{callInfo.ServiceName}");
                 }
                 else if (service == null)
                 {
