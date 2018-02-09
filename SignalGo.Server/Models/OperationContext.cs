@@ -29,6 +29,13 @@ namespace SignalGo.Server.Models
 
         public ServerBase ServerBase { get; set; }
         public ClientInfo Client { get; private set; }
+        public HttpClientInfo HttpClient
+        {
+            get
+            {
+                return (HttpClientInfo)Client;
+            }
+        }
         public IEnumerable<ClientInfo> Clients { get; private set; }
 
         public List<ClientInfo> AllServerClients
@@ -60,14 +67,114 @@ namespace SignalGo.Server.Models
         }
     }
 
+    public class OperationContextBase
+    {
+        internal static ConcurrentDictionary<ClientInfo, HashSet<object>> SavedSettings { get; set; } = new ConcurrentDictionary<ClientInfo, HashSet<object>>();
+        internal static ConcurrentDictionary<string, HashSet<object>> CustomClientSavedSettings { get; set; } = new ConcurrentDictionary<string, HashSet<object>>();
+        internal static object GetCurrentSetting(Type type)
+        {
+            var context = OperationContext.Current;
+            if (context == null)
+                throw new Exception("SynchronizationContext is null or empty! Do not call this property inside of another thread that do not have any synchronizationContext or you can call SynchronizationContext.SetSynchronizationContext(new SynchronizationContext()); and ServerBase.AllDispatchers must contine this");
+
+            if (context.Client is HttpClientInfo)
+            {
+                var property = type.GetListOfProperties().Select(x => new { Info = x, Attribute = x.GetCustomAttributes<HttpKeyAttribute>().FirstOrDefault(y => !y.IsExpireField), ExpiredAttribute = x.GetCustomAttributes<HttpKeyAttribute>().FirstOrDefault(y => y.IsExpireField) }).FirstOrDefault(x => x.Attribute != null);
+
+                if (property == null)
+                    throw new Exception("HttpKeyAttribute on your one properties on class not found please made your string property that have HttpKeyAttribute on the top!");
+                else if (property.Info.PropertyType != typeof(string))
+                    throw new Exception("type of your HttpKeyAttribute must be as string because this will used for headers of http calls and you must made it custom");
+
+                var httpClient = context.Client as HttpClientInfo;
+                if (httpClient.RequestHeaders == null || string.IsNullOrEmpty(httpClient.RequestHeaders[property.Attribute.RequestHeaderName]))
+                    return null;
+                var key = ExtractValue(httpClient.RequestHeaders[property.Attribute.RequestHeaderName], property.Attribute.KeyName, property.Attribute.HeaderValueSeparate, property.Attribute.HeaderKeyValueSeparate);
+                if (CustomClientSavedSettings.TryGetValue(key, out HashSet<object> result))
+                {
+                    var obj = result.FirstOrDefault(x => x.GetType() == type);
+                    if (obj == null)
+                        return null;
+                    if (property.ExpiredAttribute != null && property.ExpiredAttribute.CheckIsExpired(obj))
+                    {
+                        result.Remove(obj);
+                        if (result.Count == 0)
+                            CustomClientSavedSettings.TryRemove(key, out result);
+                        return null;
+                    }
+                    return obj;
+                }
+            }
+            else if (SavedSettings.TryGetValue(context.Client, out HashSet<object> result))
+            {
+                return result.FirstOrDefault(x => x.GetType() == type);
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// set setting for this client
+        /// </summary>
+        /// <param name="setting"></param>
+        public static void SetSetting(object setting, OperationContext context)
+        {
+            if (!SavedSettings.ContainsKey(context.Client))
+                SavedSettings.TryAdd(context.Client, new HashSet<object>() { setting });
+            else if (SavedSettings.TryGetValue(context.Client, out HashSet<object> result) && !result.Contains(setting))
+                result.Add(setting);
+        }
+
+        public static object GetSetting(ClientInfo client, Type type)
+        {
+            if (SavedSettings.TryGetValue(client, out HashSet<object> result))
+            {
+                return result.FirstOrDefault(x => x.GetType() == type);
+            }
+            return null;
+        }
+
+        static string ExtractValue(string data, string keyName, string valueSeparateChar, string keyValueSeparateChar)
+        {
+            if (string.IsNullOrEmpty(data) || string.IsNullOrEmpty(keyName) || (string.IsNullOrEmpty(valueSeparateChar) && string.IsNullOrEmpty(keyValueSeparateChar)))
+                return data;
+            if (string.IsNullOrEmpty(keyValueSeparateChar))
+            {
+                return data.Split(new string[] { valueSeparateChar }, StringSplitOptions.RemoveEmptyEntries).LastOrDefault();
+            }
+            else if (string.IsNullOrEmpty(valueSeparateChar))
+            {
+                return data.Split(new string[] { keyValueSeparateChar }, StringSplitOptions.RemoveEmptyEntries).LastOrDefault();
+            }
+            else
+            {
+                foreach (var keyValue in data.Split(new string[] { valueSeparateChar }, StringSplitOptions.RemoveEmptyEntries))
+                {
+                    var separate = keyValue.Split(new string[] { keyValueSeparateChar }, StringSplitOptions.RemoveEmptyEntries);
+                    if (string.IsNullOrEmpty(separate.FirstOrDefault()))
+                        continue;
+                    if (separate.FirstOrDefault().ToLower() == keyName.ToLower())
+                        return separate.Length > 1 ? separate.LastOrDefault() : "";
+                }
+            }
+            return "";
+        }
+
+        internal static string IncludeValue(string value, string keyName, string valueSeparateChar, string keyValueSeparateChar)
+        {
+            if (string.IsNullOrEmpty(value) || string.IsNullOrEmpty(keyName) || string.IsNullOrEmpty(keyValueSeparateChar))
+                return value;
+            return keyName + keyValueSeparateChar + value;
+
+        }
+    }
+
     /// <summary>
     /// operation contract for client that help you to save a class and get it later inside of your service class
     /// </summary>
     /// <typeparam name="T">type of your setting</typeparam>
-    public class OperationContext<T> where T : class
+    public class OperationContext<T> : OperationContextBase where T : class
     {
-        internal static ConcurrentDictionary<ClientInfo, HashSet<object>> SavedSettings { get; set; } = new ConcurrentDictionary<ClientInfo, HashSet<object>>();
-        internal static ConcurrentDictionary<string, HashSet<object>> CustomClientSavedSettings { get; set; } = new ConcurrentDictionary<string, HashSet<object>>();
+
         static T _Current = null;
         /// <summary>
         /// get seeting of one type that you set it
@@ -76,36 +183,29 @@ namespace SignalGo.Server.Models
         {
             get
             {
-                var context = OperationContext.Current;
-                if (context == null)
-                    throw new Exception("SynchronizationContext is null or empty! Do not call this property inside of another thread that do not have any synchronizationContext or you can call SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());");
-
-                if (SavedSettings.TryGetValue(context.Client, out HashSet<object> result))
-                {
-                    return (T)result.FirstOrDefault(x => x.GetType() == typeof(T));
-                }
-                return null;
+                return (T)GetCurrentSetting(typeof(T));
             }
             set
             {
-                SetSetting(value);
+                var context = OperationContext.Current;
+                if (context == null)
+                    throw new Exception("SynchronizationContext is null or empty! Do not call this property inside of another thread that do not have any synchronizationContext or you can call SynchronizationContext.SetSynchronizationContext(new SynchronizationContext()); and ServerBase.AllDispatchers must contine this");
+
+                if (context.Client is HttpClientInfo)
+                {
+                    var property = typeof(T).GetListOfProperties().Select(x => new { Info = x, Attribute = x.GetCustomAttributes<HttpKeyAttribute>().FirstOrDefault() }).FirstOrDefault(x => x.Attribute != null);
+                    if (property == null)
+                        throw new Exception("HttpKeyAttribute on your one properties on class not found please made your string property that have HttpKeyAttribute on the top!");
+                    else if (property.Info.PropertyType != typeof(string))
+                        throw new Exception("type of your HttpKeyAttribute must be as string because this will used for headers of http calls and you must made it custom");
+                    var key = (string)property.Info.GetValue(value, null);
+                    SetCustomClientSetting(key, value);
+                    //SetSetting(value, context);
+                }
+                SetSetting(value, context);
             }
         }
 
-        /// <summary>
-        /// set setting for this client
-        /// </summary>
-        /// <param name="setting"></param>
-        public static void SetSetting(object setting)
-        {
-            var context = OperationContext.Current;
-            if (SynchronizationContext.Current == null)
-                throw new Exception("SynchronizationContext is null or empty! Do not call this property inside of another thread that do not have any synchronizationContext or you can call SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());");
-            if (!SavedSettings.ContainsKey(context.Client))
-                SavedSettings.TryAdd(context.Client, new HashSet<object>() { setting });
-            else if (SavedSettings.TryGetValue(context.Client, out HashSet<object> result) && !result.Contains(setting))
-                result.Add(setting);
-        }
 
         /// <summary>
         /// get first setting of type that setted
@@ -158,11 +258,13 @@ namespace SignalGo.Server.Models
 
         public static void SetCustomClientSetting(string customClientId, object setting)
         {
-            if (setting == null || string.IsNullOrEmpty(customClientId))
+            if (setting == null)
                 throw new Exception("setting is null or empty! please fill all parameters");
-            if (!CustomClientSavedSettings.ContainsKey(customClientId))
-                CustomClientSavedSettings.TryAdd(customClientId, new HashSet<object>() { setting });
-            else if (CustomClientSavedSettings.TryGetValue(customClientId, out HashSet<object> result) && !result.Contains(setting))
+            if (string.IsNullOrEmpty(customClientId))
+                throw new Exception("customClientId is null or empty! please fill all parameters");
+            //if (!CustomClientSavedSettings.ContainsKey(customClientId))
+            //    ;
+            else if (!CustomClientSavedSettings.TryAdd(customClientId, new HashSet<object>() { setting }) && CustomClientSavedSettings.TryGetValue(customClientId, out HashSet<object> result) && !result.Contains(setting))
                 result.Add(setting);
         }
 

@@ -1,11 +1,12 @@
-﻿using System;
+﻿using SignalGo.Shared.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
 namespace SignalGo.Shared.Http
 {
-    public abstract class HttpRequestController
+    public abstract class HttpRequestController : IHttpClientInfo
     {
         private static readonly string[][] s_HTTPStatusDescriptions;
 
@@ -36,13 +37,12 @@ namespace SignalGo.Shared.Http
             }
             return string.Empty;
         }
-        /// <summary>
-        /// ip address of client
-        /// </summary>
-        public string ClientIpAddress { get; set; }
+
         public System.Net.HttpStatusCode Status { get; set; } = System.Net.HttpStatusCode.OK;
         public WebHeaderCollection RequestHeaders { get; set; }
         public WebHeaderCollection ResponseHeaders { get; set; } = new WebHeaderCollection();
+
+        public string IPAddress { get; set; }
 
         public ActionResult Content(string text)
         {

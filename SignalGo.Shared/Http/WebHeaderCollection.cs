@@ -64,6 +64,11 @@ namespace SignalGo.Shared.Http
             Items.Remove(name.ToLower());
         }
 
+        public bool ExistHeader(string header)
+        {
+            return Items.ContainsKey(header.ToLower());
+        }
+
         public void Add(string header, string value)
         {
             Items.AddOrUpdate(header.ToLower(), new KeyValuePair<string, string>(header, value), (x, old) => new KeyValuePair<string, string>(header, value));

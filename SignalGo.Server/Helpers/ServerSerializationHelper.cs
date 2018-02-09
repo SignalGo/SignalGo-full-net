@@ -27,10 +27,10 @@ namespace SignalGo.Server.Helpers
             return (T)Deserialize(json, typeof(T), serverBase, customDataExchanger: customDataExchanger, client: client);
         }
 
-        public static object Deserialize(this string json, ServerBase serverBase = null, CustomDataExchangerAttribute[] customDataExchanger = null, ClientInfo client = null)
-        {
-            return Deserialize<object>(json, serverBase, customDataExchanger: customDataExchanger, client: client);
-        }
+        //public static object Deserialize(this string json, ServerBase serverBase = null, CustomDataExchangerAttribute[] customDataExchanger = null, ClientInfo client = null)
+        //{
+        //    return Deserialize<object>(json, serverBase, customDataExchanger: customDataExchanger, client: client);
+        //}
 
         public static object Deserialize(this string json, Type type, ServerBase serverBase = null, NullValueHandling nullValueHandling = NullValueHandling.Ignore, CustomDataExchangerAttribute[] customDataExchanger = null, ClientInfo client = null)
         {

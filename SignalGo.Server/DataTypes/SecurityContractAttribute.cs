@@ -1,5 +1,6 @@
 ﻿using SignalGo.Server.Models;
 using SignalGo.Shared.Http;
+using SignalGo.Shared.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,8 +14,8 @@ namespace SignalGo.Server.DataTypes
     /// </summary>
     public abstract class SecurityContractAttribute : Attribute
     {
-        public abstract bool CheckHttpPermission(ClientInfo client, HttpRequestController controller, string serviceName, string methodName, string address, List<object> parameters);
-        public abstract ActionResult GetHttpValueWhenDenyPermission(ClientInfo client, HttpRequestController controller, string serviceName, string methodName, string address, List<object> parameters);
+        public abstract bool CheckHttpPermission(ClientInfo client, IHttpClientInfo controller, string serviceName, string methodName, string address, List<object> parameters);
+        public abstract object GetHttpValueWhenDenyPermission(ClientInfo client, IHttpClientInfo controller, string serviceName, string methodName, string address, List<object> parameters);
 
         /// <summary>
         /// call your check security method

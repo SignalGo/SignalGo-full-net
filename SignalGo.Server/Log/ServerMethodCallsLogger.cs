@@ -216,7 +216,7 @@ namespace SignalGo.Server.Log
             }
         }
 
-        void EndHttpMethodCallAction(object clientInfo, string callGuid, string address, System.Reflection.MethodInfo method, List<string> values, ActionResult result, Exception exception)
+        void EndHttpMethodCallAction(object clientInfo, string callGuid, string address, System.Reflection.MethodInfo method, List<string> values, object result, Exception exception)
         {
             var find = Logs.FirstOrDefault(x => x.CallerGuid == callGuid);
             if (find != null)

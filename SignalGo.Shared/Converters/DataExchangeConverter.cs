@@ -287,9 +287,9 @@ namespace SignalGo.Shared.Converters
             return false;
         }
 
-        const string refProperty = "@ref";
-        const string idProperty = "@id";
-        const string valuesProperty = "@values";
+        public static string refProperty = "$ref";
+        public static string idProperty = "$id";
+        public static string valuesProperty = "$values";
 
         /// <summary>
         /// read json for deseralize object
@@ -460,7 +460,14 @@ namespace SignalGo.Shared.Converters
                     var generic = type.GetListOfGenericArguments().FirstOrDefault();
                     return Activator.CreateInstance(typeof(List<>).MakeGenericType(generic));
                 }
-                return Activator.CreateInstance(type);
+                try
+                {
+                    return Activator.CreateInstance(type);
+                }
+                catch (Exception ex)
+                {
+                    return null;
+                }
             }
         }
 
@@ -639,13 +646,24 @@ namespace SignalGo.Shared.Converters
                 else if (reader.TokenType == JsonToken.StartArray)
                 {
                     var property = objectType.GetPropertyInfo(propertyName);
-                    if (property == null)
+                    if (property != null)
                     {
-                        AutoLogger.LogText($"property {propertyName} not found in {objectType.FullName}");
-                        return;
+                        var array = ReadNewArray(null, reader, property.PropertyType, existingValue, serializer);
+                        property.SetValue(instance, array, null);
+
                     }
-                    var array = ReadNewArray(null, reader, property.PropertyType, existingValue, serializer);
-                    property.SetValue(instance, array, null);
+                    else
+                    {
+                        var field = objectType.GetFieldInfo(propertyName);
+                        if (field != null)
+                        {
+                            var array = ReadNewArray(null, reader, field.FieldType, existingValue, serializer);
+                            field.SetValue(instance, array);
+                        }
+                        else
+                            AutoLogger.LogText($"property {propertyName} not found in {objectType.FullName}");
+                    }
+                   
                 }
                 else
                 {
