@@ -633,6 +633,8 @@ namespace SignalGo.Shared.Converters
             {
                 if (propertyName == idProperty)
                 {
+                    if (reader.Value == null)
+                        return;
                     SerializedReferencedObjects.Add(int.Parse(reader.Value.ToString()), instance);
                 }
                 else if (propertyName == valuesProperty)
@@ -682,12 +684,19 @@ namespace SignalGo.Shared.Converters
                         }
                         else
                         {
-                            var value = SerializeHelper.ConvertType(property.PropertyType, reader.Value);
-                            if (property.CanWrite)
-                                property.SetValue(instance, value, null);
-                            else
+                            try
                             {
-                                AutoLogger.LogText($"property {property.Name} cannot write");
+                                var value = SerializeHelper.ConvertType(property.PropertyType, reader.Value);
+                                if (property.CanWrite)
+                                    property.SetValue(instance, value, null);
+                                else
+                                {
+                                    AutoLogger.LogText($"property {property.Name} cannot write");
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                AutoLogger.LogError(ex, $"Deserialize Error {property.Name} :");
                             }
                         }
                     }
