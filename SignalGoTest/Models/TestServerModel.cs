@@ -1,4 +1,5 @@
 ﻿using SignalGo.Server.Models;
+using SignalGo.Shared.DataTypes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -53,6 +54,56 @@ namespace SignalGoTest.Models
         Tuple<bool> ITestServerModelBase.Logout(string yourName)
         {
             throw new NotImplementedException();
+        }
+
+        public List<UserInfoTest> GetListOfUsers()
+        {
+            List<UserInfoTest> results = new List<UserInfoTest>();
+            UserInfoTest userInfoTest1 = new UserInfoTest() { Id = 1, Age = 25, Password = "123", Username = "aliUser" };
+            userInfoTest1.PostInfoes = new List<PostInfoTest>() { new PostInfoTest() { Id = 1, PostSecurityLink = "securityLink", Text = "hello guys...", Title = "work finished", User = userInfoTest1 } };
+            userInfoTest1.LastPostInfo = userInfoTest1.PostInfoes.FirstOrDefault();
+            userInfoTest1.RoleInfoes = new List<RoleInfoTest>() { new RoleInfoTest() { Id = 1, Type = RoleTypeTest.Normal, User = userInfoTest1 } };
+            results.Add(userInfoTest1);
+
+            UserInfoTest userInfoTest2 = new UserInfoTest() { Id = 2, Age = 32, Password = "hello?123", Username = "rezaUser" };
+
+            userInfoTest2.PostInfoes = new List<PostInfoTest>() { new PostInfoTest() { Id = 2, PostSecurityLink = "securityLink2", Text = "today were good but...", Title = "good day", User = userInfoTest2 } };
+            userInfoTest2.LastPostInfo = userInfoTest2.PostInfoes.FirstOrDefault();
+            userInfoTest2.RoleInfoes = new List<RoleInfoTest>() { new RoleInfoTest() { Id = 2, Type = RoleTypeTest.Admin, User = userInfoTest2 } };
+            results.Add(userInfoTest2);
+
+            return results;
+        }
+
+        public List<PostInfoTest> GetPostsOfUser(int userId)
+        {
+            List<PostInfoTest> results = new List<PostInfoTest>();
+            results.Add(new PostInfoTest() { Id = 1, PostSecurityLink = "securityLink", Text = "hello guys...", Title = "work finished" });
+            results.Add(new PostInfoTest() { Id = 2, PostSecurityLink = "securityLink2", Text = "today were good but...", Title = "good day" });
+            return results;
+        }
+
+        public List<UserInfoTest> GetListOfUsersCustom()
+        {
+            return GetListOfUsers();
+        }
+
+        [CustomDataExchanger(typeof(PostInfoTest), "PostSecurityLink", "PostRoleToSee", ExchangeType = CustomDataExchangerType.Take, LimitationMode = LimitExchangeType.Both)]
+        public List<PostInfoTest> GetCustomPostsOfUser(int userId)
+        {
+            List<PostInfoTest> results = new List<PostInfoTest>();
+            results.Add(new PostInfoTest() { Id = 1, PostSecurityLink = "securityLink", Text = "hello guys...", Title = "work finished" });
+            results.Add(new PostInfoTest() { Id = 2, PostSecurityLink = "securityLink2", Text = "today were good but...", Title = "good day" });
+            return results;
+        }
+
+        [CustomDataExchanger(typeof(RoleInfoTest), "Id", ExchangeType = CustomDataExchangerType.Take, LimitationMode = LimitExchangeType.IncomingCall)]
+        public bool Login(UserInfoTest userInfoTest)
+        {
+            if (userInfoTest.RoleInfoes == null || userInfoTest.PostInfoes != null || userInfoTest.LastPostInfo != null)
+                return false;
+
+            return userInfoTest.Username == "ali" && userInfoTest.Password == "123";
         }
     }
 }

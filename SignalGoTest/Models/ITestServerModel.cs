@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SignalGo.Shared.DataTypes;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -15,6 +16,12 @@ namespace SignalGoTest.Models
     public interface ITestServerModel : ITestServerModelBase
     {
         string HelloWorld(string yourName);
+        List<UserInfoTest> GetListOfUsers();
+        List<PostInfoTest> GetPostsOfUser(int userId);
+        [CustomDataExchanger(typeof(UserInfoTest), "Id", "Password", "PostInfoes", ExchangeType = CustomDataExchangerType.Take, LimitationMode = LimitExchangeType.Both)]
+        List<UserInfoTest> GetListOfUsersCustom();
+        List<PostInfoTest> GetCustomPostsOfUser(int userId);
+        bool Login(UserInfoTest userInfoTest);
     }
 
     [SignalGo.Shared.DataTypes.ServiceContract("TestServerModel", SignalGo.Shared.DataTypes.InstanceType.SingleInstance)]

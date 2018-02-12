@@ -630,16 +630,13 @@ namespace SignalGo.Client
                     }
                     else
                     {
+                        var getServiceMethod = type.FindMethod(method.Name);
+                        var customDataExchanger = getServiceMethod.GetCustomAttributes(typeof(CustomDataExchangerAttribute), true).Cast<CustomDataExchangerAttribute>().Where(x => x.GetExchangerByUserCustomization(this)).ToList();
                         var data = ConnectorExtension.SendData(this, serviceName, method.Name, args);
                         if (data == null)
                             return null;
-                        if (data is StreamInfo)
-                            return data;
-                        else
-                        {
-                            var result = ClientSerializationHelper.DeserializeObject(data.ToString(), method.ReturnType);
-                            return result;
-                        }
+                        var result = ClientSerializationHelper.DeserializeObject(data.ToString(), method.ReturnType,customDataExchanger: customDataExchanger.ToArray());
+                        return result;
                     };
                 }
             });

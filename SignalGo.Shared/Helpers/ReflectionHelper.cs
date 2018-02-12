@@ -105,7 +105,7 @@ namespace SignalGo.Shared.Helpers
         /// <returns></returns>
         public static PropertyInfo GetPropertyInfo(this Type type, string name)
         {
-            return type
+                return type
 #if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
                 .GetTypeInfo()
 #endif

@@ -102,7 +102,24 @@ namespace SignalGo.Shared.DataTypes
             return Properties.Contains(name);
         }
 
-       
+        public LimitExchangeType GetLimitationMode(bool isClient)
+        {
+            if (!isClient)
+                return LimitationMode;
+            if (LimitationMode == LimitExchangeType.Both)
+                return LimitationMode;
+            if (InverseLimitationForClientSide)
+            {
+                if (LimitationMode == LimitExchangeType.IncomingCall)
+                    return LimitExchangeType.OutgoingCall;
+                else if (LimitationMode == LimitExchangeType.OutgoingCall)
+                    return LimitExchangeType.IncomingCall;
+            }
+
+            return LimitationMode;
+        }
+
+
         /// <summary>
         /// get list of methods of type
         /// </summary>

@@ -13,9 +13,9 @@ namespace SignalGoTest
     public static class GlobalInitalization
     {
         static SignalGo.Server.ServiceManager.ServerProvider server;
-        static ClientProvider client;
+        //static ClientProvider client;
 
-        public async static void Initialize()
+        public static void Initialize()
         {
             if (server == null)
             {
@@ -31,43 +31,52 @@ namespace SignalGoTest
                 {
 
                 };
-                //your client connector that will be connect to your server
-                ClientProvider provider = new ClientProvider();
-                //connect to your server must have full address that your server is listen
-                provider.Connect("http://localhost:1132/SignalGoTestService");
-                var service = provider.RegisterClientServiceInterfaceWrapper<ITestClientServerModel>();
+                server.InternalSetting = new SignalGo.Server.Settings.InternalSetting() { IsEnabledDataExchanger = true };
+                ////your client connector that will be connect to your server
+                //ClientProvider provider = new ClientProvider();
+                ////connect to your server must have full address that your server is listen
+                //provider.Connect("http://localhost:1132/SignalGoTestService");
+                //var service = provider.RegisterClientServiceInterfaceWrapper<ITestClientServerModel>();
 
-                try
-                {
-                    var result = service.HelloWorld("ali");
-                    //var result1 = await service.MUL(10, 20);
-                    //var result3 = await service.WhoAmI();
-                    //var result40 = service.Tagh(10, 3);
-                    ////var result41 = service.Tagha(10, 3);
-                    //var result4 = await service.TaghAsync(10, 3);
-                    //var result5 = await service.LongValue();
-                    //var result6 = await service.TimeS(100000000);
-                }
-                catch (Exception ex)
-                {
+                //try
+                //{
+                //    var result = service.HelloWorld("ali");
+                //    //var result1 = await service.MUL(10, 20);
+                //    //var result3 = await service.WhoAmI();
+                //    //var result40 = service.Tagh(10, 3);
+                //    ////var result41 = service.Tagha(10, 3);
+                //    //var result4 = await service.TaghAsync(10, 3);
+                //    //var result5 = await service.LongValue();
+                //    //var result6 = await service.TimeS(100000000);
+                //}
+                //catch (Exception ex)
+                //{
 
-                }
-                //register your service interfacce for client
-                //var testServerModel = provider.RegisterClientServiceDynamic<ITestServerModel>();
-                //call server method and return value from your server to client
-                //var result = testServerModel.HelloWorld("ali");
-                provider.Dispose();
-                Thread.Sleep(10000);
+                //}
+                ////register your service interfacce for client
+                ////var testServerModel = provider.RegisterClientServiceDynamic<ITestServerModel>();
+                ////call server method and return value from your server to client
+                ////var result = testServerModel.HelloWorld("ali");
+                //provider.Dispose();
+                //Thread.Sleep(10000);
                 //print your result to console
                 //Console.WriteLine(result.Item1);
             }
-            client = new ClientProvider();
-            client.Connect("http://localhost:1132/SignalGoTestService");
+            //client = new ClientProvider();
+            //client.Connect("http://localhost:1132/SignalGoTestService");
         }
 
-        public static ITestServerStreamModel GetStreamService()
+        public static ClientProvider InitializeAndConnecteClient()
         {
-            return client.RegisterStreamServiceInterfaceWrapper<ITestServerStreamModel>();
+            ClientProvider provider = new ClientProvider();
+            //connect to your server must have full address that your server is listen
+            provider.Connect("http://localhost:1132/SignalGoTestService");
+            return provider;
         }
+
+        //public static ITestServerStreamModel GetStreamService()
+        //{
+        //    return client.RegisterStreamServiceInterfaceWrapper<ITestServerStreamModel>();
+        //}
     }
 }
