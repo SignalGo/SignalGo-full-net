@@ -946,9 +946,9 @@ namespace SignalGo.Server.ServiceManager
                         var securityAttributes = method.GetCustomAttributes(typeof(SecurityContractAttribute), true).ToList();
                         foreach (SecurityContractAttribute attrib in securityAttributes)
                         {
-                            if (!attrib.CheckHttpPermission(client, (IHttpClientInfo)service, address, methodName, fullAddress, resultParameters))
+                            if (!attrib.CheckHttpPermission(client, (service is IHttpClientInfo) ? (IHttpClientInfo)service : null, address, methodName, fullAddress, resultParameters))
                             {
-                                result = attrib.GetHttpValueWhenDenyPermission(client, (IHttpClientInfo)service, address, methodName, fullAddress, resultParameters);
+                                result = attrib.GetHttpValueWhenDenyPermission(client, (service is IHttpClientInfo) ? (IHttpClientInfo)service : null, address, methodName, fullAddress, resultParameters);
                                 if (result == null)
                                 {
                                     string data = newLine + $"result from method invoke {methodName}, is null or is not ActionResult type" + address + newLine;
@@ -989,7 +989,7 @@ namespace SignalGo.Server.ServiceManager
                                     if (!client.ResponseHeaders.ExistHeader(property.Attribute.ResponseHeaderName))
                                     {
                                         //"_session=651654564456; expires=Sat, 10-Mar-2018 13:18:22 GMT; Max-Age=2592000; path=/";
-                                        client.ResponseHeaders[property.Attribute.ResponseHeaderName] =  OperationContextBase.IncludeValue((string)property.Info.GetValue(contextResult, null), property.Attribute.KeyName, property.Attribute.HeaderValueSeparate, property.Attribute.HeaderKeyValueSeparate) + property.Attribute.Perfix;
+                                        client.ResponseHeaders[property.Attribute.ResponseHeaderName] = OperationContextBase.IncludeValue((string)property.Info.GetValue(contextResult, null), property.Attribute.KeyName, property.Attribute.HeaderValueSeparate, property.Attribute.HeaderKeyValueSeparate) + property.Attribute.Perfix;
                                     }
                                 }
                             }
@@ -1326,6 +1326,7 @@ namespace SignalGo.Server.ServiceManager
                         {
                             ((IHttpClientInfo)service).SetFirstFile(fileInfo);
                         }
+                        client.RequestHeaders = headers;
                         client.SetFirstFile(fileInfo);
 
 
@@ -1366,9 +1367,9 @@ namespace SignalGo.Server.ServiceManager
                         var securityAttributes = method.GetCustomAttributes(typeof(SecurityContractAttribute), true).ToList();
                         foreach (SecurityContractAttribute attrib in securityAttributes)
                         {
-                            if (!attrib.CheckHttpPermission(client, (IHttpClientInfo)service, address, methodName, fullAddress, resultParameters))
+                            if (!attrib.CheckHttpPermission(client, (service is IHttpClientInfo) ? (IHttpClientInfo)service : null, address, methodName, fullAddress, resultParameters))
                             {
-                                result = attrib.GetHttpValueWhenDenyPermission(client, (IHttpClientInfo)service, address, methodName, fullAddress, resultParameters);
+                                result = attrib.GetHttpValueWhenDenyPermission(client, (service is IHttpClientInfo) ? (IHttpClientInfo)service : null, address, methodName, fullAddress, resultParameters);
                                 if (result == null)
                                 {
                                     string data = newLine + $"result from method invoke {methodName}, is null or is not ActionResult type" + address + newLine;
@@ -1597,18 +1598,18 @@ namespace SignalGo.Server.ServiceManager
             var attributes = httpService.GetCustomAttributes<HttpSupportAttribute>();
             if (attributes == null || attributes.Length == 0)
                 throw new Exception("HttpSupport attribute not found from: " + httpService.FullName);
-            bool exist = false;
-            foreach (var item in CSCodeInjection.GetListOfTypes(httpService))
-            {
-                if (item == typeof(HttpRequestController))
-                {
-                    exist = true;
-                    break;
-                }
-            }
+            //bool exist = false;
+            //foreach (var item in CSCodeInjection.GetListOfTypes(httpService))
+            //{
+            //    if (item == typeof(HttpRequestController))
+            //    {
+            //        exist = true;
+            //        break;
+            //    }
+            //}
 
-            if (!exist)
-                throw new Exception("your type is not nested HttpRequestController: " + httpService.FullName);
+            //if (!exist)
+            //    throw new Exception("your type is not nested HttpRequestController: " + httpService.FullName);
 
             foreach (var attrib in attributes)
             {
