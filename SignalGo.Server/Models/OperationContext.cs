@@ -87,9 +87,15 @@ namespace SignalGo.Server.Models
                     throw new Exception("type of your HttpKeyAttribute must be as string because this will used for headers of http calls and you must made it custom");
 
                 var httpClient = context.Client as HttpClientInfo;
-                if (httpClient.RequestHeaders == null || string.IsNullOrEmpty(httpClient.RequestHeaders[property.Attribute.RequestHeaderName]))
+                var setting = GetSetting(context.Client, type);
+                if (setting == null && (httpClient.RequestHeaders == null || string.IsNullOrEmpty(httpClient.RequestHeaders[property.Attribute.RequestHeaderName])))
                     return null;
-                var key = ExtractValue(httpClient.RequestHeaders[property.Attribute.RequestHeaderName], property.Attribute.KeyName, property.Attribute.HeaderValueSeparate, property.Attribute.HeaderKeyValueSeparate);
+
+                string key = "";
+                if (setting == null)
+                    key = ExtractValue(httpClient.RequestHeaders[property.Attribute.RequestHeaderName], property.Attribute.KeyName, property.Attribute.HeaderValueSeparate, property.Attribute.HeaderKeyValueSeparate);
+                else
+                    key = GetKeyFromSetting(type, setting);
                 if (CustomClientSavedSettings.TryGetValue(key, out HashSet<object> result))
                 {
                     var obj = result.FirstOrDefault(x => x.GetType() == type);
@@ -139,11 +145,11 @@ namespace SignalGo.Server.Models
                 return data;
             if (string.IsNullOrEmpty(keyValueSeparateChar))
             {
-                return data.Split(new string[] { valueSeparateChar }, StringSplitOptions.RemoveEmptyEntries).LastOrDefault();
+                return data.Split(new string[] { valueSeparateChar }, StringSplitOptions.RemoveEmptyEntries).LastOrDefault().Trim();
             }
             else if (string.IsNullOrEmpty(valueSeparateChar))
             {
-                return data.Split(new string[] { keyValueSeparateChar }, StringSplitOptions.RemoveEmptyEntries).LastOrDefault();
+                return data.Split(new string[] { keyValueSeparateChar }, StringSplitOptions.RemoveEmptyEntries).LastOrDefault().Trim();
             }
             else
             {
@@ -152,8 +158,8 @@ namespace SignalGo.Server.Models
                     var separate = keyValue.Split(new string[] { keyValueSeparateChar }, StringSplitOptions.RemoveEmptyEntries);
                     if (string.IsNullOrEmpty(separate.FirstOrDefault()))
                         continue;
-                    if (separate.FirstOrDefault().ToLower() == keyName.ToLower())
-                        return separate.Length > 1 ? separate.LastOrDefault() : "";
+                    if (separate.FirstOrDefault().ToLower().Trim() == keyName.ToLower())
+                        return separate.Length > 1 ? separate.LastOrDefault().Trim() : "";
                 }
             }
             return "";
@@ -165,6 +171,16 @@ namespace SignalGo.Server.Models
                 return value;
             return keyName + keyValueSeparateChar + value;
 
+        }
+
+        internal static string GetKeyFromSetting(Type type, object setting)
+        {
+            var property = type.GetListOfProperties().Select(x => new { Info = x, Attribute = x.GetCustomAttributes<HttpKeyAttribute>().FirstOrDefault() }).FirstOrDefault(x => x.Attribute != null);
+            if (property == null)
+                throw new Exception("HttpKeyAttribute on your one properties on class not found please made your string property that have HttpKeyAttribute on the top!");
+            else if (property.Info.PropertyType != typeof(string))
+                throw new Exception("type of your HttpKeyAttribute must be as string because this will used for headers of http calls and you must made it custom");
+            return (string)property.Info.GetValue(setting, null);
         }
     }
 
@@ -193,12 +209,7 @@ namespace SignalGo.Server.Models
 
                 if (context.Client is HttpClientInfo)
                 {
-                    var property = typeof(T).GetListOfProperties().Select(x => new { Info = x, Attribute = x.GetCustomAttributes<HttpKeyAttribute>().FirstOrDefault() }).FirstOrDefault(x => x.Attribute != null);
-                    if (property == null)
-                        throw new Exception("HttpKeyAttribute on your one properties on class not found please made your string property that have HttpKeyAttribute on the top!");
-                    else if (property.Info.PropertyType != typeof(string))
-                        throw new Exception("type of your HttpKeyAttribute must be as string because this will used for headers of http calls and you must made it custom");
-                    var key = (string)property.Info.GetValue(value, null);
+                    var key = GetKeyFromSetting(typeof(T), value);
                     SetCustomClientSetting(key, value);
                     //SetSetting(value, context);
                 }

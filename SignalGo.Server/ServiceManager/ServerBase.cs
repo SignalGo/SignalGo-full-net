@@ -814,13 +814,15 @@ namespace SignalGo.Server.ServiceManager
                         }
                         else if (headers["content-type"] == "application/json")
                         {
-                            JObject des = JObject.Parse(parameters);
-                            foreach (var item in des.Properties())
-                            {
-                                var value = des.GetValue(item.Name);
-                                //values.Add(new Tuple<string, string>(item.Name, Uri.UnescapeDataString(value.Value<string>())));
-                                values.Add(new Tuple<string, string>(item.Name, value.ToString()));
-                            }
+                            //JObject des = JObject.Parse(parameters);
+                            //foreach (var item in des.Properties())
+                            //{
+                            //    var value = des.GetValue(item.Name);
+                            //    values.Add(new Tuple<string, string>(item.Name, value.ToString()));
+                            //}
+
+                            //works on raw json data in post
+                            values.Add(new Tuple<string, string>("", parameters));
                         }
                         else
                         {
@@ -974,26 +976,17 @@ namespace SignalGo.Server.ServiceManager
                         else
                             result = method.Invoke(service, resultParameters.ToArray()).ToActionResult();
 
+                        List<HttpKeyAttribute> httpKeyAttributes = new List<HttpKeyAttribute>();
                         var httpKeyOnMethod = (HttpKeyAttribute)method.GetCustomAttributes(typeof(HttpKeyAttribute), true).FirstOrDefault();
                         if (httpKeyOnMethod != null)
+                            httpKeyAttributes.Add(httpKeyOnMethod);
+                        if (InternalSetting.HttpKeyResponses != null)
                         {
-                            if (httpKeyOnMethod.SettingType == null)
-                                throw new Exception("you made HttpKeyAttribute top of your method but this have not fill SettingType property");
-                            var contextResult = OperationContextBase.GetSetting(client, httpKeyOnMethod.SettingType);
-
-                            if (contextResult != null)
-                            {
-                                var property = contextResult.GetType().GetListOfProperties().Select(x => new { Info = x, Attribute = x.GetCustomAttributes<HttpKeyAttribute>().FirstOrDefault(y => !y.IsExpireField), ExpiredAttribute = x.GetCustomAttributes<HttpKeyAttribute>().FirstOrDefault(y => y.IsExpireField) }).FirstOrDefault(x => x.Attribute != null);
-                                if (property != null)
-                                {
-                                    if (!client.ResponseHeaders.ExistHeader(property.Attribute.ResponseHeaderName))
-                                    {
-                                        //"_session=651654564456; expires=Sat, 10-Mar-2018 13:18:22 GMT; Max-Age=2592000; path=/";
-                                        client.ResponseHeaders[property.Attribute.ResponseHeaderName] = OperationContextBase.IncludeValue((string)property.Info.GetValue(contextResult, null), property.Attribute.KeyName, property.Attribute.HeaderValueSeparate, property.Attribute.HeaderKeyValueSeparate) + property.Attribute.Perfix;
-                                    }
-                                }
-                            }
+                            httpKeyAttributes.AddRange(InternalSetting.HttpKeyResponses);
                         }
+
+                        FillReponseHeaders(client, httpKeyAttributes);
+
                         if (result == null)
                         {
                             string data = newLine + $"result from method invoke {methodName}, is null " + address + newLine;
@@ -1033,6 +1026,29 @@ namespace SignalGo.Server.ServiceManager
                     AutoLogger.LogText(data);
                 }
             }
+        }
+
+        void FillReponseHeaders(HttpClientInfo client, List<HttpKeyAttribute> httpKeyAttributes)
+        {
+            foreach (var item in httpKeyAttributes)
+            {
+                if (item.SettingType == null)
+                    throw new Exception("you made HttpKeyAttribute top of your method but this have not fill SettingType property");
+                var contextResult = OperationContextBase.GetCurrentSetting(item.SettingType);
+
+                if (contextResult != null)
+                {
+                    var property = contextResult.GetType().GetListOfProperties().Select(x => new { Info = x, Attribute = x.GetCustomAttributes<HttpKeyAttribute>().FirstOrDefault(y => !y.IsExpireField), ExpiredAttribute = x.GetCustomAttributes<HttpKeyAttribute>().FirstOrDefault(y => y.IsExpireField) }).FirstOrDefault(x => x.Attribute != null);
+                    if (property != null)
+                    {
+                        if (!client.ResponseHeaders.ExistHeader(property.Attribute.ResponseHeaderName))
+                        {
+                            client.ResponseHeaders[property.Attribute.ResponseHeaderName] = OperationContextBase.IncludeValue((string)property.Info.GetValue(contextResult, null), property.Attribute.KeyName, property.Attribute.HeaderValueSeparate, property.Attribute.HeaderKeyValueSeparate) + property.Attribute.Perfix;
+                        }
+                    }
+                }
+            }
+
         }
 
         /// <summary>
@@ -1112,7 +1128,8 @@ namespace SignalGo.Server.ServiceManager
                     string fileName = "";
                     string name = "";
                     bool findFile = false;
-                    foreach (var data in response.Split(new string[] { "--" + boundary }, StringSplitOptions.RemoveEmptyEntries))
+                    var lineBreaks = new string[] { "--" + boundary.Replace("\"", ""), "--" + boundary.Replace("\"", "") + "--" };
+                    foreach (var data in response.Split(lineBreaks, StringSplitOptions.RemoveEmptyEntries))
                     {
                         if (data.ToLower().Contains("content-disposition"))
                         {
@@ -1142,12 +1159,16 @@ namespace SignalGo.Server.ServiceManager
                             {
                                 if (data.Replace(" ", "").Contains(";name="))
                                 {
-                                    int index = data.ToLower().IndexOf("content-disposition");
-                                    var header = data.Substring(index);
-                                    var headLen = header.IndexOf("\r\n");
-                                    header = data.Substring(index, headLen);
+                                    var sp = data.Split(new string[] { "\r\n\r\n" }, StringSplitOptions.RemoveEmptyEntries);
+                                    var contentHeaders = sp.FirstOrDefault();
+                                    var datas = sp.LastOrDefault();
+                                    int index = contentHeaders.ToLower().IndexOf("content-disposition");
+                                    var header = contentHeaders.Substring(index);
+                                    var headLen =  data.IndexOf("\r\n");
+                                    //var headLen = data.IndexOf("\r\n\r\n");
+                                    //header = sp.Length > 1 ? datas : data.Substring(index, headLen);
                                     //var byteData = GoStreamReader.ReadBlockSize(client.TcpClient.GetStream(), (ulong)(len - content.Length - fileHeaderCount));
-                                    string newData = data.Substring(headLen + 4);//Encoding.UTF8.GetString(byteData);
+                                    string newData = sp.Length > 1 ? datas : data.Substring(headLen + 4);//Encoding.UTF8.GetString(byteData);
                                     newData = newData.Trim(Environment.NewLine.ToCharArray());
                                     //var newData = text.Substring(0, text.IndexOf(boundary) - 4);
                                     if (header.ToLower().IndexOf("content-disposition:") == 0)
@@ -1155,6 +1176,19 @@ namespace SignalGo.Server.ServiceManager
                                         var disp = new CustomContentDisposition(header);
                                         if (disp.Parameters.ContainsKey("name"))
                                             name = disp.Parameters["name"];
+                                        //StringBuilder build = new StringBuilder();
+                                        //using (var reader = new StringReader(newData))
+                                        //{
+                                        //    while (true)
+                                        //    {
+                                        //        var line = reader.ReadLine();
+                                        //        if (line == null)
+                                        //            break;
+                                        //        else if (lineBreaks.Contains(line))
+                                        //            continue;
+                                        //        build.AppendLine(line);
+                                        //    }
+                                        //}
                                         multiPartParameter.Add(name, newData);
                                     }
                                 }
@@ -1393,6 +1427,16 @@ namespace SignalGo.Server.ServiceManager
                         }
                         else
                             result = method.Invoke(service, resultParameters.ToArray()).ToActionResult();
+                        List<HttpKeyAttribute> httpKeyAttributes = new List<HttpKeyAttribute>();
+                        var httpKeyOnMethod = (HttpKeyAttribute)method.GetCustomAttributes(typeof(HttpKeyAttribute), true).FirstOrDefault();
+                        if (httpKeyOnMethod != null)
+                            httpKeyAttributes.Add(httpKeyOnMethod);
+                        if (InternalSetting.HttpKeyResponses != null)
+                        {
+                            httpKeyAttributes.AddRange(InternalSetting.HttpKeyResponses);
+                        }
+
+                        FillReponseHeaders(client, httpKeyAttributes);
 
                         if (result == null)
                         {
@@ -1627,6 +1671,19 @@ namespace SignalGo.Server.ServiceManager
                     {
                         RegisteredHttpServiceTypes.TryAdd(address.ToLower(), httpService);
                     }
+                }
+            }
+        }
+
+        public void FindAndAddHttpServiceFromAssembly(Assembly assembly)
+        {
+            foreach (var item in assembly.GetTypes())
+            {
+                var attributes = item.GetCustomAttributes<HttpSupportAttribute>();
+                if (attributes.Length > 0)
+                {
+                    AddHttpService(item);
+                    Console.WriteLine("Add Controller: " + attributes[0].Addresses.FirstOrDefault());
                 }
             }
         }
@@ -3234,9 +3291,10 @@ namespace SignalGo.Server.ServiceManager
             {
                 try
                 {
-                    if (!RegisteredServiceTypes.ContainsKey(detail.ServiceName))
+                    if (!RegisteredServiceTypes.ContainsKey(detail.ServiceName) && !RegisteredHttpServiceTypes.ContainsKey(detail.ServiceName))
                         throw new Exception($"{client.IPAddress} {client.ClientId} Service {detail.ServiceName} not found");
-                    var serviceType = RegisteredServiceTypes[detail.ServiceName];
+                    if (!RegisteredServiceTypes.TryGetValue(detail.ServiceName, out Type serviceType))
+                        RegisteredHttpServiceTypes.TryGetValue(detail.ServiceName, out serviceType);
                     if (serviceType == null)
                         throw new Exception($"{client.IPAddress} {client.ClientId} serviceType {detail.ServiceName} not found");
 
