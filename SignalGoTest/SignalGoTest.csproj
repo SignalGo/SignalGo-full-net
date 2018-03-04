@@ -46,10 +46,14 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.ServiceModel" />
+    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DataExhanger\DataExchangerTest.cs" />
     <Compile Include="Download\DownloadStreamTest.cs" />
+    <Compile Include="Download\WebServiceTest.cs" />
     <Compile Include="GlobalInitalization.cs" />
     <Compile Include="Models\DataExchangerTestModel.cs" />
     <Compile Include="Models\ITestServerModel.cs" />
@@ -61,6 +65,7 @@
     <Compile Include="Utilities\FactoryTest.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="app.config" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
@@ -80,6 +85,9 @@
       <Project>{a8d61499-a96b-4c74-a281-51f7367de808}</Project>
       <Name>SignalGo.Utilities</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <WCFMetadata Include="Connected Services\" />
   </ItemGroup>
   <Import Project="$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets" Condition="Exists('$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets')" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

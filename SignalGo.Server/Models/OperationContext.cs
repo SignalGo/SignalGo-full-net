@@ -79,21 +79,27 @@ namespace SignalGo.Server.Models
 
             if (context.Client is HttpClientInfo)
             {
-                var property = type.GetListOfProperties().Select(x => new { Info = x, Attribute = x.GetCustomAttributes<HttpKeyAttribute>().FirstOrDefault(y => !y.IsExpireField), ExpiredAttribute = x.GetCustomAttributes<HttpKeyAttribute>().FirstOrDefault(y => y.IsExpireField) }).FirstOrDefault(x => x.Attribute != null);
-
-                if (property == null)
+                var sessionPeroperty = type.GetListOfProperties().Where(x => x.GetCustomAttributes<HttpKeyAttribute>().FirstOrDefault(y => !y.IsExpireField) != null).Select(x => new { Info = x, Attribute = x.GetCustomAttributes<HttpKeyAttribute>().FirstOrDefault() }).FirstOrDefault();
+                var expirePeroperty = type.GetListOfProperties().Where(x => x.GetCustomAttributes<HttpKeyAttribute>().FirstOrDefault(y => y.IsExpireField) != null).Select(x => new { Info = x, Attribute = x.GetCustomAttributes<HttpKeyAttribute>().FirstOrDefault() }).FirstOrDefault();
+                //var property = type.GetListOfProperties().Select(x => new
+                //{
+                //    Info = x,
+                //    Attribute = x.GetCustomAttributes<HttpKeyAttribute>().FirstOrDefault(y => !y.IsExpireField),
+                //    ExpiredAttribute = type.GetListOfProperties().Where(y => y.GetCustomAttributes<HttpKeyAttribute>().FirstOrDefault(j => j.IsExpireField) != null).Select(y => y.GetCustomAttributes<HttpKeyAttribute>().FirstOrDefault(j => j.IsExpireField)).FirstOrDefault()
+                //}).FirstOrDefault(x => x.Attribute != null);
+                if (sessionPeroperty == null)
                     throw new Exception("HttpKeyAttribute on your one properties on class not found please made your string property that have HttpKeyAttribute on the top!");
-                else if (property.Info.PropertyType != typeof(string))
+                else if (sessionPeroperty.Info.PropertyType != typeof(string))
                     throw new Exception("type of your HttpKeyAttribute must be as string because this will used for headers of http calls and you must made it custom");
 
                 var httpClient = context.Client as HttpClientInfo;
                 var setting = GetSetting(context.Client, type);
-                if (setting == null && (httpClient.RequestHeaders == null || string.IsNullOrEmpty(httpClient.RequestHeaders[property.Attribute.RequestHeaderName])))
+                if (setting == null && (httpClient.RequestHeaders == null || string.IsNullOrEmpty(httpClient.RequestHeaders[sessionPeroperty.Attribute.RequestHeaderName])))
                     return null;
 
                 string key = "";
                 if (setting == null)
-                    key = ExtractValue(httpClient.RequestHeaders[property.Attribute.RequestHeaderName], property.Attribute.KeyName, property.Attribute.HeaderValueSeparate, property.Attribute.HeaderKeyValueSeparate);
+                    key = ExtractValue(httpClient.RequestHeaders[sessionPeroperty.Attribute.RequestHeaderName], sessionPeroperty.Attribute.KeyName, sessionPeroperty.Attribute.HeaderValueSeparate, sessionPeroperty.Attribute.HeaderKeyValueSeparate);
                 else
                     key = GetKeyFromSetting(type, setting);
                 if (CustomClientSavedSettings.TryGetValue(key, out HashSet<object> result))
@@ -101,7 +107,7 @@ namespace SignalGo.Server.Models
                     var obj = result.FirstOrDefault(x => x.GetType() == type);
                     if (obj == null)
                         return null;
-                    if (property.ExpiredAttribute != null && property.ExpiredAttribute.CheckIsExpired(obj))
+                    if (expirePeroperty != null && obj != null && expirePeroperty.Attribute.CheckIsExpired(obj.GetType().GetProperty(expirePeroperty.Info.Name).GetValue(obj, null)))
                     {
                         result.Remove(obj);
                         if (result.Count == 0)

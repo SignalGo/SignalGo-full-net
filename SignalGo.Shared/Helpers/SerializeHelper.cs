@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SignalGo.Shared.Log;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -188,7 +189,15 @@ namespace SignalGo.Shared.Helpers
             }
             else if (targetPropertyType == SerializeObjectType.DateTime)
             {
-                return Convert.ToDateTime(value);
+                try
+                {
+                    return Convert.ToDateTime(value);
+                }
+                catch (Exception ex)
+                {
+                    AutoLogger.LogError(ex, $"cannot convert value {value} type of {value.GetType()} to DateTime!");
+                    return DateTime.MinValue;
+                }
             }
             else if (targetPropertyType == SerializeObjectType.DateTimeNullable)
             {
@@ -249,6 +258,7 @@ namespace SignalGo.Shared.Helpers
                 }
                 catch (Exception ex)
                 {
+                    AutoLogger.LogError(ex, $"cannot convert value {value} type of {value.GetType()} to EnumNullable!");
                     return null;
                 }
             }

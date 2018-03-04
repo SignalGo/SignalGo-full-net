@@ -15,6 +15,7 @@ namespace SignalGoTest.Models
     [SignalGo.Shared.DataTypes.ServiceContract("TestServerModel", SignalGo.Shared.DataTypes.InstanceType.SingleInstance)]
     public interface ITestServerModel : ITestServerModelBase
     {
+        //string HelloWorld([Bind(Exclude = "CategoryDescription")]string yourName);
         string HelloWorld(string yourName);
         List<UserInfoTest> GetListOfUsers();
         List<PostInfoTest> GetPostsOfUser(int userId);

@@ -59,7 +59,7 @@ namespace SignalGo.Shared.DataTypes
 
         public virtual bool CheckIsExpired(object value)
         {
-            if (value is DateTime && (DateTime)value < DateTime.Now)
+            if (value is DateTime && (DateTime)value > DateTime.Now)
                 return false;
             return true;
         }

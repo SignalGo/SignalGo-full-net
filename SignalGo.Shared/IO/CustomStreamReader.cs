@@ -64,6 +64,7 @@ namespace SignalGo.Shared.IO
             CurrentStream.Write(buffer, offset, count);
         }
 
+        public byte[] LastBytesReaded { get; set; }
         public string ReadLine()
         {
             List<byte> result = new List<byte>();
@@ -98,7 +99,8 @@ namespace SignalGo.Shared.IO
                 }
             }
             while (true);
-            return Encoding.UTF8.GetString(result.ToArray(), 0, result.Count);
+            LastBytesReaded = result.ToArray();
+            return Encoding.UTF8.GetString(LastBytesReaded, 0, LastBytesReaded.Length);
         }
 #if (!PORTABLE)
         bool CheckDataAvalable(bool isFirstCall)
