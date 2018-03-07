@@ -5,10 +5,10 @@
     <MinimumVisualStudioVersion>10.0</MinimumVisualStudioVersion>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <AssemblyVersion>3.2</AssemblyVersion>
-    <FileVersion>3.2</FileVersion>
-    <VersionPrefix>3.2</VersionPrefix>
-    <Version>3.2</Version>
+    <AssemblyVersion>3.5</AssemblyVersion>
+    <FileVersion>3.5</FileVersion>
+    <VersionPrefix>3.5</VersionPrefix>
+    <Version>3.5</Version>
     <!--<VersionSuffix>beta1</VersionSuffix>-->
     <Authors>Ali Yousefi</Authors>
     <Company></Company>
@@ -44,7 +44,9 @@
     <Summary>
     </Summary>
     <PackageReleaseNotes>
-      fix bugs and more improvement
+      1.fix bugs and more improvement
+      2.support for add service reference
+      3.support http cookies and more improvement for http supports
     </PackageReleaseNotes>
     <NeutralLanguage>en-US</NeutralLanguage>
     <PackageId>SignalGo.Shared</PackageId>
