@@ -24,4 +24,10 @@ namespace SignalGo.Shared.Models
         public T1 Key { get; set; }
         public T2 Value { get; set; }
     }
+
+    public class DoubleNullable<T>
+    {
+        public T Value { get; set; }
+    }
+
 }

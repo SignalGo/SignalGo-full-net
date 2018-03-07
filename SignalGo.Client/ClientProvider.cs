@@ -78,9 +78,9 @@ namespace SignalGo.Client
             GetClientIdIfNeed();
             StartToReadingClientData();
             var isConnected = ConnectorExtension.SendData<bool>(this, new Shared.Models.MethodCallInfo() { Guid = Guid.NewGuid().ToString(), ServiceName = "/CheckConnection" });
-#if (!PORTABLE)
-            Console.WriteLine("isConnected " + isConnected);
-#endif
+//#if (!PORTABLE)
+//            Console.WriteLine("isConnected " + isConnected);
+//#endif
             if (!isConnected && !ProviderSetting.AutoDetectRegisterServices)
             {
                 Disconnect();
@@ -184,9 +184,9 @@ namespace SignalGo.Client
 #endif
                 byte b1 = (byte)stream.ReadByte();
                 byte b2 = (byte)stream.ReadByte();
-#if (!PORTABLE)
-                Console.WriteLine("Connect Write " + Encoding.UTF8.GetString(new byte[2] { b1, b2 }));
-#endif
+//#if (!PORTABLE)
+//                Console.WriteLine("Connect Write " + Encoding.UTF8.GetString(new byte[2] { b1, b2 }));
+//#endif
             }
             catch (Exception ex)
             {
@@ -207,17 +207,17 @@ namespace SignalGo.Client
             byte[] dataLen = BitConverter.GetBytes(jsonBytes.Length);
             bytes.AddRange(dataLen);
             bytes.AddRange(jsonBytes);
-#if (!PORTABLE)
-            Console.WriteLine("write url:" + bytes.Count);
-#endif
+//#if (!PORTABLE)
+//            Console.WriteLine("write url:" + bytes.Count);
+//#endif
 #if (PORTABLE)
             GoStreamWriter.WriteToStream(_client.WriteStream, bytes.ToArray(), IsWebSocket);
 #else
             GoStreamWriter.WriteToStream(_client.GetStream(), bytes.ToArray(), IsWebSocket);
 #endif
-#if (!PORTABLE)
-            Console.WriteLine("write complete:" + bytes.Count);
-#endif
+//#if (!PORTABLE)
+//            Console.WriteLine("write complete:" + bytes.Count);
+//#endif
         }
 
         void GetClientIdIfNeed()

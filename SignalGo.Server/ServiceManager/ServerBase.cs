@@ -30,6 +30,9 @@ using System.Threading;
 
 namespace SignalGo.Server.ServiceManager
 {
+    /// <summary>
+    /// base of server
+    /// </summary>
     public abstract class ServerBase : IDisposable
     {
         /// <summary>
@@ -37,10 +40,11 @@ namespace SignalGo.Server.ServiceManager
         /// </summary>
         public bool IsStarted { get; set; }
 
+
+        private volatile int _callingCount;
         /// <summary>
         /// calling method count if this is going to zero server can stop
         /// </summary>
-        private volatile int _callingCount;
         public int CallingCount
         {
             get
@@ -55,12 +59,25 @@ namespace SignalGo.Server.ServiceManager
             }
         }
 
+        /// <summary>
+        /// settings of server
+        /// </summary>
         public ProviderSetting ProviderSetting { get; set; } = new ProviderSetting();
-
+        /// <summary>
+        /// when server disconnect
+        /// </summary>
         public Action OnServerDisconnectedAction { get; set; }
+        /// <summary>
+        /// when server had internal exception
+        /// </summary>
         public Action<Exception> OnServerInternalExceptionAction { get; set; }
-
+        /// <summary>
+        /// after client connected
+        /// </summary>
         public Action<ClientInfo> OnConnectedClientAction { get; set; }
+        /// <summary>
+        /// after client disconnected
+        /// </summary>
         public Action<ClientInfo> OnDisconnectedClientAction { get; set; }
 
         //internal ConcurrentDictionary<ClientInfo, SynchronizationContext> ClientDispatchers { get; set; } = new ConcurrentDictionary<ClientInfo, SynchronizationContext>();
@@ -115,6 +132,10 @@ namespace SignalGo.Server.ServiceManager
         /// </summary>
         internal ConcurrentDictionary<string, object> SingleInstanceServices { get; set; } = new ConcurrentDictionary<string, object>();
         internal ConcurrentDictionary<ClientInfo, ConcurrentList<object>> Callbacks { get; set; } = new ConcurrentDictionary<ClientInfo, ConcurrentList<object>>();
+        /// <summary>
+        /// include models to server reference when client want to add or update service reference
+        /// </summary>
+        internal List<Assembly> ModellingReferencesAssemblies { get; set; } = new List<Assembly>();
 
         /// <summary>
         /// توابع و سرویس هایی که برای کلاینت رجیستر شده تا سرور اونارو صدا بزنه و بارگزاری داده نداشته باشه
@@ -516,7 +537,9 @@ namespace SignalGo.Server.ServiceManager
                                         var headers = GetHttpHeaders(lines.Skip(1).ToArray());
                                         if (headers["content-type"] != null && headers["content-type"] == "SignalGo Service Reference")
                                         {
-                                            DoSoapService((HttpClientInfo)client);
+                                            var doClient = (HttpClientInfo)client;
+                                            doClient.RequestHeaders = headers;
+                                            SendSignalGoServiceReference(doClient);
                                         }
                                         else
                                             RunHttpRequest(address, "GET", "", headers, (HttpClientInfo)client);
@@ -539,7 +562,8 @@ namespace SignalGo.Server.ServiceManager
                                         }
                                         else if (headers["content-type"] != null && headers["content-type"] == "SignalGo Service Reference")
                                         {
-                                            DoSoapService((HttpClientInfo)client);
+                                            SendSignalGoServiceReference((HttpClientInfo)client);
+                                            return;
                                         }
                                         else
                                         {
@@ -1080,32 +1104,31 @@ namespace SignalGo.Server.ServiceManager
 
         }
 
-
-        public void DoSoapService(HttpClientInfo client)
+        /// <summary>
+        /// send service reference data to client
+        /// </summary>
+        /// <param name="client"></param>
+        public void SendSignalGoServiceReference(HttpClientInfo client)
         {
             var stream = client.TcpClient.GetStream();
             StringBuilder headers = new StringBuilder();
-            //var okData = Encoding.ASCII.GetBytes("HTTP/1.1 100 Continue\r\n\r\n");
-            //stream.Write(okData, 0, okData.Length);
-            //var bytes = new byte[1024 * 1024];
-            //var readCount = stream.Read(bytes, 0, bytes.Length);
-            //var dara = Encoding.ASCII.GetString(bytes, 0, readCount);
 
-            var okData = File.ReadAllBytes("I:\\ali.cs");
+            var referenceData = new ServiceReferenceHelper().GetServiceReferenceCSharpCode(client.RequestHeaders["servicenamespace"], this);
+            var reault = Encoding.UTF8.GetBytes(ServerSerializationHelper.SerializeObject(referenceData, this));
             headers.AppendLine($"HTTP/1.1 {(int)HttpStatusCode.OK} {HttpRequestController.GetStatusDescription((int)HttpStatusCode.OK)}");
-            headers.AppendLine("Content-Length: " + okData.Length);
+            headers.AppendLine("Content-Length: " + reault.Length);
             headers.AppendLine("Content-Type: SignalGoServiceType");
             headers.AppendLine();
             var headBytes = Encoding.ASCII.GetBytes(headers.ToString());
             stream.Write(headBytes, 0, headBytes.Length);
 
-            stream.Write(okData, 0, okData.Length);
+            stream.Write(reault, 0, reault.Length);
 
             var bytes = new byte[1024 * 1024];
             var readCount = stream.Read(bytes, 0, bytes.Length);
-            var dara = Encoding.ASCII.GetString(bytes, 0, readCount);
-            
+            DisposeClient(client, "SendSignalGoServiceReference finished");
         }
+
         /// <summary>
         /// run method of server http class with address and headers
         /// </summary>
@@ -1752,6 +1775,10 @@ namespace SignalGo.Server.ServiceManager
             }
         }
 
+        /// <summary>
+        /// find and add http services automatically from your assembly
+        /// </summary>
+        /// <param name="assembly"></param>
         public void FindAndAddHttpServiceFromAssembly(Assembly assembly)
         {
             foreach (var item in assembly.GetTypes())
@@ -1767,6 +1794,14 @@ namespace SignalGo.Server.ServiceManager
 
         #endregion
 
+        /// <summary>
+        /// add assembly that include models to server reference when client want to add or update service reference
+        /// </summary>
+        public void AddModellingReferencesAssembly(Assembly assembly)
+        {
+            if (!ModellingReferencesAssemblies.Contains(assembly))
+                ModellingReferencesAssemblies.Add(assembly);
+        }
 
         /// <summary>
         /// guid for web socket client connection
@@ -2514,7 +2549,7 @@ namespace SignalGo.Server.ServiceManager
             }
         }
 
-        internal object GetDefault(Type t)
+        internal static object GetDefault(Type t)
         {
             try
             {
@@ -2813,7 +2848,7 @@ namespace SignalGo.Server.ServiceManager
                             {
                                 if (serviceType == typeof(object))
                                     continue;
-                                var methods = serviceType.GetMethods().Where(x => !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_")))).ToList();
+                                var methods = serviceType.GetMethods().Where(x => !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_"))) && x.DeclaringType != typeof(object)).ToList();
                                 if (methods.Count == 0)
                                     continue;
                                 var comment = xmlCommentLoader.GetComment(serviceType);
@@ -2939,7 +2974,7 @@ namespace SignalGo.Server.ServiceManager
                                 }
                             }
 
-                            var methods = service.Value.GetMethods().Where(x => !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_")))).ToList();
+                            var methods = service.Value.GetMethods().Where(x => !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_"))) && x.DeclaringType != typeof(object)).ToList();
                             if (methods.Count == 0)
                                 continue;
                             var comment = xmlCommentLoader.GetComment(service.Value);
@@ -3040,7 +3075,7 @@ namespace SignalGo.Server.ServiceManager
                             id++;
                             result.WebApiDetailsInfo.Id = id;
                             result.WebApiDetailsInfo.HttpControllers.Add(controller);
-                            var methods = httpServiceType.Value.GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance).Where(x => !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_")))).ToList();
+                            var methods = httpServiceType.Value.GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance).Where(x => !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_"))) && x.DeclaringType != typeof(object)).ToList();
                             if (methods.Count == 0)
                                 continue;
                             var comment = xmlCommentLoader.GetComment(httpServiceType.Value);

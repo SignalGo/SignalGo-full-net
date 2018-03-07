@@ -105,7 +105,7 @@ namespace SignalGo.Shared.Helpers
         /// <returns></returns>
         public static PropertyInfo GetPropertyInfo(this Type type, string name)
         {
-                return type
+            return type
 #if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
                 .GetTypeInfo()
 #endif
@@ -147,7 +147,7 @@ namespace SignalGo.Shared.Helpers
 #if (PORTABLE)
                 .GetDeclaredMethod(name);
 #else
-                .GetMethod(name, BindingFlags.IgnoreCase | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic |  BindingFlags.Static);
+                .GetMethod(name, BindingFlags.IgnoreCase | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
 #endif
         }
 
@@ -186,6 +186,26 @@ namespace SignalGo.Shared.Helpers
                           BindingFlags.Instance | BindingFlags.IgnoreCase);
 #endif
         }
+
+        /// <summary>
+        /// get list of declared properties
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public static IEnumerable<PropertyInfo> GetListOfDeclaredProperties(this Type type)
+        {
+            return type
+#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
+                .GetTypeInfo()
+#endif
+#if (PORTABLE)
+                .DeclaredProperties;
+#else
+                .GetProperties(BindingFlags.Public |
+                          BindingFlags.Instance | BindingFlags.IgnoreCase | BindingFlags.DeclaredOnly);
+#endif
+        }
+
         /// <summary>
         /// get list of fields
         /// </summary>
@@ -294,6 +314,24 @@ namespace SignalGo.Shared.Helpers
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
+        public static IEnumerable<MethodInfo> GetListOfDeclaredMethods(this Type type)
+        {
+            return type
+#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
+                .GetTypeInfo()
+#endif
+#if (PORTABLE || NETSTANDARD1_6 || NETCOREAPP1_1)
+                .DeclaredMethods;
+#else
+                .GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Public);
+#endif
+        }
+
+        /// <summary>
+        /// get list of methods
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
         public static IEnumerable<MethodInfo> GetListOfMethods(this Type type)
         {
             return type
@@ -307,6 +345,21 @@ namespace SignalGo.Shared.Helpers
 #endif
 
         }
+
+        public static List<MethodInfo> GetListOfMethodsWithAllOfBases(this Type type)
+        {
+            var methods = type.GetListOfMethods().ToList();
+            foreach (var item in type.GetListOfInterfaces())
+            {
+                methods.AddRange(item.GetListOfMethods());
+            }
+            foreach (var item in type.GetListOfBaseTypes())
+            {
+                methods.AddRange(item.GetListOfMethods());
+            }
+            return methods;
+        }
+
         /// <summary>
         /// get generic Arguments
         /// </summary>

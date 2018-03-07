@@ -23,7 +23,7 @@ namespace SignalGo.Shared.Models
         /// </summary>
         public string NameSpace { get; set; }
         /// <summary>
-        /// name and namce space of class
+        /// class name and name space of class
         /// </summary>
         public string FullNameSpace { get; set; }
         /// <summary>
