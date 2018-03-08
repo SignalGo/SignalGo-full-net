@@ -26,6 +26,10 @@ namespace SignalGo.Shared.DataTypes
         /// </summary>
         public Type MapToType { get; set; }
         /// <summary>
+        /// ignore properties to generate from server
+        /// </summary>
+        public string[] IgnoreProperties { get; set; }
+        /// <summary>
         /// 
         /// </summary>
         public ModelMappAttribute(Type mapToType)
