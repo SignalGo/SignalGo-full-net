@@ -27,17 +27,21 @@ namespace SignalGo.Shared.DataTypes
     public enum ServiceType
     {
         /// <summary>
-        /// service class is implimeneted server methods
+        /// service class is implemented server methods
         /// </summary>
-        SeverService,
+        ServerService,
         /// <summary>
-        /// service class is implimeneted client methods
+        /// service class is implemented client methods
         /// </summary>
         ClientService,
         /// <summary>
-        /// service class is implimeneted server methods that support httpCalls
+        /// service class is implemented server methods that support httpCalls
         /// </summary>
-        HttpService
+        HttpService,
+        /// <summary>
+        ///  service class is implemented server stream methods
+        /// </summary>
+        StreamService,
     }
 
     /// <summary>
@@ -98,6 +102,7 @@ namespace SignalGo.Shared.DataTypes
             var serviceContract = type.GetServerServiceAttribute();
             return serviceContract.Name;
         }
+
         /// <summary>
         /// get client service name from ServiceContractAttribute
         /// </summary>
@@ -116,11 +121,12 @@ namespace SignalGo.Shared.DataTypes
         /// <returns></returns>
         public static ServiceContractAttribute GetServerServiceAttribute(this Type type)
         {
-            var serviceContract = type.GetCustomAttributes<ServiceContractAttribute>(true).Where(x => x.ServiceType == ServiceType.SeverService || x.ServiceType == ServiceType.HttpService).FirstOrDefault();
+            var serviceContract = type.GetCustomAttributes<ServiceContractAttribute>(true).Where(x => x.ServiceType == ServiceType.ServerService || x.ServiceType == ServiceType.HttpService || x.ServiceType == ServiceType.StreamService).FirstOrDefault();
             if (serviceContract == null)
                 throw new Exception("your server class must have ServiceContract attribute that have ServiceType == ServiceType.SeverService parameter");
             return serviceContract;
         }
+
         /// <summary>
         /// get client service attribute from ServiceContractAttribute
         /// </summary>

@@ -276,7 +276,7 @@ namespace System
         }
 
         static ConcurrentDictionary<Type, List<Type>> CachedTypesOfAttribute = new ConcurrentDictionary<Type, List<Type>>();
-        public static List<Type> GetTypesByAttribute<T>(this Type type, bool isManual = true) where T : Attribute
+        public static List<Type> GetTypesByAttribute<T>(this Type type, Func<T, bool> canAdd, bool isManual = true) where T : Attribute
         {
             List<Type> result = new List<Type>();
             if (type == null)
@@ -290,7 +290,7 @@ namespace System
                 return CachedTypesOfAttribute[type];
             foreach (var attrib in typeInfo.GetCustomAttributes(false))
             {
-                if (attrib.GetType() == typeof(T))
+                if (attrib.GetType() == typeof(T) && canAdd((T)attrib))
                 {
                     if (!result.Contains(type))
                         result.Add(type);
@@ -307,7 +307,7 @@ namespace System
 #endif
                 foreach (var attrib in interfaceTypeInfo.GetCustomAttributes(false))
                 {
-                    if (attrib.GetType() == typeof(T))
+                    if (attrib.GetType() == typeof(T) && canAdd((T)attrib))
                     {
                         if (!result.Contains(interfaceType))
                             result.Add(interfaceType);
@@ -315,7 +315,7 @@ namespace System
                     }
                 }
             }
-            result.AddRange(typeInfo.BaseType.GetTypesByAttribute<T>(isManual: false));
+            result.AddRange(typeInfo.BaseType.GetTypesByAttribute<T>(canAdd, isManual: false));
             if (isManual)
                 CachedTypesOfAttribute[type] = result;
             return result;

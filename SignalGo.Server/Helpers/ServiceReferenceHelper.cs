@@ -524,7 +524,7 @@ namespace SignalGo.Server.Helpers
                 Type = classReferenceType
             };
 
-            foreach (var serviceType in type.GetTypesByAttribute<ServiceContractAttribute>().ToList())
+            foreach (var serviceType in type.GetTypesByAttribute<ServiceContractAttribute>(x => x.ServiceType == ServiceType.ServerService).ToList())
             {
                 if (typeGenerated.Contains(serviceType))
                     continue;
@@ -548,7 +548,7 @@ namespace SignalGo.Server.Helpers
                 Type = ClassReferenceType.HttpServiceLevel
             };
 
-            foreach (var serviceType in type.GetTypesByAttribute<HttpSupportAttribute>().ToList())
+            foreach (var serviceType in type.GetTypesByAttribute<ServiceContractAttribute>(x => x.ServiceType == ServiceType.HttpService).ToList())
             {
                 if (typeGenerated.Contains(serviceType))
                     continue;

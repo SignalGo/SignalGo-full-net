@@ -8,13 +8,22 @@ using System.Threading.Tasks;
 
 namespace ServerConsoleTest
 {
-    [ServiceContract("HealthFamilyService")]
+    [ServiceContract("HealthFamilyService", ServiceType.ServerService)]
     public interface ITestManager
     {
         bool HelloWorld(string userName, string password);
     }
 
-    public partial class TestServiceProvider : ITestManager
+    public partial class TestService : ITestManager
+    {
+        public bool HelloWorld(string userName, string password)
+        {
+            return true;
+        }
+    }
+
+    [ServiceContract("HttpService", ServiceType.HttpService)]
+    public partial class HttpService
     {
         public bool HelloWorld(string userName, string password)
         {
@@ -29,8 +38,7 @@ namespace ServerConsoleTest
             try
             {
                 ServerProvider provider = new ServerProvider();
-                provider.InitializeService<TestServiceProvider>();
-                provider.Start("http://localhost:3284/TestServices/SignalGo");
+                provider.Start("http://localhost:3284/TestServices/SignalGo", true);
 
                 Console.WriteLine("server started");
             }

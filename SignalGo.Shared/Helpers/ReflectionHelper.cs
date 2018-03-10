@@ -13,6 +13,43 @@ namespace SignalGo.Shared.Helpers
     public static class ReflectionHelper
     {
         /// <summary>
+        /// get all project Assemblies
+        /// </summary>
+        /// <returns></returns>
+        public static List<Assembly> GetReferencedAssemblies(Assembly assembly)
+        {
+#if (PORTABLE)
+            throw new NotSupportedException("not support auto register services for portable class library");
+#else
+            List<Assembly> result = new List<Assembly>();
+            result.Add(assembly);
+
+
+            foreach (var reference in assembly.GetReferencedAssemblies())
+            {
+                var loaded = Assembly.Load(reference);
+                result.Add(loaded);
+            }
+            return result;
+            //var list = new List<string>();
+            //var stack = new Stack<Assembly>();
+            //stack.Push(assembly);
+            //do
+            //{
+            //    var asm = stack.Pop();
+            //    yield return asm;
+            //    foreach (var reference in asm.GetReferencedAssemblies())
+            //        if (!list.Contains(reference.FullName))
+            //        {
+            //            stack.Push(Assembly.Load(reference));
+            //            list.Add(reference.FullName);
+            //        }
+            //}
+            //while (stack.Count > 0);
+#endif
+        }
+
+        /// <summary>
         /// get Nested Types
         /// </summary>
         /// <param name="type"></param>

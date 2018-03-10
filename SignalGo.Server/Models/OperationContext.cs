@@ -61,7 +61,7 @@ namespace SignalGo.Server.Models
         /// <returns></returns>
         public T GetService<T>() where T : class
         {
-            var attribute = typeof(T).GetCustomAttributes<ServiceContractAttribute>(true).Where(x => x.ServiceType == ServiceType.SeverService).FirstOrDefault();
+            var attribute = typeof(T).GetCustomAttributes<ServiceContractAttribute>(true).Where(x => x.ServiceType == ServiceType.ServerService).FirstOrDefault();
             ServerBase.SingleInstanceServices.TryGetValue(attribute.Name, out object result);
             return (T)result;
         }

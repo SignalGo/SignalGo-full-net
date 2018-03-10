@@ -220,21 +220,22 @@ namespace SignalGo.Server.ServiceManager
         }
 
         /// <summary>
-        /// initialize server service
+        /// register server service
         /// </summary>
         /// <param name="serviceType"></param>
-        public void InitializeService(Type serviceType)
+        public void RegisterServerService(Type serviceType)
         {
             var name = serviceType.GetServerServiceName();
-            RegisteredServiceTypes.TryAdd(name, serviceType);
+            if (!RegisteredServiceTypes.ContainsKey(name))
+                RegisteredServiceTypes.TryAdd(name, serviceType);
         }
         /// <summary>
         /// initialize server service
         /// </summary>
         /// <typeparam name="T"></typeparam>
-        public void InitializeService<T>()
+        public void RegisterServerService<T>()
         {
-            InitializeService(typeof(T));
+            RegisterServerService(typeof(T));
         }
 
         internal object FindServerServiceByType(ClientInfo client, Type serviceType, ServiceContractAttribute attribute)
@@ -305,7 +306,8 @@ namespace SignalGo.Server.ServiceManager
         public void RegisterClientService(Type type)
         {
             var name = type.GetClientServiceName();
-            RegisteredCallbacksTypes.TryAdd(name, type);
+            if (!RegisteredCallbacksTypes.ContainsKey(name))
+                RegisteredCallbacksTypes.TryAdd(name, type);
         }
         /// <summary>
         /// register stream service for download and upload stream or file
@@ -328,12 +330,17 @@ namespace SignalGo.Server.ServiceManager
             RegisterStreamService(typeof(T));
         }
 #if (!NETSTANDARD1_6 && !NETCOREAPP1_1)
-        public void RegisterClientCallbackInterfaceService<T>()
+        public void RegisterClientServiceInterface(Type  type)
         {
-            Type type = typeof(T);
             var name = type.GetClientServiceName();
             var obj = CSCodeInjection.GenerateInterfaceType(type, typeof(OperationCalls), new List<Type>() { typeof(ServiceContractAttribute), this.GetType() }, true);
             RegisteredCallbacksTypes.TryAdd(name, obj);
+        }
+
+        public void RegisterClientServiceInterface<T>()
+        {
+            Type type = typeof(T);
+            RegisterClientServiceInterface(type);
         }
 #endif
 
@@ -1730,21 +1737,21 @@ namespace SignalGo.Server.ServiceManager
         /// <summary>
         /// add a http service class
         /// </summary>
-        /// <param name="httpService">a service class that inheritance HttpRequestController and using HttpSupport attribute</param>
-        public void AddHttpService<T>()
+        /// <param name="T">a service class that using ServiceContractAttribute attribute by ServiceType.HttpService</param>
+        public void RegisterHttpService<T>()
         {
-            AddHttpService(typeof(T));
+            RegisterHttpService(typeof(T));
         }
 
         /// <summary>
         /// add a http service class
         /// </summary>
-        /// <param name="httpService">a service class that inheritance HttpRequestController and using HttpSupport attribute</param>
-        public void AddHttpService(Type httpService)
+        /// <param name="httpService">a service class using ServiceContractAttribute attribute ServiceType.HttpService</param>
+        public void RegisterHttpService(Type httpService)
         {
-            var attributes = httpService.GetCustomAttributes<HttpSupportAttribute>();
-            if (attributes == null || attributes.Length == 0)
-                throw new Exception("HttpSupport attribute not found from: " + httpService.FullName);
+            var attributes = httpService.GetCustomAttributes<ServiceContractAttribute>().Where(x => x.ServiceType == ServiceType.HttpService);
+            if (attributes == null || attributes.Count() == 0)
+                throw new Exception("ServiceContractAttribute attribute not found from: " + httpService.FullName);
             //bool exist = false;
             //foreach (var item in CSCodeInjection.GetListOfTypes(httpService))
             //{
@@ -1760,38 +1767,11 @@ namespace SignalGo.Server.ServiceManager
 
             foreach (var attrib in attributes)
             {
-                foreach (var address in attrib.Addresses)
+                if (string.IsNullOrEmpty(attrib.Name))
                 {
-                    if (string.IsNullOrEmpty(address))
-                    {
-                        throw new Exception("HttpSupport Address is null or empty from: " + httpService.FullName);
-                    }
-                    else if (RegisteredHttpServiceTypes.ContainsKey(address.ToLower()))
-                    {
-                        throw new Exception($"HttpSupport Address {address} is exist please use another address for this class type: {httpService.FullName}");
-                    }
-                    else
-                    {
-                        RegisteredHttpServiceTypes.TryAdd(address.ToLower(), httpService);
-                    }
+                    throw new Exception("HttpSupport Address is null or empty from: " + httpService.FullName);
                 }
-            }
-        }
-
-        /// <summary>
-        /// find and add http services automatically from your assembly
-        /// </summary>
-        /// <param name="assembly"></param>
-        public void FindAndAddHttpServiceFromAssembly(Assembly assembly)
-        {
-            foreach (var item in assembly.GetTypes())
-            {
-                var attributes = item.GetCustomAttributes<HttpSupportAttribute>();
-                if (attributes.Length > 0)
-                {
-                    AddHttpService(item);
-                    Console.WriteLine("Add Controller: " + attributes[0].Addresses.FirstOrDefault());
-                }
+                RegisteredHttpServiceTypes.TryAdd(attrib.Name.ToLower(), httpService);
             }
         }
 
@@ -2333,7 +2313,7 @@ namespace SignalGo.Server.ServiceManager
 
         internal System.Reflection.MethodInfo GetMethod(MethodCallInfo callInfo, Type serviceType)
         {
-            var list = serviceType.GetTypesByAttribute<ServiceContractAttribute>().ToList();
+            var list = serviceType.GetTypesByAttribute<ServiceContractAttribute>(x => true).ToList();
             foreach (var item in list)
             {
                 var pTypes = RuntimeTypeHelper.GetMethodTypes(serviceType, callInfo).ToArray();
@@ -3073,7 +3053,7 @@ namespace SignalGo.Server.ServiceManager
                             var controller = new HttpControllerDetailsInfo()
                             {
                                 Id = id,
-                                Url = httpServiceType.Value.GetCustomAttributes<HttpSupportAttribute>(true)[0].Addresses.FirstOrDefault(),
+                                Url = httpServiceType.Value.GetCustomAttributes<ServiceContractAttribute>(true)[0].Name,
                             };
                             id++;
                             result.WebApiDetailsInfo.Id = id;

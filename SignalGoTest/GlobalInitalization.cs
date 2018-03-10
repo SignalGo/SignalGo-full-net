@@ -21,8 +21,8 @@ namespace SignalGoTest
             {
                 server = new SignalGo.Server.ServiceManager.ServerProvider();
                 server.RegisterStreamService(typeof(TestServerStreamModel));
-                server.InitializeService<TestServerModel>();
-                server.Start("http://localhost:1132/SignalGoTestService");
+                server.RegisterServerService<TestServerModel>();
+                server.Start("http://localhost:1132/SignalGoTestService", false);
                 server.OnConnectedClientAction = (client) =>
                 {
 
