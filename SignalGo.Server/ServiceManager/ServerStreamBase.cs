@@ -34,7 +34,7 @@ namespace SignalGo.Server.ServiceManager
             var clientInfo = Clients[clientId];
             if (clientInfo == null)
                 throw new Exception("RegisterFile client not found!");
-            var service = FindClientServiceByType(clientInfo, serviceType, null);
+            var service = FindServerServiceByType(clientInfo, serviceType, null);
 
 #if (NETSTANDARD1_6 || NETCOREAPP1_1)
             var method = serviceType.GetTypeInfo().GetMethod(callInfo.MethodName, RuntimeTypeHelper.GetMethodTypes(serviceType, callInfo).ToArray());
@@ -95,7 +95,7 @@ namespace SignalGo.Server.ServiceManager
             var clientInfo = Clients[clientId];
             if (clientInfo == null)
                 throw new Exception("RegisterFile client not found!");
-            var service = FindClientServiceByType(clientInfo, serviceType, null);
+            var service = FindServerServiceByType(clientInfo, serviceType, null);
 
 #if (NETSTANDARD1_6 || NETCOREAPP1_1)
             var method = serviceType.GetTypeInfo().GetMethod(callInfo.MethodName, RuntimeTypeHelper.GetMethodTypes(serviceType, callInfo).ToArray());

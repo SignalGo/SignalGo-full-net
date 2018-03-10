@@ -117,7 +117,7 @@ namespace SignalGo.Client
         {
             string serviceName = "";
             if (string.IsNullOrEmpty(attibName))
-                serviceName = client.GetType().GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault().Name;
+                serviceName = client.GetType().GetServerServiceName();
             else
                 serviceName = attibName;
 
@@ -422,18 +422,15 @@ namespace SignalGo.Client
         /// </summary>
         /// <typeparam name="T">type of class for call server methods</typeparam>
         /// <returns>return instance class for call methods</returns>
-        public T RegisterClientService<T>()
+        public T RegisterServerService<T>()
         {
             if (IsDisposed)
                 throw new ObjectDisposedException("Connector");
             var type = typeof(T);
+            var name = type.GetServerServiceName();
             MethodCallInfo callInfo = new MethodCallInfo()
             {
-#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
-                ServiceName = ((ServiceContractAttribute)type.GetTypeInfo().GetCustomAttributes(typeof(ServiceContractAttribute), true).FirstOrDefault()).Name,
-#else
-                ServiceName = ((ServiceContractAttribute)type.GetCustomAttributes(typeof(ServiceContractAttribute), true).FirstOrDefault()).Name,
-#endif
+                ServiceName = name,
                 MethodName = "/RegisterService",
                 Guid = Guid.NewGuid().ToString()
             };
@@ -517,18 +514,20 @@ namespace SignalGo.Client
         {
             return default(T);
         }
+
 #if (!NETSTANDARD1_6 && !NETCOREAPP1_1 && !NET35 && !PORTABLE)
         /// <summary>
         /// register service and method to server for client call thats
         /// </summary>
         /// <typeparam name="T">type of interface for create instanse</typeparam>
         /// <returns>return instance of interface that client can call methods</returns>
-        public T RegisterClientServiceInterface<T>() where T : class
+        public T RegisterServerServiceInterface<T>() where T : class
         {
             if (IsDisposed)
                 throw new ObjectDisposedException("Connector");
             var type = typeof(T);
-            var name = type.GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault().Name;
+            var name = type.GetServerServiceName();
+
             MethodCallInfo callInfo = new MethodCallInfo()
             {
                 ServiceName = name,
@@ -555,12 +554,13 @@ namespace SignalGo.Client
         /// </summary>
         /// <typeparam name="T">type of interface for create instanse</typeparam>
         /// <returns>return instance of interface that client can call methods</returns>
-        public T RegisterClientServiceInterfaceWrapper<T>() where T : class
+        public T RegisterServerServiceInterfaceWrapper<T>() where T : class
         {
             if (IsDisposed)
                 throw new ObjectDisposedException("Connector");
             var type = typeof(T);
-            var name = type.GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault().Name;
+            var name = type.GetServerServiceName();
+
             if (!ProviderSetting.AutoDetectRegisterServices)
             {
                 MethodCallInfo callInfo = new MethodCallInfo()
@@ -635,7 +635,7 @@ namespace SignalGo.Client
                         var data = ConnectorExtension.SendData(this, serviceName, method.Name, args);
                         if (data == null)
                             return null;
-                        var result = ClientSerializationHelper.DeserializeObject(data.ToString(), method.ReturnType,customDataExchanger: customDataExchanger.ToArray());
+                        var result = ClientSerializationHelper.DeserializeObject(data.ToString(), method.ReturnType, customDataExchanger: customDataExchanger.ToArray());
                         return result;
                     };
                 }
@@ -670,7 +670,7 @@ namespace SignalGo.Client
             }
 
             var type = typeof(T);
-            var name = type.GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault().Name;
+            var name = type.GetServerServiceName();
 
             var objectInstance = InterfaceWrapper.Wrap<T>((serviceName, method, args) =>
             {
@@ -810,18 +810,19 @@ namespace SignalGo.Client
             return (T)objectInstance;
         }
 
-        public void RegisterClientServiceInterface(string serviceName)
-        {
-            if (IsDisposed)
-                throw new ObjectDisposedException("Connector");
-            MethodCallInfo callInfo = new MethodCallInfo()
-            {
-                ServiceName = serviceName,
-                MethodName = "/RegisterService",
-                Guid = Guid.NewGuid().ToString()
-            };
-            var callback = this.SendData<MethodCallbackInfo>(callInfo);
-        }
+
+        //public void RegisterServerServiceInterface(string serviceName)
+        //{
+        //    if (IsDisposed)
+        //        throw new ObjectDisposedException("Connector");
+        //    MethodCallInfo callInfo = new MethodCallInfo()
+        //    {
+        //        ServiceName = serviceName,
+        //        MethodName = "/RegisterService",
+        //        Guid = Guid.NewGuid().ToString()
+        //    };
+        //    var callback = this.SendData<MethodCallbackInfo>(callInfo);
+        //}
 #if (!NETSTANDARD1_6 && !NETCOREAPP1_1 && !NET35 && !PORTABLE)
         /// <summary>
         /// register a callback interface and get dynamic calls
@@ -830,12 +831,12 @@ namespace SignalGo.Client
         /// </summary>
         /// <typeparam name="T">interface to instance</typeparam>
         /// <returns>return interface type to call methods</returns>
-        public T RegisterClientServiceDynamicInterface<T>() where T : class
+        public T RegisterServerServiceDynamicInterface<T>() where T : class
         {
             if (IsDisposed)
                 throw new ObjectDisposedException("Connector");
             var type = typeof(T);
-            var name = type.GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault().Name;
+            var name = type.GetServerServiceName();
             MethodCallInfo callInfo = new MethodCallInfo()
             {
                 ServiceName = name,
@@ -856,17 +857,17 @@ namespace SignalGo.Client
 #endif
 #if (!NET35)
         /// <summary>
-        /// register a callback interface and get dynamic calls
+        /// register a server service interface and get dynamic calls
         /// works for all platform like windows ,android ,ios and ...
         /// </summary>
         /// <typeparam name="T">interface type for use dynamic call</typeparam>
         /// <returns>return dynamic type to call methods</returns>
-        public dynamic RegisterClientServiceDynamic<T>() where T : class
+        public dynamic RegisterServerServiceDynamic<T>() where T : class
         {
             if (IsDisposed)
                 throw new ObjectDisposedException("Connector");
             var type = typeof(T);
-            var name = type.GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault().Name;
+            var name = type.GetServerServiceName();
             MethodCallInfo callInfo = new MethodCallInfo()
             {
                 ServiceName = name,
@@ -891,7 +892,7 @@ namespace SignalGo.Client
         /// </summary>
         /// <typeparam name="T">interface type for use dynamic call</typeparam>
         /// <returns>return dynamic type to call methods</returns>
-        public dynamic RegisterClientServiceDynamic(string serviceName)
+        public dynamic RegisterServerServiceDynamic(string serviceName)
         {
             if (IsDisposed)
                 throw new ObjectDisposedException("Connector");
@@ -913,20 +914,22 @@ namespace SignalGo.Client
         }
 #endif
         /// <summary>
-        /// register server callback class, it's client methods wait for server call thats
+        /// register client service class, it's client methods that server call them
         /// </summary>
         /// <typeparam name="T">type of your class</typeparam>
         /// <returns>return instance if type</returns>
-        public T RegisterServerCallback<T>()
+        public T RegisterClientService<T>()
         {
             if (IsDisposed)
                 throw new ObjectDisposedException("Connector");
             var type = typeof(T);
+            var name = type.GetClientServiceName();
+
             var objectInstance = Activator.CreateInstance(type);
             //var duplex = objectInstance as ClientDuplex;
             //duplex.Connector = this;
 
-            Callbacks.TryAdd(type.GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault().Name, new KeyValue<SynchronizationContext, object>(SynchronizationContext.Current, objectInstance));
+            Callbacks.TryAdd(name, new KeyValue<SynchronizationContext, object>(SynchronizationContext.Current, objectInstance));
             OperationContract.SetConnector(objectInstance, this);
             return (T)objectInstance;
         }

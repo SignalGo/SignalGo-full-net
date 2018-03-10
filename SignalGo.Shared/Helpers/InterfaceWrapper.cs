@@ -58,7 +58,7 @@ namespace SignalGo.Shared.Helpers
             return result;
         }
 
-        public static Object Wrap(Type serviceInterfaceType, Func<string, MethodInfo, object[], object> CallMethodAction)
+        internal static Object Wrap(Type serviceInterfaceType, Func<string, MethodInfo, object[], object> CallMethodAction)
         {
             //this method load GetCurrentMethod for xamarin linked assembly
             //var fix = System.Reflection.MethodInfo.GetCurrentMethod();
@@ -68,7 +68,7 @@ namespace SignalGo.Shared.Helpers
             String ns = serviceInterfaceType.Namespace;
             if (!String.IsNullOrEmpty(ns))
                 ns += ".";
-            var attrib = serviceInterfaceType.GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault();
+            var attrib = serviceInterfaceType.GetCustomAttributes<ServiceContractAttribute>(true).Where(x => x.ServiceType == ServiceType.SeverService).FirstOrDefault();
 
 #if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
             var assembly = AssemblyBuilder.DefineDynamicAssembly(assemblyName,

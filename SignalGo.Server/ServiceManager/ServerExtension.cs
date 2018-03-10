@@ -66,7 +66,7 @@ namespace SignalGo.Server.ServiceManager
 
         static object SendToClientData(this OperationCalls client, string callerName, params object[] args)
         {
-            var attribute = client.GetType().GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault();
+            var attribute = client.GetType().GetServerServiceAttribute();
             if (client.ServerBase.ClientRegistredMethods[client.CurrentClient].ContainsKey(attribute.Name))
             {
                 if (client.ServerBase.ClientRegistredMethods[client.CurrentClient][attribute.Name].Contains(callerName))
@@ -85,7 +85,7 @@ namespace SignalGo.Server.ServiceManager
         {
             if (SynchronizationContext.Current != null && ServerBase.AllDispatchers.ContainsKey(SynchronizationContext.Current) && ServerBase.AllDispatchers[SynchronizationContext.Current].FirstOrDefault().MainContext == SynchronizationContext.Current)
                 throw new Exception("Cannot call method from class Constractor or main Thread");
-            var attribute = client.GetType().GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault();
+            var attribute = client.GetType().GetServerServiceAttribute();
             MethodCallInfo callInfo = new MethodCallInfo();
             callInfo.ServiceName = attribute.Name;
             callInfo.MethodName = callerName;

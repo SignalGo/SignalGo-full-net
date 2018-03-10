@@ -12,7 +12,7 @@ namespace SignalGoTest.DataExhanger
         {
             GlobalInitalization.Initialize();
             var client = GlobalInitalization.InitializeAndConnecteClient();
-            var service = client.RegisterClientServiceInterfaceWrapper<ITestServerModel>();
+            var service = client.RegisterServerServiceInterfaceWrapper<ITestServerModel>();
 
             var users = service.GetListOfUsers();
             Assert.IsTrue(string.IsNullOrEmpty(users[0].Password));

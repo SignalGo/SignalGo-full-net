@@ -22,17 +22,42 @@ namespace SignalGo.Shared.DataTypes
     }
 
     /// <summary>
+    /// type of your service class that supported
+    /// </summary>
+    public enum ServiceType
+    {
+        /// <summary>
+        /// service class is implimeneted server methods
+        /// </summary>
+        SeverService,
+        /// <summary>
+        /// service class is implimeneted client methods
+        /// </summary>
+        ClientService,
+        /// <summary>
+        /// service class is implimeneted server methods that support httpCalls
+        /// </summary>
+        HttpService
+    }
+
+    /// <summary>
     /// service contract is communicate services between client and server
     /// </summary>
     public class ServiceContractAttribute : Attribute
     {
         /// <summary>
+        /// type of service
+        /// </summary>
+        public ServiceType ServiceType { get; set; }
+        /// <summary>
         /// 
         /// </summary>
         /// <param name="name"></param>
-        public ServiceContractAttribute(string name)
+        /// <param name="serviceType"></param>
+        public ServiceContractAttribute(string name, ServiceType serviceType)
         {
             Name = name;
+            ServiceType = serviceType;
         }
 
         /// <summary>
@@ -40,10 +65,12 @@ namespace SignalGo.Shared.DataTypes
         /// </summary>
         /// <param name="name"></param>
         /// <param name="instanceType"></param>
-        public ServiceContractAttribute(string name, InstanceType instanceType)
+        /// <param name="serviceType"></param>
+        public ServiceContractAttribute(string name, InstanceType instanceType, ServiceType serviceType)
         {
             Name = name;
             InstanceType = instanceType;
+            ServiceType = serviceType;
         }
         /// <summary>
         /// name of service
@@ -54,5 +81,40 @@ namespace SignalGo.Shared.DataTypes
         /// you can change the instance plane with this parameter
         /// </summary>
         public InstanceType InstanceType { get; set; } = InstanceType.MultipeInstance;
+    }
+
+    public static class ServiceContractExtensions
+    {
+        public static string GetServerServiceName(this Type type)
+        {
+            var serviceContract = type.GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault();
+            if (serviceContract == null)
+                throw new Exception("your server class must have ServiceContract attribute that have ServiceType == ServiceType.SeverService parameter");
+            return serviceContract.Name;
+        }
+
+        public static string GetClientServiceName(this Type type)
+        {
+            var serviceContract = type.GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault();
+            if (serviceContract == null)
+                throw new Exception("your client class must have ServiceContract attribute that have ServiceType == ServiceType.ClientService parameter");
+            return serviceContract.Name;
+        }
+
+        public static ServiceContractAttribute GetServerServiceAttribute(this Type type)
+        {
+            var serviceContract = type.GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault();
+            if (serviceContract == null)
+                throw new Exception("your server class must have ServiceContract attribute that have ServiceType == ServiceType.SeverService parameter");
+            return serviceContract;
+        }
+
+        public static ServiceContractAttribute GetClientServiceAttribute(this Type type)
+        {
+            var serviceContract = type.GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault();
+            if (serviceContract == null)
+                throw new Exception("your client class must have ServiceContract attribute that have ServiceType == ServiceType.ClientService parameter");
+            return serviceContract;
+        }
     }
 }

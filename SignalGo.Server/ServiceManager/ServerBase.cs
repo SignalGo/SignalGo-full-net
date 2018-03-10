@@ -219,22 +219,29 @@ namespace SignalGo.Server.ServiceManager
 #endif
         }
 
+        /// <summary>
+        /// initialize server service
+        /// </summary>
+        /// <param name="serviceType"></param>
         public void InitializeService(Type serviceType)
         {
-            var name = serviceType.GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault().Name;
+            var name = serviceType.GetServerServiceName();
             RegisteredServiceTypes.TryAdd(name, serviceType);
         }
-
+        /// <summary>
+        /// initialize server service
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
         public void InitializeService<T>()
         {
             InitializeService(typeof(T));
         }
 
-        internal object FindClientServiceByType(ClientInfo client, Type serviceType, ServiceContractAttribute attribute)
+        internal object FindServerServiceByType(ClientInfo client, Type serviceType, ServiceContractAttribute attribute)
         {
             if (attribute == null)
             {
-                attribute = serviceType.GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault();
+                attribute = serviceType.GetServerServiceAttribute();
             }
 
             if (attribute.InstanceType == InstanceType.SingleInstance)
@@ -242,7 +249,7 @@ namespace SignalGo.Server.ServiceManager
                 if (!SingleInstanceServices.TryGetValue(attribute.Name, out object result))
                 {
                     if (ProviderSetting.AutoDetectRegisterServices)
-                        RegisterServiceForClient(attribute, client);
+                        RegisterServerServiceForClient(attribute, client);
                     SingleInstanceServices.TryGetValue(attribute.Name, out result);
                 }
                 return result;
@@ -252,19 +259,19 @@ namespace SignalGo.Server.ServiceManager
             {
                 if (ProviderSetting.AutoDetectRegisterServices)
                 {
-                    return RegisterServiceForClient(attribute, client);
+                    return RegisterServerServiceForClient(attribute, client);
                 }
                 return null;
             }
             var serviceName = attribute.Name;
             foreach (var item in Services[client])
             {
-                if (serviceName == item.GetType().GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault().Name)
+                if (serviceName == item.GetType().GetServerServiceName())
                     return item;
             }
             if (ProviderSetting.AutoDetectRegisterServices)
             {
-                return RegisterServiceForClient(attribute, client);
+                return RegisterServerServiceForClient(attribute, client);
             }
             return null;
         }
@@ -275,9 +282,9 @@ namespace SignalGo.Server.ServiceManager
             return value;
         }
 
-        internal object FindClientCallbackByType(ClientInfo client, Type serviceType)
+        internal object FindClientServerByType(ClientInfo client, Type serviceType)
         {
-            var serviceName = serviceType.GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault().Name;
+            var serviceName = serviceType.GetClientServiceName();
             if (!Callbacks.ContainsKey(client))
             {
                 AutoLogger.LogText($"Callbacks is not ContainsKey! {serviceType.FullName} {client.ClientId} {DateTime.Now}");
@@ -285,19 +292,19 @@ namespace SignalGo.Server.ServiceManager
             }
             foreach (var item in Callbacks[client].ToArray())
             {
-                if (serviceName == item.GetType().GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault().Name)
+                if (serviceName == item.GetType().GetClientServiceName())
                     return item;
             }
             return null;
         }
 
+        /// <summary>
+        /// register client service that have client methods
+        /// </summary>
+        /// <param name="type"></param>
         public void RegisterClientService(Type type)
         {
-#if (NETSTANDARD1_6 || NETCOREAPP1_1)
-            var name = ((ServiceContractAttribute)type.GetTypeInfo().GetCustomAttributes(typeof(ServiceContractAttribute), true).FirstOrDefault()).Name;
-#else
-            var name = ((ServiceContractAttribute)type.GetCustomAttributes(typeof(ServiceContractAttribute), true).FirstOrDefault()).Name;
-#endif
+            var name = type.GetClientServiceName();
             RegisteredCallbacksTypes.TryAdd(name, type);
         }
         /// <summary>
@@ -306,11 +313,7 @@ namespace SignalGo.Server.ServiceManager
         /// <param name="type"></param>
         public void RegisterStreamService(Type type)
         {
-#if (NETSTANDARD1_6 || NETCOREAPP1_1)
-            var name = ((ServiceContractAttribute)AttributeHelper.GetCustomAttributes<ServiceContractAttribute>(type, true).FirstOrDefault()).Name;
-#else
-            var name = ((ServiceContractAttribute)type.GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault()).Name;
-#endif
+            var name = type.GetServerServiceName();
             if (StreamServices.ContainsKey(name))
                 throw new Exception("duplicate call");
             var service = Activator.CreateInstance(type);
@@ -328,7 +331,7 @@ namespace SignalGo.Server.ServiceManager
         public void RegisterClientCallbackInterfaceService<T>()
         {
             Type type = typeof(T);
-            var name = type.GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault().Name;// (().GetCustomAttributes(typeof(ServiceContractAttribute), true).FirstOrDefault()).Name;
+            var name = type.GetClientServiceName();
             var obj = CSCodeInjection.GenerateInterfaceType(type, typeof(OperationCalls), new List<Type>() { typeof(ServiceContractAttribute), this.GetType() }, true);
             RegisteredCallbacksTypes.TryAdd(name, obj);
         }
@@ -1970,7 +1973,7 @@ namespace SignalGo.Server.ServiceManager
                                 SendCallbackData(new MethodCallbackInfo() { Guid = callInfo.Guid, Data = ServerSerializationHelper.SerializeObject(true, this) }, client);
                             //کلاسی کالبکی که سمت سرور جدید میشه
                             else if (callInfo.MethodName == "/RegisterService")
-                                CalculateRegisterServiceForClient(callInfo, client);
+                                CalculateRegisterServerServiceForClient(callInfo, client);
                             //متد هایی که لازمه برای کلاینت کال بشه
                             else if (callInfo.MethodName == "/RegisterClientMethods")
                             {
@@ -2183,7 +2186,7 @@ namespace SignalGo.Server.ServiceManager
         /// </summary>
         /// <param name="callInfo"></param>
         /// <param name="client"></param>
-        public void CalculateRegisterServiceForClient(MethodCallInfo callInfo, ClientInfo client)
+        public void CalculateRegisterServerServiceForClient(MethodCallInfo callInfo, ClientInfo client)
         {
             MethodCallbackInfo callback = new MethodCallbackInfo()
             {
@@ -2195,16 +2198,16 @@ namespace SignalGo.Server.ServiceManager
                 if (!RegisteredServiceTypes.ContainsKey(callInfo.ServiceName))
                     throw new Exception($"Service name {callInfo.ServiceName} not found or not registered!");
                 var serviceType = RegisteredServiceTypes[callInfo.ServiceName];
-                var serviceTypeAttribute = serviceType.GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault();
+                var serviceTypeAttribute = serviceType.GetServerServiceAttribute();
 
-                var service = FindClientServiceByType(client, serviceType, serviceTypeAttribute);
+                var service = FindServerServiceByType(client, serviceType, serviceTypeAttribute);
                 if (service != null && serviceTypeAttribute.InstanceType == InstanceType.MultipeInstance)
                 {
                     AutoLogger.LogText($"{client.IPAddress} {client.ClientId} this service for this client exist, type: {serviceType.FullName} : serviceName:{callInfo.ServiceName}");
                 }
                 else if (service == null)
                 {
-                    RegisterServiceForClient(serviceTypeAttribute, client);
+                    RegisterServerServiceForClient(serviceTypeAttribute, client);
                 }
 
                 //جلوگیری از هنگ
@@ -2220,7 +2223,7 @@ namespace SignalGo.Server.ServiceManager
             SendCallbackData(callback, client);
         }
 
-        public object RegisterServiceForClient(ServiceContractAttribute serviceAttribute, ClientInfo client)
+        public object RegisterServerServiceForClient(ServiceContractAttribute serviceAttribute, ClientInfo client)
         {
             var serviceType = RegisteredServiceTypes[serviceAttribute.Name];
             var objectInstance = Activator.CreateInstance(serviceType);
@@ -2369,7 +2372,7 @@ namespace SignalGo.Server.ServiceManager
                     var serviceType = RegisteredServiceTypes[callInfo.ServiceName];
                     if (serviceType == null)
                         throw new Exception($"{client.IPAddress} {client.ClientId} serviceType {callInfo.ServiceName} not found");
-                    var service = FindClientServiceByType(client, serviceType, null);
+                    var service = FindServerServiceByType(client, serviceType, null);
                     if (service == null)
                         throw new Exception($"{client.IPAddress} {client.ClientId} service {callInfo.ServiceName} not found");
 
