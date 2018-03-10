@@ -83,35 +83,52 @@ namespace SignalGo.Shared.DataTypes
         public InstanceType InstanceType { get; set; } = InstanceType.MultipeInstance;
     }
 
+    /// <summary>
+    /// extension of service contract attribute
+    /// </summary>
     public static class ServiceContractExtensions
     {
+        /// <summary>
+        /// get server service name from ServiceContractAttribute
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
         public static string GetServerServiceName(this Type type)
         {
-            var serviceContract = type.GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault();
-            if (serviceContract == null)
-                throw new Exception("your server class must have ServiceContract attribute that have ServiceType == ServiceType.SeverService parameter");
+            var serviceContract = type.GetServerServiceAttribute();
             return serviceContract.Name;
         }
-
+        /// <summary>
+        /// get client service name from ServiceContractAttribute
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
         public static string GetClientServiceName(this Type type)
         {
-            var serviceContract = type.GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault();
-            if (serviceContract == null)
-                throw new Exception("your client class must have ServiceContract attribute that have ServiceType == ServiceType.ClientService parameter");
+            var serviceContract = type.GetClientServiceAttribute();
             return serviceContract.Name;
         }
 
+        /// <summary>
+        /// get server service attribute from ServiceContractAttribute
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
         public static ServiceContractAttribute GetServerServiceAttribute(this Type type)
         {
-            var serviceContract = type.GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault();
+            var serviceContract = type.GetCustomAttributes<ServiceContractAttribute>(true).Where(x => x.ServiceType == ServiceType.SeverService || x.ServiceType == ServiceType.HttpService).FirstOrDefault();
             if (serviceContract == null)
                 throw new Exception("your server class must have ServiceContract attribute that have ServiceType == ServiceType.SeverService parameter");
             return serviceContract;
         }
-
+        /// <summary>
+        /// get client service attribute from ServiceContractAttribute
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
         public static ServiceContractAttribute GetClientServiceAttribute(this Type type)
         {
-            var serviceContract = type.GetCustomAttributes<ServiceContractAttribute>(true).FirstOrDefault();
+            var serviceContract = type.GetCustomAttributes<ServiceContractAttribute>(true).Where(x => x.ServiceType == ServiceType.ClientService).FirstOrDefault();
             if (serviceContract == null)
                 throw new Exception("your client class must have ServiceContract attribute that have ServiceType == ServiceType.ClientService parameter");
             return serviceContract;
