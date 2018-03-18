@@ -183,9 +183,16 @@ namespace SignalGo.Shared.Converters
     public class DataExchangeConverter : JsonConverter
     {
         /// <summary>
+        /// log system for data exchanger
+        /// </summary>
+        public AutoLogger AutoLogger { get; set; } = new AutoLogger() { FileName = "DataExchanger Logs.log" };
+        /// <summary>
         /// enable refrence serializing when duplicate object detected
         /// </summary>
         public bool IsEnabledReferenceResolver { get; set; } = true;
+        /// <summary>
+        /// enable refrence serializing when duplicate list of objects detected
+        /// </summary>
         public bool IsEnabledReferenceResolverForArray { get; set; } = true;
         private DefaultReferenceResolver ReferenceResolver { get; set; } = new DefaultReferenceResolver();
         /// <summary>
@@ -587,7 +594,7 @@ namespace SignalGo.Shared.Converters
                                 if (property.CanWrite)
                                     property.SetValue(instance, value, null);
                                 else
-                                    AutoLogger.LogText($"property {property.Name} cannot write");
+                                    AutoLogger?.LogText($"property {property.Name} cannot write");
                             }
                         }
                         else
@@ -600,13 +607,13 @@ namespace SignalGo.Shared.Converters
                                     if (property.CanWrite)
                                         property.SetValue(instance, value, null);
                                     else
-                                        AutoLogger.LogText($"property {property.Name} cannot write");
+                                        AutoLogger?.LogText($"property {property.Name} cannot write");
                                 }
 
                             }
                             catch (Exception ex)
                             {
-                                AutoLogger.LogError(ex, $"Deserialize Error {property.Name} :");
+                                AutoLogger?.LogError(ex, $"Deserialize Error {property.Name} :");
                             }
                         }
                     }
@@ -1078,7 +1085,7 @@ namespace SignalGo.Shared.Converters
             }
             catch (Exception ex)
             {
-                AutoLogger.LogError(ex, "WriteData 4");
+                AutoLogger?.LogError(ex, "WriteData 4");
             }
 
             void GenerateValue(PropertyInfo property, FieldInfo field)
@@ -1175,7 +1182,7 @@ namespace SignalGo.Shared.Converters
                             }
                             catch (Exception ex)
                             {
-                                AutoLogger.LogError(ex, "WriteData 1");
+                                AutoLogger?.LogError(ex, "WriteData 1");
                             }
                             if (propValue != null)
                             {
@@ -1209,7 +1216,7 @@ namespace SignalGo.Shared.Converters
                                 }
                                 catch (Exception ex)
                                 {
-                                    AutoLogger.LogError(ex, "WriteData 2");
+                                    AutoLogger?.LogError(ex, "WriteData 2");
                                 }
                             }
                         }
@@ -1280,7 +1287,7 @@ namespace SignalGo.Shared.Converters
                             }
                             catch (Exception ex)
                             {
-                                AutoLogger.LogError(ex, "WriteData 3");
+                                AutoLogger?.LogError(ex, "WriteData 3");
                             }
                         }
                     }

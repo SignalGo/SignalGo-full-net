@@ -28,14 +28,14 @@ namespace SignalGo.Shared.IO
             {
                 ulong size = 0;
                 var bytes = GetLengthOfWebSocket(stream, ref size);
-//#if (!PORTABLE)
-//                Console.WriteLine("read webSocket converted bytes: " + bytes.Count);
-//                foreach (var item in bytes)
-//                {
-//                    Console.WriteLine(item);
-//                }
-//                Console.WriteLine("end webSocket converted bytes");
-//#endif
+                //#if (!PORTABLE)
+                //                Console.WriteLine("read webSocket converted bytes: " + bytes.Count);
+                //                foreach (var item in bytes)
+                //                {
+                //                    Console.WriteLine(item);
+                //                }
+                //                Console.WriteLine("end webSocket converted bytes");
+                //#endif
                 var newBytes = ReadBlockSize(stream, size);
                 List<byte> b = new List<byte>();
                 b.AddRange(bytes);
@@ -43,7 +43,8 @@ namespace SignalGo.Shared.IO
                 var decode = DecodeMessage(b.ToArray());
                 if (decode == null || decode.Length == 0)
                 {
-                    AutoLogger.LogText($"decode zero size: {size} bytes: {ByteArrayToText(bytes.ToArray())} newBytes:{ByteArrayToText(newBytes)} decode: {ByteArrayToText(decode)}");
+                    throw new Exception("websocket closed by client");
+                    //AutoLogger.LogText($"decode zero size: {size} bytes: {ByteArrayToText(bytes.ToArray())} newBytes:{ByteArrayToText(newBytes)} decode: {ByteArrayToText(decode)}");
                 }
                 return decode;
             }
@@ -127,14 +128,14 @@ namespace SignalGo.Shared.IO
             List<byte> bytes = new List<byte>();
 
             bytes.AddRange(ReadBlockSize(stream, 2));
-//#if (!PORTABLE)
-//            Console.WriteLine("read block bytes: " + bytes.Count);
-//            foreach (var item in bytes)
-//            {
-//                Console.WriteLine(item);
-//            }
-//            Console.WriteLine("end read block bytes");
-//#endif
+            //#if (!PORTABLE)
+            //            Console.WriteLine("read block bytes: " + bytes.Count);
+            //            foreach (var item in bytes)
+            //            {
+            //                Console.WriteLine(item);
+            //            }
+            //            Console.WriteLine("end read block bytes");
+            //#endif
 
             if (bytes[1] - 128 <= 125)
             {
@@ -174,9 +175,9 @@ namespace SignalGo.Shared.IO
                 {
                     countToRead = count - lengthReaded;
                 }
-//#if (!PORTABLE)
-//                Console.WriteLine("countToRead: " + countToRead);
-//#endif
+                //#if (!PORTABLE)
+                //                Console.WriteLine("countToRead: " + countToRead);
+                //#endif
                 byte[] readBytes = new byte[countToRead];
                 var readCount = stream.Read(readBytes, 0, (int)countToRead);
                 if (readCount <= 0)
@@ -221,7 +222,50 @@ namespace SignalGo.Shared.IO
             return bytes.ToArray();
         }
 #endif
-        //static byte[] DecodeMessage(byte[] bytes)
+        //public static byte[] DecodeMessage(byte[] buffer, int length)
+        //{
+        //    byte b = buffer[1];
+        //    int dataLength = 0;
+        //    int totalLength = 0;
+        //    int keyIndex = 0;
+
+        //    if (b - 128 <= 125)
+        //    {
+        //        dataLength = b - 128;
+        //        keyIndex = 2;
+        //        totalLength = dataLength + 6;
+        //    }
+
+        //    if (b - 128 == 126)
+        //    {
+        //        dataLength = BitConverter.ToInt16(new byte[] { buffer[3], buffer[2] }, 0);
+        //        keyIndex = 4;
+        //        totalLength = dataLength + 8;
+        //    }
+
+        //    if (b - 128 == 127)
+        //    {
+        //        dataLength = (int)BitConverter.ToInt64(new byte[] { buffer[9], buffer[8], buffer[7], buffer[6], buffer[5], buffer[4], buffer[3], buffer[2] }, 0);
+        //        keyIndex = 10;
+        //        totalLength = dataLength + 14;
+        //    }
+
+        //    if (totalLength > length)
+        //        throw new Exception("The buffer length is small than the data length");
+
+        //    byte[] key = new byte[] { buffer[keyIndex], buffer[keyIndex + 1], buffer[keyIndex + 2], buffer[keyIndex + 3] };
+
+        //    int dataIndex = keyIndex + 4;
+        //    int count = 0;
+        //    for (int i = dataIndex; i < totalLength; i++)
+        //    {
+        //        buffer[i] = (byte)(buffer[i] ^ key[count % 4]);
+        //        count++;
+        //    }
+
+        //    return buffer.ToList().GetRange(dataIndex, dataLength).ToArray();// Encoding.ASCII.GetString(buffer, dataIndex, dataLength);
+        //}
+        //static byte[] DecodeMessage(byte[] byt;es)
         //{
         //    string incomingData = string.Empty;
         //    byte secondByte = bytes[1];
@@ -243,49 +287,95 @@ namespace SignalGo.Shared.IO
 
         //    return decoded;
         //}
-
-        static byte[] DecodeMessage(byte[] buffer)
+        static byte[] DecodeMessage(byte[] bytes)
         {
-            byte b = buffer[1];
-            int dataLength = 0;
-            int totalLength = 0;
-            int keyIndex = 0;
-
-            if (b - 128 <= 125)
+            List<byte> ret = new List<byte>();
+            int offset = 0;
+            while (offset + 6 < bytes.Length)
             {
-                dataLength = b - 128;
-                keyIndex = 2;
-                totalLength = dataLength + 6;
+                // format: 0==ascii/binary 1=length-0x80, byte 2,3,4,5=key, 6+len=message, repeat with offset for next...
+                int len = bytes[offset + 1] - 0x80;
+
+                if (len <= 125)
+                {
+
+                    //String data = Encoding.UTF8.GetString(bytes);
+                    //Debug.Log("len=" + len + "bytes[" + bytes.Length + "]=" + ByteArrayToString(bytes) + " data[" + data.Length + "]=" + data);
+                    //Debug.Log("len=" + len + " offset=" + offset);
+                    Byte[] key = new Byte[] { bytes[offset + 2], bytes[offset + 3], bytes[offset + 4], bytes[offset + 5] };
+                    Byte[] decoded = new Byte[len];
+                    for (int i = 0; i < len; i++)
+                    {
+                        int realPos = offset + 6 + i;
+                        decoded[i] = (Byte)(bytes[realPos] ^ key[i % 4]);
+                    }
+                    offset += 6 + len;
+                    ret.AddRange(decoded);
+                }
+                else
+                {
+                    int a = bytes[offset + 2];
+                    int b = bytes[offset + 3];
+                    len = (a << 8) + b;
+                    //Debug.Log("Length of ws: " + len);
+
+                    Byte[] key = new Byte[] { bytes[offset + 4], bytes[offset + 5], bytes[offset + 6], bytes[offset + 7] };
+                    Byte[] decoded = new Byte[len];
+                    for (int i = 0; i < len; i++)
+                    {
+                        int realPos = offset + 8 + i;
+                        decoded[i] = (Byte)(bytes[realPos] ^ key[i % 4]);
+                    }
+
+                    offset += 8 + len;
+                    ret.AddRange(decoded);
+                }
             }
-
-            if (b - 128 == 126)
-            {
-                dataLength = BitConverter.ToInt16(new byte[] { buffer[3], buffer[2] }, 0);
-                keyIndex = 4;
-                totalLength = dataLength + 8;
-            }
-
-            if (b - 128 == 127)
-            {
-                dataLength = (int)BitConverter.ToInt64(new byte[] { buffer[9], buffer[8], buffer[7], buffer[6], buffer[5], buffer[4], buffer[3], buffer[2] }, 0);
-                keyIndex = 10;
-                totalLength = dataLength + 14;
-            }
-
-            //if (totalLength > buffer.Length)
-            //    throw new Exception("The buffer length is small than the data length");
-
-            byte[] key = new byte[] { buffer[keyIndex], buffer[keyIndex + 1], buffer[keyIndex + 2], buffer[keyIndex + 3] };
-
-            int dataIndex = keyIndex + 4;
-            int count = 0;
-            for (int i = dataIndex; i < totalLength; i++)
-            {
-                buffer[i] = (byte)(buffer[i] ^ key[count % 4]);
-                count++;
-            }
-
-            return buffer.ToList().GetRange(dataIndex, dataLength).ToArray();// Encoding.ASCII.GetString(, , );
+            return ret.ToArray();
         }
+        //static byte[] DecodeMessage(byte[] buffer)
+        //{
+        //    byte b = buffer[1];
+        //    int dataLength = 0;
+        //    int totalLength = 0;
+        //    int keyIndex = 0;
+        //    var takeLength = b - 128;
+        //    if (takeLength == 0)
+        //    {
+        //        return new byte[] { 1 };
+        //    }
+        //    else if (takeLength <= 125)
+        //    {
+        //        dataLength = b - 128;
+        //        keyIndex = 2;
+        //        totalLength = dataLength + 6;
+        //    }
+        //    else if (takeLength == 126)
+        //    {
+        //        dataLength = BitConverter.ToInt16(new byte[] { buffer[3], buffer[2] }, 0);
+        //        keyIndex = 4;
+        //        totalLength = dataLength + 8;
+        //    }
+        //    else if (takeLength == 127)
+        //    {
+        //        dataLength = (int)BitConverter.ToInt64(new byte[] { buffer[9], buffer[8], buffer[7], buffer[6], buffer[5], buffer[4], buffer[3], buffer[2] }, 0);
+        //        keyIndex = 10;
+        //        totalLength = dataLength + 14;
+        //    }
+        //    //if (totalLength > buffer.Length)
+        //    //    throw new Exception("The buffer length is small than the data length");
+
+        //    byte[] key = new byte[] { buffer[keyIndex], buffer[keyIndex + 1], buffer[keyIndex + 2], buffer[keyIndex + 3] };
+
+        //    int dataIndex = keyIndex + 4;
+        //    int count = 0;
+        //    for (int i = dataIndex; i < totalLength; i++)
+        //    {
+        //        buffer[i] = (byte)(buffer[i] ^ key[count % 4]);
+        //        count++;
+        //    }
+
+        //    return buffer.ToList().GetRange(dataIndex, dataLength).ToArray();// Encoding.ASCII.GetString(, , );
+        //}
     }
 }

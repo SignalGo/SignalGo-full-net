@@ -35,6 +35,15 @@ namespace SignalGo.Server.ServiceManager
     /// </summary>
     public abstract class ServerBase : IDisposable
     {
+        internal AutoLogger AutoLogger { get; private set; } = new AutoLogger() { FileName = "ServerBase Logs.log" };
+        private JsonSettingHelper JsonSettingHelper { get; set; } = new JsonSettingHelper();
+        /// <summary>
+        /// 
+        /// </summary>
+        public ServerBase()
+        {
+            JsonSettingHelper.Initialize();
+        }
         /// <summary>
         /// server is started or not
         /// </summary>
@@ -151,7 +160,6 @@ namespace SignalGo.Server.ServiceManager
         /// <summary>
         /// اتصال به سرور
         /// </summary>
-        /// <param name="serverUrl"></param>
         /// <param name="port"></param>
         /// <param name="virtualUrl"></param>
         internal void Connect(int port, string[] virtualUrl)
@@ -188,7 +196,7 @@ namespace SignalGo.Server.ServiceManager
                 {
                     Console.WriteLine("Server Disposed! : " + ex);
                     OnServerInternalExceptionAction?.Invoke(ex);
-                    SignalGo.Shared.Log.AutoLogger.LogError(ex, "Connect Server");
+                    AutoLogger.LogError(ex, "Connect Server");
                     exception = ex;
                     resetEvent.Set();
                     Stop();
@@ -218,6 +226,8 @@ namespace SignalGo.Server.ServiceManager
             AddClient(server.AcceptTcpClient());
 #endif
         }
+
+
 
         /// <summary>
         /// register server service
@@ -516,9 +526,9 @@ namespace SignalGo.Server.ServiceManager
 
                                 //var response = "HTTP/1.1 101 Switching Protocols" + newLine
                                 var response = "HTTP/1.0 101 Switching Protocols" + newLine
-                                     + "Upgrade: websocket" + newLine
-                                     + "Connection: Upgrade" + newLine
-                                     + "Sec-WebSocket-Accept: " + acceptKey + newLine + newLine;
+                                 + "Upgrade: websocket" + newLine
+                                 + "Connection: Upgrade" + newLine
+                                 + "Sec-WebSocket-Accept: " + acceptKey + newLine + newLine;
                                 var bytes = System.Text.Encoding.UTF8.GetBytes(response);
                                 tcpClient.GetStream().Write(bytes, 0, bytes.Length);
                                 //Console.WriteLine($"WebSocket client send reponse success size:{bytes.Length} sended{count}");
@@ -1882,7 +1892,7 @@ namespace SignalGo.Server.ServiceManager
                         if (client.TcpClient.Connected)
                         {
                             var bytes = GoStreamReader.ReadBlockToEnd(stream, CompressMode.None, 2048, client.IsWebSocket);
-                            var json = Encoding.UTF8.GetString(bytes);
+                            var json = Encoding.ASCII.GetString(bytes);
                             List<string> registers = ServerSerializationHelper.Deserialize<List<string>>(json, this);
                             foreach (var item in registers)
                             {
@@ -2056,7 +2066,7 @@ namespace SignalGo.Server.ServiceManager
                 catch (Exception ex)
                 {
                     Console.WriteLine(ex);
-                    SignalGo.Shared.Log.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase StartToReadingClientData");
+                    AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase StartToReadingClientData");
                     DisposeClient(client, "StartToReadingClientData exception");
                 }
             })
@@ -2196,7 +2206,7 @@ namespace SignalGo.Server.ServiceManager
             }
             catch (Exception ex)
             {
-                SignalGo.Shared.Log.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase RegisterClassForClient");
+                AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase RegisterClassForClient");
                 callback.IsException = true;
                 callback.Data = ServerSerializationHelper.SerializeObject(ex.ToString(), this);
             }
@@ -2240,7 +2250,7 @@ namespace SignalGo.Server.ServiceManager
             }
             catch (Exception ex)
             {
-                SignalGo.Shared.Log.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase RegisterMethodsForClient");
+                AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase RegisterMethodsForClient");
                 callback.IsException = true;
                 callback.Data = ServerSerializationHelper.SerializeObject(ex.ToString(), this);
             }
@@ -2269,7 +2279,7 @@ namespace SignalGo.Server.ServiceManager
             }
             catch (Exception ex)
             {
-                SignalGo.Shared.Log.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase UnRegisterMethodsForClient");
+                AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase UnRegisterMethodsForClient");
                 callback.IsException = true;
                 callback.Data = ServerSerializationHelper.SerializeObject(ex.ToString(), this);
             }
@@ -2505,7 +2515,7 @@ namespace SignalGo.Server.ServiceManager
                 catch (Exception ex)
                 {
                     exception = ex;
-                    SignalGo.Shared.Log.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase CallMethod: {callInfo.MethodName}");
+                    AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase CallMethod: {callInfo.MethodName}");
                     callback.IsException = true;
                     callback.Data = ServerSerializationHelper.SerializeObject(ex.ToString(), this);
                 }
@@ -2596,7 +2606,7 @@ namespace SignalGo.Server.ServiceManager
             }
             catch (Exception ex)
             {
-                SignalGo.Shared.Log.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase SetSettings");
+                AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase SetSettings");
                 if (!client.TcpClient.Connected)
                     DisposeClient(client, "SetSettings exception");
             }
@@ -2678,7 +2688,7 @@ namespace SignalGo.Server.ServiceManager
             }
             catch (Exception ex)
             {
-                SignalGo.Shared.Log.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase SendCallbackData");
+                AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase SendCallbackData");
                 if (!client.TcpClient.Connected)
                     DisposeClient(client, "SendCallbackData exception");
             }
@@ -3243,7 +3253,7 @@ namespace SignalGo.Server.ServiceManager
                     bytes.AddRange(jsonBytes);
                     GoStreamWriter.WriteToStream(client.TcpClient.GetStream(), bytes.ToArray(), client.IsWebSocket);
 
-                    SignalGo.Shared.Log.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase CallMethod");
+                    AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase CallMethod");
                 }
                 finally
                 {
@@ -3423,7 +3433,7 @@ namespace SignalGo.Server.ServiceManager
                 }
                 catch (Exception ex)
                 {
-                    SignalGo.Shared.Log.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase CallMethod");
+                    AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase CallMethod");
                 }
             });
         }

@@ -38,8 +38,7 @@ namespace ServerConsoleTest
             try
             {
                 ServerProvider provider = new ServerProvider();
-                provider.Start("http://localhost:3284/TestServices/SignalGo", true);
-
+                provider.Start("http://localhost:3284/TestServices/SignalGo");
                 Console.WriteLine("server started");
             }
             catch (Exception ex)

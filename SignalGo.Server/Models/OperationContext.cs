@@ -409,7 +409,7 @@ namespace SignalGo.Server.Models
                         }
                         catch (Exception ex)
                         {
-                            AutoLogger.LogError(ex, "GetClientCallbackOfClientContext");
+                            context.ServerBase.AutoLogger.LogError(ex, "GetClientCallbackOfClientContext");
                         }
                         return null;
                     }
@@ -426,7 +426,7 @@ namespace SignalGo.Server.Models
                             }
                             catch (Exception ex)
                             {
-                                AutoLogger.LogError(ex, "GetClientCallbackOfClientContext 2");
+                                context.ServerBase.AutoLogger.LogError(ex, "GetClientCallbackOfClientContext 2");
                             }
                             return null;
                         }
@@ -470,13 +470,13 @@ namespace SignalGo.Server.Models
 
                 context.ServerBase.Callbacks[context.Client].Add(obj);
                 if (!(obj is OperationCalls))
-                    Shared.Log.AutoLogger.LogText("is not OprationCalls: " + obj.ToString(), true);
+                    context.ServerBase.AutoLogger.LogText("is not OprationCalls: " + obj.ToString(), true);
 
                 return new ClientContext<T>(obj, context.Client);
             }
             else
             {
-                Shared.Log.AutoLogger.LogText("is not interface: " + typeof(T).ToString(), true);
+                context.ServerBase.AutoLogger.LogText("is not interface: " + typeof(T).ToString(), true);
                 return new ClientContext<T>((T)context.ServerBase.FindClientServerByType(context.Client, typeof(T)), context.Client);
 
             }
@@ -490,7 +490,7 @@ namespace SignalGo.Server.Models
                 GetClientCallbackOfClientContext<T>(serverBase, client);
                 find = serverBase.FindClientServerByType(client, serviceType);
                 if (find == null)
-                    AutoLogger.LogText($"GetAllClientCallbackListOfClientContext service not found : {serviceType.FullName} : name: {attribName} session: {client.ClientId}", true);
+                    serverBase.AutoLogger.LogText($"GetAllClientCallbackListOfClientContext service not found : {serviceType.FullName} : name: {attribName} session: {client.ClientId}", true);
             }
             return find;
         }
@@ -829,7 +829,7 @@ namespace SignalGo.Server.Models
                         }
                         catch (Exception ex)
                         {
-                            AutoLogger.LogError(ex, "GetClientCallbackOfClientContext");
+                            serverBase.AutoLogger.LogError(ex, "GetClientCallbackOfClientContext");
                         }
                         return null;
                     }
@@ -869,13 +869,13 @@ namespace SignalGo.Server.Models
 
                 serverBase.Callbacks[client].Add(obj);
                 if (!(obj is OperationCalls))
-                    Shared.Log.AutoLogger.LogText("is not OprationCalls: " + obj.ToString(), true);
+                    serverBase.AutoLogger.LogText("is not OprationCalls: " + obj.ToString(), true);
 
                 return new ClientContext<T>(obj, client);
             }
             else
             {
-                Shared.Log.AutoLogger.LogText("is not interface: " + typeof(T).ToString(), true);
+                serverBase.AutoLogger.LogText("is not interface: " + typeof(T).ToString(), true);
                 return new ClientContext<T>((T)serverBase.FindClientServerByType(client, typeof(T)), client);
 
             }

@@ -11,6 +11,7 @@ namespace SignalGo.Shared.Helpers
 {
     public class ToLocalDateTimeConvertor : DateTimeConverterBase
     {
+        public AutoLogger AutoLogger { get; set; }
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
             try
@@ -19,7 +20,7 @@ namespace SignalGo.Shared.Helpers
                     return default(DateTime);
                 return ((DateTime)reader.Value).ToLocalTime();
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 AutoLogger.LogError(ex, "ToLocalDateTimeConvertor ReadJson");
                 AutoLogger.LogText(reader.Value == null ? "null" : reader.Value.ToString());
@@ -44,13 +45,14 @@ namespace SignalGo.Shared.Helpers
                 AutoLogger.LogError(ex, "ToLocalDateTimeConvertor WriteJson");
                 AutoLogger.LogText(value == null ? "null" : value.ToString());
             }
-            
+
         }
     }
 
-    public static class JsonSettingHelper
+    public class JsonSettingHelper
     {
-        public static void Initialize()
+        public AutoLogger AutoLogger { get; set; } = new AutoLogger() { FileName = "JsonSettingHelper Logs.log" };
+        public void Initialize()
         {
             JsonConvert.DefaultSettings = () =>
             {
@@ -61,12 +63,12 @@ namespace SignalGo.Shared.Helpers
                     NullValueHandling = NullValueHandling.Ignore,
                     ReferenceLoopHandling = ReferenceLoopHandling.Ignore
                 };
-                setting.Converters.Add(new ToLocalDateTimeConvertor());
+                setting.Converters.Add(new ToLocalDateTimeConvertor() { AutoLogger = AutoLogger });
                 return setting;
             };
         }
 
-        public static void HandleDeserializationError(object sender, ErrorEventArgs errorArgs)
+        public void HandleDeserializationError(object sender, ErrorEventArgs errorArgs)
         {
             if (errorArgs != null && errorArgs.ErrorContext != null && errorArgs.ErrorContext.Error != null && errorArgs.ErrorContext.Error.GetType() == typeof(JsonSerializationException))
             {

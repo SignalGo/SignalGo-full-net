@@ -15,10 +15,6 @@ namespace SignalGo.Server.ServiceManager
     /// </summary>
     public class ServerProvider : UdpServiceBase
     {
-        static ServerProvider()
-        {
-            JsonSettingHelper.Initialize();
-        }
 
         /// <summary>
         /// strat the server
