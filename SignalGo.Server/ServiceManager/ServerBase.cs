@@ -1266,7 +1266,7 @@ namespace SignalGo.Server.ServiceManager
                                     //var headLen = data.IndexOf("\r\n\r\n");
                                     //header = sp.Length > 1 ? datas : data.Substring(index, headLen);
                                     //var byteData = GoStreamReader.ReadBlockSize(client.TcpClient.GetStream(), (ulong)(len - content.Length - fileHeaderCount));
-                                    string newData = sp.Length > 1 ? datas : data.Substring(headLen + 4);//Encoding.UTF8.GetString(byteData);
+                                    string newData = sp.Length > 1 ? datas : data.Substring(headLen + 4);//+ 4 Encoding.UTF8.GetString(byteData);
                                     newData = newData.Trim(Environment.NewLine.ToCharArray());
                                     //var newData = text.Substring(0, text.IndexOf(boundary) - 4);
                                     if (header.ToLower().IndexOf("content-disposition:") == 0)
@@ -1609,7 +1609,7 @@ namespace SignalGo.Server.ServiceManager
                         bool canBreak = false;
                         foreach (var item in lines)
                         {
-                            if (item.Trim().StartsWith("content-disposition:") && item.Contains("filename"))
+                            if (item.Trim().StartsWith("content-disposition:") && item.Contains("filename="))
                             {
                                 canBreak = true;
                                 break;
