@@ -14,6 +14,11 @@ namespace SignalGoTest.DataExhanger
             var client = GlobalInitalization.InitializeAndConnecteClient();
             var service = client.RegisterServerServiceInterfaceWrapper<ITestServerModel>();
 
+            var test = new UserInfoTest() { Age = 10, Id = 15, Username = "user name", LastPostInfo = new PostInfoTest() { }, Password = "pass", PostInfoes = new System.Collections.Generic.List<PostInfoTest>() { }, RoleInfoes = new System.Collections.Generic.List<RoleInfoTest>() { new RoleInfoTest() { } } };
+            var test1 = new UserInfoTest() { Age = 10, Id = 15, Username = "user name", LastPostInfo = new PostInfoTest() { }, Password = "pass", PostInfoes = new System.Collections.Generic.List<PostInfoTest>() { }, RoleInfoes = new System.Collections.Generic.List<RoleInfoTest>() { new RoleInfoTest() { Id = 5 } } };
+            var test2 = new UserInfoTest() { Age = 10, Id = 15, Username = "user name", LastPostInfo = new PostInfoTest() { }, Password = "pass", PostInfoes = new System.Collections.Generic.List<PostInfoTest>() { }, RoleInfoes = new System.Collections.Generic.List<RoleInfoTest>() { new RoleInfoTest() { } } };
+            var helloBind = service.HelloBind(test, test1, test2);
+            Assert.IsTrue(helloBind);
             var users = service.GetListOfUsers();
             Assert.IsTrue(string.IsNullOrEmpty(users[0].Password));
             Assert.IsTrue(users[0].LastPostInfo == null);

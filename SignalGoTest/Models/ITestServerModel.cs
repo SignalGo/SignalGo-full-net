@@ -15,13 +15,15 @@ namespace SignalGoTest.Models
     [SignalGo.Shared.DataTypes.ServiceContract("TestServerModel", ServiceType.ServerService, InstanceType = SignalGo.Shared.DataTypes.InstanceType.SingleInstance)]
     public interface ITestServerModel : ITestServerModelBase
     {
-        //string HelloWorld([Bind(Exclude = "CategoryDescription")]string yourName);
+        //string HelloWorld([Bind(Excludes = new string[] { "CategoryDescription" })]string yourName);
         string HelloWorld(string yourName);
         List<UserInfoTest> GetListOfUsers();
         List<PostInfoTest> GetPostsOfUser(int userId);
         [CustomDataExchanger(typeof(UserInfoTest), "Id", "Password", "PostInfoes", ExchangeType = CustomDataExchangerType.Take, LimitationMode = LimitExchangeType.Both)]
         List<UserInfoTest> GetListOfUsersCustom();
         List<PostInfoTest> GetCustomPostsOfUser(int userId);
+        bool HelloBind([Bind(Include = "Id")]UserInfoTest userInfoTest, [Bind(Exclude = "Username")]UserInfoTest userInfoTest2,
+            [Bind(Includes = new string[] { "Id", "Username" })]UserInfoTest userInfoTest3);
         bool Login(UserInfoTest userInfoTest);
     }
 

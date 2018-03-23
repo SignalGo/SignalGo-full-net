@@ -280,16 +280,15 @@ namespace SignalGo.Shared.Converters
             implementICollection = ExchangerTypes == null ? null : ExchangerTypes.Where(x => x.Type == type && (x.GetLimitationMode(IsClient) == Mode || x.GetLimitationMode(IsClient) == LimitExchangeType.Both));
             if (implementICollection == null || implementICollection.Count() == 0)
                 implementICollection = property.GetCustomAttributes<CustomDataExchangerAttribute>(true).Where(x => x.GetLimitationMode(IsClient) == Mode || x.GetLimitationMode(IsClient) == LimitExchangeType.Both);
-            if (property.Name.Contains("Password"))
-            {
 
-            }
             bool canIgnore = implementICollection == null ? false : implementICollection.Any(x => x.CanIgnore(instance, property, null, type, Server, Client) ?? false);
             if (canIgnore)
                 return true;
             else if (implementICollection != null)
             {
-                if (implementICollection.Any(x => x.ExchangeType == CustomDataExchangerType.Ignore && (x.GetLimitationMode(IsClient) == LimitExchangeType.Both || x.GetLimitationMode(IsClient) == Mode)))
+                if (implementICollection.Any(x => x.ExchangeType == CustomDataExchangerType.Ignore && x.Properties != null && x.Properties.Contains(property.Name) && (x.GetLimitationMode(IsClient) == LimitExchangeType.Both || x.GetLimitationMode(IsClient) == Mode)))
+                    return true;
+                else if (implementICollection.Any(x => x.ExchangeType == CustomDataExchangerType.Ignore && x.Properties == null && (x.GetLimitationMode(IsClient) == LimitExchangeType.Both || x.GetLimitationMode(IsClient) == Mode)))
                     return true;
                 else if (implementICollection.Any(x => x.Properties != null && x.ExchangeType == CustomDataExchangerType.Take && !x.Properties.Contains(property.Name) && (x.GetLimitationMode(IsClient) == LimitExchangeType.Both || x.GetLimitationMode(IsClient) == Mode)))
                     return true;
@@ -378,7 +377,7 @@ namespace SignalGo.Shared.Converters
                 {
                     return Activator.CreateInstance(type);
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     AutoLogger.LogError(ex, "DataExchangeConverter CreateInstance");
                     return null;
@@ -1064,6 +1063,10 @@ namespace SignalGo.Shared.Converters
 
                 foreach (var property in baseType.GetListOfProperties())
                 {
+                    if (property.Name == "RoleInfoes")
+                    {
+
+                    }
                     if (implementICollection != null)
                     {
                         if (implementICollection.ExchangeType == CustomDataExchangerType.Ignore && implementICollection.ContainsProperty(property.Name))

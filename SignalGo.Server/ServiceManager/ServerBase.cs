@@ -340,7 +340,7 @@ namespace SignalGo.Server.ServiceManager
             RegisterStreamService(typeof(T));
         }
 #if (!NETSTANDARD1_6 && !NETCOREAPP1_1)
-        public void RegisterClientServiceInterface(Type  type)
+        public void RegisterClientServiceInterface(Type type)
         {
             var name = type.GetClientServiceName();
             var obj = CSCodeInjection.GenerateInterfaceType(type, typeof(OperationCalls), new List<Type>() { typeof(ServiceContractAttribute), this.GetType() }, true);
@@ -966,7 +966,10 @@ namespace SignalGo.Server.ServiceManager
                                 resultParameters.Add(GetDefault(item.ParameterType));
                             else
                             {
-                                var obj = ServerSerializationHelper.DeserializeByValidate(currentParam.Item2, item.ParameterType, this);
+                                var customDataExchanger = method.GetCustomAttributes(typeof(CustomDataExchangerAttribute), true).Cast<CustomDataExchangerAttribute>().Where(x => x.GetExchangerByUserCustomization(client)).ToList();
+                                customDataExchanger.AddRange(GetMethodParameterBinds(index, method).Where(x => x.GetExchangerByUserCustomization(client)));
+                                var obj = ServerSerializationHelper.DeserializeByValidate(currentParam.Item2, item.ParameterType, this,
+                                    customDataExchanger: customDataExchanger.ToArray());
 
 
                                 //if (obj == null)
@@ -1487,9 +1490,9 @@ namespace SignalGo.Server.ServiceManager
                                 resultParameters.Add(GetDefault(item.ParameterType));
                             else
                             {
-                                var obj = ServerSerializationHelper.DeserializeByValidate(currentParam.Item2, item.ParameterType, this);
-                                //if (obj == null)
-                                //    obj = ServerSerializationHelper.Deserialize(currentParam.Item2.SerializeObject(this), item.ParameterType, this);
+                                var customDataExchanger = method.GetCustomAttributes(typeof(CustomDataExchangerAttribute), true).Cast<CustomDataExchangerAttribute>().Where(x => x.GetExchangerByUserCustomization(client)).ToList();
+                                customDataExchanger.AddRange(GetMethodParameterBinds(index, method).Where(x => x.GetExchangerByUserCustomization(client)));
+                                var obj = ServerSerializationHelper.DeserializeByValidate(currentParam.Item2, item.ParameterType, this, customDataExchanger: customDataExchanger.ToArray());
                                 resultParameters.Add(obj);
                             }
                             index++;
@@ -2391,6 +2394,7 @@ namespace SignalGo.Server.ServiceManager
                     var customDataExchanger = serviceMethod.GetCustomAttributes(typeof(CustomDataExchangerAttribute), true).Cast<CustomDataExchangerAttribute>().Where(x => x.GetExchangerByUserCustomization(client)).ToList();
 
                     customDataExchanger.AddRange(method.GetCustomAttributes(typeof(CustomDataExchangerAttribute), true).Cast<CustomDataExchangerAttribute>().Where(x => x.GetExchangerByUserCustomization(client)).ToList());
+
                     securityAttributes.AddRange(method.GetCustomAttributes(typeof(SecurityContractAttribute), true));
 
                     List<object> parameters = new List<object>();
@@ -2401,7 +2405,11 @@ namespace SignalGo.Server.ServiceManager
                         if (item.Value == null)
                             parameters.Add(GetDefault(prms[index].ParameterType));
                         else
-                            parameters.Add(ServerSerializationHelper.Deserialize(item.Value, prms[index].ParameterType, this, customDataExchanger: customDataExchanger.ToArray(), client: client));
+                        {
+                            var parameterDataExchanger = customDataExchanger.ToList();
+                            parameterDataExchanger.AddRange(GetMethodParameterBinds(index, serviceMethod, method).Where(x => x.GetExchangerByUserCustomization(client)));
+                            parameters.Add(ServerSerializationHelper.Deserialize(item.Value, prms[index].ParameterType, this, customDataExchanger: parameterDataExchanger.ToArray(), client: client));
+                        }
                         index++;
                     }
 
@@ -2526,6 +2534,25 @@ namespace SignalGo.Server.ServiceManager
                 }
                 SendCallbackData(callback, client);
             }));
+        }
+
+        CustomDataExchangerAttribute[] GetMethodParameterBinds(int parameterIndex, params MethodInfo[] methodInfoes)
+        {
+            List<CustomDataExchangerAttribute> result = new List<CustomDataExchangerAttribute>();
+            foreach (var method in methodInfoes)
+            {
+                var parameter = method.GetParameters()[parameterIndex];
+                List<CustomDataExchangerAttribute> items = new List<CustomDataExchangerAttribute>();
+                foreach (var find in parameter.GetCustomAttributes(typeof(CustomDataExchangerAttribute), true).Cast<CustomDataExchangerAttribute>())
+                {
+                    find.Type = parameter.ParameterType;
+                    items.Add(find);
+                }
+                result.AddRange(items);
+            }
+
+
+            return result.ToArray();
         }
 
         internal static bool EquelMethods(MethodInfo method1, MethodInfo method2)

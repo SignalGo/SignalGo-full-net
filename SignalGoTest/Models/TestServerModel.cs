@@ -105,5 +105,14 @@ namespace SignalGoTest.Models
 
             return userInfoTest.Username == "ali" && userInfoTest.Password == "123";
         }
+
+        public bool HelloBind(UserInfoTest userInfoTest, UserInfoTest userInfoTest2, UserInfoTest userInfoTest3)
+        {
+            if (userInfoTest.Id == 15 && userInfoTest.Age == 0 && userInfoTest.Password == null && userInfoTest.Username == null && userInfoTest.RoleInfoes == null && userInfoTest.PostInfoes == null &&
+                userInfoTest2.Id == 15 && userInfoTest2.Age == 10 && userInfoTest2.Username == null && userInfoTest2.Password != null && userInfoTest2.RoleInfoes[0].Id == 5 &&
+                userInfoTest3.Id == 15 && userInfoTest3.Username == "user name" && userInfoTest3.Age == 0 && userInfoTest3.Password == null)
+                return true;
+            return false;
+        }
     }
 }
