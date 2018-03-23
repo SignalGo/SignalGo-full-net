@@ -61,7 +61,7 @@ namespace SignalGo.Shared
                 }
                 catch (Exception ex)
                 {
-
+                    AutoLogger.LogError(ex, "AsyncActions RunOnUI");
                 }
             }, null);
         }

@@ -79,6 +79,8 @@ namespace SignalGo.Shared.Converters
     /// <typeparam>The object type to convert.</typeparam>
     public class CustomICollectionCreationConverter : JsonConverter
     {
+        public AutoLogger AutoLogger { get; set; } = new AutoLogger() { FileName = "DataExchanger Logs.log" };
+
         Type BaseType { get; set; }
 
         public CustomICollectionCreationConverter()
@@ -132,7 +134,7 @@ namespace SignalGo.Shared.Converters
                     }
                     catch (Exception ex)
                     {
-
+                        AutoLogger.LogError(ex, "CustomICollectionCreationConverter ReadJson");
                     }
                 }
             }
@@ -376,8 +378,9 @@ namespace SignalGo.Shared.Converters
                 {
                     return Activator.CreateInstance(type);
                 }
-                catch (Exception ex)
+                catch(Exception ex)
                 {
+                    AutoLogger.LogError(ex, "DataExchangeConverter CreateInstance");
                     return null;
                 }
             }

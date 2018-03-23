@@ -77,6 +77,18 @@ namespace SignalGo.Shared.DataTypes
             ServiceType = serviceType;
         }
         /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="serviceType"></param>
+        /// <param name="instanceType"></param>
+        public ServiceContractAttribute(string name, ServiceType serviceType, InstanceType instanceType)
+        {
+            Name = name;
+            InstanceType = instanceType;
+            ServiceType = serviceType;
+        }
+        /// <summary>
         /// name of service
         /// </summary>
         public string Name { get; set; }

@@ -15,7 +15,7 @@ namespace SignalGoTest.Models
 
     }
 
-    [ServiceContract("TestServerStreamModel")]
+    [ServiceContract("TestServerStreamModel", ServiceType.StreamService, InstanceType.SingleInstance)]
     public interface ITestServerStreamModel
     {
         StreamInfo<string> DownloadImage(string name, TestStreamModel testStreamModel);
