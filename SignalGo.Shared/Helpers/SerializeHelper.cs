@@ -69,6 +69,7 @@ namespace SignalGo.Shared.Helpers
     /// </summary>
     public class SerializeHelper
     {
+        public static AutoLogger AutoLogger { get; set; } = new AutoLogger() { FileName = "SerializeHelper Logs.log" };
         private static readonly Dictionary<Type, SerializeObjectType> TypeCodeMap = new Dictionary<Type, SerializeObjectType>
         {
                 { typeof(char), SerializeObjectType.Char },

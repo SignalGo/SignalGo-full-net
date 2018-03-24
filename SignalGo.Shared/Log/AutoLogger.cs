@@ -8,31 +8,67 @@ using System.Text;
 namespace SignalGo.Shared.Log
 {
     /// <summary>
-    /// log exceptions and text to log file
+    /// log exceptions and texts to a file
     /// </summary>
-    public static class AutoLogger
+    public class AutoLogger
     {
+        public static AutoLogger Default { get; set; } = new AutoLogger() { DirectoryName = "", FileName = "App Logs.log" };
         /// <summary>
-        /// if false ignore write errors to .log file
+        /// is enabled log system
         /// </summary>
-        public static bool IsEnabled { get; set; } = true;
-        
-        static AutoLogger()
+        public bool IsEnabled { get; set; } = true;
+        /// <summary>
+        /// full path of log
+        /// </summary>
+        public static string DirectoryLocation { get; set; }
+        /// <summary>
+        /// directory name of log
+        /// </summary>
+        public string DirectoryName { get; set; }
+        /// <summary>
+        /// file name to save
+        /// </summary>
+        public string FileName { get; set; }
+
+        string SavePath
+        {
+            get
+            {
+                string dir = "";
+                if (string.IsNullOrEmpty(DirectoryName))
+                    dir = DirectoryLocation;
+                else
+                    dir = Path.Combine(DirectoryLocation, DirectoryName);
+#if (!PORTABLE)
+                if (!Directory.Exists(dir))
+                    Directory.CreateDirectory(dir);
+#endif
+                return Path.Combine(dir, FileName);
+            }
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        public AutoLogger()
         {
 #if (!PORTABLE)
             try
             {
-                ApplicationDirectory = Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location);
+                DirectoryLocation = Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location);
+                if (!Directory.Exists(DirectoryLocation))
+                    Directory.CreateDirectory(DirectoryLocation);
             }
             catch
             {
 
             }
+            DirectoryName = "SignalGoDiagnostic";
+            FileName = "SignalGo Logs.log";
 #endif
         }
 #if (!PORTABLE)
 
-        static void GetOneStackTraceText(StackTrace stackTrace, StringBuilder builder)
+        void GetOneStackTraceText(StackTrace stackTrace, StringBuilder builder)
         {
             builder.AppendLine("<------------------------------StackTrace One Begin------------------------------>");
 
@@ -66,14 +102,17 @@ namespace SignalGo.Shared.Log
         }
 #endif
 
-        static object lockOBJ = new object();
-        public static void LogText(string text, bool stacktrace = false)
+        object lockOBJ = new object();
+        /// <summary>
+        /// log text message
+        /// </summary>
+        /// <param name="text">text to log</param>
+        /// <param name="stacktrace">log stacktrace</param>
+        public void LogText(string text, bool stacktrace = false)
         {
-            if (string.IsNullOrEmpty(ApplicationDirectory))
+            if (string.IsNullOrEmpty(DirectoryLocation) || !IsEnabled)
                 return;
 #if (!PORTABLE)
-            if (!IsEnabled)
-                return;
             StringBuilder str = new StringBuilder();
             str.AppendLine("<Text Log Start>");
             str.AppendLine(text);
@@ -90,10 +129,9 @@ namespace SignalGo.Shared.Log
 
                 str.AppendLine("</StackTrace>");
             }
-            //str.AppendLine(GetFullStack());
             str.AppendLine("<Text Log End>");
 
-            string fileName = Path.Combine(ApplicationDirectory, "SignalGo Logs.log");
+            string fileName = SavePath;
             try
             {
                 lock (lockOBJ)
@@ -113,30 +151,26 @@ namespace SignalGo.Shared.Log
 #endif
         }
 
-        public static string ApplicationDirectory { get; set; }
 
-        public static void LogError(Exception e, string title)
+        /// <summary>
+        /// log an exception to file
+        /// </summary>
+        /// <param name="e">exception of log</param>
+        /// <param name="title">title of log</param>
+        public void LogError(Exception e, string title)
         {
-            if (string.IsNullOrEmpty(ApplicationDirectory))
+            if (string.IsNullOrEmpty(DirectoryLocation) || !IsEnabled)
                 return;
 #if (!PORTABLE)
-            if (!IsEnabled)
-                return;
             try
             {
-                //#if (!DEBUG)
-                //                if (!canSave && !ForceLog)
-                //                    return;
-                //#endif
                 StringBuilder str = new StringBuilder();
                 str.AppendLine(title);
                 str.AppendLine(e.ToString());
-                //if (logFullStack)
-                //    str.AppendLine(GetFullStack());
                 str.AppendLine("Time : " + DateTime.Now.ToLocalTime().ToString());
                 str.AppendLine("--------------------------------------------------------------------------------------------------");
                 str.AppendLine("--------------------------------------------------------------------------------------------------");
-                string fileName = Path.Combine(ApplicationDirectory, "SignalGo Logs.log");
+                string fileName = SavePath;
 
                 try
                 {
@@ -161,47 +195,5 @@ namespace SignalGo.Shared.Log
             }
 #endif
         }
-
-        //static string GetAllInner(Exception e)
-        //{
-        //    string msg = "Start Exception:" + System.Environment.NewLine;
-        //    while (e != null)
-        //    {
-        //        msg += "<---------Start One--------->" + System.Environment.NewLine + GetTextMessageFromException(e) + System.Environment.NewLine + "<---------End One--------->" + System.Environment.NewLine;
-        //        e = e.InnerException;
-        //    }
-        //    return msg + "End Exception";
-        //}
-
-        //static string GetTextMessageFromException(Exception e)
-        //{
-        //    if (e == null)
-        //        return "No Exception";
-        //    else
-        //    {
-        //        if (e.Message == null)
-        //        {
-        //            if (e.StackTrace == null)
-        //            {
-        //                return "Null Error";
-        //            }
-        //            else
-        //            {
-        //                return "FaghatStack : " + e.StackTrace;
-        //            }
-        //        }
-        //        else
-        //        {
-        //            if (e.StackTrace == null)
-        //            {
-        //                return "Stack Is Null But Message: " + e.Message;
-        //            }
-        //            else
-        //            {
-        //                return "*Message: " + e.Message + System.Environment.NewLine + "*Stack: " + e.StackTrace;
-        //            }
-        //        }
-        //    }
-        //}
     }
 }

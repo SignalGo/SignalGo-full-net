@@ -7,12 +7,14 @@ using System.Text;
 using System.Threading.Tasks;
 using SignalGo.Shared;
 using System.Threading;
+using SignalGo.Server.ServiceManager;
+using SignalGo.Server.Models;
 
 namespace SignalGoTest
 {
     public static class GlobalInitalization
     {
-        static SignalGo.Server.ServiceManager.ServerProvider server;
+        static ServerProvider server;
         //static ClientProvider client;
 
         public static void Initialize()
@@ -20,17 +22,18 @@ namespace SignalGoTest
             if (server == null)
             {
                 server = new SignalGo.Server.ServiceManager.ServerProvider();
-                server.RegisterStreamService(typeof(TestServerStreamModel));
+                server.RegisterServerService<TestServerStreamModel>();
                 server.RegisterServerService<TestServerModel>();
-                server.Start("http://localhost:1132/SignalGoTestService", false);
+                server.Start("http://localhost:1132/SignalGoTestService");
                 server.OnConnectedClientAction = (client) =>
                 {
-
+                    
                 };
                 server.OnDisconnectedClientAction = (client) =>
                 {
 
                 };
+
                 server.InternalSetting = new SignalGo.Server.Settings.InternalSetting() { IsEnabledDataExchanger = true };
                 ////your client connector that will be connect to your server
                 //ClientProvider provider = new ClientProvider();

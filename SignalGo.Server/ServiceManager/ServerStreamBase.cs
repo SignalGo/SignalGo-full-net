@@ -182,7 +182,7 @@ namespace SignalGo.Server.ServiceManager
             catch (IOException ex)
             {
                 exception = ex;
-                Shared.Log.AutoLogger.LogError(ex, "upload stream error");
+                AutoLogger.LogError(ex, "upload stream error");
                 DisposeClient(client, "DownloadStreamFromClient exception");
                 return;
             }

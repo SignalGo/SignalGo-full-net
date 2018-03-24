@@ -114,9 +114,9 @@ namespace SignalGo.Shared.Models
                     socket.Dispose();
 #endif
                 }
-                catch (Exception ex)
+                catch
                 {
-                    AutoLogger.LogError(ex, "StreamInfo Dispose");
+                    //AutoLogger.LogError(ex, "StreamInfo Dispose");
                 }
             }
 #endif
@@ -233,9 +233,9 @@ namespace SignalGo.Shared.Models
                     socket.Dispose();
 #endif
                 }
-                catch (Exception ex)
+                catch
                 {
-                    AutoLogger.LogError(ex, "StreamInfo Dispose");
+                    //AutoLogger.LogError(ex, "StreamInfo Dispose");
                 }
             }
 #endif

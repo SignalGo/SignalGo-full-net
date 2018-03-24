@@ -79,6 +79,8 @@ namespace SignalGo.Shared.Converters
     /// <typeparam>The object type to convert.</typeparam>
     public class CustomICollectionCreationConverter : JsonConverter
     {
+        public AutoLogger AutoLogger { get; set; } = new AutoLogger() { FileName = "DataExchanger Logs.log" };
+
         Type BaseType { get; set; }
 
         public CustomICollectionCreationConverter()
@@ -132,7 +134,7 @@ namespace SignalGo.Shared.Converters
                     }
                     catch (Exception ex)
                     {
-
+                        AutoLogger.LogError(ex, "CustomICollectionCreationConverter ReadJson");
                     }
                 }
             }
@@ -183,9 +185,16 @@ namespace SignalGo.Shared.Converters
     public class DataExchangeConverter : JsonConverter
     {
         /// <summary>
+        /// log system for data exchanger
+        /// </summary>
+        public AutoLogger AutoLogger { get; set; } = new AutoLogger() { FileName = "DataExchanger Logs.log" };
+        /// <summary>
         /// enable refrence serializing when duplicate object detected
         /// </summary>
         public bool IsEnabledReferenceResolver { get; set; } = true;
+        /// <summary>
+        /// enable refrence serializing when duplicate list of objects detected
+        /// </summary>
         public bool IsEnabledReferenceResolverForArray { get; set; } = true;
         private DefaultReferenceResolver ReferenceResolver { get; set; } = new DefaultReferenceResolver();
         /// <summary>
@@ -271,16 +280,15 @@ namespace SignalGo.Shared.Converters
             implementICollection = ExchangerTypes == null ? null : ExchangerTypes.Where(x => x.Type == type && (x.GetLimitationMode(IsClient) == Mode || x.GetLimitationMode(IsClient) == LimitExchangeType.Both));
             if (implementICollection == null || implementICollection.Count() == 0)
                 implementICollection = property.GetCustomAttributes<CustomDataExchangerAttribute>(true).Where(x => x.GetLimitationMode(IsClient) == Mode || x.GetLimitationMode(IsClient) == LimitExchangeType.Both);
-            if (property.Name.Contains("Password"))
-            {
 
-            }
             bool canIgnore = implementICollection == null ? false : implementICollection.Any(x => x.CanIgnore(instance, property, null, type, Server, Client) ?? false);
             if (canIgnore)
                 return true;
             else if (implementICollection != null)
             {
-                if (implementICollection.Any(x => x.ExchangeType == CustomDataExchangerType.Ignore && (x.GetLimitationMode(IsClient) == LimitExchangeType.Both || x.GetLimitationMode(IsClient) == Mode)))
+                if (implementICollection.Any(x => x.ExchangeType == CustomDataExchangerType.Ignore && x.Properties != null && x.Properties.Contains(property.Name) && (x.GetLimitationMode(IsClient) == LimitExchangeType.Both || x.GetLimitationMode(IsClient) == Mode)))
+                    return true;
+                else if (implementICollection.Any(x => x.ExchangeType == CustomDataExchangerType.Ignore && x.Properties == null && (x.GetLimitationMode(IsClient) == LimitExchangeType.Both || x.GetLimitationMode(IsClient) == Mode)))
                     return true;
                 else if (implementICollection.Any(x => x.Properties != null && x.ExchangeType == CustomDataExchangerType.Take && !x.Properties.Contains(property.Name) && (x.GetLimitationMode(IsClient) == LimitExchangeType.Both || x.GetLimitationMode(IsClient) == Mode)))
                     return true;
@@ -371,6 +379,7 @@ namespace SignalGo.Shared.Converters
                 }
                 catch (Exception ex)
                 {
+                    AutoLogger.LogError(ex, "DataExchangeConverter CreateInstance");
                     return null;
                 }
             }
@@ -587,7 +596,7 @@ namespace SignalGo.Shared.Converters
                                 if (property.CanWrite)
                                     property.SetValue(instance, value, null);
                                 else
-                                    AutoLogger.LogText($"property {property.Name} cannot write");
+                                    AutoLogger?.LogText($"property {property.Name} cannot write");
                             }
                         }
                         else
@@ -600,13 +609,13 @@ namespace SignalGo.Shared.Converters
                                     if (property.CanWrite)
                                         property.SetValue(instance, value, null);
                                     else
-                                        AutoLogger.LogText($"property {property.Name} cannot write");
+                                        AutoLogger?.LogText($"property {property.Name} cannot write");
                                 }
 
                             }
                             catch (Exception ex)
                             {
-                                AutoLogger.LogError(ex, $"Deserialize Error {property.Name} :");
+                                AutoLogger?.LogError(ex, $"Deserialize Error {property.Name} :");
                             }
                         }
                     }
@@ -1054,6 +1063,10 @@ namespace SignalGo.Shared.Converters
 
                 foreach (var property in baseType.GetListOfProperties())
                 {
+                    if (property.Name == "RoleInfoes")
+                    {
+
+                    }
                     if (implementICollection != null)
                     {
                         if (implementICollection.ExchangeType == CustomDataExchangerType.Ignore && implementICollection.ContainsProperty(property.Name))
@@ -1078,7 +1091,7 @@ namespace SignalGo.Shared.Converters
             }
             catch (Exception ex)
             {
-                AutoLogger.LogError(ex, "WriteData 4");
+                AutoLogger?.LogError(ex, "WriteData 4");
             }
 
             void GenerateValue(PropertyInfo property, FieldInfo field)
@@ -1175,7 +1188,7 @@ namespace SignalGo.Shared.Converters
                             }
                             catch (Exception ex)
                             {
-                                AutoLogger.LogError(ex, "WriteData 1");
+                                AutoLogger?.LogError(ex, "WriteData 1");
                             }
                             if (propValue != null)
                             {
@@ -1209,7 +1222,7 @@ namespace SignalGo.Shared.Converters
                                 }
                                 catch (Exception ex)
                                 {
-                                    AutoLogger.LogError(ex, "WriteData 2");
+                                    AutoLogger?.LogError(ex, "WriteData 2");
                                 }
                             }
                         }
@@ -1280,7 +1293,7 @@ namespace SignalGo.Shared.Converters
                             }
                             catch (Exception ex)
                             {
-                                AutoLogger.LogError(ex, "WriteData 3");
+                                AutoLogger?.LogError(ex, "WriteData 3");
                             }
                         }
                     }

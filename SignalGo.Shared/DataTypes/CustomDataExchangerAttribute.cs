@@ -10,7 +10,7 @@ namespace SignalGo.Shared.DataTypes
     /// <summary>
     /// system custom data exchanger help you to ignore or take custom properties to serialize data
     /// </summary>
-    [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class | AttributeTargets.Property | AttributeTargets.Field, AllowMultiple = true)]
+    [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class | AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Parameter, AllowMultiple = true)]
     public class CustomDataExchangerAttribute : Attribute
     {
         public CustomDataExchangerAttribute()

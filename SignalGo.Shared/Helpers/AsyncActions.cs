@@ -32,6 +32,7 @@ namespace SignalGo.Shared
     /// </summary>
     public static class AsyncActions
     {
+        public static AutoLogger AutoLogger { get; set; } = new AutoLogger() { FileName = "AsyncActions Logs.log" };
 #if (!PORTABLE)
         static SynchronizationContext UIThread { get; set; }
         /// <summary>
@@ -60,7 +61,7 @@ namespace SignalGo.Shared
                 }
                 catch (Exception ex)
                 {
-
+                    AutoLogger.LogError(ex, "AsyncActions RunOnUI");
                 }
             }, null);
         }

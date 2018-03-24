@@ -35,6 +35,15 @@ namespace SignalGo.Server.ServiceManager
     /// </summary>
     public abstract class ServerBase : IDisposable
     {
+        internal AutoLogger AutoLogger { get; private set; } = new AutoLogger() { FileName = "ServerBase Logs.log" };
+        private JsonSettingHelper JsonSettingHelper { get; set; } = new JsonSettingHelper();
+        /// <summary>
+        /// 
+        /// </summary>
+        public ServerBase()
+        {
+            JsonSettingHelper.Initialize();
+        }
         /// <summary>
         /// server is started or not
         /// </summary>
@@ -117,7 +126,7 @@ namespace SignalGo.Server.ServiceManager
         /// <summary>
         /// کلاس هایی که سرور اونارو میسازه تا بتونه توابع کلاینت رو صدا بزنه
         /// </summary>
-        internal ConcurrentDictionary<string, Type> RegisteredCallbacksTypes { get; set; } = new ConcurrentDictionary<string, Type>();
+        internal ConcurrentDictionary<string, Type> RegisteredClientServicesTypes { get; set; } = new ConcurrentDictionary<string, Type>();
         /// <summary>
         /// کلاس های توابع کلاینت که سرور انها را صدا میزند و به دست کاربر میرسد.
         /// </summary>
@@ -131,7 +140,7 @@ namespace SignalGo.Server.ServiceManager
         /// signle instance services
         /// </summary>
         internal ConcurrentDictionary<string, object> SingleInstanceServices { get; set; } = new ConcurrentDictionary<string, object>();
-        internal ConcurrentDictionary<ClientInfo, ConcurrentList<object>> Callbacks { get; set; } = new ConcurrentDictionary<ClientInfo, ConcurrentList<object>>();
+        internal ConcurrentDictionary<ClientInfo, ConcurrentList<object>> ClientServices { get; set; } = new ConcurrentDictionary<ClientInfo, ConcurrentList<object>>();
         /// <summary>
         /// include models to server reference when client want to add or update service reference
         /// </summary>
@@ -151,7 +160,6 @@ namespace SignalGo.Server.ServiceManager
         /// <summary>
         /// اتصال به سرور
         /// </summary>
-        /// <param name="serverUrl"></param>
         /// <param name="port"></param>
         /// <param name="virtualUrl"></param>
         internal void Connect(int port, string[] virtualUrl)
@@ -188,7 +196,7 @@ namespace SignalGo.Server.ServiceManager
                 {
                     Console.WriteLine("Server Disposed! : " + ex);
                     OnServerInternalExceptionAction?.Invoke(ex);
-                    SignalGo.Shared.Log.AutoLogger.LogError(ex, "Connect Server");
+                    AutoLogger.LogError(ex, "Connect Server");
                     exception = ex;
                     resetEvent.Set();
                     Stop();
@@ -219,15 +227,34 @@ namespace SignalGo.Server.ServiceManager
 #endif
         }
 
+
+
         /// <summary>
         /// register server service
         /// </summary>
         /// <param name="serviceType"></param>
         public void RegisterServerService(Type serviceType)
         {
-            var name = serviceType.GetServerServiceName();
-            if (!RegisteredServiceTypes.ContainsKey(name))
-                RegisteredServiceTypes.TryAdd(name, serviceType);
+            var service = serviceType.GetServerServiceAttribute();
+            if (service != null)
+            {
+                if (service.ServiceType == ServiceType.ServerService)
+                {
+                    var name = service.Name;
+                    if (!RegisteredServiceTypes.ContainsKey(name))
+                        RegisteredServiceTypes.TryAdd(name, serviceType);
+                }
+                else if (service.ServiceType == ServiceType.HttpService)
+                    RegisterHttpService(serviceType);
+                else if (service.ServiceType == ServiceType.StreamService)
+                    RegisterStreamService(serviceType);
+                else
+                    throw new NotSupportedException("your service is not type of ServerService or HttpService or StreamService");
+            }
+            else
+            {
+                throw new NotSupportedException("your service is not type of ServerService or HttpService or StreamService");
+            }
         }
         /// <summary>
         /// initialize server service
@@ -286,12 +313,12 @@ namespace SignalGo.Server.ServiceManager
         internal object FindClientServerByType(ClientInfo client, Type serviceType)
         {
             var serviceName = serviceType.GetClientServiceName();
-            if (!Callbacks.ContainsKey(client))
+            if (!ClientServices.ContainsKey(client))
             {
                 AutoLogger.LogText($"Callbacks is not ContainsKey! {serviceType.FullName} {client.ClientId} {DateTime.Now}");
                 return null;
             }
-            foreach (var item in Callbacks[client].ToArray())
+            foreach (var item in ClientServices[client].ToArray())
             {
                 if (serviceName == item.GetType().GetClientServiceName())
                     return item;
@@ -306,14 +333,22 @@ namespace SignalGo.Server.ServiceManager
         public void RegisterClientService(Type type)
         {
             var name = type.GetClientServiceName();
-            if (!RegisteredCallbacksTypes.ContainsKey(name))
-                RegisteredCallbacksTypes.TryAdd(name, type);
+            if (!RegisteredClientServicesTypes.ContainsKey(name))
+                RegisteredClientServicesTypes.TryAdd(name, type);
+        }
+
+        /// <summary>
+        /// register client service that have client methods
+        /// </summary>
+        public void RegisterClientService<T>()
+        {
+            RegisterClientService(typeof(T));
         }
         /// <summary>
         /// register stream service for download and upload stream or file
         /// </summary>
         /// <param name="type"></param>
-        public void RegisterStreamService(Type type)
+        internal void RegisterStreamService(Type type)
         {
             var name = type.GetServerServiceName();
             if (StreamServices.ContainsKey(name))
@@ -325,16 +360,16 @@ namespace SignalGo.Server.ServiceManager
         /// register stream service for download and upload stream or file
         /// </summary>
         /// <typeparam name="T"></typeparam>
-        public void RegisterStreamService<T>()
+        internal void RegisterStreamService<T>()
         {
             RegisterStreamService(typeof(T));
         }
 #if (!NETSTANDARD1_6 && !NETCOREAPP1_1)
-        public void RegisterClientServiceInterface(Type  type)
+        public void RegisterClientServiceInterface(Type type)
         {
             var name = type.GetClientServiceName();
             var obj = CSCodeInjection.GenerateInterfaceType(type, typeof(OperationCalls), new List<Type>() { typeof(ServiceContractAttribute), this.GetType() }, true);
-            RegisteredCallbacksTypes.TryAdd(name, obj);
+            RegisteredClientServicesTypes.TryAdd(name, obj);
         }
 
         public void RegisterClientServiceInterface<T>()
@@ -344,9 +379,9 @@ namespace SignalGo.Server.ServiceManager
         }
 #endif
 
-        internal Type GetRegisteredCallbacksTypeByName(string name)
+        internal Type GetRegisteredClientServiceTypeByName(string name)
         {
-            return RegisteredCallbacksTypes[name];
+            return RegisteredClientServicesTypes[name];
         }
 
         static volatile int _ClientConnectedCallingCount = 1;
@@ -516,9 +551,9 @@ namespace SignalGo.Server.ServiceManager
 
                                 //var response = "HTTP/1.1 101 Switching Protocols" + newLine
                                 var response = "HTTP/1.0 101 Switching Protocols" + newLine
-                                     + "Upgrade: websocket" + newLine
-                                     + "Connection: Upgrade" + newLine
-                                     + "Sec-WebSocket-Accept: " + acceptKey + newLine + newLine;
+                                 + "Upgrade: websocket" + newLine
+                                 + "Connection: Upgrade" + newLine
+                                 + "Sec-WebSocket-Accept: " + acceptKey + newLine + newLine;
                                 var bytes = System.Text.Encoding.UTF8.GetBytes(response);
                                 tcpClient.GetStream().Write(bytes, 0, bytes.Length);
                                 //Console.WriteLine($"WebSocket client send reponse success size:{bytes.Length} sended{count}");
@@ -956,7 +991,10 @@ namespace SignalGo.Server.ServiceManager
                                 resultParameters.Add(GetDefault(item.ParameterType));
                             else
                             {
-                                var obj = ServerSerializationHelper.DeserializeByValidate(currentParam.Item2, item.ParameterType, this);
+                                var customDataExchanger = method.GetCustomAttributes(typeof(CustomDataExchangerAttribute), true).Cast<CustomDataExchangerAttribute>().Where(x => x.GetExchangerByUserCustomization(client)).ToList();
+                                customDataExchanger.AddRange(GetMethodParameterBinds(index, method).Where(x => x.GetExchangerByUserCustomization(client)));
+                                var obj = ServerSerializationHelper.DeserializeByValidate(currentParam.Item2, item.ParameterType, this,
+                                    customDataExchanger: customDataExchanger.ToArray());
 
 
                                 //if (obj == null)
@@ -1256,7 +1294,7 @@ namespace SignalGo.Server.ServiceManager
                                     //var headLen = data.IndexOf("\r\n\r\n");
                                     //header = sp.Length > 1 ? datas : data.Substring(index, headLen);
                                     //var byteData = GoStreamReader.ReadBlockSize(client.TcpClient.GetStream(), (ulong)(len - content.Length - fileHeaderCount));
-                                    string newData = sp.Length > 1 ? datas : data.Substring(headLen + 4);//Encoding.UTF8.GetString(byteData);
+                                    string newData = sp.Length > 1 ? datas : data.Substring(headLen + 4);//+ 4 Encoding.UTF8.GetString(byteData);
                                     newData = newData.Trim(Environment.NewLine.ToCharArray());
                                     //var newData = text.Substring(0, text.IndexOf(boundary) - 4);
                                     if (header.ToLower().IndexOf("content-disposition:") == 0)
@@ -1477,9 +1515,9 @@ namespace SignalGo.Server.ServiceManager
                                 resultParameters.Add(GetDefault(item.ParameterType));
                             else
                             {
-                                var obj = ServerSerializationHelper.DeserializeByValidate(currentParam.Item2, item.ParameterType, this);
-                                //if (obj == null)
-                                //    obj = ServerSerializationHelper.Deserialize(currentParam.Item2.SerializeObject(this), item.ParameterType, this);
+                                var customDataExchanger = method.GetCustomAttributes(typeof(CustomDataExchangerAttribute), true).Cast<CustomDataExchangerAttribute>().Where(x => x.GetExchangerByUserCustomization(client)).ToList();
+                                customDataExchanger.AddRange(GetMethodParameterBinds(index, method).Where(x => x.GetExchangerByUserCustomization(client)));
+                                var obj = ServerSerializationHelper.DeserializeByValidate(currentParam.Item2, item.ParameterType, this, customDataExchanger: customDataExchanger.ToArray());
                                 resultParameters.Add(obj);
                             }
                             index++;
@@ -1599,7 +1637,7 @@ namespace SignalGo.Server.ServiceManager
                         bool canBreak = false;
                         foreach (var item in lines)
                         {
-                            if (item.Trim().StartsWith("content-disposition:") && item.Contains("filename"))
+                            if (item.Trim().StartsWith("content-disposition:") && item.Contains("filename="))
                             {
                                 canBreak = true;
                                 break;
@@ -1738,7 +1776,7 @@ namespace SignalGo.Server.ServiceManager
         /// add a http service class
         /// </summary>
         /// <param name="T">a service class that using ServiceContractAttribute attribute by ServiceType.HttpService</param>
-        public void RegisterHttpService<T>()
+        internal void RegisterHttpService<T>()
         {
             RegisterHttpService(typeof(T));
         }
@@ -1747,7 +1785,7 @@ namespace SignalGo.Server.ServiceManager
         /// add a http service class
         /// </summary>
         /// <param name="httpService">a service class using ServiceContractAttribute attribute ServiceType.HttpService</param>
-        public void RegisterHttpService(Type httpService)
+        internal void RegisterHttpService(Type httpService)
         {
             var attributes = httpService.GetCustomAttributes<ServiceContractAttribute>().Where(x => x.ServiceType == ServiceType.HttpService);
             if (attributes == null || attributes.Count() == 0)
@@ -1817,10 +1855,10 @@ namespace SignalGo.Server.ServiceManager
         /// register calbacks for client
         /// </summary>
         /// <param name="client"></param>
-        internal void RegisterCallbacksForClient(ClientInfo client)
+        internal void RegisterClientServices(ClientInfo client)
         {
             var callbacks = new ConcurrentList<object>();
-            foreach (var item in RegisteredCallbacksTypes)
+            foreach (var item in RegisteredClientServicesTypes)
             {
                 //callbacks.Add(OCExtension.GetClientCallbackOfClientContext(this, client, item.Value));
                 var objectInstance = Activator.CreateInstance(item.Value);
@@ -1852,7 +1890,7 @@ namespace SignalGo.Server.ServiceManager
                 AutoLogger.LogText($"RegisterCallbacksForClient foreach {((object)objectInstance).ToString()} {client.ClientId}");
                 ////objectInstance.OnInitialized();
             }
-            var add = Callbacks.TryAdd(client, callbacks);
+            var add = ClientServices.TryAdd(client, callbacks);
             AutoLogger.LogText($"RegisterCallbacksForClient add {add} {client.ClientId}");
         }
 
@@ -1874,7 +1912,7 @@ namespace SignalGo.Server.ServiceManager
                 client.MainThread = thread;
                 try
                 {
-                    RegisterCallbacksForClient(client);
+                    RegisterClientServices(client);
                     var stream = client.TcpClient.GetStream();
                     bool isVerify = false;
                     if (!client.IsVerification)
@@ -1882,7 +1920,7 @@ namespace SignalGo.Server.ServiceManager
                         if (client.TcpClient.Connected)
                         {
                             var bytes = GoStreamReader.ReadBlockToEnd(stream, CompressMode.None, 2048, client.IsWebSocket);
-                            var json = Encoding.UTF8.GetString(bytes);
+                            var json = Encoding.ASCII.GetString(bytes);
                             List<string> registers = ServerSerializationHelper.Deserialize<List<string>>(json, this);
                             foreach (var item in registers)
                             {
@@ -2056,7 +2094,7 @@ namespace SignalGo.Server.ServiceManager
                 catch (Exception ex)
                 {
                     Console.WriteLine(ex);
-                    SignalGo.Shared.Log.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase StartToReadingClientData");
+                    AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase StartToReadingClientData");
                     DisposeClient(client, "StartToReadingClientData exception");
                 }
             })
@@ -2089,7 +2127,7 @@ namespace SignalGo.Server.ServiceManager
             WaitedMethodsForResponse.Remove(client);
             Services.Remove(client);
             ClientRegistredMethods.Remove(client);
-            Callbacks.Remove(client);
+            ClientServices.Remove(client);
         }
 
         internal void DisposeClient(ClientInfo client, string reason)
@@ -2196,7 +2234,7 @@ namespace SignalGo.Server.ServiceManager
             }
             catch (Exception ex)
             {
-                SignalGo.Shared.Log.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase RegisterClassForClient");
+                AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase RegisterClassForClient");
                 callback.IsException = true;
                 callback.Data = ServerSerializationHelper.SerializeObject(ex.ToString(), this);
             }
@@ -2240,7 +2278,7 @@ namespace SignalGo.Server.ServiceManager
             }
             catch (Exception ex)
             {
-                SignalGo.Shared.Log.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase RegisterMethodsForClient");
+                AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase RegisterMethodsForClient");
                 callback.IsException = true;
                 callback.Data = ServerSerializationHelper.SerializeObject(ex.ToString(), this);
             }
@@ -2269,7 +2307,7 @@ namespace SignalGo.Server.ServiceManager
             }
             catch (Exception ex)
             {
-                SignalGo.Shared.Log.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase UnRegisterMethodsForClient");
+                AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase UnRegisterMethodsForClient");
                 callback.IsException = true;
                 callback.Data = ServerSerializationHelper.SerializeObject(ex.ToString(), this);
             }
@@ -2381,6 +2419,7 @@ namespace SignalGo.Server.ServiceManager
                     var customDataExchanger = serviceMethod.GetCustomAttributes(typeof(CustomDataExchangerAttribute), true).Cast<CustomDataExchangerAttribute>().Where(x => x.GetExchangerByUserCustomization(client)).ToList();
 
                     customDataExchanger.AddRange(method.GetCustomAttributes(typeof(CustomDataExchangerAttribute), true).Cast<CustomDataExchangerAttribute>().Where(x => x.GetExchangerByUserCustomization(client)).ToList());
+
                     securityAttributes.AddRange(method.GetCustomAttributes(typeof(SecurityContractAttribute), true));
 
                     List<object> parameters = new List<object>();
@@ -2391,7 +2430,11 @@ namespace SignalGo.Server.ServiceManager
                         if (item.Value == null)
                             parameters.Add(GetDefault(prms[index].ParameterType));
                         else
-                            parameters.Add(ServerSerializationHelper.Deserialize(item.Value, prms[index].ParameterType, this, customDataExchanger: customDataExchanger.ToArray(), client: client));
+                        {
+                            var parameterDataExchanger = customDataExchanger.ToList();
+                            parameterDataExchanger.AddRange(GetMethodParameterBinds(index, serviceMethod, method).Where(x => x.GetExchangerByUserCustomization(client)));
+                            parameters.Add(ServerSerializationHelper.Deserialize(item.Value, prms[index].ParameterType, this, customDataExchanger: parameterDataExchanger.ToArray(), client: client));
+                        }
                         index++;
                     }
 
@@ -2505,7 +2548,7 @@ namespace SignalGo.Server.ServiceManager
                 catch (Exception ex)
                 {
                     exception = ex;
-                    SignalGo.Shared.Log.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase CallMethod: {callInfo.MethodName}");
+                    AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase CallMethod: {callInfo.MethodName}");
                     callback.IsException = true;
                     callback.Data = ServerSerializationHelper.SerializeObject(ex.ToString(), this);
                 }
@@ -2516,6 +2559,25 @@ namespace SignalGo.Server.ServiceManager
                 }
                 SendCallbackData(callback, client);
             }));
+        }
+
+        CustomDataExchangerAttribute[] GetMethodParameterBinds(int parameterIndex, params MethodInfo[] methodInfoes)
+        {
+            List<CustomDataExchangerAttribute> result = new List<CustomDataExchangerAttribute>();
+            foreach (var method in methodInfoes)
+            {
+                var parameter = method.GetParameters()[parameterIndex];
+                List<CustomDataExchangerAttribute> items = new List<CustomDataExchangerAttribute>();
+                foreach (var find in parameter.GetCustomAttributes(typeof(CustomDataExchangerAttribute), true).Cast<CustomDataExchangerAttribute>())
+                {
+                    find.Type = parameter.ParameterType;
+                    items.Add(find);
+                }
+                result.AddRange(items);
+            }
+
+
+            return result.ToArray();
         }
 
         internal static bool EquelMethods(MethodInfo method1, MethodInfo method2)
@@ -2596,7 +2658,7 @@ namespace SignalGo.Server.ServiceManager
             }
             catch (Exception ex)
             {
-                SignalGo.Shared.Log.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase SetSettings");
+                AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase SetSettings");
                 if (!client.TcpClient.Connected)
                     DisposeClient(client, "SetSettings exception");
             }
@@ -2678,7 +2740,7 @@ namespace SignalGo.Server.ServiceManager
             }
             catch (Exception ex)
             {
-                SignalGo.Shared.Log.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase SendCallbackData");
+                AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase SendCallbackData");
                 if (!client.TcpClient.Connected)
                     DisposeClient(client, "SendCallbackData exception");
             }
@@ -2933,7 +2995,7 @@ namespace SignalGo.Server.ServiceManager
 
 
 
-                        foreach (var service in RegisteredCallbacksTypes)
+                        foreach (var service in RegisteredClientServicesTypes)
                         {
                             id++;
                             var serviceDetail = new CallbackServiceDetailsInfo()
@@ -3243,7 +3305,7 @@ namespace SignalGo.Server.ServiceManager
                     bytes.AddRange(jsonBytes);
                     GoStreamWriter.WriteToStream(client.TcpClient.GetStream(), bytes.ToArray(), client.IsWebSocket);
 
-                    SignalGo.Shared.Log.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase CallMethod");
+                    AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase CallMethod");
                 }
                 finally
                 {
@@ -3423,7 +3485,7 @@ namespace SignalGo.Server.ServiceManager
                 }
                 catch (Exception ex)
                 {
-                    SignalGo.Shared.Log.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase CallMethod");
+                    AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase CallMethod");
                 }
             });
         }

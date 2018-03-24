@@ -90,6 +90,16 @@ namespace SignalGo.Shared.Helpers
             return result;
         }
 
+        public static Assembly GetAssembly(this Type type)
+        {
+
+#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
+            return type.GetTypeInfo().Assembly;
+#else
+            return type.Assembly;
+#endif
+        }
+
         /// <summary>
         /// interfaces
         /// </summary>

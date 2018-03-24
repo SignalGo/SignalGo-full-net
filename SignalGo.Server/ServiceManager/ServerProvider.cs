@@ -15,10 +15,6 @@ namespace SignalGo.Server.ServiceManager
     /// </summary>
     public class ServerProvider : UdpServiceBase
     {
-        static ServerProvider()
-        {
-            JsonSettingHelper.Initialize();
-        }
 
         /// <summary>
         /// strat the server
@@ -49,6 +45,8 @@ namespace SignalGo.Server.ServiceManager
         {
             Start(url);
             var assembly = Assembly.GetEntryAssembly();
+            if (assemblies == null)
+                assemblies = new List<Assembly>() { assembly };
             AutoRegisterServices(assemblies);
 
         }
@@ -158,7 +156,7 @@ namespace SignalGo.Server.ServiceManager
                         RegisterClientServiceInterface(item);
                     else
 #endif
-                        RegisterClientService(item);
+                    RegisterClientService(item);
                     Console.WriteLine(item.FullName);
                 }
             }

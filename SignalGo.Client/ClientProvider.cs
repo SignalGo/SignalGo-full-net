@@ -18,11 +18,6 @@ namespace SignalGo.Client
     /// </summary>
     public class ClientProvider : UdpConnectorBase
     {
-        static ClientProvider()
-        {
-            JsonSettingHelper.Initialize();
-        }
-
         /// <summary>
         /// connect to server
         /// </summary>

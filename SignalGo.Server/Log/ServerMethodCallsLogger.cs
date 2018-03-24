@@ -148,6 +148,7 @@ namespace SignalGo.Server.Log
     /// </summary>
     public class ServerMethodCallsLogger : IDisposable
     {
+        public AutoLogger AutoLogger { get; set; } = new AutoLogger() { FileName = "ServerMethodCalls Logs.log" };
         /// <summary>
         /// when user called and response a service method
         /// </summary>
@@ -433,9 +434,9 @@ namespace SignalGo.Server.Log
             throw new NotSupportedException();
 #else
 #if (NET35)
-            string path = CombinePath(AutoLogger.ApplicationDirectory, "Logs", log.DateTimeStartMethod.Year.ToString(), log.DateTimeStartMethod.Month.ToString(), log.DateTimeStartMethod.Day.ToString());
+            string path = CombinePath(AutoLogger.DirectoryLocation, "Logs", log.DateTimeStartMethod.Year.ToString(), log.DateTimeStartMethod.Month.ToString(), log.DateTimeStartMethod.Day.ToString());
 #else
-            string path = System.IO.Path.Combine(AutoLogger.ApplicationDirectory, "Logs", log.DateTimeStartMethod.Year.ToString(), log.DateTimeStartMethod.Month.ToString(), log.DateTimeStartMethod.Day.ToString());
+            string path = System.IO.Path.Combine(AutoLogger.DirectoryLocation, "Logs", log.DateTimeStartMethod.Year.ToString(), log.DateTimeStartMethod.Month.ToString(), log.DateTimeStartMethod.Day.ToString());
 #endif
             if (!System.IO.Directory.Exists(path))
                 System.IO.Directory.CreateDirectory(path);
@@ -501,9 +502,9 @@ namespace SignalGo.Server.Log
             throw new NotSupportedException();
 #else
 #if (NET35)
-            string path = CombinePath(AutoLogger.ApplicationDirectory, "Logs", log.DateTimeStartMethod.Year.ToString(), log.DateTimeStartMethod.Month.ToString(), log.DateTimeStartMethod.Day.ToString());
+            string path = CombinePath(AutoLogger.DirectoryLocation, "Logs", log.DateTimeStartMethod.Year.ToString(), log.DateTimeStartMethod.Month.ToString(), log.DateTimeStartMethod.Day.ToString());
 #else
-            string path = System.IO.Path.Combine(AutoLogger.ApplicationDirectory, "Logs", log.DateTimeStartMethod.Year.ToString(), log.DateTimeStartMethod.Month.ToString(), log.DateTimeStartMethod.Day.ToString());
+            string path = System.IO.Path.Combine(AutoLogger.DirectoryLocation, "Logs", log.DateTimeStartMethod.Year.ToString(), log.DateTimeStartMethod.Month.ToString(), log.DateTimeStartMethod.Day.ToString());
 #endif
             if (!System.IO.Directory.Exists(path))
                 System.IO.Directory.CreateDirectory(path);
@@ -568,9 +569,9 @@ namespace SignalGo.Server.Log
             throw new NotSupportedException();
 #else
 #if (NET35)
-            string path = CombinePath(AutoLogger.ApplicationDirectory, "Logs", log.DateTimeStartMethod.Year.ToString(), log.DateTimeStartMethod.Month.ToString(), log.DateTimeStartMethod.Day.ToString());
+            string path = CombinePath(AutoLogger.DirectoryLocation, "Logs", log.DateTimeStartMethod.Year.ToString(), log.DateTimeStartMethod.Month.ToString(), log.DateTimeStartMethod.Day.ToString());
 #else
-            string path = System.IO.Path.Combine(AutoLogger.ApplicationDirectory, "Logs", log.DateTimeStartMethod.Year.ToString(), log.DateTimeStartMethod.Month.ToString(), log.DateTimeStartMethod.Day.ToString());
+            string path = System.IO.Path.Combine(AutoLogger.DirectoryLocation, "Logs", log.DateTimeStartMethod.Year.ToString(), log.DateTimeStartMethod.Month.ToString(), log.DateTimeStartMethod.Day.ToString());
 #endif
             if (!System.IO.Directory.Exists(path))
                 System.IO.Directory.CreateDirectory(path);
@@ -632,9 +633,9 @@ namespace SignalGo.Server.Log
             throw new NotSupportedException();
 #else
 #if (NET35)
-            string path = CombinePath(AutoLogger.ApplicationDirectory, "Logs", log.DateTimeStartMethod.Year.ToString(), log.DateTimeStartMethod.Month.ToString(), log.DateTimeStartMethod.Day.ToString());
+            string path = CombinePath(AutoLogger.DirectoryLocation, "Logs", log.DateTimeStartMethod.Year.ToString(), log.DateTimeStartMethod.Month.ToString(), log.DateTimeStartMethod.Day.ToString());
 #else
-            string path = System.IO.Path.Combine(AutoLogger.ApplicationDirectory, "Logs", log.DateTimeStartMethod.Year.ToString(), log.DateTimeStartMethod.Month.ToString(), log.DateTimeStartMethod.Day.ToString());
+            string path = System.IO.Path.Combine(AutoLogger.DirectoryLocation, "Logs", log.DateTimeStartMethod.Year.ToString(), log.DateTimeStartMethod.Month.ToString(), log.DateTimeStartMethod.Day.ToString());
 #endif
             if (!System.IO.Directory.Exists(path))
                 System.IO.Directory.CreateDirectory(path);

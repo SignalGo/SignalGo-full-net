@@ -31,10 +31,10 @@ namespace SignalGo.Client
             CSCodeInjection.InvokedClientMethodAction = (client, method, parameters) =>
             {
                 //Console.WriteLine($"CSCodeInjection.InvokedClientMethodAction {method.Name}");
-                if (!(client is OperationCalls))
-                {
-                    AutoLogger.LogText($"cannot cast! {method.Name} params {parameters?.Length}");
-                }
+                //if (!(client is OperationCalls))
+                //{
+                //    AutoLogger.LogText($"cannot cast! {method.Name} params {parameters?.Length}");
+                //}
                 SendDataInvoke((OperationCalls)client, method.Name, parameters);
             };
 
@@ -303,6 +303,12 @@ namespace SignalGo.Client
     /// </summary>
     public abstract class ConnectorBase : IDisposable
     {
+        public ConnectorBase()
+        {
+            JsonSettingHelper.Initialize();
+        }
+        internal JsonSettingHelper JsonSettingHelper { get; set; } = new JsonSettingHelper();
+        internal AutoLogger AutoLogger { get; set; } = new AutoLogger() { FileName = "ConnectorBase Logs.log" };
         internal ConcurrentList<AutoResetEvent> HoldMethodsToReconnect = new ConcurrentList<AutoResetEvent>();
         internal ConcurrentList<Delegate> PriorityActionsAfterConnected = new ConcurrentList<Delegate>();
         /// <summary>
@@ -441,6 +447,23 @@ namespace SignalGo.Client
                 duplex.Connector = this;
             Services.TryAdd(callInfo.ServiceName, objectInstance);
             return (T)objectInstance;
+        }
+
+        /// <summary>
+        /// register service by name
+        /// </summary>
+        /// <param name="name"></param>
+        public void RegisterServerService(string name)
+        {
+            if (IsDisposed)
+                throw new ObjectDisposedException("Connector");
+            MethodCallInfo callInfo = new MethodCallInfo()
+            {
+                ServiceName = name,
+                MethodName = "/RegisterService",
+                Guid = Guid.NewGuid().ToString()
+            };
+            var callback = this.SendData<MethodCallbackInfo>(callInfo);
         }
         /// <summary>
         /// get default value from type
@@ -1029,7 +1052,7 @@ namespace SignalGo.Client
                         else
                         {
                             //incorrect data! :|
-                            SignalGo.Shared.Log.AutoLogger.LogText("StartToReadingClientData Incorrect Data!");
+                            AutoLogger.LogText("StartToReadingClientData Incorrect Data!");
                             Disconnect();
                             break;
                         }
@@ -1037,7 +1060,7 @@ namespace SignalGo.Client
                 }
                 catch (Exception ex)
                 {
-                    SignalGo.Shared.Log.AutoLogger.LogError(ex, "StartToReadingClientData");
+                    AutoLogger.LogError(ex, "StartToReadingClientData");
                     Disconnect();
                 }
             });
