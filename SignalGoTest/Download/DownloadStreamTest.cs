@@ -1,6 +1,5 @@
 ﻿using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using SignalGo.Server.ServiceManager;
 
 namespace SignalGoTest.Download
 {

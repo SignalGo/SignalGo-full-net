@@ -10,10 +10,10 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>SignalGo.Client</RootNamespace>
     <AssemblyName>SignalGo.Client</AssemblyName>
-    <AssemblyVersion>3.5</AssemblyVersion>
-    <FileVersion>3.5</FileVersion>
-    <VersionPrefix>3.5</VersionPrefix>
-    <Version>3.5</Version>
+    <AssemblyVersion>3.6</AssemblyVersion>
+    <FileVersion>3.6</FileVersion>
+    <VersionPrefix>3.6</VersionPrefix>
+    <Version>3.6</Version>
     <Copyright>Copyright © ali.visual.studio@gmail.com 2016</Copyright>
     <Description>
       SignalGo is a library for Cross-Platform developers that makes it incredibly simple to add real-time web functionality to your applications. What is "real-time web" functionality? It's the ability to have your server-side code push content to the connected clients as it happens, in real-time. like WCF and SignalR
@@ -48,8 +48,11 @@
     <PackageTags>SignalGo SignalR WCF Server Client Signal Sig RealTime Real-Time</PackageTags>
     <PackageReleaseNotes>
       1.fix bugs and more improvement
-      2.support for add service reference
-      3.support http cookies and more improvement for http supports
+      2.support for tuples
+      3.rename InitializeService to RegisterServerService
+      rename RegisterClientServiceInterfaceWrapper to RegisterServerServiceInterfaceWrapper
+      read document examples here:
+      https://github.com/SignalGo/SignalGo-full-net
     </PackageReleaseNotes>
   </PropertyGroup>
   <PropertyGroup>
