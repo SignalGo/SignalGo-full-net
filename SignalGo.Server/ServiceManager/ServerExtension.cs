@@ -74,7 +74,7 @@ namespace SignalGo.Server.ServiceManager
                     return SendCallClientMethod(client, callerName, args);
                 }
             }
-            else if (client.ServerBase.RegisteredCallbacksTypes.ContainsKey(attribute.Name))
+            else if (client.ServerBase.RegisteredClientServicesTypes.ContainsKey(attribute.Name))
             {
                 return SendCallClientMethod(client, callerName, args);
             }

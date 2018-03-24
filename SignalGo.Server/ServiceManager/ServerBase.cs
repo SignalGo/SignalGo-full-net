@@ -126,7 +126,7 @@ namespace SignalGo.Server.ServiceManager
         /// <summary>
         /// کلاس هایی که سرور اونارو میسازه تا بتونه توابع کلاینت رو صدا بزنه
         /// </summary>
-        internal ConcurrentDictionary<string, Type> RegisteredCallbacksTypes { get; set; } = new ConcurrentDictionary<string, Type>();
+        internal ConcurrentDictionary<string, Type> RegisteredClientServicesTypes { get; set; } = new ConcurrentDictionary<string, Type>();
         /// <summary>
         /// کلاس های توابع کلاینت که سرور انها را صدا میزند و به دست کاربر میرسد.
         /// </summary>
@@ -140,7 +140,7 @@ namespace SignalGo.Server.ServiceManager
         /// signle instance services
         /// </summary>
         internal ConcurrentDictionary<string, object> SingleInstanceServices { get; set; } = new ConcurrentDictionary<string, object>();
-        internal ConcurrentDictionary<ClientInfo, ConcurrentList<object>> Callbacks { get; set; } = new ConcurrentDictionary<ClientInfo, ConcurrentList<object>>();
+        internal ConcurrentDictionary<ClientInfo, ConcurrentList<object>> ClientServices { get; set; } = new ConcurrentDictionary<ClientInfo, ConcurrentList<object>>();
         /// <summary>
         /// include models to server reference when client want to add or update service reference
         /// </summary>
@@ -296,12 +296,12 @@ namespace SignalGo.Server.ServiceManager
         internal object FindClientServerByType(ClientInfo client, Type serviceType)
         {
             var serviceName = serviceType.GetClientServiceName();
-            if (!Callbacks.ContainsKey(client))
+            if (!ClientServices.ContainsKey(client))
             {
                 AutoLogger.LogText($"Callbacks is not ContainsKey! {serviceType.FullName} {client.ClientId} {DateTime.Now}");
                 return null;
             }
-            foreach (var item in Callbacks[client].ToArray())
+            foreach (var item in ClientServices[client].ToArray())
             {
                 if (serviceName == item.GetType().GetClientServiceName())
                     return item;
@@ -316,8 +316,8 @@ namespace SignalGo.Server.ServiceManager
         public void RegisterClientService(Type type)
         {
             var name = type.GetClientServiceName();
-            if (!RegisteredCallbacksTypes.ContainsKey(name))
-                RegisteredCallbacksTypes.TryAdd(name, type);
+            if (!RegisteredClientServicesTypes.ContainsKey(name))
+                RegisteredClientServicesTypes.TryAdd(name, type);
         }
 
         /// <summary>
@@ -352,7 +352,7 @@ namespace SignalGo.Server.ServiceManager
         {
             var name = type.GetClientServiceName();
             var obj = CSCodeInjection.GenerateInterfaceType(type, typeof(OperationCalls), new List<Type>() { typeof(ServiceContractAttribute), this.GetType() }, true);
-            RegisteredCallbacksTypes.TryAdd(name, obj);
+            RegisteredClientServicesTypes.TryAdd(name, obj);
         }
 
         public void RegisterClientServiceInterface<T>()
@@ -362,9 +362,9 @@ namespace SignalGo.Server.ServiceManager
         }
 #endif
 
-        internal Type GetRegisteredCallbacksTypeByName(string name)
+        internal Type GetRegisteredClientServiceTypeByName(string name)
         {
-            return RegisteredCallbacksTypes[name];
+            return RegisteredClientServicesTypes[name];
         }
 
         static volatile int _ClientConnectedCallingCount = 1;
@@ -1838,10 +1838,10 @@ namespace SignalGo.Server.ServiceManager
         /// register calbacks for client
         /// </summary>
         /// <param name="client"></param>
-        internal void RegisterCallbacksForClient(ClientInfo client)
+        internal void RegisterClientServices(ClientInfo client)
         {
             var callbacks = new ConcurrentList<object>();
-            foreach (var item in RegisteredCallbacksTypes)
+            foreach (var item in RegisteredClientServicesTypes)
             {
                 //callbacks.Add(OCExtension.GetClientCallbackOfClientContext(this, client, item.Value));
                 var objectInstance = Activator.CreateInstance(item.Value);
@@ -1873,7 +1873,7 @@ namespace SignalGo.Server.ServiceManager
                 AutoLogger.LogText($"RegisterCallbacksForClient foreach {((object)objectInstance).ToString()} {client.ClientId}");
                 ////objectInstance.OnInitialized();
             }
-            var add = Callbacks.TryAdd(client, callbacks);
+            var add = ClientServices.TryAdd(client, callbacks);
             AutoLogger.LogText($"RegisterCallbacksForClient add {add} {client.ClientId}");
         }
 
@@ -1895,7 +1895,7 @@ namespace SignalGo.Server.ServiceManager
                 client.MainThread = thread;
                 try
                 {
-                    RegisterCallbacksForClient(client);
+                    RegisterClientServices(client);
                     var stream = client.TcpClient.GetStream();
                     bool isVerify = false;
                     if (!client.IsVerification)
@@ -2110,7 +2110,7 @@ namespace SignalGo.Server.ServiceManager
             WaitedMethodsForResponse.Remove(client);
             Services.Remove(client);
             ClientRegistredMethods.Remove(client);
-            Callbacks.Remove(client);
+            ClientServices.Remove(client);
         }
 
         internal void DisposeClient(ClientInfo client, string reason)
@@ -2978,7 +2978,7 @@ namespace SignalGo.Server.ServiceManager
 
 
 
-                        foreach (var service in RegisteredCallbacksTypes)
+                        foreach (var service in RegisteredClientServicesTypes)
                         {
                             id++;
                             var serviceDetail = new CallbackServiceDetailsInfo()

@@ -482,7 +482,7 @@ namespace SignalGo.Server.Helpers
                 GenerateServiceClass(serviceInfo.Key, serviceInfo.Value, ClassReferenceType.ServiceLevel, ServiceType.ServerService);
             }
 
-            foreach (var serviceInfo in serverBase.RegisteredCallbacksTypes)
+            foreach (var serviceInfo in serverBase.RegisteredClientServicesTypes)
             {
                 GenerateServiceClass(serviceInfo.Key, serviceInfo.Value, ClassReferenceType.CallbackLevel, ServiceType.ClientService);
             }
