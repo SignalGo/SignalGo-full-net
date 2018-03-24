@@ -332,9 +332,20 @@ namespace SignalGo.Server.ServiceManager
         /// <param name="type"></param>
         public void RegisterClientService(Type type)
         {
-            var name = type.GetClientServiceName();
-            if (!RegisteredClientServicesTypes.ContainsKey(name))
-                RegisteredClientServicesTypes.TryAdd(name, type);
+            if (type.GetIsInterface())
+            {
+#if (!NETSTANDARD1_6 && !NETCOREAPP1_1)
+                RegisterClientServiceInterface(type);
+#else
+                throw new NotSupportedException("not support register interface for this method");
+#endif
+            }
+            else
+            {
+                var name = type.GetClientServiceName();
+                if (!RegisteredClientServicesTypes.ContainsKey(name))
+                    RegisteredClientServicesTypes.TryAdd(name, type);
+            }
         }
 
         /// <summary>
@@ -689,7 +700,7 @@ namespace SignalGo.Server.ServiceManager
         /// </summary>
         public InternalSetting InternalSetting { get; set; } = new InternalSetting();
 
-        #region Http request supports
+#region Http request supports
         /// <summary>
         /// Http protocol and response request settings 
         /// </summary>
@@ -1813,7 +1824,7 @@ namespace SignalGo.Server.ServiceManager
             }
         }
 
-        #endregion
+#endregion
 
         /// <summary>
         /// add assembly that include models to server reference when client want to add or update service reference
@@ -2584,14 +2595,6 @@ namespace SignalGo.Server.ServiceManager
         {
             var find = method1.DeclaringType.GetMethod(method2.Name, method2.GetParameters().Select(p => p.ParameterType).ToArray());
             return find != null;
-        }
-
-        public class DefaultGenerator<T>
-        {
-            public static T GetDefault()
-            {
-                return default(T);
-            }
         }
 
         internal static object GetDefault(Type t)

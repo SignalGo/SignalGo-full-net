@@ -282,7 +282,7 @@ namespace SignalGo.Shared.Helpers
                 .GetDeclaredField(name);
 #else
                 .GetField(name, BindingFlags.Public |
-                          BindingFlags.Instance | BindingFlags.IgnoreCase);
+                          BindingFlags.Instance | BindingFlags.IgnoreCase | BindingFlags.NonPublic);
 #endif
         }
 
@@ -337,6 +337,19 @@ namespace SignalGo.Shared.Helpers
                 .IsInterface;
 #else
                 .IsInterface;
+#endif
+        }
+
+        public static ConstructorInfo[] GetListOfConstructors(this Type type)
+        {
+            return type
+#if (PORTABLE)
+                .GetTypeInfo()
+#endif
+#if (PORTABLE)
+                .DeclaredConstructors.ToArray();
+#else
+                .GetConstructors();
 #endif
         }
         /// <summary>
