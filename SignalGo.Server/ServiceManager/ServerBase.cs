@@ -319,6 +319,14 @@ namespace SignalGo.Server.ServiceManager
             if (!RegisteredCallbacksTypes.ContainsKey(name))
                 RegisteredCallbacksTypes.TryAdd(name, type);
         }
+
+        /// <summary>
+        /// register client service that have client methods
+        /// </summary>
+        public void RegisterClientService<T>()
+        {
+            RegisterClientService(typeof(T));
+        }
         /// <summary>
         /// register stream service for download and upload stream or file
         /// </summary>
