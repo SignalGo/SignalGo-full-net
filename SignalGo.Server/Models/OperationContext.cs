@@ -489,7 +489,7 @@ namespace SignalGo.Server.Models
                 GetClientContextService<T>(serverBase, client);
                 find = serverBase.FindClientServerByType(client, serviceType);
                 if (find == null)
-                    serverBase.AutoLogger.LogText($"FindClientService service not found : {serviceType.FullName} : name: {attribName} session: {client.ClientId}", true);
+                    serverBase.AutoLogger.LogText($"FindClientService service not found : {serviceType.FullName} : name: {attribName} clientId: {client.ClientId}", true);
             }
             return find;
         }

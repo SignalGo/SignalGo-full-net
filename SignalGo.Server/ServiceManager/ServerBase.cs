@@ -235,9 +235,26 @@ namespace SignalGo.Server.ServiceManager
         /// <param name="serviceType"></param>
         public void RegisterServerService(Type serviceType)
         {
-            var name = serviceType.GetServerServiceName();
-            if (!RegisteredServiceTypes.ContainsKey(name))
-                RegisteredServiceTypes.TryAdd(name, serviceType);
+            var service = serviceType.GetServerServiceAttribute();
+            if (service != null)
+            {
+                if (service.ServiceType == ServiceType.ServerService)
+                {
+                    var name = service.Name;
+                    if (!RegisteredServiceTypes.ContainsKey(name))
+                        RegisteredServiceTypes.TryAdd(name, serviceType);
+                }
+                else if (service.ServiceType == ServiceType.HttpService)
+                    RegisterHttpService(serviceType);
+                else if (service.ServiceType == ServiceType.StreamService)
+                    RegisterStreamService(serviceType);
+                else
+                    throw new NotSupportedException("your service is not type of ServerService or HttpService or StreamService");
+            }
+            else
+            {
+                throw new NotSupportedException("your service is not type of ServerService or HttpService or StreamService");
+            }
         }
         /// <summary>
         /// initialize server service
@@ -331,7 +348,7 @@ namespace SignalGo.Server.ServiceManager
         /// register stream service for download and upload stream or file
         /// </summary>
         /// <param name="type"></param>
-        public void RegisterStreamService(Type type)
+        internal void RegisterStreamService(Type type)
         {
             var name = type.GetServerServiceName();
             if (StreamServices.ContainsKey(name))
@@ -343,7 +360,7 @@ namespace SignalGo.Server.ServiceManager
         /// register stream service for download and upload stream or file
         /// </summary>
         /// <typeparam name="T"></typeparam>
-        public void RegisterStreamService<T>()
+        internal void RegisterStreamService<T>()
         {
             RegisterStreamService(typeof(T));
         }
@@ -1759,7 +1776,7 @@ namespace SignalGo.Server.ServiceManager
         /// add a http service class
         /// </summary>
         /// <param name="T">a service class that using ServiceContractAttribute attribute by ServiceType.HttpService</param>
-        public void RegisterHttpService<T>()
+        internal void RegisterHttpService<T>()
         {
             RegisterHttpService(typeof(T));
         }
@@ -1768,7 +1785,7 @@ namespace SignalGo.Server.ServiceManager
         /// add a http service class
         /// </summary>
         /// <param name="httpService">a service class using ServiceContractAttribute attribute ServiceType.HttpService</param>
-        public void RegisterHttpService(Type httpService)
+        internal void RegisterHttpService(Type httpService)
         {
             var attributes = httpService.GetCustomAttributes<ServiceContractAttribute>().Where(x => x.ServiceType == ServiceType.HttpService);
             if (attributes == null || attributes.Count() == 0)
