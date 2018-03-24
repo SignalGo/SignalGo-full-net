@@ -359,6 +359,30 @@ namespace SignalGo.Shared.Converters
             }
         }
 
+        internal static object GetDefault(Type t)
+        {
+            try
+            {
+                var defaultGeneratorType =
+      typeof(DefaultGenerator<>).MakeGenericType(t);
+#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
+                MethodInfo method = defaultGeneratorType.GetTypeInfo().GetDeclaredMethod("GetDefault");
+                return method.Invoke(null, null);
+#else
+                return defaultGeneratorType.InvokeMember(
+                     "GetDefault",
+                     BindingFlags.Static |
+                     BindingFlags.Public |
+                     BindingFlags.InvokeMethod,
+                     null, null, new object[0]);
+#endif
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
+        }
+
         object CreateInstance(Type type, bool isIgnore)
         {
             var canIgnore = isIgnore ? true : CanIgnoreCustomDataExchanger(type, null);
@@ -375,7 +399,19 @@ namespace SignalGo.Shared.Converters
                 }
                 try
                 {
-                    return Activator.CreateInstance(type);
+                    var ctors = type.GetListOfConstructors();
+                    if (ctors.Any(x => x.GetParameters().Length == 0))
+                        return Activator.CreateInstance(type);
+                    else
+                    {
+                        var parameters = ctors[0].GetParameters();
+                        object[] args = new object[parameters.Length];
+                        for (int i = 0; i < parameters.Length; i++)
+                        {
+                            args[i] = GetDefault(parameters[i].ParameterType);
+                        }
+                        return Activator.CreateInstance(type, args);
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -534,6 +570,44 @@ namespace SignalGo.Shared.Converters
             return instance;
         }
 
+        public static bool IsTupleType(Type type, bool checkBaseTypes = false)
+        {
+#if (NET35)
+            return false;
+#else
+            if (type == null)
+                throw new ArgumentNullException(nameof(type));
+
+            if (type == typeof(Tuple))
+                return true;
+
+            while (type != null)
+            {
+                if (type.GetIsGenericType())
+                {
+                    var genType = type.GetGenericTypeDefinition();
+                    if (genType == typeof(Tuple<>)
+                        || genType == typeof(Tuple<,>)
+                        || genType == typeof(Tuple<,,>)
+                        || genType == typeof(Tuple<,,,>)
+                        || genType == typeof(Tuple<,,,,>)
+                        || genType == typeof(Tuple<,,,,,>)
+                        || genType == typeof(Tuple<,,,,,,>)
+                        || genType == typeof(Tuple<,,,,,,,>)
+                        || genType == typeof(Tuple<,,,,,,,>))
+                        return true;
+                }
+
+                if (!checkBaseTypes)
+                    break;
+
+                type = type.GetBaseType();
+            }
+
+            return false;
+#endif
+        }
+
         void ReadNewProperty(object instance, JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer, bool isIgnore)
         {
             //bool isDictionary= typeof(IDictionary).GetIsAssignableFrom(type);
@@ -584,44 +658,9 @@ namespace SignalGo.Shared.Converters
                 }
                 else
                 {
-                    var property = objectType.GetPropertyInfo(propertyName);
-                    if (property != null)
+                    if (IsTupleType(objectType))
                     {
-                        canIgnore = canIgnore ? true : CanIgnoreCustomDataExchanger(objectType, property, instance);
-                        if (reader.TokenType == JsonToken.StartObject)
-                        {
-                            var value = ReadNewObject(reader, property.PropertyType, reader.Value, serializer, canIgnore);
-                            if (!canIgnore)
-                            {
-                                if (property.CanWrite)
-                                    property.SetValue(instance, value, null);
-                                else
-                                    AutoLogger?.LogText($"property {property.Name} cannot write");
-                            }
-                        }
-                        else
-                        {
-                            try
-                            {
-                                if (!canIgnore)
-                                {
-                                    var value = SerializeHelper.ConvertType(property.PropertyType, reader.Value);
-                                    if (property.CanWrite)
-                                        property.SetValue(instance, value, null);
-                                    else
-                                        AutoLogger?.LogText($"property {property.Name} cannot write");
-                                }
-
-                            }
-                            catch (Exception ex)
-                            {
-                                AutoLogger?.LogError(ex, $"Deserialize Error {property.Name} :");
-                            }
-                        }
-                    }
-                    else
-                    {
-                        var field = objectType.GetFieldInfo(propertyName);
+                        var field = objectType.GetFieldInfo("m_" + propertyName);
                         if (field != null)
                         {
                             canIgnore = canIgnore ? true : CanIgnoreCustomDataExchanger(objectType, field, instance);
@@ -635,6 +674,63 @@ namespace SignalGo.Shared.Converters
                             {
                                 var value = SerializeHelper.ConvertType(field.FieldType, reader.Value);
                                 field.SetValue(instance, value);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        var property = objectType.GetPropertyInfo(propertyName);
+                        if (property != null)
+                        {
+                            canIgnore = canIgnore ? true : CanIgnoreCustomDataExchanger(objectType, property, instance);
+                            if (reader.TokenType == JsonToken.StartObject)
+                            {
+                                var value = ReadNewObject(reader, property.PropertyType, reader.Value, serializer, canIgnore);
+                                if (!canIgnore)
+                                {
+                                    if (property.CanWrite)
+                                        property.SetValue(instance, value, null);
+                                    else
+                                        AutoLogger?.LogText($"property {property.Name} cannot write");
+                                }
+                            }
+                            else
+                            {
+                                try
+                                {
+                                    if (!canIgnore)
+                                    {
+                                        var value = SerializeHelper.ConvertType(property.PropertyType, reader.Value);
+                                        if (property.CanWrite)
+                                            property.SetValue(instance, value, null);
+                                        else
+                                            AutoLogger?.LogText($"property {property.Name} cannot write");
+                                    }
+
+                                }
+                                catch (Exception ex)
+                                {
+                                    AutoLogger?.LogError(ex, $"Deserialize Error {property.Name} :");
+                                }
+                            }
+                        }
+                        else
+                        {
+                            var field = objectType.GetFieldInfo(propertyName);
+                            if (field != null)
+                            {
+                                canIgnore = canIgnore ? true : CanIgnoreCustomDataExchanger(objectType, field, instance);
+                                if (reader.TokenType == JsonToken.StartObject)
+                                {
+                                    var value = ReadNewObject(reader, field.FieldType, reader.Value, serializer, canIgnore);
+                                    if (!canIgnore)
+                                        field.SetValue(instance, value);
+                                }
+                                else if (!canIgnore)
+                                {
+                                    var value = SerializeHelper.ConvertType(field.FieldType, reader.Value);
+                                    field.SetValue(instance, value);
+                                }
                             }
                         }
                     }
