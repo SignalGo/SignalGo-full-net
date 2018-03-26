@@ -1,4 +1,5 @@
 # [You can read Wiki by click here](https://github.com/SignalGo/SignalGo-full-net/wiki)
+[![NuGet](https://img.shields.io/badge/nuget-server.net%20v3.6.0-blue.svg)](https://www.nuget.org/packages/SignalGo.Net.Server/)  [![NuGet](https://img.shields.io/badge/nuget-client.net%20v3.6.0-blue.svg)](https://www.nuget.org/packages/SignalGo.Net.Client/)  [![NuGet](https://img.shields.io/badge/nuget-javascript%20v3.6.0-blue.svg)](https://www.nuget.org/packages/SignalGo.JavaScript.Client/)
 
 # Signal Go
 
@@ -34,6 +35,8 @@ SignalGo is a library for Cross-Platform developers that makes it incredibly sim
 13.Easy to manage permissions with attribute you can customize your permissions before client call methods
 
 14.Automatic handle object references and pointers in serialize and deserialize system
+
+15.Add service reference with visual studio for client side
 
 and other fetures...
 
@@ -244,13 +247,14 @@ http://localhost:1199/AddressTest/Hello?ali
 
 ![ScreenShot](https://github.com/SignalGo/SignalGoTest/blob/master/image2.png "signal go test image")
 
+
 ## Install package from nuget:
 
-Install-Package SignalGo.Net.Server
+Install-Package SignalGo.Net.Server  [![NuGet](https://img.shields.io/badge/nuget-server.net%20v3.6.0-blue.svg)](https://www.nuget.org/packages/SignalGo.Net.Server/)
 
-Install-Package SignalGo.Net.Client
+Install-Package SignalGo.Net.Client  [![NuGet](https://img.shields.io/badge/nuget-client.net%20v3.6.0-blue.svg)](https://www.nuget.org/packages/SignalGo.Net.Client/)
 
-Install-Package SignalGo.JavaScript.Client
+Install-Package SignalGo.JavaScript.Client  [![NuGet](https://img.shields.io/badge/nuget-javascript%20v3.6.0-blue.svg)](https://www.nuget.org/packages/SignalGo.JavaScript.Client/)
 
 # Pull Requests
 I welcome all pull requests from you guys.Here are 3 basic rules of your request:
