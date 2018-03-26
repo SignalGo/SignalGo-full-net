@@ -37,7 +37,7 @@ SignalGo is a library for Cross-Platform developers that makes it incredibly sim
 
 14.Automatic handle object references and pointers in serialize and deserialize system
 
-15.Add service reference with visual studio for client side
+15.Add service reference with visual studio for client side [![NuGet](https://img.shields.io/badge/github-wiki-brightgreen.svg)](https://github.com/SignalGo/SignalGo-full-net/wiki/Add-Service-Reference---Auto-generate-all-services-and-models-in-client-side)
 
 and other fetures...
 
