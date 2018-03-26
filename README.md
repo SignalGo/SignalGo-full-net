@@ -1,4 +1,4 @@
-# [You can read Wiki by click here](https://github.com/SignalGo/SignalGo-full-net/wiki)
+# [![NuGet](https://img.shields.io/badge/github-full wiki-brightgreen.svg)](https://github.com/SignalGo/SignalGo-full-net/wiki)
 [![NuGet](https://img.shields.io/badge/nuget-server.net%20v3.6.0-blue.svg)](https://www.nuget.org/packages/SignalGo.Net.Server/)  [![NuGet](https://img.shields.io/badge/nuget-client.net%20v3.6.0-blue.svg)](https://www.nuget.org/packages/SignalGo.Net.Client/)  [![NuGet](https://img.shields.io/badge/nuget-javascript%20v3.6.0-blue.svg)](https://www.nuget.org/packages/SignalGo.JavaScript.Client/)
 
 # Signal Go
@@ -10,7 +10,7 @@ SignalGo is a library for Cross-Platform developers that makes it incredibly sim
 
 1.Send and receive any data like class,object,struct and complex object
 
-2.Send(upload) and receive(download) stream like file stream
+2.Send(upload) and receive(download) stream like file stream [![NuGet](https://img.shields.io/badge/github-download stream in wiki-brightgreen.svg)](https://github.com/SignalGo/SignalGo-full-net/wiki/Download-Stream-and-Files) [![NuGet](https://img.shields.io/badge/github-upload stream in wiki-brightgreen.svg)](https://github.com/SignalGo/SignalGo-full-net/wiki/Upload-Stream-and-Files)
 
 3.Send and receive data with UDP connection for sound and video streamming
 
