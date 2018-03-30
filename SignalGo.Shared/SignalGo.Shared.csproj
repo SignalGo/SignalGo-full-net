@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
   <!--<Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />-->
   <PropertyGroup>
-    <TargetFrameworks>net45;net40;net35;netstandard1.6;portable45-net45+win8;portable-net45+win8+wpa81</TargetFrameworks>
+    <TargetFrameworks>net45;net40;net35;netstandard1.6;portable45-net45+win8;portable-net45+win8+wpa81;</TargetFrameworks>
     <!---->
     <MinimumVisualStudioVersion>10.0</MinimumVisualStudioVersion>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -165,6 +165,7 @@
     <PackageReference Include="System.Threading.Thread" Version="4.3.0" />
     <PackageReference Include="System.Reflection.TypeExtensions" Version="4.4.0" />
     <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
+    <PackageReference Include="runtime.win8-arm.Microsoft.NETCore.Runtime.CoreCLR" Version="1.0.7" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'portable45-net45+win8'">
     <PackageReference Include="Newtonsoft.Json" Version="11.0.1" />

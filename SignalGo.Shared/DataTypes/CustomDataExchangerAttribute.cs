@@ -94,6 +94,7 @@ namespace SignalGo.Shared.DataTypes
         /// property names that you need to ignore or take for serialize
         /// </summary>
         public string[] Properties { get; set; } = null;
+        internal object Instance { get; set; }
 
         public bool ContainsProperty(string name)
         {

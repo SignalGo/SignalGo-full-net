@@ -12,9 +12,141 @@ using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Threading;
 
 namespace SignalGo.Shared.Converters
 {
+    public class DataExchanger
+    {
+        /// <summary>
+        /// 
+        /// </summary>
+        public static Dictionary<SynchronizationContext, List<CustomDataExchangerAttribute>> ListOfContextsDataExchangers = new Dictionary<SynchronizationContext, List<CustomDataExchangerAttribute>>();
+
+        public static void Take(object instance)
+        {
+            string[] value = null;
+            Take(instance, value);
+        }
+
+        public static void Ignore(object instance)
+        {
+            string[] value = null;
+            Ignore(instance, value);
+        }
+
+        public static void Take(Type type)
+        {
+            string[] value = null;
+            Take(type, value);
+        }
+
+        public static void Ignore(Type type)
+        {
+            string[] value = null;
+            Ignore(type, value);
+        }
+
+        public static void Take(object instance, params string[] property)
+        {
+            if (SynchronizationContext.Current == null)
+                throw new Exception("current context is null please don't call this method inside of another thread!");
+            if (!ListOfContextsDataExchangers.ContainsKey(SynchronizationContext.Current))
+                ListOfContextsDataExchangers.Add(SynchronizationContext.Current, new List<CustomDataExchangerAttribute>());
+            CustomDataExchangerAttribute result = new CustomDataExchangerAttribute
+            {
+                ExchangeType = CustomDataExchangerType.Take,
+                Properties = property,
+                Instance = instance,
+                LimitationMode = LimitExchangeType.Both
+            };
+            ListOfContextsDataExchangers[SynchronizationContext.Current].Add(result);
+        }
+
+        public static void Ignore(object instance, params string[] property)
+        {
+            if (SynchronizationContext.Current == null)
+                throw new Exception("current context is null please don't call this method inside of another thread!");
+            if (!ListOfContextsDataExchangers.ContainsKey(SynchronizationContext.Current))
+                ListOfContextsDataExchangers.Add(SynchronizationContext.Current, new List<CustomDataExchangerAttribute>());
+            CustomDataExchangerAttribute result = new CustomDataExchangerAttribute
+            {
+                ExchangeType = CustomDataExchangerType.Ignore,
+                Properties = property,
+                Instance = instance,
+                LimitationMode = LimitExchangeType.Both
+            };
+            ListOfContextsDataExchangers[SynchronizationContext.Current].Add(result);
+
+        }
+
+
+        public static void Take(Type type, params string[] property)
+        {
+            if (SynchronizationContext.Current == null)
+                throw new Exception("current context is null please don't call this method inside of another thread!");
+            if (!ListOfContextsDataExchangers.ContainsKey(SynchronizationContext.Current))
+                ListOfContextsDataExchangers.Add(SynchronizationContext.Current, new List<CustomDataExchangerAttribute>());
+            CustomDataExchangerAttribute result = new CustomDataExchangerAttribute
+            {
+                ExchangeType = CustomDataExchangerType.Take,
+                Properties = property,
+                Type = type,
+                LimitationMode = LimitExchangeType.Both
+            };
+            ListOfContextsDataExchangers[SynchronizationContext.Current].Add(result);
+
+        }
+
+        public static void Ignore(Type type, params string[] property)
+        {
+            if (SynchronizationContext.Current == null)
+                throw new Exception("current context is null please don't call this method inside of another thread!");
+            if (!ListOfContextsDataExchangers.ContainsKey(SynchronizationContext.Current))
+                ListOfContextsDataExchangers.Add(SynchronizationContext.Current, new List<CustomDataExchangerAttribute>());
+            CustomDataExchangerAttribute result = new CustomDataExchangerAttribute
+            {
+                ExchangeType = CustomDataExchangerType.Ignore,
+                Properties = property,
+                Type = type,
+                LimitationMode = LimitExchangeType.Both
+            };
+            ListOfContextsDataExchangers[SynchronizationContext.Current].Add(result);
+        }
+
+        public static void Clear(SynchronizationContext synchronizationContext)
+        {
+            if (synchronizationContext != null && ListOfContextsDataExchangers.ContainsKey(synchronizationContext))
+            {
+                ListOfContextsDataExchangers.Remove(synchronizationContext);
+            }
+        }
+
+        public static void Clear()
+        {
+            Clear(SynchronizationContext.Current);
+        }
+
+        public static bool ExistContext()
+        {
+            if (SynchronizationContext.Current != null && ListOfContextsDataExchangers.ContainsKey(SynchronizationContext.Current) && ListOfContextsDataExchangers[SynchronizationContext.Current].Count > 0)
+            {
+                return true;
+            }
+            return false;
+        }
+
+        public static List<CustomDataExchangerAttribute> GetContextAttributes()
+        {
+            if (SynchronizationContext.Current != null && ListOfContextsDataExchangers.ContainsKey(SynchronizationContext.Current) && ListOfContextsDataExchangers[SynchronizationContext.Current].Count > 0)
+            {
+                return ListOfContextsDataExchangers[SynchronizationContext.Current].ToList();
+            }
+            return null;
+        }
+
+    }
+
     internal class DefaultReferenceResolver
     {
         private int _referenceCount;
@@ -184,6 +316,8 @@ namespace SignalGo.Shared.Converters
     /// </summary>
     public class DataExchangeConverter : JsonConverter
     {
+
+
         /// <summary>
         /// log system for data exchanger
         /// </summary>
@@ -251,6 +385,22 @@ namespace SignalGo.Shared.Converters
 
         bool CanIgnoreCustomDataExchanger(Type type, object instance)
         {
+            if (DataExchanger.ExistContext())
+            {
+                var items = DataExchanger.GetContextAttributes();
+                if (instance != null)
+                {
+                    if (items.Any(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.Ignore && x.Properties == null))
+                        return true;
+                    else if (items.Any(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.Take && x.Properties == null))
+                        return false;
+                }
+
+                if (items.Any(x => x.Type == type && x.ExchangeType == CustomDataExchangerType.Ignore && x.Properties == null))
+                    return true;
+                else if (items.Any(x => x.Type == type && x.ExchangeType == CustomDataExchangerType.Take && x.Properties == null))
+                    return false;
+            }
             IEnumerable<CustomDataExchangerAttribute> implementICollection = null;
             implementICollection = ExchangerTypes == null ? null : ExchangerTypes.Where(x => x.Type == type && (x.GetLimitationMode(IsClient) == Mode || x.GetLimitationMode(IsClient) == LimitExchangeType.Both));
             if (implementICollection == null || implementICollection.Count() == 0)
@@ -266,6 +416,22 @@ namespace SignalGo.Shared.Converters
 
         CustomDataExchangerAttribute GetCustomDataExchanger(Type type, object instance)
         {
+            if (DataExchanger.ExistContext())
+            {
+                var items = DataExchanger.GetContextAttributes();
+                if (instance != null)
+                {
+                    if (items.Any(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.Ignore))
+                        return items.FirstOrDefault(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.Ignore);
+                    else if (items.Any(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.Take))
+                        return items.FirstOrDefault(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.Take);
+                }
+
+                if (items.Any(x => x.Type == type && x.ExchangeType == CustomDataExchangerType.Ignore))
+                    return items.FirstOrDefault(x => x.Type == type && x.ExchangeType == CustomDataExchangerType.Ignore);
+                else if (items.Any(x => x.Type == type && x.ExchangeType == CustomDataExchangerType.Take))
+                    return items.FirstOrDefault(x => x.Type == type && x.ExchangeType == CustomDataExchangerType.Take);
+            }
             CustomDataExchangerAttribute implementICollection = null;
             implementICollection = ExchangerTypes == null ? null : ExchangerTypes.Where(x => x.Type == type && (x.GetLimitationMode(IsClient) == Mode || x.GetLimitationMode(IsClient) == LimitExchangeType.Both)).FirstOrDefault();
             if (implementICollection == null)
@@ -276,6 +442,54 @@ namespace SignalGo.Shared.Converters
 
         bool CanIgnoreCustomDataExchanger(Type type, PropertyInfo property, object instance)
         {
+            if (DataExchanger.ExistContext())
+            {
+                var items = DataExchanger.GetContextAttributes();
+                if (instance != null)
+                {
+                    if (items.Any(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.Ignore && x.Properties == null))
+                        return true;
+                    else if (items.Any(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.Take && x.Properties == null))
+                        return false;
+                    else if (items.Any(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.Ignore && x.Properties != null))
+                    {
+                        var find = items.FirstOrDefault(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.Ignore && x.Properties != null);
+                        if (find.Properties.Contains(property.Name))
+                            return true;
+                        else
+                            return false;
+                    }
+                    else if (items.Any(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.Take && x.Properties != null ))
+                    {
+                        var find = items.FirstOrDefault(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.Take && x.Properties != null);
+                        if (find.Properties.Contains(property.Name))
+                            return false;
+                        else
+                            return true;
+                    }
+                }
+
+                if (items.Any(x => x.Type == type && x.ExchangeType == CustomDataExchangerType.Ignore && x.Properties == null))
+                    return true;
+                else if (items.Any(x => x.Type == type && x.ExchangeType == CustomDataExchangerType.Take && x.Properties == null))
+                    return false;
+                else if (items.Any(x => x.Type == type && x.ExchangeType == CustomDataExchangerType.Ignore && x.Properties != null))
+                {
+                    var find = items.FirstOrDefault(x => x.Type == type && x.ExchangeType == CustomDataExchangerType.Ignore && x.Properties != null);
+                    if (find.Properties.Contains(property.Name))
+                        return true;
+                    else
+                        return false;
+                }
+                else if (items.Any(x => x.Type == type && x.ExchangeType == CustomDataExchangerType.Take && x.Properties != null))
+                {
+                    var find = items.FirstOrDefault(x => x.Type == type && x.ExchangeType == CustomDataExchangerType.Take && x.Properties != null);
+                    if (find.Properties.Contains(property.Name))
+                        return false;
+                    else
+                        return true;
+                }
+            }
             IEnumerable<CustomDataExchangerAttribute> implementICollection = null;
             implementICollection = ExchangerTypes == null ? null : ExchangerTypes.Where(x => x.Type == type && (x.GetLimitationMode(IsClient) == Mode || x.GetLimitationMode(IsClient) == LimitExchangeType.Both));
             if (implementICollection == null || implementICollection.Count() == 0)
@@ -299,6 +513,55 @@ namespace SignalGo.Shared.Converters
 
         bool CanIgnoreCustomDataExchanger(Type type, FieldInfo fieldInfo, object instance)
         {
+            if (DataExchanger.ExistContext())
+            {
+                var items = DataExchanger.GetContextAttributes();
+                if (instance != null)
+                {
+                    if (items.Any(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.Ignore && x.Properties == null))
+                        return true;
+                    else if (items.Any(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.Take && x.Properties == null))
+                        return false;
+                    else if (items.Any(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.Ignore && x.Properties != null))
+                    {
+                        var find = items.FirstOrDefault(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.Ignore && x.Properties != null);
+                        if (find.Properties.Contains(fieldInfo.Name))
+                            return true;
+                        else
+                            return false;
+                    }
+                    else if (items.Any(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.Take && x.Properties != null))
+                    {
+                        var find = items.FirstOrDefault(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.Take && x.Properties != null);
+                        if (find.Properties.Contains(fieldInfo.Name))
+                            return false;
+                        else
+                            return true;
+                    }
+                }
+
+                if (items.Any(x => x.Type == type && x.ExchangeType == CustomDataExchangerType.Ignore && x.Properties == null))
+                    return true;
+                else if (items.Any(x => x.Type == type && x.ExchangeType == CustomDataExchangerType.Take && x.Properties == null))
+                    return false;
+                else if (items.Any(x => x.Type == type && x.ExchangeType == CustomDataExchangerType.Ignore && x.Properties != null))
+                {
+                    var find = items.FirstOrDefault(x => x.Type == type && x.ExchangeType == CustomDataExchangerType.Ignore && x.Properties != null);
+                    if (find.Properties.Contains(fieldInfo.Name))
+                        return true;
+                    else
+                        return false;
+                }
+                else if (items.Any(x => x.Type == type && x.ExchangeType == CustomDataExchangerType.Take && x.Properties != null))
+                {
+                    var find = items.FirstOrDefault(x => x.Type == type && x.ExchangeType == CustomDataExchangerType.Take && x.Properties != null);
+                    if (find.Properties.Contains(fieldInfo.Name))
+                        return false;
+                    else
+                        return true;
+                }
+            }
+
             IEnumerable<CustomDataExchangerAttribute> implementICollection = null;
             implementICollection = ExchangerTypes == null ? null : ExchangerTypes.Where(x => x.Type == type && (x.GetLimitationMode(IsClient) == Mode || x.GetLimitationMode(IsClient) == LimitExchangeType.Both));
             if (implementICollection == null)

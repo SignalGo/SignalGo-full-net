@@ -16,6 +16,7 @@ namespace SignalGoTest.DataExhanger
             var test = new UserInfoTest() { Age = 10, Id = 15, Username = "user name", LastPostInfo = new PostInfoTest() { }, Password = "pass", PostInfoes = new System.Collections.Generic.List<PostInfoTest>() { }, RoleInfoes = new System.Collections.Generic.List<RoleInfoTest>() { new RoleInfoTest() { } } };
             var test1 = new UserInfoTest() { Age = 10, Id = 15, Username = "user name", LastPostInfo = new PostInfoTest() { }, Password = "pass", PostInfoes = new System.Collections.Generic.List<PostInfoTest>() { }, RoleInfoes = new System.Collections.Generic.List<RoleInfoTest>() { new RoleInfoTest() { Id = 5 } } };
             var test2 = new UserInfoTest() { Age = 10, Id = 15, Username = "user name", LastPostInfo = new PostInfoTest() { }, Password = "pass", PostInfoes = new System.Collections.Generic.List<PostInfoTest>() { }, RoleInfoes = new System.Collections.Generic.List<RoleInfoTest>() { new RoleInfoTest() { } } };
+
             var helloBind = service.HelloBind(test, test1, test2);
             Assert.IsTrue(helloBind);
             var users = service.GetListOfUsers();
@@ -32,6 +33,9 @@ namespace SignalGoTest.DataExhanger
             var customPosts = service.GetCustomPostsOfUser(1);
             Assert.IsTrue(!string.IsNullOrEmpty(customPosts[0].PostSecurityLink));
             Assert.IsTrue(customPosts[0].User == null);
+            Assert.IsTrue(customPosts.Count == 6);
+            Assert.IsTrue(customPosts[5].PostSecurityLink == null);
+            Assert.IsTrue(customPosts[4].Id > 0 && customPosts[4].PostSecurityLink == null);
             Assert.IsTrue(string.IsNullOrEmpty(customPosts[0].Title) && string.IsNullOrEmpty(customPosts[1].Text) && customPosts[0].Id == customPosts[1].Id);
 
             var customUsers = service.GetListOfUsersCustom();

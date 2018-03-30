@@ -1,4 +1,5 @@
 ﻿using SignalGo.Server.Models;
+using SignalGo.Shared.Converters;
 using SignalGo.Shared.DataTypes;
 using System;
 using System.Collections.Generic;
@@ -94,6 +95,14 @@ namespace SignalGoTest.Models
             List<PostInfoTest> results = new List<PostInfoTest>();
             results.Add(new PostInfoTest() { Id = 1, PostSecurityLink = "securityLink", Text = "hello guys...", Title = "work finished" });
             results.Add(new PostInfoTest() { Id = 2, PostSecurityLink = "securityLink2", Text = "today were good but...", Title = "good day" });
+            results.Add(new PostInfoTest() { Id = 3, PostSecurityLink = "securityLink3", Text = "today were bad but...", Title = "bad day" });
+            results.Add(new PostInfoTest() { Id = 4, PostSecurityLink = "securityLink4", Text = "today were bad but...", Title = "bad day" });
+            results.Add(new PostInfoTest() { Id = 5, PostSecurityLink = "securityLink5", Text = "today were bad but...", Title = "bad day" });
+            results.Add(new PostInfoTest() { Id = 6, PostSecurityLink = "securityLink6", Text = "today were bad but...", Title = "bad day" });
+            results.Add(new PostInfoTest() { Id = 7, PostSecurityLink = "securityLink7", Text = "today were bad but...", Title = "bad day" });
+            DataExchanger.Ignore(results[6]);
+            DataExchanger.Ignore(results[5], "PostSecurityLink");
+            DataExchanger.Take(results[4], "Id");
             return results;
         }
 

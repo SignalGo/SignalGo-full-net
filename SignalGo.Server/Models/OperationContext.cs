@@ -23,12 +23,20 @@ namespace SignalGo.Server.Models
                     var clients = ServerBase.AllDispatchers[SynchronizationContext.Current];
                     return new OperationContext() { Client = clients.FirstOrDefault(), Clients = clients, ServerBase = clients.FirstOrDefault().ServerBase };
                 }
-                return null;
+                throw new Exception("SynchronizationContext is null or empty! Do not call this property or method inside of another thread you have to call this inside of server methods not another thread");
             }
         }
-
+        /// <summary>
+        /// server provider
+        /// </summary>
         public ServerBase ServerBase { get; set; }
+        /// <summary>
+        /// current client information
+        /// </summary>
         public ClientInfo Client { get; private set; }
+        /// <summary>
+        /// current http client information if client is http call
+        /// </summary>
         public HttpClientInfo HttpClient
         {
             get
@@ -36,8 +44,13 @@ namespace SignalGo.Server.Models
                 return (HttpClientInfo)Client;
             }
         }
+        /// <summary>
+        /// all client info of this thread
+        /// </summary>
         public IEnumerable<ClientInfo> Clients { get; private set; }
-
+        /// <summary>
+        /// all of server clients
+        /// </summary>
         public List<ClientInfo> AllServerClients
         {
             get
@@ -46,6 +59,9 @@ namespace SignalGo.Server.Models
             }
         }
 
+        /// <summary>
+        /// count of connected Clients
+        /// </summary>
         public int ConnectedClientsCount
         {
             get
@@ -65,10 +81,24 @@ namespace SignalGo.Server.Models
             ServerBase.SingleInstanceServices.TryGetValue(attribute.Name, out object result);
             return (T)result;
         }
-
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="clientId"></param>
+        /// <returns></returns>
         public ClientInfo GetClientInfoByClientId(string clientId)
         {
             return Current.ServerBase.GetClientByClientId(clientId);
+        }
+
+        public void AddResultOfDataExchanger(object instance, CustomDataExchangerAttribute customDataExchangerAttribute)
+        {
+
+        }
+
+        public void AddResultOfDataExchanger(Type type, CustomDataExchangerAttribute customDataExchangerAttribute)
+        {
+
         }
     }
 
