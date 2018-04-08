@@ -905,15 +905,17 @@ namespace SignalGo.Server.ServiceManager
                         }
                         else if (headers["content-type"] == "application/json")
                         {
-                            //JObject des = JObject.Parse(parameters);
-                            //foreach (var item in des.Properties())
-                            //{
-                            //    var value = des.GetValue(item.Name);
-                            //    values.Add(new Tuple<string, string>(item.Name, value.ToString()));
-                            //}
-
-                            //works on raw json data in post
-                            values.Add(new Tuple<string, string>("", parameters));
+                            JObject des = JObject.Parse(parameters);
+                            if (IsMethodInfoOfJsonParameters(methods, des.Properties().Select(x => x.Name).ToList()))
+                            {
+                                foreach (var item in des.Properties())
+                                {
+                                    var value = des.GetValue(item.Name);
+                                    values.Add(new Tuple<string, string>(item.Name, value.ToString()));
+                                }
+                            }
+                            else
+                                values.Add(new Tuple<string, string>("", parameters));
                         }
                         else
                         {
@@ -1139,6 +1141,31 @@ namespace SignalGo.Server.ServiceManager
                 }
             }
             return methods.FirstOrDefault(x => x.GetParameters().Length == values.Count);
+        }
+
+        bool IsMethodInfoOfJsonParameters(IEnumerable<MethodInfo> methods, List<string> names)
+        {
+            bool isFind = false;
+            foreach (var method in methods)
+            {
+                int fakeParameterCount = 0;
+                var findCount = method.GetCustomAttributes<FakeParameterAttribute>().Count();
+                fakeParameterCount += findCount;
+                if (method.GetParameters().Length == names.Count - fakeParameterCount)
+                {
+                    for (int i = 0; i < fakeParameterCount; i++)
+                    {
+                        if (names.Count > 0)
+                            names.RemoveAt(names.Count - 1);
+                    }
+                }
+                if (method.GetParameters().Count(x => names.Any(y => y.ToLower() == x.Name.ToLower())) == names.Count)
+                {
+                    isFind = true;
+                    break;
+                }
+            }
+            return isFind;
         }
 
         void FillReponseHeaders(HttpClientInfo client, List<HttpKeyAttribute> httpKeyAttributes)
