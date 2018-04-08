@@ -23,10 +23,10 @@ namespace SignalGo.Shared.Converters
         /// </summary>
         public static Dictionary<SynchronizationContext, List<CustomDataExchangerAttribute>> ListOfContextsDataExchangers = new Dictionary<SynchronizationContext, List<CustomDataExchangerAttribute>>();
 
-        public static void Take(object instance)
+        public static void TakeOnly(object instance)
         {
             string[] value = null;
-            Take(instance, value);
+            TakeOnly(instance, value);
         }
 
         public static void Ignore(object instance)
@@ -35,7 +35,7 @@ namespace SignalGo.Shared.Converters
             Ignore(instance, value);
         }
 
-        public static void Take(Type type)
+        public static void TakeOnly(Type type)
         {
             string[] value = null;
             Take(type, value);
@@ -47,7 +47,7 @@ namespace SignalGo.Shared.Converters
             Ignore(type, value);
         }
 
-        public static void Take(object instance, params string[] property)
+        public static void TakeOnly(object instance, params string[] property)
         {
             if (SynchronizationContext.Current == null)
                 throw new Exception("current context is null please don't call this method inside of another thread!");
@@ -55,7 +55,7 @@ namespace SignalGo.Shared.Converters
                 ListOfContextsDataExchangers.Add(SynchronizationContext.Current, new List<CustomDataExchangerAttribute>());
             CustomDataExchangerAttribute result = new CustomDataExchangerAttribute
             {
-                ExchangeType = CustomDataExchangerType.Take,
+                ExchangeType = CustomDataExchangerType.TakeOnly,
                 Properties = property,
                 Instance = instance,
                 LimitationMode = LimitExchangeType.Both
@@ -89,7 +89,7 @@ namespace SignalGo.Shared.Converters
                 ListOfContextsDataExchangers.Add(SynchronizationContext.Current, new List<CustomDataExchangerAttribute>());
             CustomDataExchangerAttribute result = new CustomDataExchangerAttribute
             {
-                ExchangeType = CustomDataExchangerType.Take,
+                ExchangeType = CustomDataExchangerType.TakeOnly,
                 Properties = property,
                 Type = type,
                 LimitationMode = LimitExchangeType.Both
@@ -316,8 +316,6 @@ namespace SignalGo.Shared.Converters
     /// </summary>
     public class DataExchangeConverter : JsonConverter
     {
-
-
         /// <summary>
         /// log system for data exchanger
         /// </summary>
@@ -392,17 +390,17 @@ namespace SignalGo.Shared.Converters
                 {
                     if (items.Any(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.Ignore && x.Properties == null))
                         return true;
-                    else if (items.Any(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.Take && x.Properties == null))
+                    else if (items.Any(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.TakeOnly && x.Properties == null))
                         return false;
                 }
 
                 if (items.Any(x => x.Type == type && x.ExchangeType == CustomDataExchangerType.Ignore && x.Properties == null))
                     return true;
-                else if (items.Any(x => x.Type == type && x.ExchangeType == CustomDataExchangerType.Take && x.Properties == null))
+                else if (items.Any(x => x.Type == type && x.ExchangeType == CustomDataExchangerType.TakeOnly && x.Properties == null))
                     return false;
             }
             IEnumerable<CustomDataExchangerAttribute> implementICollection = null;
-            implementICollection = ExchangerTypes == null ? null : ExchangerTypes.Where(x => x.Type == type && (x.GetLimitationMode(IsClient) == Mode || x.GetLimitationMode(IsClient) == LimitExchangeType.Both));
+            implementICollection = ExchangerTypes?.Where(x => x.Type == type && (x.GetLimitationMode(IsClient) == Mode || x.GetLimitationMode(IsClient) == LimitExchangeType.Both));
             if (implementICollection == null || implementICollection.Count() == 0)
                 implementICollection = type.GetCustomAttributes<CustomDataExchangerAttribute>(true).Where(x => x.GetLimitationMode(IsClient) == Mode || x.GetLimitationMode(IsClient) == LimitExchangeType.Both);
 
@@ -423,14 +421,14 @@ namespace SignalGo.Shared.Converters
                 {
                     if (items.Any(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.Ignore))
                         return items.FirstOrDefault(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.Ignore);
-                    else if (items.Any(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.Take))
-                        return items.FirstOrDefault(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.Take);
+                    else if (items.Any(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.TakeOnly))
+                        return items.FirstOrDefault(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.TakeOnly);
                 }
 
                 if (items.Any(x => x.Type == type && x.ExchangeType == CustomDataExchangerType.Ignore))
                     return items.FirstOrDefault(x => x.Type == type && x.ExchangeType == CustomDataExchangerType.Ignore);
-                else if (items.Any(x => x.Type == type && x.ExchangeType == CustomDataExchangerType.Take))
-                    return items.FirstOrDefault(x => x.Type == type && x.ExchangeType == CustomDataExchangerType.Take);
+                else if (items.Any(x => x.Type == type && x.ExchangeType == CustomDataExchangerType.TakeOnly))
+                    return items.FirstOrDefault(x => x.Type == type && x.ExchangeType == CustomDataExchangerType.TakeOnly);
             }
             CustomDataExchangerAttribute implementICollection = null;
             implementICollection = ExchangerTypes == null ? null : ExchangerTypes.Where(x => x.Type == type && (x.GetLimitationMode(IsClient) == Mode || x.GetLimitationMode(IsClient) == LimitExchangeType.Both)).FirstOrDefault();
@@ -449,7 +447,7 @@ namespace SignalGo.Shared.Converters
                 {
                     if (items.Any(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.Ignore && x.Properties == null))
                         return true;
-                    else if (items.Any(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.Take && x.Properties == null))
+                    else if (items.Any(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.TakeOnly && x.Properties == null))
                         return false;
                     else if (items.Any(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.Ignore && x.Properties != null))
                     {
@@ -459,9 +457,9 @@ namespace SignalGo.Shared.Converters
                         else
                             return false;
                     }
-                    else if (items.Any(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.Take && x.Properties != null ))
+                    else if (items.Any(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.TakeOnly && x.Properties != null ))
                     {
-                        var find = items.FirstOrDefault(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.Take && x.Properties != null);
+                        var find = items.FirstOrDefault(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.TakeOnly && x.Properties != null);
                         if (find.Properties.Contains(property.Name))
                             return false;
                         else
@@ -471,7 +469,7 @@ namespace SignalGo.Shared.Converters
 
                 if (items.Any(x => x.Type == type && x.ExchangeType == CustomDataExchangerType.Ignore && x.Properties == null))
                     return true;
-                else if (items.Any(x => x.Type == type && x.ExchangeType == CustomDataExchangerType.Take && x.Properties == null))
+                else if (items.Any(x => x.Type == type && x.ExchangeType == CustomDataExchangerType.TakeOnly && x.Properties == null))
                     return false;
                 else if (items.Any(x => x.Type == type && x.ExchangeType == CustomDataExchangerType.Ignore && x.Properties != null))
                 {
@@ -481,9 +479,9 @@ namespace SignalGo.Shared.Converters
                     else
                         return false;
                 }
-                else if (items.Any(x => x.Type == type && x.ExchangeType == CustomDataExchangerType.Take && x.Properties != null))
+                else if (items.Any(x => x.Type == type && x.ExchangeType == CustomDataExchangerType.TakeOnly && x.Properties != null))
                 {
-                    var find = items.FirstOrDefault(x => x.Type == type && x.ExchangeType == CustomDataExchangerType.Take && x.Properties != null);
+                    var find = items.FirstOrDefault(x => x.Type == type && x.ExchangeType == CustomDataExchangerType.TakeOnly && x.Properties != null);
                     if (find.Properties.Contains(property.Name))
                         return false;
                     else
@@ -504,7 +502,7 @@ namespace SignalGo.Shared.Converters
                     return true;
                 else if (implementICollection.Any(x => x.ExchangeType == CustomDataExchangerType.Ignore && x.Properties == null && (x.GetLimitationMode(IsClient) == LimitExchangeType.Both || x.GetLimitationMode(IsClient) == Mode)))
                     return true;
-                else if (implementICollection.Any(x => x.Properties != null && x.ExchangeType == CustomDataExchangerType.Take && !x.Properties.Contains(property.Name) && (x.GetLimitationMode(IsClient) == LimitExchangeType.Both || x.GetLimitationMode(IsClient) == Mode)))
+                else if (implementICollection.Any(x => x.Properties != null && x.ExchangeType == CustomDataExchangerType.TakeOnly && !x.Properties.Contains(property.Name) && (x.GetLimitationMode(IsClient) == LimitExchangeType.Both || x.GetLimitationMode(IsClient) == Mode)))
                     return true;
             }
 
@@ -520,7 +518,7 @@ namespace SignalGo.Shared.Converters
                 {
                     if (items.Any(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.Ignore && x.Properties == null))
                         return true;
-                    else if (items.Any(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.Take && x.Properties == null))
+                    else if (items.Any(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.TakeOnly && x.Properties == null))
                         return false;
                     else if (items.Any(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.Ignore && x.Properties != null))
                     {
@@ -530,9 +528,9 @@ namespace SignalGo.Shared.Converters
                         else
                             return false;
                     }
-                    else if (items.Any(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.Take && x.Properties != null))
+                    else if (items.Any(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.TakeOnly && x.Properties != null))
                     {
-                        var find = items.FirstOrDefault(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.Take && x.Properties != null);
+                        var find = items.FirstOrDefault(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.TakeOnly && x.Properties != null);
                         if (find.Properties.Contains(fieldInfo.Name))
                             return false;
                         else
@@ -542,7 +540,7 @@ namespace SignalGo.Shared.Converters
 
                 if (items.Any(x => x.Type == type && x.ExchangeType == CustomDataExchangerType.Ignore && x.Properties == null))
                     return true;
-                else if (items.Any(x => x.Type == type && x.ExchangeType == CustomDataExchangerType.Take && x.Properties == null))
+                else if (items.Any(x => x.Type == type && x.ExchangeType == CustomDataExchangerType.TakeOnly && x.Properties == null))
                     return false;
                 else if (items.Any(x => x.Type == type && x.ExchangeType == CustomDataExchangerType.Ignore && x.Properties != null))
                 {
@@ -552,9 +550,9 @@ namespace SignalGo.Shared.Converters
                     else
                         return false;
                 }
-                else if (items.Any(x => x.Type == type && x.ExchangeType == CustomDataExchangerType.Take && x.Properties != null))
+                else if (items.Any(x => x.Type == type && x.ExchangeType == CustomDataExchangerType.TakeOnly && x.Properties != null))
                 {
-                    var find = items.FirstOrDefault(x => x.Type == type && x.ExchangeType == CustomDataExchangerType.Take && x.Properties != null);
+                    var find = items.FirstOrDefault(x => x.Type == type && x.ExchangeType == CustomDataExchangerType.TakeOnly && x.Properties != null);
                     if (find.Properties.Contains(fieldInfo.Name))
                         return false;
                     else
@@ -833,6 +831,85 @@ namespace SignalGo.Shared.Converters
             return instance;
         }
 
+
+        void ReadFreeObject(JsonReader reader)
+        {
+            while (reader.Read())
+            {
+                if (reader.TokenType == JsonToken.PropertyName)
+                {
+                    ReadFreeProperty(reader);
+                }
+                else if (reader.TokenType == JsonToken.StartArray)
+                {
+                    ReadFreeArray(reader);
+                }
+                else if (reader.TokenType == JsonToken.StartObject)
+                {
+                    ReadFreeObject(reader);
+                }
+                else if (reader.TokenType == JsonToken.EndObject)
+                    break;
+            }
+        }
+
+        void ReadFreeProperty(JsonReader reader)
+        {
+            if (reader.Read())
+            {
+                if (reader.TokenType == JsonToken.StartArray)
+                {
+                    ReadFreeArray(reader);
+                }
+                else if (reader.TokenType == JsonToken.StartObject)
+                {
+                    ReadFreeObject(reader);
+                }
+                else if (reader.TokenType == JsonToken.PropertyName)
+                {
+                    ReadFreeProperty(reader);
+                }
+            }
+        }
+
+        void ReadFreeArray(JsonReader reader)
+        {
+            //read value of property
+            while (reader.Read())
+            {
+                if (reader.TokenType == JsonToken.PropertyName)
+                {
+                    ReadFreeProperty(reader);
+                }
+                else if (reader.TokenType == JsonToken.StartObject)
+                {
+                    ReadFreeObject(reader);
+                }
+                else  if (reader.TokenType == JsonToken.StartArray)
+                {
+                    ReadFreeArray(reader);
+                }
+                else if (reader.TokenType == JsonToken.EndArray)
+                    break;
+            }
+        }
+
+        public void ReadFreeAny(JsonReader reader)
+        {
+            if (reader.TokenType == JsonToken.PropertyName)
+            {
+                ReadFreeProperty(reader);
+            }
+            else if (reader.TokenType == JsonToken.StartObject)
+            {
+                ReadFreeObject(reader);
+            }
+            else if (reader.TokenType == JsonToken.StartArray)
+            {
+                ReadFreeArray(reader);
+            }
+        }
+
         public static bool IsTupleType(Type type, bool checkBaseTypes = false)
         {
 #if (NET35)
@@ -915,9 +992,11 @@ namespace SignalGo.Shared.Converters
                                 field.SetValue(instance, array);
                         }
                         else
+                        {
+                            ReadFreeArray(reader);
                             AutoLogger.LogText($"json property {propertyName} not found in {objectType.FullName}");
+                        }
                     }
-
                 }
                 else
                 {
@@ -938,6 +1017,10 @@ namespace SignalGo.Shared.Converters
                                 var value = SerializeHelper.ConvertType(field.FieldType, reader.Value);
                                 field.SetValue(instance, value);
                             }
+                        }
+                        else
+                        {
+                            ReadFreeAny(reader);
                         }
                     }
                     else
@@ -995,6 +1078,8 @@ namespace SignalGo.Shared.Converters
                                     field.SetValue(instance, value);
                                 }
                             }
+                            else
+                                ReadFreeAny(reader);
                         }
                     }
                 }
@@ -1430,7 +1515,7 @@ namespace SignalGo.Shared.Converters
                     {
                         if (implementICollection.ExchangeType == CustomDataExchangerType.Ignore && implementICollection.ContainsProperty(property.Name))
                             continue;
-                        else if (implementICollection.ExchangeType == CustomDataExchangerType.Take && !implementICollection.ContainsProperty(property.Name))
+                        else if (implementICollection.ExchangeType == CustomDataExchangerType.TakeOnly && !implementICollection.ContainsProperty(property.Name))
                             continue;
                     }
 
@@ -1442,7 +1527,7 @@ namespace SignalGo.Shared.Converters
                     {
                         if (implementICollection.ExchangeType == CustomDataExchangerType.Ignore && implementICollection.ContainsProperty(field.Name))
                             continue;
-                        else if (implementICollection.ExchangeType == CustomDataExchangerType.Take && !implementICollection.ContainsProperty(field.Name))
+                        else if (implementICollection.ExchangeType == CustomDataExchangerType.TakeOnly && !implementICollection.ContainsProperty(field.Name))
                             continue;
                     }
                     GenerateValue(null, field);

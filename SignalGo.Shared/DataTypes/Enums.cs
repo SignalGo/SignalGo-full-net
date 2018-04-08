@@ -114,7 +114,7 @@ namespace SignalGo.Shared.DataTypes
         /// <summary>
         /// if use take system will take properties for serialize
         /// </summary>
-        Take,
+        TakeOnly,
         /// <summary>
         /// if use ignore system ignore properties for serialize
         /// </summary>

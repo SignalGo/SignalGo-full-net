@@ -21,8 +21,8 @@ namespace SignalGoTest.Models
         public PostInfoTest LastPostInfo { get; set; }
     }
 
-    [CustomDataExchanger("Title", "Text", ExchangeType = CustomDataExchangerType.Take, LimitationMode = LimitExchangeType.IncomingCall)]
-    [CustomDataExchanger("Id", "Title", "Text", ExchangeType = CustomDataExchangerType.Take, LimitationMode = LimitExchangeType.OutgoingCall)]
+    [CustomDataExchanger("Title", "Text", ExchangeType = CustomDataExchangerType.TakeOnly, LimitationMode = LimitExchangeType.IncomingCall)]
+    [CustomDataExchanger("Id", "Title", "Text", ExchangeType = CustomDataExchangerType.TakeOnly, LimitationMode = LimitExchangeType.OutgoingCall)]
     public class PostInfoTest
     {
         public int Id { get; set; }

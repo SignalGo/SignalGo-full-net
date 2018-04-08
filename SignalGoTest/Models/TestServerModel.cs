@@ -89,7 +89,7 @@ namespace SignalGoTest.Models
             return GetListOfUsers();
         }
 
-        [CustomDataExchanger(typeof(PostInfoTest), "PostSecurityLink", "PostRoleToSee", ExchangeType = CustomDataExchangerType.Take, LimitationMode = LimitExchangeType.Both)]
+        [CustomDataExchanger(typeof(PostInfoTest), "PostSecurityLink", "PostRoleToSee", ExchangeType = CustomDataExchangerType.TakeOnly, LimitationMode = LimitExchangeType.Both)]
         public List<PostInfoTest> GetCustomPostsOfUser(int userId)
         {
             List<PostInfoTest> results = new List<PostInfoTest>();
@@ -102,11 +102,11 @@ namespace SignalGoTest.Models
             results.Add(new PostInfoTest() { Id = 7, PostSecurityLink = "securityLink7", Text = "today were bad but...", Title = "bad day" });
             DataExchanger.Ignore(results[6]);
             DataExchanger.Ignore(results[5], "PostSecurityLink");
-            DataExchanger.Take(results[4], "Id");
+            DataExchanger.TakeOnly(results[4], "Id");
             return results;
         }
 
-        [CustomDataExchanger(typeof(RoleInfoTest), "Id", ExchangeType = CustomDataExchangerType.Take, LimitationMode = LimitExchangeType.IncomingCall)]
+        [CustomDataExchanger(typeof(RoleInfoTest), "Id", ExchangeType = CustomDataExchangerType.TakeOnly, LimitationMode = LimitExchangeType.IncomingCall)]
         public bool Login(UserInfoTest userInfoTest)
         {
             if (userInfoTest.RoleInfoes == null || userInfoTest.PostInfoes != null || userInfoTest.LastPostInfo != null)

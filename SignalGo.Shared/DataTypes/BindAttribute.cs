@@ -42,7 +42,7 @@ namespace SignalGo.Shared.DataTypes
             {
                 _Include = value;
                 Properties = new string[] { value };
-                ExchangeType = CustomDataExchangerType.Take;
+                ExchangeType = CustomDataExchangerType.TakeOnly;
             }
         }
 
@@ -70,7 +70,7 @@ namespace SignalGo.Shared.DataTypes
             {
                 _Includes = value;
                 Properties = value;
-                ExchangeType = CustomDataExchangerType.Take;
+                ExchangeType = CustomDataExchangerType.TakeOnly;
             }
         }
     }
