@@ -81,6 +81,7 @@ namespace SignalGo.Client
                 Disconnect();
                 throw new Exception("server is available but connection address is not true");
             }
+            IsConnected = true;
             RunPriorities();
             if (IsAutoReconnecting)
                 OnConnectionChanged?.Invoke(ConnectionStatus.Reconnected);
