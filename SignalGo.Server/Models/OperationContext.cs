@@ -23,19 +23,19 @@ namespace SignalGo.Server.Models
                     var clients = ServerBase.AllDispatchers[SynchronizationContext.Current];
                     return new OperationContext() { Client = clients.FirstOrDefault(), Clients = clients, ServerBase = clients.FirstOrDefault().ServerBase };
                 }
-                throw new Exception("SynchronizationContext is null or empty! Do not call this property or method inside of another thread you have to call this inside of server methods not another thread");
+                throw new Exception("SynchronizationContext is null or empty! Do not call this property or method in another thread. You must call this inside a server method, not from another thread");
             }
         }
         /// <summary>
-        /// server provider
+        /// The server provider
         /// </summary>
         public ServerBase ServerBase { get; set; }
         /// <summary>
-        /// current client information
+        /// The current client information
         /// </summary>
         public ClientInfo Client { get; private set; }
         /// <summary>
-        /// current http client information if client is http call
+        /// The current http client information
         /// </summary>
         public HttpClientInfo HttpClient
         {
@@ -45,11 +45,11 @@ namespace SignalGo.Server.Models
             }
         }
         /// <summary>
-        /// all client info of this thread
+        /// All client's info on current thread
         /// </summary>
         public IEnumerable<ClientInfo> Clients { get; private set; }
         /// <summary>
-        /// all of server clients
+        /// The list of all server clients
         /// </summary>
         public List<ClientInfo> AllServerClients
         {
@@ -60,7 +60,7 @@ namespace SignalGo.Server.Models
         }
 
         /// <summary>
-        /// count of connected Clients
+        /// Total number of connected clients
         /// </summary>
         public int ConnectedClientsCount
         {
@@ -71,7 +71,7 @@ namespace SignalGo.Server.Models
         }
 
         /// <summary>
-        /// get server service of
+        /// Get the server service of type T 
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
@@ -160,7 +160,7 @@ namespace SignalGo.Server.Models
         }
 
         /// <summary>
-        /// set setting for this client
+        /// Sets the settings for the current client
         /// </summary>
         /// <param name="setting"></param>
         public static void SetSetting(object setting, OperationContext context)
@@ -226,7 +226,7 @@ namespace SignalGo.Server.Models
     }
 
     /// <summary>
-    /// operation contract for client that help you to save a class and get it later inside of your service class
+    /// Operation contract for client. Helps you to save a class and get it later inside your service class
     /// </summary>
     /// <typeparam name="T">type of your setting</typeparam>
     public class OperationContext<T> : OperationContextBase where T : class
