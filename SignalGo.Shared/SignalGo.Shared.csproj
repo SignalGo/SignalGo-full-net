@@ -1,15 +1,15 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
   <!--<Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />-->
   <PropertyGroup>
-    <TargetFrameworks>net45;net40;net35;netstandard1.6;portable45-net45+win8;portable-net45+win8+wpa81</TargetFrameworks>
+    <TargetFrameworks>net45;net40;net35;netstandard1.6;portable45-net45+win8;portable-net45+win8+wpa81;</TargetFrameworks>
     <!---->
     <MinimumVisualStudioVersion>10.0</MinimumVisualStudioVersion>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <AssemblyVersion>3.5</AssemblyVersion>
-    <FileVersion>3.5</FileVersion>
-    <VersionPrefix>3.5</VersionPrefix>
-    <Version>3.5</Version>
+    <AssemblyVersion>3.7</AssemblyVersion>
+    <FileVersion>3.7</FileVersion>
+    <VersionPrefix>3.7</VersionPrefix>
+    <Version>3.7</Version>
     <!--<VersionSuffix>beta1</VersionSuffix>-->
     <Authors>Ali Yousefi</Authors>
     <Company></Company>
@@ -46,8 +46,12 @@
     </Summary>
     <PackageReleaseNotes>
       1.fix bugs and more improvement
-      2.support for add service reference
-      3.support http cookies and more improvement for http supports
+      2.support for tuples
+      3.rename InitializeService to RegisterServerService
+      rename RegisterClientServiceInterfaceWrapper to RegisterServerServiceInterfaceWrapper
+      read document examples here:
+      https://github.com/SignalGo/SignalGo-full-net
+
     </PackageReleaseNotes>
     <NeutralLanguage>en-US</NeutralLanguage>
     <PackageId>SignalGo.Shared</PackageId>
@@ -123,7 +127,7 @@
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <PackageReference Include="Newtonsoft.Json" Version="11.0.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
     <PackageReference Include="TaskParallelLibrary" Version="1.0.2856" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net40'">
@@ -134,7 +138,7 @@
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <PackageReference Include="Newtonsoft.Json" Version="11.0.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net45'">
     <Reference Include="Microsoft.CSharp" />
@@ -144,10 +148,10 @@
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <PackageReference Include="Newtonsoft.Json" Version="11.0.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard1.6'">
-    <PackageReference Include="Newtonsoft.Json" Version="11.0.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
     <PackageReference Include="System.Diagnostics.StackTrace" Version="4.3.0" />
     <PackageReference Include="System.Xml.XmlSerializer" Version="4.3.0" />
     <PackageReference Include="System.Threading.Thread" Version="4.3.0" />
@@ -155,20 +159,21 @@
     <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp1.1'">
-    <PackageReference Include="Newtonsoft.Json" Version="11.0.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
     <PackageReference Include="System.Diagnostics.StackTrace" Version="4.3.0" />
     <PackageReference Include="System.Xml.XmlSerializer" Version="4.3.0" />
     <PackageReference Include="System.Threading.Thread" Version="4.3.0" />
     <PackageReference Include="System.Reflection.TypeExtensions" Version="4.4.0" />
     <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
+    <PackageReference Include="runtime.win8-arm.Microsoft.NETCore.Runtime.CoreCLR" Version="1.0.7" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'portable45-net45+win8'">
-    <PackageReference Include="Newtonsoft.Json" Version="11.0.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
     <PackageReference Include="rda.SocketsForPCL" Version="2.0.2" />
     <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'portable-net45+win8+wpa81'">
-    <PackageReference Include="Newtonsoft.Json" Version="11.0.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
     <PackageReference Include="rda.SocketsForPCL" Version="2.0.2" />
     <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
   </ItemGroup>

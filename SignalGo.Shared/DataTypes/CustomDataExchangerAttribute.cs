@@ -77,7 +77,7 @@ namespace SignalGo.Shared.DataTypes
         /// <summary>
         /// type of data exchanger you need to ignore that peroperties or take
         /// </summary>
-        public virtual CustomDataExchangerType ExchangeType { get; set; } = CustomDataExchangerType.Take;
+        public virtual CustomDataExchangerType ExchangeType { get; set; } = CustomDataExchangerType.TakeOnly;
         /// <summary>
         /// limitation mode in incoming call or outgoingCall or both
         /// </summary>
@@ -94,6 +94,7 @@ namespace SignalGo.Shared.DataTypes
         /// property names that you need to ignore or take for serialize
         /// </summary>
         public string[] Properties { get; set; } = null;
+        internal object Instance { get; set; }
 
         public bool ContainsProperty(string name)
         {

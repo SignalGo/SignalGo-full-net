@@ -6,6 +6,7 @@ using SignalGo.Server.IO;
 using SignalGo.Server.Models;
 using SignalGo.Server.Settings;
 using SignalGo.Shared;
+using SignalGo.Shared.Converters;
 using SignalGo.Shared.DataTypes;
 using SignalGo.Shared.Events;
 using SignalGo.Shared.Helpers;
@@ -700,7 +701,7 @@ namespace SignalGo.Server.ServiceManager
         /// </summary>
         public InternalSetting InternalSetting { get; set; } = new InternalSetting();
 
-#region Http request supports
+        #region Http request supports
         /// <summary>
         /// Http protocol and response request settings 
         /// </summary>
@@ -904,15 +905,17 @@ namespace SignalGo.Server.ServiceManager
                         }
                         else if (headers["content-type"] == "application/json")
                         {
-                            //JObject des = JObject.Parse(parameters);
-                            //foreach (var item in des.Properties())
-                            //{
-                            //    var value = des.GetValue(item.Name);
-                            //    values.Add(new Tuple<string, string>(item.Name, value.ToString()));
-                            //}
-
-                            //works on raw json data in post
-                            values.Add(new Tuple<string, string>("", parameters));
+                            JObject des = JObject.Parse(parameters);
+                            if (IsMethodInfoOfJsonParameters(methods, des.Properties().Select(x => x.Name).ToList()))
+                            {
+                                foreach (var item in des.Properties())
+                                {
+                                    var value = des.GetValue(item.Name);
+                                    values.Add(new Tuple<string, string>(item.Name, value.ToString()));
+                                }
+                            }
+                            else
+                                values.Add(new Tuple<string, string>("", parameters));
                         }
                         else
                         {
@@ -1138,6 +1141,31 @@ namespace SignalGo.Server.ServiceManager
                 }
             }
             return methods.FirstOrDefault(x => x.GetParameters().Length == values.Count);
+        }
+
+        bool IsMethodInfoOfJsonParameters(IEnumerable<MethodInfo> methods, List<string> names)
+        {
+            bool isFind = false;
+            foreach (var method in methods)
+            {
+                int fakeParameterCount = 0;
+                var findCount = method.GetCustomAttributes<FakeParameterAttribute>().Count();
+                fakeParameterCount += findCount;
+                if (method.GetParameters().Length == names.Count - fakeParameterCount)
+                {
+                    for (int i = 0; i < fakeParameterCount; i++)
+                    {
+                        if (names.Count > 0)
+                            names.RemoveAt(names.Count - 1);
+                    }
+                }
+                if (method.GetParameters().Count(x => names.Any(y => y.ToLower() == x.Name.ToLower())) == names.Count)
+                {
+                    isFind = true;
+                    break;
+                }
+            }
+            return isFind;
         }
 
         void FillReponseHeaders(HttpClientInfo client, List<HttpKeyAttribute> httpKeyAttributes)
@@ -1824,7 +1852,7 @@ namespace SignalGo.Server.ServiceManager
             }
         }
 
-#endregion
+        #endregion
 
         /// <summary>
         /// add assembly that include models to server reference when client want to add or update service reference
@@ -2168,8 +2196,13 @@ namespace SignalGo.Server.ServiceManager
                 //        contexts.Add(item.Key);
                 //    }
                 //}
+                var keys = AllDispatchers.GetKeys(client);
+                foreach (var item in keys)
+                {
+                    DataExchanger.Clear(item);
+                }
                 AllDispatchers.Remove(client);
-
+                OperationContextBase.SavedSettings.Remove(client);
                 //foreach (var item in contexts)
                 //{
                 //    AllDispatchers.Remove(item);
@@ -2182,7 +2215,7 @@ namespace SignalGo.Server.ServiceManager
             }
             catch (Exception ex)
             {
-                AutoLogger.LogError(ex, "DisposeClient");
+                AutoLogger.LogError(ex, "DisposeClientError");
             }
         }
         /// <summary>
@@ -2566,9 +2599,18 @@ namespace SignalGo.Server.ServiceManager
                 finally
                 {
                     ClientConnectedCallingCount--;
-                    MethodsCallHandler.EndMethodCallAction?.Invoke(client, callInfo.Guid, callInfo.ServiceName, method, callInfo.Parameters, callback?.Data, exception);
+                    try
+                    {
+                        MethodsCallHandler.EndMethodCallAction?.Invoke(client, callInfo.Guid, callInfo.ServiceName, method, callInfo.Parameters, callback?.Data, exception);
+                    }
+                    catch (Exception ex)
+                    {
+                        AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase CallMethod 2: {callInfo.MethodName}");
+                    }
                 }
                 SendCallbackData(callback, client);
+                AllDispatchers.Remove(SynchronizationContext.Current);
+                DataExchanger.Clear();
             }));
         }
 
@@ -2843,8 +2885,17 @@ namespace SignalGo.Server.ServiceManager
                 finally
                 {
                     ClientConnectedCallingCount--;
-                    //MethodsCallHandler.EndClientMethodCallAction?.Invoke(client, callInfo.ServiceName, callInfo.MethodName, callInfo.Parameters, null, exception);
+                    //try
+                    //{
+                    //    MethodsCallHandler.EndClientMethodCallAction?.Invoke(client, callInfo.Guid, callInfo.ServiceName, callInfo.MethodName, callInfo.Parameters, null, exception);
+                    //}
+                    //catch (Exception ex)
+                    //{
+                    //    AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase CallClientMethod 2: {callInfo.MethodName}");
+                    //}
                 }
+                AllDispatchers.Remove(SynchronizationContext.Current);
+                DataExchanger.Clear();
             });
         }
 

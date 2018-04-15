@@ -19,7 +19,7 @@ namespace SignalGoTest.Models
         string HelloWorld(string yourName);
         List<UserInfoTest> GetListOfUsers();
         List<PostInfoTest> GetPostsOfUser(int userId);
-        [CustomDataExchanger(typeof(UserInfoTest), "Id", "Password", "PostInfoes", ExchangeType = CustomDataExchangerType.Take, LimitationMode = LimitExchangeType.Both)]
+        [CustomDataExchanger(typeof(UserInfoTest), "Id", "Password", "PostInfoes", ExchangeType = CustomDataExchangerType.TakeOnly, LimitationMode = LimitExchangeType.OutgoingCall)]
         List<UserInfoTest> GetListOfUsersCustom();
         List<PostInfoTest> GetCustomPostsOfUser(int userId);
         bool HelloBind([Bind(Include = "Id")]UserInfoTest userInfoTest, [Bind(Exclude = "Username")]UserInfoTest userInfoTest2,

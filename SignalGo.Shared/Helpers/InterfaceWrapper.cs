@@ -68,7 +68,7 @@ namespace SignalGo.Shared.Helpers
             String ns = serviceInterfaceType.Namespace;
             if (!String.IsNullOrEmpty(ns))
                 ns += ".";
-            var attrib = serviceInterfaceType.GetCustomAttributes<ServiceContractAttribute>(true).Where(x => x.ServiceType == ServiceType.ServerService).FirstOrDefault();
+            var attrib = serviceInterfaceType.GetCustomAttributes<ServiceContractAttribute>(true).Where(x => x.ServiceType == ServiceType.ServerService || x.ServiceType == ServiceType.ClientService || x.ServiceType == ServiceType.StreamService).FirstOrDefault();
 
 #if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
             var assembly = AssemblyBuilder.DefineDynamicAssembly(assemblyName,
