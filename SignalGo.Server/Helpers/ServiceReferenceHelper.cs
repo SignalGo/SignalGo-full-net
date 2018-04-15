@@ -418,11 +418,11 @@ namespace SignalGo.Server.Helpers
 
         List<Assembly> ModellingReferencesAssemblies { get; set; }
         /// <summary>
-        /// type add to this list after generated and dont need to duplicate generate
+        /// Type adds to this list after generated so a duplicate generate is not needed
         /// </summary>
         List<Type> ModelsCodeGenerated { get; set; } = new List<Type>();
         /// <summary>
-        /// this types must generate after generate this will remove from list
+        /// This types must be generated. After generate this will remove from list
         /// </summary>
         List<Type> TypeToGenerate { get; set; } = new List<Type>();
 
