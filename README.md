@@ -1,6 +1,6 @@
 # Wiki and Nuget
 [![NuGet](https://img.shields.io/badge/github-full%20wiki-brightgreen.svg)](https://github.com/SignalGo/SignalGo-full-net/wiki)
-[![NuGet](https://img.shields.io/badge/nuget-server.net%20v3.6.0-blue.svg)](https://www.nuget.org/packages/SignalGo.Net.Server/)  [![NuGet](https://img.shields.io/badge/nuget-client.net%20v3.6.0-blue.svg)](https://www.nuget.org/packages/SignalGo.Net.Client/)  [![NuGet](https://img.shields.io/badge/nuget-javascript%20v3.6.0-blue.svg)](https://www.nuget.org/packages/SignalGo.JavaScript.Client/)
+[![NuGet](https://img.shields.io/badge/nuget-server.net%20v3.7.0-blue.svg)](https://www.nuget.org/packages/SignalGo.Net.Server/)  [![NuGet](https://img.shields.io/badge/nuget-client.net%20v3.7.0-blue.svg)](https://www.nuget.org/packages/SignalGo.Net.Client/)  [![NuGet](https://img.shields.io/badge/nuget-javascript%20v3.7.0-blue.svg)](https://www.nuget.org/packages/SignalGo.JavaScript.Client/)
 
 # Signal Go
 
