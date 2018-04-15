@@ -14,7 +14,7 @@ namespace SignalGo.Server.DataTypes
     {
         /// <summary>
         /// just this list can call
-        /// if you fill this property another ip addresses have not access to call method
+        /// if you fill this property other ip addresses cannot call method
         /// </summary>
         public string[] AllowAccessList { get; set; }
         /// <summary>

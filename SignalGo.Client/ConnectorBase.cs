@@ -422,7 +422,7 @@ namespace SignalGo.Client
         }
 
         /// <summary>
-        /// register service and method to server for client call thats
+        /// This registers service on server and methods that the client can call
         /// T type must inherited OprationCalls interface
         /// T type must not be an interface
         /// </summary>
