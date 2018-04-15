@@ -15,7 +15,7 @@ namespace SignalGoTest
     public static class GlobalInitalization
     {
         static ServerProvider server;
-        //static ClientProvider client;
+        static ClientProvider client;
 
         public static void Initialize()
         {
@@ -72,14 +72,15 @@ namespace SignalGoTest
         public static ClientProvider InitializeAndConnecteClient()
         {
             ClientProvider provider = new ClientProvider();
+            client = provider;
             //connect to your server must have full address that your server is listen
             provider.Connect("http://localhost:1132/SignalGoTestService");
             return provider;
         }
 
-        //public static ITestServerStreamModel GetStreamService()
-        //{
-        //    return client.RegisterStreamServiceInterfaceWrapper<ITestServerStreamModel>();
-        //}
+        public static ITestServerStreamModel GetStreamService()
+        {
+            return client.RegisterStreamServiceInterfaceWrapper<ITestServerStreamModel>();
+        }
     }
 }
