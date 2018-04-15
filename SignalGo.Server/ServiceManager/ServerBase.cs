@@ -32,7 +32,7 @@ using System.Threading;
 namespace SignalGo.Server.ServiceManager
 {
     /// <summary>
-    /// base of server
+    /// Base server class
     /// </summary>
     public abstract class ServerBase : IDisposable
     {
@@ -46,14 +46,14 @@ namespace SignalGo.Server.ServiceManager
             JsonSettingHelper.Initialize();
         }
         /// <summary>
-        /// server is started or not
+        /// TRue = Server is started. False: server is not started
         /// </summary>
         public bool IsStarted { get; set; }
 
 
         private volatile int _callingCount;
         /// <summary>
-        /// calling method count if this is going to zero server can stop
+        /// Method calling counter. If this reaches zero server can be stopped
         /// </summary>
         public int CallingCount
         {
@@ -70,7 +70,7 @@ namespace SignalGo.Server.ServiceManager
         }
 
         /// <summary>
-        /// settings of server
+        /// The server settings
         /// </summary>
         public ProviderSetting ProviderSetting { get; set; } = new ProviderSetting();
         /// <summary>

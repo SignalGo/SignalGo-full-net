@@ -110,7 +110,7 @@ namespace SignalGo.Server.Models
         {
             var context = OperationContext.Current;
             if (context == null)
-                throw new Exception("SynchronizationContext is null or empty! Do not call this property inside of another thread that do not have any synchronizationContext or you can call SynchronizationContext.SetSynchronizationContext(new SynchronizationContext()); and ServerBase.AllDispatchers must contine this");
+                throw new Exception("SynchronizationContext is null or empty! Do not call this property in another thread that doesn't have any SynchronizationContext. You can call SynchronizationContext.SetSynchronizationContext(new SynchronizationContext()); and ServerBase.AllDispatchers must contain this");
 
             if (context.Client is HttpClientInfo)
             {
@@ -123,9 +123,9 @@ namespace SignalGo.Server.Models
                 //    ExpiredAttribute = type.GetListOfProperties().Where(y => y.GetCustomAttributes<HttpKeyAttribute>().FirstOrDefault(j => j.IsExpireField) != null).Select(y => y.GetCustomAttributes<HttpKeyAttribute>().FirstOrDefault(j => j.IsExpireField)).FirstOrDefault()
                 //}).FirstOrDefault(x => x.Attribute != null);
                 if (sessionPeroperty == null)
-                    throw new Exception("HttpKeyAttribute on your one properties on class not found please made your string property that have HttpKeyAttribute on the top!");
+                    throw new Exception("HttpKeyAttribute on one or more class properties not found. Please write your string property that has HttpKeyAttribute on the top!");
                 else if (sessionPeroperty.Info.PropertyType != typeof(string))
-                    throw new Exception("type of your HttpKeyAttribute must be as string because this will used for headers of http calls and you must made it custom");
+                    throw new Exception("The type of your HttpKeyAttribute must be set as string because this will be used in headers of http calls and it's needed to be set as custom");
 
                 var httpClient = context.Client as HttpClientInfo;
                 var setting = GetSetting(context.Client, type);
@@ -218,9 +218,9 @@ namespace SignalGo.Server.Models
         {
             var property = type.GetListOfProperties().Select(x => new { Info = x, Attribute = x.GetCustomAttributes<HttpKeyAttribute>().FirstOrDefault() }).FirstOrDefault(x => x.Attribute != null);
             if (property == null)
-                throw new Exception("HttpKeyAttribute on your one properties on class not found please made your string property that have HttpKeyAttribute on the top!");
+                throw new Exception("HttpKeyAttribute on one or more class properties not found. Please write your string property that must have HttpKeyAttribute on the top!");
             else if (property.Info.PropertyType != typeof(string))
-                throw new Exception("type of your HttpKeyAttribute must be as string because this will used for headers of http calls and you must made it custom");
+                throw new Exception("The type of your HttpKeyAttribute must be set as string because this will be used in headers of http calls and it's needed to be set as custom");
             return (string)property.Info.GetValue(setting, null);
         }
     }
@@ -234,7 +234,7 @@ namespace SignalGo.Server.Models
 
         static T _Current = null;
         /// <summary>
-        /// get seeting of one type that you set it
+        /// Get the setting of type T you set before
         /// </summary>
         public static T CurrentSetting
         {
@@ -246,7 +246,7 @@ namespace SignalGo.Server.Models
             {
                 var context = OperationContext.Current;
                 if (context == null)
-                    throw new Exception("SynchronizationContext is null or empty! Do not call this property inside of another thread that do not have any synchronizationContext or you can call SynchronizationContext.SetSynchronizationContext(new SynchronizationContext()); and ServerBase.AllDispatchers must contine this");
+                    throw new Exception("SynchronizationContext is null or empty! Do not call this property in another thread that doesn't have any SynchronizationContext. You can call SynchronizationContext.SetSynchronizationContext(new SynchronizationContext()); and ServerBase.AllDispatchers must contain this");
 
                 if (context.Client is HttpClientInfo)
                 {
@@ -260,7 +260,7 @@ namespace SignalGo.Server.Models
 
 
         /// <summary>
-        /// get first setting of type that setted
+        /// Get the first setting of type T setted before
         /// </summary>
         /// <typeparam name="T">type of setting</typeparam>
         /// <returns></returns>
@@ -268,7 +268,7 @@ namespace SignalGo.Server.Models
         {
             var context = OperationContext.Current;
             if (SynchronizationContext.Current == null)
-                throw new Exception("SynchronizationContext is null or empty! Do not call this property inside of another thread that do not have any synchronizationContext or you can call SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());");
+                throw new Exception("SynchronizationContext is null or empty! Do not call this property in another thread that doesn't have any SynchronizationContext. You can call SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());");
             if (SavedSettings.TryGetValue(context.Client, out HashSet<object> result))
             {
                 return result.Where(x => x.GetType() == typeof(T)).Select(x => (T)x);
@@ -311,9 +311,9 @@ namespace SignalGo.Server.Models
         public static void SetCustomClientSetting(string customClientId, object setting)
         {
             if (setting == null)
-                throw new Exception("setting is null or empty! please fill all parameters");
+                throw new Exception("Setting is null or empty! Please fill all parameters");
             if (string.IsNullOrEmpty(customClientId))
-                throw new Exception("customClientId is null or empty! please fill all parameters");
+                throw new Exception("customClientId parameter is null or empty!");
             //if (!CustomClientSavedSettings.ContainsKey(customClientId))
             //    ;
             else if (!CustomClientSavedSettings.TryAdd(customClientId, new HashSet<object>() { setting }) && CustomClientSavedSettings.TryGetValue(customClientId, out HashSet<object> result) && !result.Contains(setting))
@@ -321,7 +321,7 @@ namespace SignalGo.Server.Models
         }
 
         /// <summary>
-        /// get setting of your custom client id or sessions or etc
+        /// Get the custom setting of your client id, session etc.
         /// </summary>
         /// <param name="customClientId"></param>
         /// <returns></returns>
@@ -384,14 +384,14 @@ namespace SignalGo.Server.Models
         }
 
         /// <summary>
-        /// get all settings of client
+        /// Get all settings of client
         /// </summary>
         /// <returns></returns>
         public static IEnumerable<object> GetAllSettings()
         {
             var context = OperationContext.Current;
             if (SynchronizationContext.Current == null)
-                throw new Exception("SynchronizationContext is null or empty! Do not call this property inside of another thread that do not have any synchronizationContext or you can call SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());");
+                throw new Exception("SynchronizationContext is null or empty! Do not call this property in another thread that doesn't have any SynchronizationContext. You can call SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());");
             if (SavedSettings.TryGetValue(context.Client, out HashSet<object> result))
             {
                 return result;
@@ -415,7 +415,7 @@ namespace SignalGo.Server.Models
     public static class OCExtension
     {
         /// <summary>
-        /// get current context service
+        /// Get the current context service
         /// </summary>
         /// <typeparam name="T">type of service</typeparam>
         /// <param name="context">client context</param>
@@ -525,7 +525,7 @@ namespace SignalGo.Server.Models
         }
 
         /// <summary>
-        ///  get all client context service
+        ///  This gets all client context services in the selected operation context
         /// </summary>
         /// <typeparam name="T">type of service</typeparam>
         /// <param name="context">client context</param>
@@ -546,7 +546,7 @@ namespace SignalGo.Server.Models
         }
 
         /// <summary>
-        /// get all client context but ignore current context
+        /// This gets all client context services but ignore current context
         /// </summary>
         /// <typeparam name="T">type of service</typeparam>
         /// <param name="context">client context</param>
@@ -566,11 +566,11 @@ namespace SignalGo.Server.Models
         }
 
         /// <summary>
-        /// get clients service context by session list
+        /// This gets client's service contexts by Client id
         /// </summary>
         /// <typeparam name="T">service type</typeparam>
         /// <param name="context">client context</param>
-        /// <param name="clientId">list of sessions</param>
+        /// <param name="clientId">client id</param>
         /// <returns>list of service context</returns>
         public static ClientContext<T> GetClientContextService<T>(this OperationContext context, string clientId)
         {
@@ -587,7 +587,7 @@ namespace SignalGo.Server.Models
         }
 
         /// <summary>
-        /// get clients service context by session list
+        /// This gets client's service context by client info
         /// </summary>
         /// <typeparam name="T">service type</typeparam>
         /// <param name="context">client context</param>
@@ -605,11 +605,11 @@ namespace SignalGo.Server.Models
         }
 
         /// <summary>
-        /// get clients service context by session list
+        /// This gets client's service context by Client id
         /// </summary>
         /// <typeparam name="T">service type</typeparam>
         /// <param name="context">client context</param>
-        /// <param name="clientId">id of client</param>
+        /// <param name="clientId">client id</param>
         /// <returns>list of service context</returns>
         public static T GetClientService<T>(this OperationContext context, string clientId)
         {
@@ -620,7 +620,7 @@ namespace SignalGo.Server.Models
         }
 
         /// <summary>
-        /// get clients service context by session list
+        /// This gets client's service context by client info
         /// </summary>
         /// <typeparam name="T">service type</typeparam>
         /// <param name="context">client context</param>
@@ -635,11 +635,11 @@ namespace SignalGo.Server.Models
         }
 
         /// <summary>
-        /// get client service context by client list
+        /// This gets the list of clients service context by supplying a list of clients
         /// </summary>
         /// <typeparam name="T">type of service</typeparam>
         /// <param name="context">client context</param>
-        /// <param name="clients">clients of clients to get client context</param>
+        /// <param name="clients">list of clients from which get client context</param>
         /// <returns>list of service context</returns>
         public static List<ClientContext<T>> GetListOfClientContextServices<T>(this OperationContext context, IEnumerable<ClientInfo> clients)
         {
@@ -657,11 +657,11 @@ namespace SignalGo.Server.Models
         }
 
         /// <summary>
-        /// get clients service context by session list
+        /// This gets the list of clients service context by supplying a list of client id
         /// </summary>
         /// <typeparam name="T">service type</typeparam>
         /// <param name="context">client context</param>
-        /// <param name="clientIds">list of sessions</param>
+        /// <param name="clientIds">list of clients id</param>
         /// <returns>list of service context</returns>
         public static List<ClientContext<T>> GetListOfClientContextServices<T>(this OperationContext context, IEnumerable<string> clientIds)
         {
@@ -680,11 +680,11 @@ namespace SignalGo.Server.Models
         }
 
         /// <summary>
-        /// get clients service context list and ignore custom session list
+        /// This gets the list client service context by providing a list of client id to ignore
         /// </summary>
         /// <typeparam name="T">service type</typeparam>
         /// <param name="context">client context</param>
-        /// <param name="clientIds">list of sessions to ingore get</param>
+        /// <param name="clientIds">list of client id to ignore</param>
         /// <returns>list of service context</returns>
         public static List<ClientContext<T>> GetListOfExcludeClientContextServices<T>(this OperationContext context, IEnumerable<string> clientIds)
         {
@@ -704,7 +704,7 @@ namespace SignalGo.Server.Models
 
 
         /// <summary>
-        /// get current context service
+        /// This gets the current context service
         /// </summary>
         /// <typeparam name="T">type of service</typeparam>
         /// <param name="context">client context</param>
@@ -715,7 +715,7 @@ namespace SignalGo.Server.Models
         }
 
         /// <summary>
-        ///  get all client context service
+        ///  This gets all client context service
         /// </summary>
         /// <typeparam name="T">type of service</typeparam>
         /// <param name="context">client context</param>
@@ -726,7 +726,7 @@ namespace SignalGo.Server.Models
         }
 
         /// <summary>
-        /// get all client context but ignore current context
+        /// This gets all client contexts but ignore current one
         /// </summary>
         /// <typeparam name="T">type of service</typeparam>
         /// <param name="context">client context</param>
@@ -737,7 +737,7 @@ namespace SignalGo.Server.Models
         }
 
         /// <summary>
-        /// get client service by client list
+        /// This gets the list of client services of the specified list of client info
         /// </summary>
         /// <typeparam name="T">type of service</typeparam>
         /// <param name="context">client context</param>
@@ -749,7 +749,7 @@ namespace SignalGo.Server.Models
         }
 
         /// <summary>
-        /// get clients service by session list
+        /// This gets the list of clients services from the specified list list of client id
         /// </summary>
         /// <typeparam name="T">service type</typeparam>
         /// <param name="context">client context</param>
@@ -761,7 +761,7 @@ namespace SignalGo.Server.Models
         }
 
         /// <summary>
-        /// get clients services list and ignore custom session list
+        /// This gets client's services list but ignore the list of lcient id specified
         /// </summary>
         /// <typeparam name="T">service type</typeparam>
         /// <param name="context">client context</param>
@@ -797,7 +797,7 @@ namespace SignalGo.Server.Models
 
 
         /// <summary>
-        /// get current context service
+        /// This gets the current context service
         /// </summary>
         /// <typeparam name="T">type of service</typeparam>
         /// <param name="serverBase">server context</param>
@@ -818,7 +818,7 @@ namespace SignalGo.Server.Models
                     {
                         try
                         {
-                            throw new Exception($"context client not exist! {client.ClientId} {serverBase.ClientServices.Count} {serverBase.Services.Count} {DateTime.Now}");
+                            throw new Exception($"Context client doesn't exist! {client.ClientId} {serverBase.ClientServices.Count} {serverBase.Services.Count} {DateTime.Now}");
                         }
                         catch (Exception ex)
                         {
@@ -874,7 +874,7 @@ namespace SignalGo.Server.Models
         }
 
         /// <summary>
-        /// get all client context but ignore current context
+        /// This gets all client context services but ignore current context
         /// </summary>
         /// <typeparam name="T">type of service</typeparam>
         /// <param name="serverBase"></param>
@@ -896,11 +896,11 @@ namespace SignalGo.Server.Models
         }
 
         /// <summary>
-        /// get clients service context by session list
+        /// This gets client's services context by client id
         /// </summary>
         /// <typeparam name="T">service type</typeparam>
         /// <param name="serverBase"></param>
-        /// <param name="clientId">list of sessions</param>
+        /// <param name="clientId">the client id</param>
         /// <returns>list of service context</returns>
         public static ClientContext<T> GetClientContextService<T>(this ServerBase serverBase, string clientId)
         {
@@ -918,7 +918,7 @@ namespace SignalGo.Server.Models
 
 
         /// <summary>
-        /// get clients service context by session list
+        /// This gets client's service context by client id
         /// </summary>
         /// <typeparam name="T">service type</typeparam>
         /// <param name="serverBase"></param>
@@ -933,7 +933,7 @@ namespace SignalGo.Server.Models
         }
 
         /// <summary>
-        /// get clients service context by session list
+        /// This gets client's service context by client info
         /// </summary>
         /// <typeparam name="T">service type</typeparam>
         /// <param name="serverBase"></param>
@@ -948,7 +948,7 @@ namespace SignalGo.Server.Models
         }
 
         /// <summary>
-        /// get client service context by client list
+        /// This gets the list of client's service context of the specified list of client info
         /// </summary>
         /// <typeparam name="T">type of service</typeparam>
         /// <param name="serverBase"></param>
@@ -969,11 +969,11 @@ namespace SignalGo.Server.Models
         }
 
         /// <summary>
-        /// get clients service context by session list
+        /// This gets the list of client's service context of the specified list of client id
         /// </summary>
         /// <typeparam name="T">service type</typeparam>
         /// <param name="serverBase"></param>
-        /// <param name="clientIds">list of sessions</param>
+        /// <param name="clientIds">list of client id</param>
         /// <returns>list of service context</returns>
         public static List<ClientContext<T>> GetListOfClientContextServices<T>(this ServerBase serverBase, IEnumerable<string> clientIds)
         {
@@ -991,7 +991,7 @@ namespace SignalGo.Server.Models
         }
 
         /// <summary>
-        /// get clients service context list and ignore custom session list
+        /// This gets the list of client's service context of the specified server but ignore the provided list of client id
         /// </summary>
         /// <typeparam name="T">service type</typeparam>
         /// <param name="serverBase"></param>
@@ -1014,7 +1014,7 @@ namespace SignalGo.Server.Models
 
 
         /// <summary>
-        /// get all client context but ignore current context
+        /// This gets the list of client's server services of the specified server but ignore the current context
         /// </summary>
         /// <typeparam name="T">type of service</typeparam>
         /// <param name="serverBase"></param>
@@ -1026,7 +1026,7 @@ namespace SignalGo.Server.Models
         }
 
         /// <summary>
-        /// get client service context by client list
+        /// This gets the client service contexts of the client info list specified
         /// </summary>
         /// <typeparam name="T">type of service</typeparam>
         /// <param name="serverBase"></param>
@@ -1038,11 +1038,11 @@ namespace SignalGo.Server.Models
         }
 
         /// <summary>
-        /// get client service context by client list
+        ///This gets client service contexts of the client id list specified
         /// </summary>
         /// <typeparam name="T">type of service</typeparam>
         /// <param name="serverBase"></param>
-        /// <param name="clientIds">clients of clients to get client context</param>
+        /// <param name="clientIds">client id list to get client context</param>
         /// <returns>list of service context</returns>
         public static List<T> GetListOfClientServices<T>(this ServerBase serverBase, IEnumerable<string> clientIds)
         {
@@ -1050,11 +1050,11 @@ namespace SignalGo.Server.Models
         }
 
         /// <summary>
-        /// get clients callback context list and ignore custom session list
+        /// This gets client's callback context list and ignore custom client id list
         /// </summary>
         /// <typeparam name="T">callback type</typeparam>
         /// <param name="serverBase"></param>
-        /// <param name="clientIds">list of sessions to ingore get</param>
+        /// <param name="clientIds">list of client id to ignore get</param>
         /// <returns>list of callback context</returns>
         public static List<T> GetListOfExcludeClientServices<T>(this ServerBase serverBase, IEnumerable<string> clientIds)
         {
@@ -1062,7 +1062,7 @@ namespace SignalGo.Server.Models
         }
 
         /// <summary>
-        /// get all client services
+        /// This gets get all client services
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="serverBase"></param>
@@ -1083,7 +1083,7 @@ namespace SignalGo.Server.Models
         }
 
         /// <summary>
-        /// get all client services
+        /// This gets all client services
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="serverBase"></param>
