@@ -74,15 +74,15 @@ namespace SignalGo.Server.ServiceManager
         /// </summary>
         public ProviderSetting ProviderSetting { get; set; } = new ProviderSetting();
         /// <summary>
-        /// when server disconnect
+        /// Action raised when when server disconnects
         /// </summary>
         public Action OnServerDisconnectedAction { get; set; }
         /// <summary>
-        /// when server had internal exception
+        /// Action raised when server had internal exception
         /// </summary>
         public Action<Exception> OnServerInternalExceptionAction { get; set; }
         /// <summary>
-        /// after client connected
+        /// Action raised when a client connected successfully
         /// </summary>
         public Action<ClientInfo> OnConnectedClientAction { get; set; }
         /// <summary>
@@ -104,7 +104,7 @@ namespace SignalGo.Server.ServiceManager
         internal ConcurrentDictionary<string, List<ClientInfo>> ClientsByIp { get; set; } = new ConcurrentDictionary<string, List<ClientInfo>>();
 
         /// <summary>
-        /// settings of clients
+        /// Client settings
         /// </summary>
         internal ConcurrentDictionary<ClientInfo, SecuritySettingsInfo> ClientsSettings { get; set; } = new ConcurrentDictionary<ClientInfo, SecuritySettingsInfo>();
 
@@ -133,12 +133,12 @@ namespace SignalGo.Server.ServiceManager
         /// </summary>
         internal ConcurrentDictionary<ClientInfo, ConcurrentList<object>> Services { get; set; } = new ConcurrentDictionary<ClientInfo, ConcurrentList<object>>();
         /// <summary>
-        /// stream services for upload and download files
+        /// Stream services to upload and download files
         /// </summary>
         internal ConcurrentDictionary<string, object> StreamServices { get; set; } = new ConcurrentDictionary<string, object>();
 
         /// <summary>
-        /// signle instance services
+        /// Single instance services
         /// </summary>
         internal ConcurrentDictionary<string, object> SingleInstanceServices { get; set; } = new ConcurrentDictionary<string, object>();
         internal ConcurrentDictionary<ClientInfo, ConcurrentList<object>> ClientServices { get; set; } = new ConcurrentDictionary<ClientInfo, ConcurrentList<object>>();
@@ -231,7 +231,7 @@ namespace SignalGo.Server.ServiceManager
 
 
         /// <summary>
-        /// register server service
+        /// Register server service
         /// </summary>
         /// <param name="serviceType"></param>
         public void RegisterServerService(Type serviceType)
@@ -258,7 +258,7 @@ namespace SignalGo.Server.ServiceManager
             }
         }
         /// <summary>
-        /// initialize server service
+        /// Called by a client to initialize server service
         /// </summary>
         /// <typeparam name="T"></typeparam>
         public void RegisterServerService<T>()
@@ -328,7 +328,7 @@ namespace SignalGo.Server.ServiceManager
         }
 
         /// <summary>
-        /// register client service that have client methods
+        /// Called by the server to register client service  hosting methods executed client side
         /// </summary>
         /// <param name="type"></param>
         public void RegisterClientService(Type type)
@@ -338,7 +338,7 @@ namespace SignalGo.Server.ServiceManager
 #if (!NETSTANDARD1_6 && !NETCOREAPP1_1)
                 RegisterClientServiceInterface(type);
 #else
-                throw new NotSupportedException("not support register interface for this method");
+                throw new NotSupportedException("Not supported. Register interface for this method");
 #endif
             }
             else
@@ -350,26 +350,26 @@ namespace SignalGo.Server.ServiceManager
         }
 
         /// <summary>
-        /// register client service that have client methods
+        /// Called by the server to register client service hosting methods executed client side
         /// </summary>
         public void RegisterClientService<T>()
         {
             RegisterClientService(typeof(T));
         }
         /// <summary>
-        /// register stream service for download and upload stream or file
+        /// Called by the sever to register stream service to download and upload stream or file
         /// </summary>
         /// <param name="type"></param>
         internal void RegisterStreamService(Type type)
         {
             var name = type.GetServerServiceName();
             if (StreamServices.ContainsKey(name))
-                throw new Exception("duplicate call");
+                throw new Exception("Duplicate call");
             var service = Activator.CreateInstance(type);
             StreamServices.TryAdd(name, service);
         }
         /// <summary>
-        /// register stream service for download and upload stream or file
+        /// Called by the server to register stream service for download and upload stream or file
         /// </summary>
         /// <typeparam name="T"></typeparam>
         internal void RegisterStreamService<T>()
@@ -457,8 +457,8 @@ namespace SignalGo.Server.ServiceManager
             client.TcpClient = tcpClient;
             client.IPAddress = ((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address.ToString().Replace("::ffff:", "");
             client.ClientId = Guid.NewGuid().ToString() + "-" + Guid.NewGuid().ToString();
-            AutoLogger.LogText($"client connected : {client.IPAddress} {client.ClientId} {DateTime.Now.ToString()}");
-            Console.WriteLine($"client connected : {client.IPAddress} {client.ClientId} {DateTime.Now.ToString()} {ClientConnectedCallingCount}");
+            AutoLogger.LogText($"Client connected : {client.IPAddress} {client.ClientId} {DateTime.Now.ToString()}");
+            Console.WriteLine($"Client connected : {client.IPAddress} {client.ClientId} {DateTime.Now.ToString()} {ClientConnectedCallingCount}");
             ClientConnectedCallingCount++;
             Clients.TryAdd(client.ClientId, client);
             if (ClientsByIp.ContainsKey(client.IPAddress))
@@ -471,7 +471,7 @@ namespace SignalGo.Server.ServiceManager
             return client;
         }
         /// <summary>
-        /// when client connected to server
+        /// Used when a client is connected to the server
         /// </summary>
         /// <param name="tcpClient">client</param>
         private void AddClient(TcpClient tcpClient)
@@ -697,7 +697,7 @@ namespace SignalGo.Server.ServiceManager
         }
 
         /// <summary>
-        /// server internal Settings
+        /// Server internal Settings
         /// </summary>
         public InternalSetting InternalSetting { get; set; } = new InternalSetting();
 
@@ -1855,7 +1855,7 @@ namespace SignalGo.Server.ServiceManager
         #endregion
 
         /// <summary>
-        /// add assembly that include models to server reference when client want to add or update service reference
+        /// Sdd assembly that include models to server reference when client wants to add or update service reference
         /// </summary>
         public void AddModellingReferencesAssembly(Assembly assembly)
         {
@@ -1864,11 +1864,11 @@ namespace SignalGo.Server.ServiceManager
         }
 
         /// <summary>
-        /// guid for web socket client connection
+        /// Guid for web socket client connection
         /// </summary>
         private string guid = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
         /// <summary>
-        /// accept key for websoket client
+        /// Accept key for websoket client
         /// </summary>
         /// <param name="key"></param>
         /// <returns></returns>
@@ -1881,7 +1881,7 @@ namespace SignalGo.Server.ServiceManager
 
         static SHA1 sha1 = SHA1.Create();
         /// <summary>
-        /// comput sha1 hash
+        /// Compute sha1 hash
         /// </summary>
         /// <param name="str"></param>
         /// <returns></returns>
@@ -1891,7 +1891,7 @@ namespace SignalGo.Server.ServiceManager
         }
 
         /// <summary>
-        /// register calbacks for client
+        /// Register calbacks for client
         /// </summary>
         /// <param name="client"></param>
         internal void RegisterClientServices(ClientInfo client)
@@ -1934,7 +1934,7 @@ namespace SignalGo.Server.ServiceManager
         }
 
         /// <summary>
-        /// after client connected this method start to reading client requests from new thread
+        /// After client connects, this method starts reading client requests from new thread
         /// </summary>
         /// <param name="client"></param>
         private void StartToReadingClientData(ClientInfo client)
@@ -1973,8 +1973,8 @@ namespace SignalGo.Server.ServiceManager
                     }
                     if (!isVerify)
                     {
-                        Console.WriteLine($"client is not verify: {client.ClientId}");
-                        DisposeClient(client, "StartToReadingClientData client is not verify");
+                        Console.WriteLine($"Client is not verified: {client.ClientId}");
+                        DisposeClient(client, "StartToReadingClientData client is not verified");
                         return;
                     }
                     client.IsVerification = true;
@@ -2117,7 +2117,7 @@ namespace SignalGo.Server.ServiceManager
                             data.AddRange(len);
                             data.AddRange(bytes);
                             if (data.Count > ProviderSetting.MaximumSendDataBlock)
-                                throw new Exception($"{client.IPAddress} {client.ClientId} GetClientId data length is upper than MaximumSendDataBlock");
+                                throw new Exception($"{client.IPAddress} {client.ClientId} GetClientId data length exceeds MaximumSendDataBlock");
 
                             GoStreamWriter.WriteToStream(client.TcpClient.GetStream(), data.ToArray(), client.IsWebSocket);
                         }
@@ -2219,7 +2219,7 @@ namespace SignalGo.Server.ServiceManager
             }
         }
         /// <summary>
-        /// close Client by ClientInfo
+        /// This closes the client passing its clientInfo
         /// </summary>
         /// <param name="client">client info</param>
         public void CloseClient(ClientInfo client)
@@ -2227,7 +2227,7 @@ namespace SignalGo.Server.ServiceManager
             DisposeClient(client, "manualy called CloseClient");
         }
         /// <summary>
-        /// close client by session
+        ///  This closes the client passing its id
         /// </summary>
         /// <param name="clientId">client session id</param>
         public void CloseClient(string clientId)
@@ -2244,7 +2244,7 @@ namespace SignalGo.Server.ServiceManager
         }
 
         /// <summary>
-        /// register an inastance of service class for client to call server methods
+        /// This registers an instance of service class for client used to call server methods
         /// </summary>
         /// <param name="callInfo"></param>
         /// <param name="client"></param>
@@ -2265,7 +2265,7 @@ namespace SignalGo.Server.ServiceManager
                 var service = FindServerServiceByType(client, serviceType, serviceTypeAttribute);
                 if (service != null && serviceTypeAttribute.InstanceType == InstanceType.MultipeInstance)
                 {
-                    AutoLogger.LogText($"{client.IPAddress} {client.ClientId} this service for this client exist, type: {serviceType.FullName} : serviceName:{callInfo.ServiceName}");
+                    AutoLogger.LogText($"{client.IPAddress} {client.ClientId} The service for this client exists, type: {serviceType.FullName} : serviceName:{callInfo.ServiceName}");
                 }
                 else if (service == null)
                 {
@@ -2777,7 +2777,7 @@ namespace SignalGo.Server.ServiceManager
                     data.AddRange(len);
                     data.AddRange(bytes);
                     if (data.Count > ProviderSetting.MaximumSendDataBlock)
-                        throw new Exception($"{client.IPAddress} {client.ClientId} SendCallbackData data length is upper than MaximumSendDataBlock");
+                        throw new Exception($"{client.IPAddress} {client.ClientId} SendCallbackData data length exceeds MaximumSendDataBlock");
 
                     GoStreamWriter.WriteToStream(client.TcpClient.GetStream(), data.ToArray(), client.IsWebSocket);
                 }
@@ -3324,7 +3324,7 @@ namespace SignalGo.Server.ServiceManager
                             }
                             catch (Exception ex)
                             {
-                                AutoLogger.LogError(ex, "add model type error: " + ex.ToString());
+                                AutoLogger.LogError(ex, "Model Type Add error: " + ex.ToString());
                             }
                         }
 
@@ -3652,15 +3652,15 @@ namespace SignalGo.Server.ServiceManager
 
 
         /// <summary>
-        /// error handling for return type methods (not void)
+        /// Error handling methods that return types (not void)
         /// </summary>
         public Func<Exception, object> ErrorHandlingFunction { get; set; }
         /// <summary>
-        /// error handling for http methods
+        /// Error handling for http methods
         /// </summary>
         public Func<Exception, object> HTTPErrorHandlingFunction { get; set; }
         /// <summary>
-        /// static lock for calling methods when method using StaticLock Attribute
+        /// Static lock for calling methods when method is using StaticLock Attribute
         /// </summary>
         public object StaticLockObject { get; set; } = new object();
 
@@ -3674,7 +3674,7 @@ namespace SignalGo.Server.ServiceManager
 
         private volatile bool _IsFinishingServer = false;
         /// <summary>
-        /// is server going to finish
+        /// When server is going to finish
         /// </summary>
         public bool IsFinishingServer
         {
@@ -3699,7 +3699,7 @@ namespace SignalGo.Server.ServiceManager
         }
 
         /// <summary>
-        /// when server is disposed
+        /// When server is disposed
         /// </summary>
         public bool IsDisposed { get; set; }
         /// <summary>
