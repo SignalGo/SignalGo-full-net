@@ -41,6 +41,7 @@
     <FileVersion>3.7</FileVersion>
     <VersionPrefix>3.7</VersionPrefix>
     <Version>3.7</Version>
+    <DebugType>full</DebugType>
     <PackageReleaseNotes>
       1.fix bugs and more improvement
       2.support for tuples

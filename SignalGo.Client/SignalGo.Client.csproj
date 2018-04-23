@@ -14,6 +14,7 @@
     <FileVersion>3.7</FileVersion>
     <VersionPrefix>3.7</VersionPrefix>
     <Version>3.7</Version>
+    <DebugType>full</DebugType>
     <Copyright>Copyright © ali.visual.studio@gmail.com 2016</Copyright>
     <Description>
       SignalGo is a library for Cross-Platform developers that makes it incredibly simple to add real-time web functionality to your applications. What is "real-time web" functionality? It's the ability to have your server-side code push content to the connected clients as it happens, in real-time. like WCF and SignalR

@@ -186,25 +186,33 @@ namespace SignalGo.Server.Log
         void BeginClientMethodCallAction(object clientInfo, string callGuid, string serviceName, string methodName, List<SignalGo.Shared.Models.ParameterInfo> values)
         {
             ClientInfo client = (ClientInfo)clientInfo;
-            AddCallClientMethodLog(client.ClientId, client.IPAddress, client.ConnectedDateTime, serviceName, methodName, values).CallerGuid = callGuid;
+            var result = AddCallClientMethodLog(client.ClientId, client.IPAddress, client.ConnectedDateTime, serviceName, methodName, values);
+            if (result != null)
+                result.CallerGuid = callGuid;
         }
 
         void BeginHttpMethodCallAction(object clientInfo, string callGuid, string address, MethodInfo method, List<string> values)
         {
             ClientInfo client = (ClientInfo)clientInfo;
-            AddHttpMethodLog(client.ClientId, client.IPAddress, client.ConnectedDateTime, address, method, values).CallerGuid = callGuid;
+            var result = AddHttpMethodLog(client.ClientId, client.IPAddress, client.ConnectedDateTime, address, method, values);
+            if (result != null)
+                result.CallerGuid = callGuid;
         }
 
         void BeginMethodCallAction(object clientInfo, string callGuid, string serviceName, MethodInfo method, List<SignalGo.Shared.Models.ParameterInfo> values)
         {
             ClientInfo client = (ClientInfo)clientInfo;
-            AddCallMethodLog(client.ClientId, client.IPAddress, client.ConnectedDateTime, serviceName, method, values).CallerGuid = callGuid;
+            var result = AddCallMethodLog(client.ClientId, client.IPAddress, client.ConnectedDateTime, serviceName, method, values);
+            if (result != null)
+                result.CallerGuid = callGuid;
         }
 
         void BeginStreamCallAction(object clientInfo, string callGuid, string serviceName, string methodName, List<SignalGo.Shared.Models.ParameterInfo> values)
         {
             ClientInfo client = (ClientInfo)clientInfo;
-            AddStreamCallMethodLog(client.ClientId, client.IPAddress, client.ConnectedDateTime, serviceName, methodName, values).CallerGuid = callGuid;
+            var result = AddStreamCallMethodLog(client.ClientId, client.IPAddress, client.ConnectedDateTime, serviceName, methodName, values);
+            if (result != null)
+                result.CallerGuid = callGuid;
         }
 
         void EndClientMethodCallAction(object clientInfo, string callGuid, string serviceName, string methodName, object[] values, string result, Exception exception)
@@ -594,13 +602,15 @@ namespace SignalGo.Server.Log
                 isFirst = false;
             }
             build.AppendLine(")");
-
-            build.AppendLine($"	With Values:");
-            foreach (var value in log.Parameters)
+            if (log.Parameters != null)
             {
-                build.AppendLine("			" + (value == null ? "Null" : value));
+                build.AppendLine($"	With Values:");
+                foreach (var value in log.Parameters)
+                {
+                    build.AppendLine("			" + (value == null ? "Null" : value));
+                }
+                build.AppendLine("");
             }
-            build.AppendLine("");
             if (log.Exception == null)
             {
                 build.AppendLine($"Result Information:");
@@ -659,14 +669,15 @@ namespace SignalGo.Server.Log
             //    isFirst = false;
             //}
             //build.AppendLine(")");
-
-            build.AppendLine($"	With Values:");
-            foreach (var parameter in log.Parameters)
+            if (log.Parameters != null)
             {
-                build.AppendLine("			" + (parameter.Value == null ? "Null" : JsonConvert.SerializeObject(parameter.Value, Formatting.None, new JsonSerializerSettings() { Formatting = Formatting.None }).Replace(@"\""", "")));
+                build.AppendLine($"	With Values:");
+                foreach (var parameter in log.Parameters)
+                {
+                    build.AppendLine("			" + (parameter.Value == null ? "Null" : JsonConvert.SerializeObject(parameter.Value, Formatting.None, new JsonSerializerSettings() { Formatting = Formatting.None }).Replace(@"\""", "")));
+                }
+                build.AppendLine("");
             }
-            build.AppendLine("");
-
             if (log.Exception == null)
             {
                 build.AppendLine($"Result Information:");
@@ -675,9 +686,12 @@ namespace SignalGo.Server.Log
             }
             else
             {
-                build.AppendLine($"Exception:");
-                build.AppendLine("			" + log.Exception.ToString());
-                build.AppendLine("");
+                if (log.Exception != null)
+                {
+                    build.AppendLine($"Exception:");
+                    build.AppendLine("			" + log.Exception.ToString());
+                    build.AppendLine("");
+                }
             }
 
 

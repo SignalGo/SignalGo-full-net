@@ -101,7 +101,7 @@ namespace SignalGo.Server.ServiceManager
         /// کلاینت ها
         /// </summary>
         internal ConcurrentDictionary<string, ClientInfo> Clients { get; set; } = new ConcurrentDictionary<string, ClientInfo>();
-        internal ConcurrentDictionary<string, List<ClientInfo>> ClientsByIp { get; set; } = new ConcurrentDictionary<string, List<ClientInfo>>();
+        internal ConcurrentDictionary<string, ConcurrentList<ClientInfo>> ClientsByIp { get; set; } = new ConcurrentDictionary<string, ConcurrentList<ClientInfo>>();
 
         /// <summary>
         /// settings of clients
@@ -457,14 +457,14 @@ namespace SignalGo.Server.ServiceManager
             client.TcpClient = tcpClient;
             client.IPAddress = ((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address.ToString().Replace("::ffff:", "");
             client.ClientId = Guid.NewGuid().ToString() + "-" + Guid.NewGuid().ToString();
-            AutoLogger.LogText($"client connected : {client.IPAddress} {client.ClientId} {DateTime.Now.ToString()}");
+            //AutoLogger.LogText($"client connected : {client.IPAddress} {client.ClientId} {DateTime.Now.ToString()}");
             Console.WriteLine($"client connected : {client.IPAddress} {client.ClientId} {DateTime.Now.ToString()} {ClientConnectedCallingCount}");
             ClientConnectedCallingCount++;
             Clients.TryAdd(client.ClientId, client);
             if (ClientsByIp.ContainsKey(client.IPAddress))
                 ClientsByIp[client.IPAddress].Add(client);
             else
-                ClientsByIp.TryAdd(client.IPAddress, new List<Models.ClientInfo>() { client });
+                ClientsByIp.TryAdd(client.IPAddress, new ConcurrentList<Models.ClientInfo>() { client });
             //Services.TryAdd(client, new ConcurrentList<object>());
             WaitedMethodsForResponse.TryAdd(client, new ConcurrentDictionary<string, KeyValue<AutoResetEvent, MethodCallbackInfo>>());
             ClientRegistredMethods.TryAdd(client, new ConcurrentDictionary<string, ConcurrentList<string>>());
@@ -542,7 +542,7 @@ namespace SignalGo.Server.ServiceManager
                             var bytes = System.Text.Encoding.UTF8.GetBytes("OK");
                             tcpClient.GetStream().Write(bytes, 0, bytes.Length);
                         }
-                        else if (headerResponse.Contains("HTTP/1.1"))
+                        else if (headerResponse.Contains("HTTP/1.1") || headerResponse.Contains("HTTP/1.0"))
                         {
                             while (true)
                             {
@@ -658,8 +658,14 @@ namespace SignalGo.Server.ServiceManager
                                         DisposeClient(client, "AddClient finish post call");
                                         return;
                                     }
+                                    else if (RegisteredHttpServiceTypes.ContainsKey("") && (string.IsNullOrEmpty(address) || address == "/"))
+                                    {
+                                        var headers = GetHttpHeaders(lines.Skip(1).ToArray());
+                                        RunIndexHttpRequest(headers, (HttpClientInfo)client);
+                                        DisposeClient(client, "Index Page call");
+                                        return;
+                                    }
                                 }
-
 
                                 response = "HTTP/1.1 200 OK" + newLine
                                      + "Content-Type: text/html" + newLine
@@ -674,7 +680,8 @@ namespace SignalGo.Server.ServiceManager
                         {
                             if (headerResponse == null)
                                 headerResponse = "";
-                            AutoLogger.LogText($"Header not suport msg: {headerResponse} {client.IPAddress} IsConnected:{client.TcpClient.Connected} LastByte:{reader.LastByteRead}");
+                            if (reader.LastByteRead >= 0)
+                                AutoLogger.LogText($"Header not suport msg: {headerResponse} {(client == null ? "null" : client.IPAddress)} IsConnected:{(client == null ? "null" : client.TcpClient.Connected.ToString())} LastByte:{reader.LastByteRead}");
 
                             DisposeClient(client, "AddClient header not support");
                             return;
@@ -688,9 +695,12 @@ namespace SignalGo.Server.ServiceManager
                 {
                     if (headerResponse == null)
                         headerResponse = "";
-                    AutoLogger.LogText($"AddClient Error msg : {headerResponse} {client.IPAddress}");
-                    AutoLogger.LogError(ex, "AddClient");
-                    Console.WriteLine(ex);
+                    if (!(ex is System.Net.Sockets.SocketException) && !(ex is System.IO.IOException) && client != null)
+                    {
+                        AutoLogger.LogText($"AddClient Error msg : {headerResponse} {(client == null ? "null client" : client.IPAddress)}");
+                        AutoLogger.LogError(ex, "AddClient");
+                        Console.WriteLine(ex);
+                    }
                     DisposeClient(client, "AddClient exception");
                 }
             });
@@ -751,7 +761,189 @@ namespace SignalGo.Server.ServiceManager
             }
             return result;
         }
+        private void RunIndexHttpRequest(Shared.Http.WebHeaderCollection headers, HttpClientInfo client)
+        {
+            var newLine = "\r\n";
+            Action<string> sendInternalErrorMessage = (data) =>
+            {
+                try
+                {
+                    //{ 500} {HttpRequestController.GetStatusDescription((int)HttpStatusCode.InternalServerError)}
+                    string settingHeaders = "";
+                    if (HttpProtocolSetting != null)
+                    {
+                        if (HttpProtocolSetting.HandleCrossOriginAccess)
+                        {
+                            settingHeaders = "Access-Control-Allow-Origin: " + headers["origin"] + newLine +
+                                                "Access-Control-Allow-Credentials: true" + newLine;
+                            if (!string.IsNullOrEmpty(headers["Access-Control-Request-Headers"]))
+                            {
+                                settingHeaders += "Access-Control-Allow-Headers: " + headers["Access-Control-Request-Headers"] + newLine;
+                            }
+                        }
+                    }
+                    string message = newLine + $"Internal Server Error: {data}" + newLine;
+                    var response = $"HTTP/1.1 {(int)HttpStatusCode.InternalServerError} {HttpRequestController.GetStatusDescription((int)HttpStatusCode.InternalServerError)}" + newLine
+                        + "Content-Type: text/html; charset=utf-8" + newLine
+                        + settingHeaders +
+                        "Content-Length: " + (message.Length - 2) + newLine
+                        + "Connection: Close" + newLine;
+                    client.TcpClient.Client.Send(System.Text.Encoding.UTF8.GetBytes(response + message));
+                }
+                catch (Exception ex)
+                {
+                    AutoLogger.LogError(ex, "RunHttpGETRequest sendErrorMessage");
+                }
+            };
 
+
+
+            object result = null;
+            MethodInfo method = null;
+            Exception exception = null;
+            string callGuid = Guid.NewGuid().ToString();
+            object service = null;
+            try
+            {
+                ClientConnectedCallingCount++;
+                method = (from x in RegisteredHttpServiceTypes[""].GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance) where x.IsPublic && !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_"))) && x.GetCustomAttributes<HomePageAttribute>().Count() > 0 select x).FirstOrDefault();
+                if (method == null)
+                {
+                    string data = newLine + "SignalGo Error: Index Method name not found!" + newLine;
+                    sendInternalErrorMessage(data);
+                    AutoLogger.LogText(data);
+                    return;
+                }
+
+                var clientLimitationAttribute = method.GetCustomAttributes(typeof(ClientLimitationAttribute), true).ToList();
+
+                foreach (ClientLimitationAttribute attrib in clientLimitationAttribute)
+                {
+                    var allowAddresses = attrib.GetAllowAccessIpAddresses();
+                    if (allowAddresses != null && allowAddresses.Length > 0)
+                    {
+                        if (!allowAddresses.Contains(client.IPAddress))
+                        {
+                            string data = newLine + $"Client IP Have Not Access To Call Method: {client.IPAddress}" + newLine;
+                            sendInternalErrorMessage(data);
+                            AutoLogger.LogText(data);
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        var denyAddresses = attrib.GetDenyAccessIpAddresses();
+                        if (denyAddresses != null && denyAddresses.Length > 0)
+                        {
+                            if (denyAddresses.Contains(client.IPAddress))
+                            {
+                                string data = newLine + $"Client IP Is Deny Access To Call Method: {client.IPAddress}" + newLine;
+                                sendInternalErrorMessage(data);
+                                AutoLogger.LogText(data);
+                                return;
+                            }
+                        }
+                    }
+                }
+
+
+                MethodsCallHandler.BeginHttpMethodCallAction?.Invoke(client, callGuid, "", method, null);
+                service = Activator.CreateInstance(RegisteredHttpServiceTypes[""]);
+                if (service is IHttpClientInfo)
+                {
+                    ((IHttpClientInfo)service).RequestHeaders = client.RequestHeaders = headers;
+                    ((IHttpClientInfo)service).ResponseHeaders = client.ResponseHeaders;
+                    ((IHttpClientInfo)service).IPAddress = client.IPAddress;
+                }
+                client.RequestHeaders = headers;
+                if (HttpProtocolSetting != null)
+                {
+                    if (HttpProtocolSetting.HandleCrossOriginAccess)
+                    {
+                        client.ResponseHeaders.Add("Access-Control-Allow-Origin", headers["origin"]);
+                        client.ResponseHeaders.Add("Access-Control-Allow-Credentials", "true");
+                        if (!string.IsNullOrEmpty(headers["Access-Control-Request-Headers"]))
+                        {
+                            client.ResponseHeaders.Add("Access-Control-Allow-Headers", headers["Access-Control-Request-Headers"]);
+                        }
+                    }
+                }
+
+                var securityAttributes = method.GetCustomAttributes(typeof(SecurityContractAttribute), true).ToList();
+                foreach (SecurityContractAttribute attrib in securityAttributes)
+                {
+                    if (!attrib.CheckHttpPermission(client, (service is IHttpClientInfo) ? (IHttpClientInfo)service : null, "", method.Name, "", null))
+                    {
+                        result = attrib.GetHttpValueWhenDenyPermission(client, (service is IHttpClientInfo) ? (IHttpClientInfo)service : null, "", method.Name, "", null);
+                        if (result == null)
+                        {
+                            string data = newLine + $"result from method invoke {method.Name}, is null or is not ActionResult type" + newLine;
+                            sendInternalErrorMessage(data);
+                            AutoLogger.LogText("RunHttpGETRequest : " + data);
+                        }
+                        else
+                        {
+                            RunHttpActionResult(client, result, client.TcpClient);
+                        }
+                        return;
+                    }
+                }
+
+                bool isStaticLock = method.GetCustomAttributes(typeof(StaticLockAttribute), true).Count() > 0;
+                if (isStaticLock)
+                {
+                    lock (StaticLockObject)
+                    {
+                        result = method.Invoke(service, new object[] { "", "", null }).ToActionResult();
+                    }
+                }
+                else
+                    result = method.Invoke(service, new object[] { "", "", null }).ToActionResult();
+
+                List<HttpKeyAttribute> httpKeyAttributes = new List<HttpKeyAttribute>();
+                var httpKeyOnMethod = (HttpKeyAttribute)method.GetCustomAttributes(typeof(HttpKeyAttribute), true).FirstOrDefault();
+                if (httpKeyOnMethod != null)
+                    httpKeyAttributes.Add(httpKeyOnMethod);
+                if (InternalSetting.HttpKeyResponses != null)
+                {
+                    httpKeyAttributes.AddRange(InternalSetting.HttpKeyResponses);
+                }
+
+                FillReponseHeaders(client, httpKeyAttributes);
+
+                if (result == null)
+                {
+                    string data = newLine + $"result from index method invoke, is null " + newLine;
+                    sendInternalErrorMessage(data);
+                    AutoLogger.LogText("RunHttpGETRequest : " + data);
+                }
+                else
+                {
+                    RunHttpActionResult(client, result, client.TcpClient);
+                }
+            }
+            catch (Exception ex)
+            {
+                exception = ex;
+                if (HTTPErrorHandlingFunction != null)
+                {
+                    result = HTTPErrorHandlingFunction(ex).ToActionResult();
+                    RunHttpActionResult(client, result, client.TcpClient);
+                }
+                else
+                {
+                    string data = newLine + ex.ToString() + newLine;
+                    sendInternalErrorMessage(data);
+                }
+                AutoLogger.LogError(ex, "RunHttpRequest");
+            }
+            finally
+            {
+                ClientConnectedCallingCount--;
+                MethodsCallHandler.EndHttpMethodCallAction?.Invoke(client, callGuid, "", method, null, result, exception);
+            }
+
+        }
         /// <summary>
         /// run method of server http class with address and headers
         /// </summary>
@@ -840,17 +1032,17 @@ namespace SignalGo.Server.ServiceManager
                         var boundary = parameters.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries)[0];
                         var pValues = parameters.Split(new string[] { boundary }, StringSplitOptions.RemoveEmptyEntries);
                         string name = "";
-                        foreach (var data in pValues)
+                        foreach (var valueData in pValues)
                         {
-                            if (data.ToLower().Contains("content-disposition"))
+                            if (valueData.ToLower().Contains("content-disposition"))
                             {
-                                if (data.Replace(" ", "").Contains(";name="))
+                                if (valueData.Replace(" ", "").Contains(";name="))
                                 {
-                                    int index = data.ToLower().IndexOf("content-disposition");
-                                    var header = data.Substring(index);
+                                    int index = valueData.ToLower().IndexOf("content-disposition");
+                                    var header = valueData.Substring(index);
                                     var headLen = header.IndexOf("\r\n");
-                                    header = data.Substring(index, headLen);
-                                    var newData = data.Substring(index + headLen + 2);
+                                    header = valueData.Substring(index, headLen);
+                                    var newData = valueData.Substring(index + headLen + 2);
                                     //newData = newData.Split(new string[] { boundary }, StringSplitOptions.RemoveEmptyEntries);
                                     if (header.ToLower().IndexOf("content-disposition:") == 0)
                                     {
@@ -875,21 +1067,22 @@ namespace SignalGo.Server.ServiceManager
                     address += item + "/";
                 }
                 address = address.TrimEnd('/').ToLower();
-                if (RegisteredHttpServiceTypes.ContainsKey(address))
+                object result = null;
+                MethodInfo method = null;
+                List<string> valueitems = null;
+                Exception exception = null;
+                string callGuid = Guid.NewGuid().ToString();
+                object service = null;
+                string data = null;
+                try
                 {
-                    object result = null;
-                    MethodInfo method = null;
-                    List<string> valueitems = null;
-                    Exception exception = null;
-                    string callGuid = Guid.NewGuid().ToString();
-                    object service = null;
-                    try
+                    ClientConnectedCallingCount++;
+                    if (RegisteredHttpServiceTypes.ContainsKey(address))
                     {
-                        ClientConnectedCallingCount++;
                         var methods = (from x in RegisteredHttpServiceTypes[address].GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance) where x.Name.ToLower() == methodName && x.IsPublic && !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_"))) select x).ToList();
                         if (methods.Count == 0)
                         {
-                            string data = newLine + "SignalGo Error: Method name not found in method list: " + methodName + newLine;
+                            data = newLine + "SignalGo Error: Method name not found in method list: " + methodName + newLine;
                             sendInternalErrorMessage(data);
                             AutoLogger.LogText(data);
                             return;
@@ -942,7 +1135,7 @@ namespace SignalGo.Server.ServiceManager
 
                         if (method == null)
                         {
-                            string data = newLine + "SignalGo Error: Method name not found: " + methodName + newLine;
+                            data = newLine + "SignalGo Error: Method name not found: " + methodName + newLine;
                             sendInternalErrorMessage(data);
                             AutoLogger.LogText(data);
                             return;
@@ -957,7 +1150,7 @@ namespace SignalGo.Server.ServiceManager
                             {
                                 if (!allowAddresses.Contains(client.IPAddress))
                                 {
-                                    string data = newLine + $"Client IP Have Not Access To Call Method: {client.IPAddress}" + newLine;
+                                    data = newLine + $"Client IP Have Not Access To Call Method: {client.IPAddress}" + newLine;
                                     sendInternalErrorMessage(data);
                                     AutoLogger.LogText(data);
                                     return;
@@ -970,7 +1163,7 @@ namespace SignalGo.Server.ServiceManager
                                 {
                                     if (denyAddresses.Contains(client.IPAddress))
                                     {
-                                        string data = newLine + $"Client IP Is Deny Access To Call Method: {client.IPAddress}" + newLine;
+                                        data = newLine + $"Client IP Is Deny Access To Call Method: {client.IPAddress}" + newLine;
                                         sendInternalErrorMessage(data);
                                         AutoLogger.LogText(data);
                                         return;
@@ -993,7 +1186,7 @@ namespace SignalGo.Server.ServiceManager
                                 currentParam = (from x in values where x.Item1.ToLower() == item.Name.ToLower() select x).FirstOrDefault();
                                 if (currentParam == null)
                                 {
-                                    string data = newLine + $"result from method {methodName}, parameter {item.Name} not exist, your params {content} " + newLine;
+                                    data = newLine + $"result from method {methodName}, parameter {item.Name} not exist, your params {content} " + newLine;
                                     sendInternalErrorMessage(data);
                                     AutoLogger.LogText("RunHttpGETRequest : " + data);
                                     return;
@@ -1048,7 +1241,7 @@ namespace SignalGo.Server.ServiceManager
                                 result = attrib.GetHttpValueWhenDenyPermission(client, (service is IHttpClientInfo) ? (IHttpClientInfo)service : null, address, methodName, fullAddress, resultParameters);
                                 if (result == null)
                                 {
-                                    string data = newLine + $"result from method invoke {methodName}, is null or is not ActionResult type" + address + newLine;
+                                    data = newLine + $"result from method invoke {methodName}, is null or is not ActionResult type" + address + newLine;
                                     sendInternalErrorMessage(data);
                                     AutoLogger.LogText("RunHttpGETRequest : " + data);
                                 }
@@ -1084,7 +1277,126 @@ namespace SignalGo.Server.ServiceManager
 
                         if (result == null)
                         {
-                            string data = newLine + $"result from method invoke {methodName}, is null " + address + newLine;
+                            data = newLine + $"result from method invoke {methodName}, is null " + address + newLine;
+                            sendInternalErrorMessage(data);
+                            AutoLogger.LogText("RunHttpGETRequest : " + data);
+                        }
+                        else
+                        {
+                            RunHttpActionResult(client, result, client.TcpClient);
+                        }
+
+                    }
+                    else
+                    {
+                        method = (from x in RegisteredHttpServiceTypes[""].GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance) where x.IsPublic && !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_"))) && x.GetCustomAttributes<HomePageAttribute>().Count() > 0 select x).FirstOrDefault();
+                        if (method == null)
+                        {
+                            data = newLine + "SignalGo Error: Index Method name not found!" + newLine;
+                            sendInternalErrorMessage(data);
+                            AutoLogger.LogText(data);
+                            return;
+                        }
+
+                        var clientLimitationAttribute = method.GetCustomAttributes(typeof(ClientLimitationAttribute), true).ToList();
+
+                        foreach (ClientLimitationAttribute attrib in clientLimitationAttribute)
+                        {
+                            var allowAddresses = attrib.GetAllowAccessIpAddresses();
+                            if (allowAddresses != null && allowAddresses.Length > 0)
+                            {
+                                if (!allowAddresses.Contains(client.IPAddress))
+                                {
+                                    data = newLine + $"Client IP Have Not Access To Call Method: {client.IPAddress}" + newLine;
+                                    sendInternalErrorMessage(data);
+                                    AutoLogger.LogText(data);
+                                    return;
+                                }
+                            }
+                            else
+                            {
+                                var denyAddresses = attrib.GetDenyAccessIpAddresses();
+                                if (denyAddresses != null && denyAddresses.Length > 0)
+                                {
+                                    if (denyAddresses.Contains(client.IPAddress))
+                                    {
+                                        data = newLine + $"Client IP Is Deny Access To Call Method: {client.IPAddress}" + newLine;
+                                        sendInternalErrorMessage(data);
+                                        AutoLogger.LogText(data);
+                                        return;
+                                    }
+                                }
+                            }
+                        }
+
+
+                        MethodsCallHandler.BeginHttpMethodCallAction?.Invoke(client, callGuid, "", method, null);
+                        service = Activator.CreateInstance(RegisteredHttpServiceTypes[""]);
+                        if (service is IHttpClientInfo)
+                        {
+                            ((IHttpClientInfo)service).RequestHeaders = client.RequestHeaders = headers;
+                            ((IHttpClientInfo)service).ResponseHeaders = client.ResponseHeaders;
+                            ((IHttpClientInfo)service).IPAddress = client.IPAddress;
+                        }
+                        client.RequestHeaders = headers;
+                        if (HttpProtocolSetting != null)
+                        {
+                            if (HttpProtocolSetting.HandleCrossOriginAccess)
+                            {
+                                client.ResponseHeaders.Add("Access-Control-Allow-Origin", headers["origin"]);
+                                client.ResponseHeaders.Add("Access-Control-Allow-Credentials", "true");
+                                if (!string.IsNullOrEmpty(headers["Access-Control-Request-Headers"]))
+                                {
+                                    client.ResponseHeaders.Add("Access-Control-Allow-Headers", headers["Access-Control-Request-Headers"]);
+                                }
+                            }
+                        }
+
+                        var securityAttributes = method.GetCustomAttributes(typeof(SecurityContractAttribute), true).ToList();
+                        foreach (SecurityContractAttribute attrib in securityAttributes)
+                        {
+                            if (!attrib.CheckHttpPermission(client, (service is IHttpClientInfo) ? (IHttpClientInfo)service : null, "", method.Name, "", null))
+                            {
+                                result = attrib.GetHttpValueWhenDenyPermission(client, (service is IHttpClientInfo) ? (IHttpClientInfo)service : null, "", method.Name, "", null);
+                                if (result == null)
+                                {
+                                    data = newLine + $"result from method invoke {method.Name}, is null or is not ActionResult type" + newLine;
+                                    sendInternalErrorMessage(data);
+                                    AutoLogger.LogText("RunHttpGETRequest : " + data);
+                                }
+                                else
+                                {
+                                    RunHttpActionResult(client, result, client.TcpClient);
+                                }
+                                return;
+                            }
+                        }
+
+                        bool isStaticLock = method.GetCustomAttributes(typeof(StaticLockAttribute), true).Count() > 0;
+                        if (isStaticLock)
+                        {
+                            lock (StaticLockObject)
+                            {
+                                result = method.Invoke(service, new object[] { address, methodName, valueitems }).ToActionResult();
+                            }
+                        }
+                        else
+                            result = method.Invoke(service, new object[] { address, methodName, valueitems }).ToActionResult();
+
+                        List<HttpKeyAttribute> httpKeyAttributes = new List<HttpKeyAttribute>();
+                        var httpKeyOnMethod = (HttpKeyAttribute)method.GetCustomAttributes(typeof(HttpKeyAttribute), true).FirstOrDefault();
+                        if (httpKeyOnMethod != null)
+                            httpKeyAttributes.Add(httpKeyOnMethod);
+                        if (InternalSetting.HttpKeyResponses != null)
+                        {
+                            httpKeyAttributes.AddRange(InternalSetting.HttpKeyResponses);
+                        }
+
+                        FillReponseHeaders(client, httpKeyAttributes);
+
+                        if (result == null)
+                        {
+                            data = newLine + $"result from index method invoke, is null " + newLine;
                             sendInternalErrorMessage(data);
                             AutoLogger.LogText("RunHttpGETRequest : " + data);
                         }
@@ -1093,32 +1405,26 @@ namespace SignalGo.Server.ServiceManager
                             RunHttpActionResult(client, result, client.TcpClient);
                         }
                     }
-                    catch (Exception ex)
-                    {
-                        exception = ex;
-                        if (HTTPErrorHandlingFunction != null)
-                        {
-                            result = HTTPErrorHandlingFunction(ex).ToActionResult();
-                            RunHttpActionResult(client, result, client.TcpClient);
-                        }
-                        else
-                        {
-                            string data = newLine + ex.ToString() + address + newLine;
-                            sendInternalErrorMessage(data);
-                        }
-                        AutoLogger.LogError(ex, "RunHttpRequest");
-                    }
-                    finally
-                    {
-                        ClientConnectedCallingCount--;
-                        MethodsCallHandler.EndHttpMethodCallAction?.Invoke(client, callGuid, address, method, valueitems, result, exception);
-                    }
                 }
-                else
+                catch (Exception ex)
                 {
-                    string data = newLine + "SignalGo Error: address not found in signalGo services: " + address + newLine;
-                    sendInternalErrorMessage(data);
-                    AutoLogger.LogText(data);
+                    exception = ex;
+                    if (HTTPErrorHandlingFunction != null)
+                    {
+                        result = HTTPErrorHandlingFunction(ex).ToActionResult();
+                        RunHttpActionResult(client, result, client.TcpClient);
+                    }
+                    else
+                    {
+                        data = newLine + ex.ToString() + address + newLine;
+                        sendInternalErrorMessage(data);
+                    }
+                    AutoLogger.LogError(ex, "RunHttpRequest");
+                }
+                finally
+                {
+                    ClientConnectedCallingCount--;
+                    MethodsCallHandler.EndHttpMethodCallAction?.Invoke(client, callGuid, address, method, valueitems, result, exception);
                 }
             }
         }
@@ -1844,11 +2150,14 @@ namespace SignalGo.Server.ServiceManager
 
             foreach (var attrib in attributes)
             {
-                if (string.IsNullOrEmpty(attrib.Name))
-                {
-                    throw new Exception("HttpSupport Address is null or empty from: " + httpService.FullName);
-                }
-                RegisteredHttpServiceTypes.TryAdd(attrib.Name.ToLower(), httpService);
+                //if (string.IsNullOrEmpty(attrib.Name))
+                //{
+                //    throw new Exception("HttpSupport Address is null or empty from: " + httpService.FullName);
+                //}
+                string name = attrib.Name.ToLower();
+                if (RegisteredHttpServiceTypes.ContainsKey(name))
+                    throw new Exception($"duplicate adding http service name : {name}");
+                RegisteredHttpServiceTypes.TryAdd(name.ToLower(), httpService);
             }
         }
 
@@ -2155,6 +2464,8 @@ namespace SignalGo.Server.ServiceManager
 
         private void ClientRemove(ClientInfo client)
         {
+            if (client == null)
+                return;
             Clients.Remove(client.ClientId);
             if (ClientsByIp.ContainsKey(client.IPAddress))
             {
@@ -2173,7 +2484,9 @@ namespace SignalGo.Server.ServiceManager
         {
             try
             {
-                Console.WriteLine("Client disposed " + client.ClientId + " reason: " + reason);
+                Console.WriteLine("Client disposed " + (client == null ? "null!" : client.ClientId) + " reason: " + reason);
+                if (client == null)
+                    return;
                 try
                 {
 #if (NETSTANDARD1_6 || NETCOREAPP1_1)
