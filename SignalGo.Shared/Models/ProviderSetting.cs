@@ -11,6 +11,10 @@ namespace SignalGo.Shared.Models
     public class ProviderSetting
     {
         /// <summary>
+        /// when you want to use timeouts on your provider set it true
+        /// </summary>
+        public bool IsEnabledToUseTimeout { get; set; }
+        /// <summary>
         /// maximum value of timeout to wait for send data
         /// </summary>
         public TimeSpan SendDataTimeout { get; set; } = new TimeSpan(0, 0, 30);

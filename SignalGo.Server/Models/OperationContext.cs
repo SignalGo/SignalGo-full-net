@@ -420,7 +420,7 @@ namespace SignalGo.Server.Models
         /// <typeparam name="T">type of service</typeparam>
         /// <param name="context">client context</param>
         /// <returns>list of service context</returns>
-        public static ClientContext<T> GetClientClientContextService<T>(this OperationContext context)
+        internal static ClientContext<T> GetClientClientContextService<T>(this OperationContext context)
         {
 #if (NETSTANDARD1_6 || NETCOREAPP1_1)
             if (typeof(T).GetTypeInfo().IsInterface)

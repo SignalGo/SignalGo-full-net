@@ -1363,7 +1363,7 @@ namespace SignalGo.Client
                 if (ProviderSetting.AutoReconnect && !IsAutoReconnecting)
                 {
                     IsAutoReconnecting = true;
-                    while (!IsConnected)
+                    while (!IsConnected && !IsDisposed)
                     {
                         try
                         {

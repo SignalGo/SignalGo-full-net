@@ -91,8 +91,8 @@ namespace System
             return GetCustomAttributes(type, typeof(T), inherit).Select(arg => (T)arg).ToArray();
         }
 
-        static HashMapDictionary<object, object> InheritCachedCustomAttributes = new HashMapDictionary<object, object>();
-        static HashMapDictionary<object, object> CachedCustomAttributes = new HashMapDictionary<object, object>();
+        public static HashMapDictionary<object, object> InheritCachedCustomAttributes = new HashMapDictionary<object, object>();
+        public static HashMapDictionary<object, object> CachedCustomAttributes = new HashMapDictionary<object, object>();
         static void AddCach(object type, object item, bool inherit)
         {
             if (inherit)
@@ -275,7 +275,7 @@ namespace System
             return attributeArray;
         }
 
-        static ConcurrentDictionary<Type, List<Type>> CachedTypesOfAttribute = new ConcurrentDictionary<Type, List<Type>>();
+        public static ConcurrentDictionary<Type, List<Type>> CachedTypesOfAttribute = new ConcurrentDictionary<Type, List<Type>>();
         public static List<Type> GetTypesByAttribute<T>(this Type type, Func<T, bool> canAdd, bool isManual = true) where T : Attribute
         {
             List<Type> result = new List<Type>();
