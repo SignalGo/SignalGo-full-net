@@ -36,7 +36,6 @@ namespace SignalGo.Server.ServiceManager
     /// </summary>
     public abstract class ServerBase : IDisposable
     {
-        internal AutoLogger AutoLogger { get; private set; } = new AutoLogger() { FileName = "ServerBase Logs.log" };
         private JsonSettingHelper JsonSettingHelper { get; set; } = new JsonSettingHelper();
         /// <summary>
         /// 
@@ -45,6 +44,7 @@ namespace SignalGo.Server.ServiceManager
         {
             JsonSettingHelper.Initialize();
         }
+
         /// <summary>
         /// server is started or not
         /// </summary>
@@ -68,80 +68,10 @@ namespace SignalGo.Server.ServiceManager
                     CallAfterFinishAction?.Invoke();
             }
         }
+        
 
-        /// <summary>
-        /// settings of server
-        /// </summary>
-        public ProviderSetting ProviderSetting { get; set; } = new ProviderSetting();
-        /// <summary>
-        /// when server disconnect
-        /// </summary>
-        public Action OnServerDisconnectedAction { get; set; }
-        /// <summary>
-        /// when server had internal exception
-        /// </summary>
-        public Action<Exception> OnServerInternalExceptionAction { get; set; }
-        /// <summary>
-        /// after client connected
-        /// </summary>
-        public Action<ClientInfo> OnConnectedClientAction { get; set; }
-        /// <summary>
-        /// after client disconnected
-        /// </summary>
-        public Action<ClientInfo> OnDisconnectedClientAction { get; set; }
 
-        //internal ConcurrentDictionary<ClientInfo, SynchronizationContext> ClientDispatchers { get; set; } = new ConcurrentDictionary<ClientInfo, SynchronizationContext>();
-        internal static HashMapDictionary<SynchronizationContext, ClientInfo> AllDispatchers { get; set; } = new HashMapDictionary<SynchronizationContext, ClientInfo>();
 
-        /// <summary>
-        /// کلاینت ها و توابعی که منتظر هستند پاسخشون از سمت کلاینت برگرده
-        /// </summary>
-        internal ConcurrentDictionary<ClientInfo, ConcurrentDictionary<string, KeyValue<AutoResetEvent, MethodCallbackInfo>>> WaitedMethodsForResponse { get; set; } = new ConcurrentDictionary<ClientInfo, ConcurrentDictionary<string, KeyValue<AutoResetEvent, MethodCallbackInfo>>>();
-        /// <summary>
-        /// کلاینت ها
-        /// </summary>
-        internal ConcurrentDictionary<string, ClientInfo> Clients { get; set; } = new ConcurrentDictionary<string, ClientInfo>();
-        internal ConcurrentDictionary<string, ConcurrentList<ClientInfo>> ClientsByIp { get; set; } = new ConcurrentDictionary<string, ConcurrentList<ClientInfo>>();
-
-        /// <summary>
-        /// settings of clients
-        /// </summary>
-        internal ConcurrentDictionary<ClientInfo, SecuritySettingsInfo> ClientsSettings { get; set; } = new ConcurrentDictionary<ClientInfo, SecuritySettingsInfo>();
-
-        //public List<ClientInfo> AllClients
-        //{
-        //    get
-        //    {
-        //        return Clients.ToList();
-        //    }
-        //}
-
-        /// <summary>
-        /// کلاس هایی که سرور باید اونارو به عنوان سرویس بشناسه تا کلاینت ها بتونن برای خودشون بسازنش
-        /// </summary>
-        internal ConcurrentDictionary<string, Type> RegisteredServiceTypes { get; set; } = new ConcurrentDictionary<string, Type>();
-        /// <summary>
-        /// service types those can supp signalGo http requests,so this 
-        /// </summary>
-        internal ConcurrentDictionary<string, Type> RegisteredHttpServiceTypes { get; set; } = new ConcurrentDictionary<string, Type>();
-        /// <summary>
-        /// کلاس هایی که سرور اونارو میسازه تا بتونه توابع کلاینت رو صدا بزنه
-        /// </summary>
-        internal ConcurrentDictionary<string, Type> RegisteredClientServicesTypes { get; set; } = new ConcurrentDictionary<string, Type>();
-        /// <summary>
-        /// کلاس های توابع کلاینت که سرور انها را صدا میزند و به دست کاربر میرسد.
-        /// </summary>
-        internal ConcurrentDictionary<ClientInfo, ConcurrentList<object>> Services { get; set; } = new ConcurrentDictionary<ClientInfo, ConcurrentList<object>>();
-        /// <summary>
-        /// stream services for upload and download files
-        /// </summary>
-        internal ConcurrentDictionary<string, object> StreamServices { get; set; } = new ConcurrentDictionary<string, object>();
-
-        /// <summary>
-        /// signle instance services
-        /// </summary>
-        internal ConcurrentDictionary<string, object> SingleInstanceServices { get; set; } = new ConcurrentDictionary<string, object>();
-        internal ConcurrentDictionary<ClientInfo, ConcurrentList<object>> ClientServices { get; set; } = new ConcurrentDictionary<ClientInfo, ConcurrentList<object>>();
         /// <summary>
         /// include models to server reference when client want to add or update service reference
         /// </summary>
@@ -151,88 +81,15 @@ namespace SignalGo.Server.ServiceManager
         /// توابع و سرویس هایی که برای کلاینت رجیستر شده تا سرور اونارو صدا بزنه و بارگزاری داده نداشته باشه
         /// توی دیکشنری استرینگ اول اسم سرویس هست و استرینگ دوم لیست توابع هست
         /// </summary>
-        internal ConcurrentDictionary<ClientInfo, ConcurrentDictionary<string, ConcurrentList<string>>> ClientRegistredMethods { get; set; } = new ConcurrentDictionary<ClientInfo, ConcurrentDictionary<string, ConcurrentList<string>>>();
 
-        internal ConcurrentList<string> VirtualDirectories { get; set; } = new ConcurrentList<string>();
 
-        internal SegmentManager CurrentSegmentManager = new SegmentManager();
-        TcpListener server = null;
-        Thread mainThread = null;
+
         /// <summary>
         /// اتصال به سرور
         /// </summary>
         /// <param name="port"></param>
         /// <param name="virtualUrl"></param>
-        internal void Connect(int port, string[] virtualUrl)
-        {
-            Exception exception = null;
-            AutoResetEvent resetEvent = new AutoResetEvent(false);
-            mainThread = new Thread(() =>
-            {
-                try
-                {
-                    server = new TcpListener(IPAddress.IPv6Any, port);
-#if (NET35)
-                    //server.Server.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.IP, false);
-#else
-                    server.Server.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
-#endif
-                    server.Server.NoDelay = true;
-
-                    //server = new TcpListener(IPAddress.Parse(serverUrl), port);
-                    foreach (var item in virtualUrl)
-                    {
-                        if (!VirtualDirectories.Contains(item))
-                            VirtualDirectories.Add(item);
-                    }
-
-                    server.Start();
-                    if (ProviderSetting.IsEnabledToUseTimeout)
-                    {
-                        server.Server.SendTimeout = (int)ProviderSetting.SendDataTimeout.TotalMilliseconds;
-                        server.Server.ReceiveTimeout = (int)ProviderSetting.ReceiveDataTimeout.TotalMilliseconds;
-                    }
-                    IsStarted = true;
-                    resetEvent.Set();
-                    while (true)
-                    {
-                        AcceptTcpClient();
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine("Server Disposed! : " + ex);
-                    OnServerInternalExceptionAction?.Invoke(ex);
-                    AutoLogger.LogError(ex, "Connect Server");
-                    exception = ex;
-                    resetEvent.Set();
-                    Stop();
-                }
-            })
-            {
-                IsBackground = false
-            };
-#if (NETSTANDARD1_6 || NETCOREAPP1_1)
-#else
-            mainThread.SetApartmentState(ApartmentState.STA);
-#endif
-            mainThread.Start();
-            resetEvent.WaitOne();
-            if (exception != null)
-                throw exception;
-        }
-#if (NETSTANDARD1_6 || NETCOREAPP1_1)
-        internal async void AcceptTcpClient()
-#else
-        internal void AcceptTcpClient()
-#endif
-        {
-#if (NETSTANDARD1_6 || NETCOREAPP1_1)
-            AddClient(await server.AcceptTcpClientAsync());
-#else
-            AddClient(server.AcceptTcpClient());
-#endif
-        }
+       
 
 
 
@@ -527,242 +384,7 @@ namespace SignalGo.Server.ServiceManager
             Console.WriteLine(builder.ToString());
         }
 
-        /// <summary>
-        /// when client connected to server
-        /// </summary>
-        /// <param name="tcpClient">client</param>
-        private void AddClient(TcpClient tcpClient)
-        {
-            LogClients();
-            if (IsFinishingServer)
-            {
-#if (NETSTANDARD1_6 || NETCOREAPP1_1)
-                tcpClient.Dispose();
-#else
-                tcpClient.Close();
-#endif
-                return;
-            }
-
-            AsyncActions.Run(() =>
-            {
-                string headerResponse = "";
-                ClientInfo client = null;
-                try
-                {
-
-                    //#if (NET45 || NET35 || NET4)
-                    //                    System.Net.Security.SslStream sslStream = new System.Net.Security.SslStream(
-                    //                tcpClient.GetStream(), false);
-                    //                    //sslStream.AuthenticateAsServer(new System.Security.Cryptography.X509Certificates.X509Certificate2(@"D:\Github\websockets\websocket-sharp\ConsoleTest\bin\Debug\ConsoleTest_TemporaryKey.pfx", "3773284")
-                    //                    //    , false, System.Security.Authentication.SslProtocols.Tls, false);
-                    //                    sslStream.AuthenticateAsClient(server.LocalEndpoint.ToString());
-                    //                    var sslBytes = new byte[1027 * 1024];
-                    //                    var sslReadCount = sslStream.Read(sslBytes, 0, sslBytes.Length);
-                    //                    var ttttttt = System.Text.Encoding.UTF8.GetString(sslBytes, 0, sslReadCount);
-                    //#endif
-                    using (var reader = new CustomStreamReader(tcpClient.GetStream()))
-                    {
-                        headerResponse = reader.ReadLine();
-                        //File.WriteAllBytes("I:\\signalgotext.txt", reader.LastBytesReaded);
-                        if (headerResponse.Contains("SignalGo-Stream/2.0"))
-                        {
-                            client = CreateClientInfo(false, tcpClient);
-                            //"SignalGo/1.0";
-                            //"SignalGo/1.0";
-                            client.IsWebSocket = false;
-                            var b = GoStreamReader.ReadOneByte(tcpClient.GetStream(), CompressMode.None, 1, false);
-                            if (SynchronizationContext.Current == null)
-                                SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());
-                            //ClientDispatchers.TryAdd(client, SynchronizationContext.Current);
-                            AllDispatchers.Add(SynchronizationContext.Current, client);
-                            client.MainContext = SynchronizationContext.Current;
-                            client.MainThread = System.Threading.Thread.CurrentThread;
-                            //upload from client and download from server
-                            if (b == 0)
-                            {
-                                DownloadStreamFromClient(tcpClient.GetStream(), client);
-                            }
-                            //download from server and upload from client
-                            else
-                            {
-                                UploadStreamToClient(tcpClient.GetStream(), client);
-                            }
-                            DisposeClient(client, "AddClient end signalgo stream");
-                            return;
-                        }
-                        else if (headerResponse.Contains("SignalGo/1.0"))
-                        {
-                            client = CreateClientInfo(false, tcpClient);
-                            //"SignalGo/1.0";
-                            //"SignalGo/1.0";
-                            client.IsWebSocket = false;
-                            var bytes = System.Text.Encoding.UTF8.GetBytes("OK");
-                            tcpClient.GetStream().Write(bytes, 0, bytes.Length);
-                        }
-                        else if (headerResponse.Contains("HTTP/1.1") || headerResponse.Contains("HTTP/1.0"))
-                        {
-                            while (true)
-                            {
-                                var line = reader.ReadLine();
-                                headerResponse += line;
-                                if (line == "\r\n")
-                                    break;
-                            }
-                            if (headerResponse.Contains("Sec-WebSocket-Key"))
-                            {
-                                client = CreateClientInfo(false, tcpClient);
-                                //Console.WriteLine($"WebSocket client detected : {client.IPAddress} {client.ClientId} {DateTime.Now.ToString()} {ClientConnectedCallingCount}");
-
-                                client.IsWebSocket = true;
-                                var key = headerResponse.Replace("ey:", "`").Split('`')[1].Replace("\r", "").Split('\n')[0].Trim();
-                                var acceptKey = AcceptKey(ref key);
-                                var newLine = "\r\n";
-
-                                //var response = "HTTP/1.1 101 Switching Protocols" + newLine
-                                var response = "HTTP/1.0 101 Switching Protocols" + newLine
-                                 + "Upgrade: websocket" + newLine
-                                 + "Connection: Upgrade" + newLine
-                                 + "Sec-WebSocket-Accept: " + acceptKey + newLine + newLine;
-                                var bytes = System.Text.Encoding.UTF8.GetBytes(response);
-                                tcpClient.GetStream().Write(bytes, 0, bytes.Length);
-                                //Console.WriteLine($"WebSocket client send reponse success size:{bytes.Length} sended{count}");
-                            }
-                            else
-                            {
-                                client = CreateClientInfo(true, tcpClient);
-
-                                if (SynchronizationContext.Current == null)
-                                    SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());
-                                AllDispatchers.Add(SynchronizationContext.Current, client);
-
-                                string[] lines = null;
-                                if (headerResponse.Contains("\r\n\r\n"))
-                                    lines = headerResponse.Substring(0, headerResponse.IndexOf("\r\n\r\n")).Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-                                else
-                                    lines = headerResponse.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-                                var newLine = "\r\n";
-                                string response = "";
-                                if (lines.Length > 0)
-                                {
-                                    var methodName = GetHttpMethodName(lines[0]);
-                                    var address = GetHttpAddress(lines[0]);
-                                    if (methodName.ToLower() == "get" && !string.IsNullOrEmpty(address) && address != "/")
-                                    {
-                                        var headers = GetHttpHeaders(lines.Skip(1).ToArray());
-                                        if (headers["content-type"] != null && headers["content-type"] == "SignalGo Service Reference")
-                                        {
-                                            var doClient = (HttpClientInfo)client;
-                                            doClient.RequestHeaders = headers;
-                                            SendSignalGoServiceReference(doClient);
-                                        }
-                                        else
-                                            RunHttpRequest(address, "GET", "", headers, (HttpClientInfo)client);
-                                        DisposeClient(client, "AddClient finish get call");
-                                        return;
-                                    }
-                                    else if (methodName.ToLower() == "post" && !string.IsNullOrEmpty(address) && address != "/")
-                                    {
-                                        var indexOfStartedContent = headerResponse.IndexOf("\r\n\r\n");
-                                        string content = "";
-                                        if (indexOfStartedContent > 0)
-                                        {
-                                            indexOfStartedContent += 4;
-                                            content = headerResponse.Substring(indexOfStartedContent, headerResponse.Length - indexOfStartedContent);
-                                        }
-                                        var headers = GetHttpHeaders(lines.Skip(1).ToArray());
-                                        if (headers["content-type"] != null && headers["content-type"].ToLower().Contains("multipart/form-data"))
-                                        {
-                                            RunPostHttpRequestFile(address, "POST", content, headers, (HttpClientInfo)client);
-                                        }
-                                        else if (headers["content-type"] != null && headers["content-type"] == "SignalGo Service Reference")
-                                        {
-                                            SendSignalGoServiceReference((HttpClientInfo)client);
-                                            return;
-                                        }
-                                        else
-                                        {
-                                            RunHttpRequest(address, "POST", content, headers, (HttpClientInfo)client);
-                                        }
-                                        DisposeClient(client, "AddClient finish post call");
-                                        return;
-                                    }
-                                    else if (methodName.ToLower() == "options" && !string.IsNullOrEmpty(address) && address != "/")
-                                    {
-                                        string settingHeaders = "";
-                                        var headers = GetHttpHeaders(lines.Skip(1).ToArray());
-
-                                        if (HttpProtocolSetting != null)
-                                        {
-                                            if (HttpProtocolSetting.HandleCrossOriginAccess)
-                                            {
-                                                settingHeaders = "Access-Control-Allow-Origin: " + headers["origin"] + newLine +
-                                                "Access-Control-Allow-Credentials: true" + newLine
-                                                //"Access-Control-Allow-Methods: " + "POST,GET,OPTIONS" + newLine
-                                                ;
-
-                                                if (!string.IsNullOrEmpty(headers["Access-Control-Request-Headers"]))
-                                                {
-                                                    settingHeaders += "Access-Control-Allow-Headers: " + headers["Access-Control-Request-Headers"] + newLine;
-                                                }
-                                            }
-                                        }
-                                        string message = newLine + $"Success" + newLine;
-                                        response = $"HTTP/1.1 {(int)HttpStatusCode.OK} {HttpRequestController.GetStatusDescription((int)HttpStatusCode.OK)}" + newLine
-                                            + "Content-Type: text/html; charset=utf-8" + newLine
-                                            + settingHeaders
-                                            + "Connection: Close" + newLine;
-                                        client.TcpClient.Client.Send(System.Text.Encoding.UTF8.GetBytes(response + message));
-                                        DisposeClient(client, "AddClient finish post call");
-                                        return;
-                                    }
-                                    else if (RegisteredHttpServiceTypes.ContainsKey("") && (string.IsNullOrEmpty(address) || address == "/"))
-                                    {
-                                        var headers = GetHttpHeaders(lines.Skip(1).ToArray());
-                                        RunIndexHttpRequest(headers, (HttpClientInfo)client);
-                                        DisposeClient(client, "Index Page call");
-                                        return;
-                                    }
-                                }
-
-                                response = "HTTP/1.1 200 OK" + newLine
-                                     + "Content-Type: text/html" + newLine
-                                     + "Connection: Close" + newLine;
-                                tcpClient.Client.Send(System.Text.Encoding.ASCII.GetBytes(response + newLine + "SignalGo Server OK" + newLine));
-                                DisposeClient(client, "AddClient http ok signalGo");
-                                return;
-                            }
-
-                        }
-                        else
-                        {
-                            if (headerResponse == null)
-                                headerResponse = "";
-                            if (reader.LastByteRead >= 0)
-                                AutoLogger.LogText($"Header not suport msg: {headerResponse} {(client == null ? "null" : client.IPAddress)} IsConnected:{(client == null ? "null" : client.TcpClient.Connected.ToString())} LastByte:{reader.LastByteRead}");
-
-                            DisposeClient(client, "AddClient header not support");
-                            return;
-                        }
-
-                        StartToReadingClientData(client);
-                        OnConnectedClientAction?.Invoke(client);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    if (headerResponse == null)
-                        headerResponse = "";
-                    if (!(ex is System.Net.Sockets.SocketException) && !(ex is System.IO.IOException) && client != null)
-                    {
-                        AutoLogger.LogText($"AddClient Error msg : {headerResponse} {(client == null ? "null client" : client.IPAddress)}");
-                        AutoLogger.LogError(ex, "AddClient");
-                        //Console.WriteLine(ex);
-                    }
-                    DisposeClient(client, "AddClient exception");
-                }
-            });
-        }
+        
 
         /// <summary>
         /// server internal Settings
@@ -4049,21 +3671,7 @@ namespace SignalGo.Server.ServiceManager
         public abstract void DownloadStreamFromClient(NetworkStream stream, ClientInfo client);
 
 
-        private volatile bool _IsFinishingServer = false;
-        /// <summary>
-        /// is server going to finish
-        /// </summary>
-        public bool IsFinishingServer
-        {
-            get
-            {
-                return _IsFinishingServer;
-            }
-            set
-            {
-                _IsFinishingServer = value;
-            }
-        }
+
 
         private Action CallAfterFinishAction { get; set; }
 

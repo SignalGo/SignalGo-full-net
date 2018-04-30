@@ -38,10 +38,6 @@ namespace SignalGo.Server.Models
 
         internal TcpClient TcpClient { get; set; }
         internal bool IsVerification { get; set; }
-        internal ServerBase ServerBase { get; set; }
-        internal SynchronizationContext MainContext { get; set; }
-        internal Thread MainThread { get; set; }
-        internal System.Net.IPEndPoint UdpIp { get; set; }
         internal bool IsWebSocket { get; set; }
         internal DateTime ConnectedDateTime { get; set; }
     }
