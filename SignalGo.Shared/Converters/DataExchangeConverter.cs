@@ -1659,9 +1659,12 @@ namespace SignalGo.Shared.Converters
                                         writer.WritePropertyName(property.Name);
                                     else if (field != null)
                                         writer.WritePropertyName(field.Name);
-                                    SerializeHelper.HandleSerializingObjectList.TryGetValue(property.PropertyType, out Delegate serializeHandler);
-                                    if (serializeHandler != null)
-                                        propValue = serializeHandler.DynamicInvoke(propValue);
+                                    if (property != null)
+                                    {
+                                        SerializeHelper.HandleSerializingObjectList.TryGetValue(property.PropertyType, out Delegate serializeHandler);
+                                        if (serializeHandler != null)
+                                            propValue = serializeHandler.DynamicInvoke(propValue);
+                                    }
                                     serializer.Serialize(writer, propValue);
                                 }
                                 catch (Exception ex)
