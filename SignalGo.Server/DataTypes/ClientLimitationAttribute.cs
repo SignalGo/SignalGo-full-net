@@ -7,19 +7,19 @@ using System.Text;
 namespace SignalGo.Server.DataTypes
 {
     /// <summary>
-    /// limit client ip addresses
-    /// if you want read ip addresses from file you must implement this class and override Get ip addresses methods
+    /// Limit client ip addresses to access
+    /// if you want read ip addresses from file you must implement this class and override Get ip addresses method
     /// </summary>
     public class ClientLimitationAttribute : Attribute
     {
         /// <summary>
-        /// just this list can call
-        /// if you fill this property another ip addresses have not access to call method
+        /// This list contains IPs allowed to call methods
+        /// other ip addresses are denied to call method
         /// </summary>
         public string[] AllowAccessList { get; set; }
         /// <summary>
-        /// just this list blocked to call
-        /// if you fill this property another ip addresses have access to call method
+        /// This list contains IPs not allowed to call methods
+        /// other ip addresses are allowed to call method
         /// </summary>
         public string[] DenyAccessList { get; set; }
 

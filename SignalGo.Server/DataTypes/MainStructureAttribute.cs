@@ -13,7 +13,7 @@ namespace SignalGo.Server.DataTypes
         ServerObject = 3,
     }
     /// <summary>
-    /// main class and main method that use for SignalGo ServerManager
+    /// Main class and main method used by SignalGo ServerManager
     /// </summary>
     public class MainStructureAttribute : Attribute
     {

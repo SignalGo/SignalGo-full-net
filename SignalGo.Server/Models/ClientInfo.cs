@@ -11,28 +11,28 @@ using System.Threading;
 namespace SignalGo.Server.Models
 {
     /// <summary>
-    /// information of tcp client
+    /// Informations about tcp client
     /// </summary>
     public class ClientInfo
     {
         /// <summary>
-        /// client id
+        /// The client ID
         /// </summary>
         public string ClientId { get; internal set; }
         /// <summary>
-        /// ip address of client
+        /// The client's ip address
         /// </summary>
         public string IPAddress { get; set; }
         /// <summary>
-        /// version of client
+        /// The client version 
         /// </summary>
         public uint? ClientVersion { get; set; }
         /// <summary>
-        /// tag of client
+        /// General purpose client Tag property
         /// </summary>
         public object Tag { get; set; }
         /// <summary>
-        /// when client disconnected
+        /// Action raised after a client disconnects from server
         /// </summary>
         public Action OnDisconnected { get; set; }
 
@@ -47,20 +47,20 @@ namespace SignalGo.Server.Models
     }
 
     /// <summary>
-    /// information of http client
+    /// informations about HTTP client
     /// </summary>
     public class HttpClientInfo : ClientInfo, IHttpClientInfo
     {
         /// <summary>
-        /// status of response for client
+        /// Response status for client
         /// </summary>
         public System.Net.HttpStatusCode Status { get; set; } = System.Net.HttpStatusCode.OK;
         /// <summary>
-        /// headers of request that client sended
+        /// The request headers sent by the client
         /// </summary>
         public WebHeaderCollection RequestHeaders { get; set; }
         /// <summary>
-        /// reponse headers to client
+        /// The reponse headers received by the client
         /// </summary>
         public WebHeaderCollection ResponseHeaders { get; set; } = new WebHeaderCollection();
 

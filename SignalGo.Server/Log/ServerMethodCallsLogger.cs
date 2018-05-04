@@ -17,25 +17,25 @@ using System.Threading.Tasks;
 namespace SignalGo.Server.Log
 {
     /// <summary>
-    /// base of log information
+    /// Base class for log information
     /// </summary>
     public abstract class BaseLogInformation
     {
         public string CallerGuid { get; set; }
         /// <summary>
-        /// ignore log for this iformation
+        /// Ignore log for this information
         /// </summary>
         public bool IsIgnoreLogTextFile { get; set; }
         /// <summary>
-        /// date of call
+        /// Calling method date. This snapshots date and time when method is called
         /// </summary>
         public DateTime DateTimeStartMethod { get; set; }
         /// <summary>
-        /// date of result
+        /// Result method date. This tells when a method execution has been completed
         /// </summary>
         public DateTime DateTimeEndMethod { get; set; }
         /// <summary>
-        /// Elapsed time from start call to result
+        /// Method elapsed time. The duration of method execution.
         /// </summary>
         public TimeSpan Elapsed
         {
@@ -46,128 +46,128 @@ namespace SignalGo.Server.Log
         }
 
         /// <summary>
-        /// after set call method result is going to true and write to log file
+        /// True = can write to file, False = nothing is written into log file
         /// </summary>
         public bool CanWriteToFile { get; set; }
         /// <summary>
-        /// client clientId
+        /// The client ID
         /// </summary>
         public string ClientId { get; set; }
         /// <summary>
-        /// client connected Date Time
+        /// Client connection Date. Registered when connection to the server has been established.
         /// </summary>
         public DateTime ConnectedDateTime { get; set; }
         /// <summary>
-        /// ip addresses
+        /// The client address
         /// </summary>
         public string IPAddress { get; set; }
         /// <summary>
-        /// object od result
+        /// The method result. Can be a complex object too
         /// </summary>
         public string Result { get; set; }
         /// <summary>
-        /// name of method
+        /// Name of the method called and executed
         /// </summary>
         public string MethodName { get; set; }
         /// <summary>
-        /// if method call have exception result
+        /// The exception message showed if the called method raises an exception
         /// </summary>
         public Exception Exception { get; set; }
     }
 
     /// <summary>
-    /// log of method called
+    /// Method's log
     /// </summary>
     public class CallMethodLogInformation : BaseLogInformation
     {
         /// <summary>
-        /// name of service
+        /// The name of the service
         /// </summary>
         public string ServiceName { get; set; }
         /// <summary>
-        /// parameters of method
+        /// The method parameters
         /// </summary>
         public List<SignalGo.Shared.Models.ParameterInfo> Parameters { get; set; }
         /// <summary>
-        /// method
+        /// The method
         /// </summary>
         public MethodInfo Method { get; set; }
     }
 
     /// <summary>
-    /// log of callbacks
+    /// Callbacks log
     /// </summary>
     public class CallClientMethodLogInformation : BaseLogInformation
     {
         /// <summary>
-        /// service name
+        /// The service name
         /// </summary>
         public string ServiceName { get; set; }
         /// <summary>
-        /// parameters
+        /// The parameters
         /// </summary>
         public List<SignalGo.Shared.Models.ParameterInfo> Parameters { get; set; }
     }
 
     /// <summary>
-    /// log of http calls
+    /// Http calls log
     /// </summary>
     public class HttpCallMethodLogInformation : BaseLogInformation
     {
         /// <summary>
-        /// address of http call
+        /// Address of http caller
         /// </summary>
         public string Address { get; set; }
         /// <summary>
-        /// parameters
+        /// The parameters
         /// </summary>
         public List<string> Parameters { get; set; }
         /// <summary>
-        /// method
+        /// The method
         /// </summary>
         public MethodInfo Method { get; set; }
     }
 
     /// <summary>
-    /// log of stream services
+    /// Stream services log
     /// </summary>
     public class StreamCallMethodLogInformation : BaseLogInformation
     {
         /// <summary>
-        /// address of http call
+        /// The service name
         /// </summary>
         public string ServiceName { get; set; }
         /// <summary>
-        /// parameters
+        /// The parameters
         /// </summary>
         public List<SignalGo.Shared.Models.ParameterInfo> Parameters { get; set; }
     }
 
     /// <summary>
-    /// signalGo log system manager
+    /// SignalGo log system manager
     /// </summary>
     public class ServerMethodCallsLogger : IDisposable
     {
         public AutoLogger AutoLogger { get; set; } = new AutoLogger() { FileName = "ServerMethodCalls Logs.log" };
         /// <summary>
-        /// when user called and response a service method
+        /// Action raised when a client calls a method on server (service) and receive a response
         /// </summary>
         public Action<CallMethodLogInformation> OnServiceMethodCalledAction { get; set; }
         /// <summary>
-        /// when server called a client method
+        /// Action raised when the server calls a method on client
         /// </summary>
         public Action<CallClientMethodLogInformation> OnServiceCallbackMethodCalledAction { get; set; }
         /// <summary>
-        /// when a http method called from client
+        /// Action raised when a client calls an HTTP method
         /// </summary>
         public Action<HttpCallMethodLogInformation> OnHttpServiceMethodCalledAction { get; set; }
         /// <summary>
-        /// when a stream method called from client
+        /// Action raised when a client calls a streams method
         /// </summary>
         public Action<StreamCallMethodLogInformation> OnStreamServiceMethodCalledAction { get; set; }
 
         /// <summary>
-        /// initialize events and start service
+        /// Initialize events and starts the service
         /// </summary>
         public void Initialize()
         {
@@ -265,7 +265,7 @@ namespace SignalGo.Server.Log
 
 
         /// <summary>
-        /// when system logger is started
+        /// True = the logger is started. False = the logger is stopped
         /// </summary>
         public bool IsStart
         {
@@ -275,7 +275,7 @@ namespace SignalGo.Server.Log
             }
         }
         /// <summary>
-        /// if you want log persian datet time
+        /// True = it logs persian date time.
         /// </summary>
         public bool IsPersianDateLog { get; set; } = false;
 

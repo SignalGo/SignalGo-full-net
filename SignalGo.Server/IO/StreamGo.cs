@@ -39,7 +39,7 @@ namespace SignalGo.Server.IO
         }
 
         /// <summary>
-        /// set lenth of stream
+        /// Set the lenth of stream
         /// </summary>
         /// <param name="value"></param>
         public void SetOfStreamLength(long length, int _BoundarySize)
