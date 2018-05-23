@@ -498,6 +498,11 @@ namespace SignalGo.Server.Helpers
                 GenerateHttpServiceClass(serviceInfo.Key, serviceInfo.Value);
             }
 
+            foreach (var serviceInfo in serverBase.OneWayServices)
+            {
+                GenerateServiceClass(serviceInfo.Key, serviceInfo.Value.GetType(), ClassReferenceType.OneWayLevel, ServiceType.OneWayService);
+            }
+
             Type find = null;
             while ((find = TypeToGenerate.FirstOrDefault()) != null)
             {
@@ -528,13 +533,12 @@ namespace SignalGo.Server.Helpers
             {
                 ServiceName = serviceName,
                 Name = type.Name,
-                Type = classReferenceType
+                Type = classReferenceType,
+                NameSpace = type.Namespace
             };
 
             foreach (var serviceType in type.GetTypesByAttribute<ServiceContractAttribute>(x => x.ServiceType == serviceTypeEnum).ToList())
             {
-                if (typeGenerated.Contains(serviceType))
-                    continue;
                 typeGenerated.Add(serviceType);
                 foreach (var methodInfo in serviceType.GetListOfMethodsWithAllOfBases().Where(x => !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_")))))
                 {
@@ -552,13 +556,12 @@ namespace SignalGo.Server.Helpers
             {
                 ServiceName = serviceName,
                 Name = type.Name,
-                Type = ClassReferenceType.HttpServiceLevel
+                Type = ClassReferenceType.HttpServiceLevel,
+                NameSpace = type.Namespace
             };
 
             foreach (var serviceType in type.GetTypesByAttribute<ServiceContractAttribute>(x => x.ServiceType == ServiceType.HttpService).ToList())
             {
-                if (typeGenerated.Contains(serviceType))
-                    continue;
                 typeGenerated.Add(serviceType);
                 foreach (var methodInfo in serviceType.GetListOfDeclaredMethods().Where(x => !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_")))))
                 {
@@ -577,10 +580,11 @@ namespace SignalGo.Server.Helpers
             ModelsCodeGenerated.Add(type);
             EnumReferenceInfo enumReferenceInfo = new EnumReferenceInfo
             {
-                Name = type.Name
+                Name = type.Name,
+                NameSpace = type.Namespace
             };
             var baseEumType = Enum.GetUnderlyingType(type);
-            enumReferenceInfo.TypeName = GetFullNameOfType(baseEumType);
+            enumReferenceInfo.TypeName = GetFullNameOfType(baseEumType, true);
             foreach (var name in Enum.GetValues(type))
             {
                 object res = Convert.ChangeType(name, baseEumType);
@@ -606,18 +610,19 @@ namespace SignalGo.Server.Helpers
             }
             ClassReferenceInfo classReferenceInfo = new ClassReferenceInfo
             {
-                Type = ClassReferenceType.ModelLevel
+                Type = ClassReferenceType.ModelLevel,
+                NameSpace = type.Namespace
             };
 
             var baseType = type.GetBaseType();
             if (baseType != typeof(object) && baseType != null)
             {
-                classReferenceInfo.BaseClassName = GetFullNameOfType(baseType);
+                classReferenceInfo.BaseClassName = GetFullNameOfType(baseType, true);
             }
             else
-                classReferenceInfo.BaseClassName = GetFullNameOfType(typeof(NotifyPropertyChangedBase));
+                classReferenceInfo.BaseClassName = GetFullNameOfType(typeof(NotifyPropertyChangedBase), true);
 
-            classReferenceInfo.Name = GetFullNameOfType(type);
+            classReferenceInfo.Name = GetFullNameOfType(type, false);
 
             ModelsCodeGenerated.Add(type);
 
@@ -631,14 +636,14 @@ namespace SignalGo.Server.Helpers
 
         void GenerateMethod(MethodInfo methodInfo, ClassReferenceInfo classReferenceInfo)
         {
-            if (methodGenerated.Contains(methodInfo) || methodInfo.GetParameters().Any(x => x.IsOut || x.IsRetval) || methodInfo.DeclaringType == typeof(object))
+            if (methodInfo.GetParameters().Any(x => x.IsOut || x.IsRetval) || methodInfo.DeclaringType == typeof(object))
                 return;
             MethodReferenceInfo methodReferenceInfo = new MethodReferenceInfo();
 
             AddToGenerate(methodInfo.ReturnType);
             string returnType = "void";
             if (methodInfo.ReturnType != typeof(void))
-                returnType = GetFullNameOfType(methodInfo.ReturnType);
+                returnType = GetFullNameOfType(methodInfo.ReturnType, true);
             methodReferenceInfo.ReturnTypeName = returnType;
             methodReferenceInfo.Name = methodInfo.Name;
             GenerateMethodParameters(methodInfo, methodReferenceInfo);
@@ -653,7 +658,7 @@ namespace SignalGo.Server.Helpers
             PropertyReferenceInfo propertyReferenceInfo = new PropertyReferenceInfo
             {
                 Name = propertyInfo.Name,
-                ReturnTypeName = GetFullNameOfType(propertyInfo.PropertyType)
+                ReturnTypeName = GetFullNameOfType(propertyInfo.PropertyType, true)
             };
 
             classReferenceInfo.Properties.Add(propertyReferenceInfo);
@@ -666,7 +671,7 @@ namespace SignalGo.Server.Helpers
                 ParameterReferenceInfo parameterReferenceInfo = new ParameterReferenceInfo();
                 AddToGenerate(item.ParameterType);
                 parameterReferenceInfo.Name = item.Name;
-                parameterReferenceInfo.TypeName = GetFullNameOfType(item.ParameterType);
+                parameterReferenceInfo.TypeName = GetFullNameOfType(item.ParameterType, true);
                 methodReferenceInfo.Parameters.Add(parameterReferenceInfo);
             }
         }
@@ -677,7 +682,7 @@ namespace SignalGo.Server.Helpers
                 NamespaceReferenceInfo.Usings.Add(type.Namespace);
         }
 
-        string GetFullNameOfType(Type type)
+        string GetFullNameOfType(Type type, bool withNameSpace)
         {
             if (type == typeof(bool))
                 return "bool";
@@ -722,7 +727,7 @@ namespace SignalGo.Server.Helpers
                     {
                         generics += ", ";
                     }
-                    generics += GetFullNameOfType(item);
+                    generics += GetFullNameOfType(item, true);
                 }
                 string name = "";
                 if (type.Name.IndexOf("`") != -1)
@@ -734,13 +739,22 @@ namespace SignalGo.Server.Helpers
                     else
                     {
                         name = type.Name.Substring(0, type.Name.IndexOf("`"));
+                        if (withNameSpace)
+                            name = type.Namespace + "." + name;
                     }
                 }
                 //add type.Namespace to name spaces
                 return $"{name}<{generics}>";
             }
-            else
+            else if (type.IsGenericParameter)
                 return type.Name;
+            else
+            {
+                if (withNameSpace)
+                    return type.Namespace + "." + type.Name;
+                else
+                    return type.Name;
+            }
         }
     }
 }

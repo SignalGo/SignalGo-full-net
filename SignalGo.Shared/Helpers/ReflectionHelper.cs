@@ -408,7 +408,7 @@ namespace SignalGo.Shared.Helpers
 
         public static List<MethodInfo> GetListOfMethodsWithAllOfBases(this Type type)
         {
-            var methods = type.GetListOfMethods().ToList();
+            var methods = new List<MethodInfo>();
             foreach (var item in type.GetListOfInterfaces())
             {
                 methods.AddRange(item.GetListOfMethods());

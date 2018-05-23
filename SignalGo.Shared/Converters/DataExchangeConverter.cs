@@ -595,7 +595,6 @@ namespace SignalGo.Shared.Converters
                 }
                 return null;
             }
-
             if (reader.TokenType == JsonToken.StartObject)
             {
                 var instance = ReadNewObject(reader, objectType, existingValue, serializer, false);
@@ -1219,7 +1218,7 @@ namespace SignalGo.Shared.Converters
             if (!SerializedObjects.Contains(value))
                 SerializedObjects.Add(value);
             var type = value.GetType();
-            if (HasJsonIgnore(type))
+            if (HasJsonIgnore(type) || type.FullName.StartsWith("System.Reflection."))
                 return;
             if (SerializeHelper.GetTypeCodeOfObject(type) != SerializeObjectType.Object)
             {
@@ -1501,6 +1500,7 @@ namespace SignalGo.Shared.Converters
                 //{
                 //    return;
                 //}
+                //if (baseType is RuntimeParameterType)
                 var implementICollection = GetCustomDataExchanger(baseType, instance);
                 if (CanIgnoreCustomDataExchanger(baseType, instance))
                     return;

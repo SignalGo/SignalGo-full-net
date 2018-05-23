@@ -77,6 +77,7 @@ namespace SignalGo.Server.ServiceManager
             List<Type> ClientServices = new List<Type>();
             List<Type> HttpServices = new List<Type>();
             List<Type> StreamServices = new List<Type>();
+            List<Type> OneWayServices = new List<Type>();
             List<Type> AllTypes = GetAllTypes(assemblies).ToList();
 
             foreach (var type in AllTypes)
@@ -104,6 +105,11 @@ namespace SignalGo.Server.ServiceManager
                         {
                             if (!ClientServices.Contains(type) && type.GetIsInterface())
                                 ClientServices.Add(type);
+                        }
+                        else if (att.ServiceType == ServiceType.OneWayService)
+                        {
+                            if (!OneWayServices.Contains(type))
+                                OneWayServices.Add(type);
                         }
                         else if (att.ServiceType == ServiceType.HttpService)
                         {
@@ -176,6 +182,15 @@ namespace SignalGo.Server.ServiceManager
                 foreach (var item in StreamServices)
                 {
                     RegisterStreamService(item);
+                    Console.WriteLine(item.FullName);
+                }
+            }
+            if (OneWayServices.Count > 0)
+            {
+                Console.WriteLine("Registering OneWayServices:");
+                foreach (var item in OneWayServices)
+                {
+                    RegisterOneWayService(item);
                     Console.WriteLine(item.FullName);
                 }
             }

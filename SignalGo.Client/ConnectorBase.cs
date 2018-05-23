@@ -168,7 +168,7 @@ namespace SignalGo.Client
                 var added = WaitedMethodsForResponse.TryAdd(callInfo.Guid, valueData);
                 var service = connector.Services.ContainsKey(callInfo.ServiceName) ? connector.Services[callInfo.ServiceName] : null;
 #if (PORTABLE)
-            var method = service?.GetType().FindMethod(callInfo.MethodName);
+                var method = service?.GetType().FindMethod(callInfo.MethodName);
 #else
                 var method = service?.GetType().GetMethod(callInfo.MethodName, RuntimeTypeHelper.GetMethodTypes(service.GetType(), callInfo).ToArray());
 #endif
@@ -221,6 +221,7 @@ namespace SignalGo.Client
                 if (connector.ProviderSetting.AutoReconnect && connector.ProviderSetting.HoldMethodCallsWhenDisconnected && !connector.IsConnected && !isIgnorePriority)
                 {
                     AutoResetEvent resetEvent = new AutoResetEvent(true);
+                    resetEvent.Reset();
                     connector.HoldMethodsToReconnect.Add(resetEvent);
                     if (connector.IsConnected)
                     {
@@ -405,15 +406,15 @@ namespace SignalGo.Client
                 _address = address;
                 _port = port;
 #if (NETSTANDARD1_6 || NETCOREAPP1_1)
-            _client = new TcpClient();
-            bool isSuccess = _client.ConnectAsync(address, port).Wait(new TimeSpan(0, 0, 5));
-            if (!isSuccess)
-                throw new TimeoutException();
+                _client = new TcpClient();
+                bool isSuccess = _client.ConnectAsync(address, port).Wait(new TimeSpan(0, 0, 5));
+                if (!isSuccess)
+                    throw new TimeoutException();
 #elif (PORTABLE)
-            _client = new Sockets.Plugin.TcpSocketClient();
-            bool isSuccess = _client.ConnectAsync(address, port).Wait(new TimeSpan(0, 0, 5));
-            if (!isSuccess)
-                throw new TimeoutException();
+                _client = new Sockets.Plugin.TcpSocketClient();
+                bool isSuccess = _client.ConnectAsync(address, port).Wait(new TimeSpan(0, 0, 5));
+                if (!isSuccess)
+                    throw new TimeoutException();
 #else
                 _client = new TcpClient(address, port);
                 _client.NoDelay = true;
@@ -582,6 +583,7 @@ namespace SignalGo.Client
             if (IsDisposed)
                 throw new ObjectDisposedException("Connector");
             var type = typeof(T);
+
             var name = type.GetServerServiceName();
 
             if (!ProviderSetting.AutoDetectRegisterServices)
@@ -678,7 +680,10 @@ namespace SignalGo.Client
         {
             if (IsDisposed)
                 throw new ObjectDisposedException("Connector");
-
+            var type = typeof(T);
+            var serviceType = type.GetServerServiceAttribute();
+            if (serviceType.ServiceType != ServiceType.StreamService)
+                throw new Exception("your service is not a stream service");
             if (string.IsNullOrEmpty(serverAddress))
                 serverAddress = _address;
 
@@ -692,127 +697,172 @@ namespace SignalGo.Client
                 return (T)instance;
             }
 
-            var type = typeof(T);
             var name = type.GetServerServiceName();
 
             var objectInstance = InterfaceWrapper.Wrap<T>((serviceName, method, args) =>
             {
-                if (string.IsNullOrEmpty(serverAddress))
-                    serverAddress = _address;
-
-                if (port == null || port.Value == 0)
-                    port = _port;
-#if (NETSTANDARD1_6 || NETCOREAPP1_1)
-                var _newClient = new TcpClient();
-                bool isSuccess = _newClient.ConnectAsync(serverAddress, port.Value).Wait(new TimeSpan(0, 0, 10));
-                if (!isSuccess)
-                    throw new TimeoutException();
-#elif (PORTABLE)
-                var _newClient = new Sockets.Plugin.TcpSocketClient();
-                bool isSuccess = _newClient.ConnectAsync(serverAddress, port.Value).Wait(new TimeSpan(0, 0, 10));
-                if (!isSuccess)
-                    throw new TimeoutException();
-#else
-                var _newClient = new TcpClient(serverAddress, port.Value);
-                _newClient.NoDelay = true;
-#endif
-#if (PORTABLE)
-                var stream = _newClient.WriteStream;
-                var readStream = _newClient.ReadStream;
-#else
-                var stream = _newClient.GetStream();
-                var readStream = stream;
-#endif
-
-                //var json = JsonConvert.SerializeObject(Data);
-                //var jsonBytes = Encoding.UTF8.GetBytes(json);
-                var header = "SignalGo-Stream/2.0\r\n";
-                var bytes = Encoding.UTF8.GetBytes(header);
-                stream.Write(bytes, 0, bytes.Length);
-                bool isUpload = false;
-                if (method.GetParameters().Any(x => x.ParameterType == typeof(StreamInfo) || (x.ParameterType.GetIsGenericType() && x.ParameterType.GetGenericTypeDefinition() == typeof(StreamInfo<>))))
+                if (method.ReturnType == typeof(Task))
                 {
-                    isUpload = true;
-                    stream.Write(new byte[] { 0 }, 0, 1);
+                    var task = Task.Factory.StartNew(() =>
+                    {
+                        UploadStream(name, serverAddress, port, serviceName, method, args, false);
+                    });
+                    return task;
+                }
+                //this is async function
+                else if (method.ReturnType.GetBaseType() == typeof(Task))
+                {
+#if (!PORTABLE)
+                    // ConnectorExtension.SendDataAsync<object>()
+                    var findMethod = typeof(ConnectorBase).FindMethod("UploadStreamAsync", BindingFlags.Instance | BindingFlags.NonPublic);
+                    var methodType = method.ReturnType.GetListOfGenericArguments().FirstOrDefault();
+                    var madeMethod = findMethod.MakeGenericMethod(methodType);
+                    return madeMethod.Invoke(this, new object[] { name, serverAddress, port, serviceName, method, args });
+
+#else
+                    throw new NotSupportedException();
+#endif
                 }
                 else
-                    stream.Write(new byte[] { 1 }, 0, 1);
+                    return UploadStream(name, serverAddress, port, serviceName, method, args, false);
+            });
+            InstancesOfRegisterStreamService.TryAdd(callKey, objectInstance);
+            return (T)objectInstance;
+        }
 
-                MethodCallInfo callInfo = new MethodCallInfo();
-                callInfo.ServiceName = name;
-                BaseStreamInfo iStream = null;
-                foreach (var item in args)
+        private Task<T> UploadStreamAsync<T>(string name, string serverAddress, int? port, string serviceName, MethodInfo method, object[] args)
+        {
+            return Task<T>.Factory.StartNew(() =>
+            {
+                return (T)UploadStream(name, serverAddress, port, serviceName, method, args, true);
+            });
+        }
+
+        public object UploadStream(string name, string serverAddress, int? port, string serviceName, MethodInfo method, object[] args, bool isAsync)
+        {
+            if (string.IsNullOrEmpty(serverAddress))
+                serverAddress = _address;
+
+            if (port == null || port.Value == 0)
+                port = _port;
+#if (NETSTANDARD1_6 || NETCOREAPP1_1)
+            var _newClient = new TcpClient();
+            bool isSuccess = _newClient.ConnectAsync(serverAddress, port.Value).Wait(new TimeSpan(0, 0, 10));
+            if (!isSuccess)
+                throw new TimeoutException();
+#elif (PORTABLE)
+            var _newClient = new Sockets.Plugin.TcpSocketClient();
+            bool isSuccess = _newClient.ConnectAsync(serverAddress, port.Value).Wait(new TimeSpan(0, 0, 10));
+            if (!isSuccess)
+                throw new TimeoutException();
+#else
+            var _newClient = new TcpClient(serverAddress, port.Value);
+            _newClient.NoDelay = true;
+#endif
+#if (PORTABLE)
+            var stream = _newClient.WriteStream;
+            var readStream = _newClient.ReadStream;
+#else
+            var stream = _newClient.GetStream();
+            var readStream = stream;
+#endif
+
+            //var json = JsonConvert.SerializeObject(Data);
+            //var jsonBytes = Encoding.UTF8.GetBytes(json);
+            var header = "SignalGo-Stream/2.0\r\n";
+            var bytes = Encoding.UTF8.GetBytes(header);
+            stream.Write(bytes, 0, bytes.Length);
+            bool isUpload = false;
+            if (method.GetParameters().Any(x => x.ParameterType == typeof(StreamInfo) || (x.ParameterType.GetIsGenericType() && x.ParameterType.GetGenericTypeDefinition() == typeof(StreamInfo<>))))
+            {
+                isUpload = true;
+                stream.Write(new byte[] { 0 }, 0, 1);
+            }
+            else
+                stream.Write(new byte[] { 1 }, 0, 1);
+
+            MethodCallInfo callInfo = new MethodCallInfo();
+            callInfo.ServiceName = name;
+            BaseStreamInfo iStream = null;
+            foreach (var item in args)
+            {
+                if (item is BaseStreamInfo)
                 {
-                    if (item is BaseStreamInfo)
-                    {
-                        iStream = (BaseStreamInfo)item;
-                        iStream.ClientId = ClientId;
-                    }
-                    callInfo.Parameters.Add(new Shared.Models.ParameterInfo() { Value = ClientSerializationHelper.SerializeObject(item) });
+                    iStream = (BaseStreamInfo)item;
+                    iStream.ClientId = ClientId;
                 }
-                callInfo.MethodName = method.Name;
-                var json = ClientSerializationHelper.SerializeObject(callInfo);
+                callInfo.Parameters.Add(new Shared.Models.ParameterInfo() { Value = ClientSerializationHelper.SerializeObject(item) });
+            }
+            string methodName = method.Name;
+            if (methodName.EndsWith("Async"))
+                methodName = methodName.Substring(0, methodName.Length - 5);
+            callInfo.MethodName = methodName;
 
-                var jsonBytes = Encoding.UTF8.GetBytes(json);
-                GoStreamWriter.WriteBlockToStream(stream, jsonBytes);
-                CompressMode compressMode = CompressMode.None;
-                if (isUpload)
+            var json = ClientSerializationHelper.SerializeObject(callInfo);
+
+            var jsonBytes = Encoding.UTF8.GetBytes(json);
+            GoStreamWriter.WriteBlockToStream(stream, jsonBytes);
+            CompressMode compressMode = CompressMode.None;
+            if (isUpload)
+            {
+                KeyValue<DataType, CompressMode> firstData = null;
+                iStream.GetPositionFlush = () =>
                 {
-                    KeyValue<DataType, CompressMode> firstData = null;
-                    iStream.GetPositionFlush = () =>
+                    if (firstData != null && firstData.Key != DataType.FlushStream)
+                        return -1;
+                    firstData = iStream.ReadFirstData(readStream, ProviderSetting.MaximumReceiveStreamHeaderBlock);
+                    if (firstData.Key == DataType.FlushStream)
                     {
-                        if (firstData != null && firstData.Key != DataType.FlushStream)
-                            return -1;
+                        var data = GoStreamReader.ReadBlockToEnd(readStream, firstData.Value, ProviderSetting.MaximumReceiveStreamHeaderBlock, false);
+                        return BitConverter.ToInt32(data, 0);
+                    }
+                    return -1;
+                };
+                if (iStream.WriteManually != null)
+                    iStream.WriteManually(stream);
+                else
+                {
+                    long length = iStream.Length;
+                    long position = 0;
+                    int blockOfRead = 1024 * 10;
+                    while (length != position)
+                    {
+
+                        if (position + blockOfRead > length)
+                            blockOfRead = (int)(length - position);
+                        bytes = new byte[blockOfRead];
+                        var readCount = iStream.Stream.Read(bytes, 0, bytes.Length);
+                        position += readCount;
+                        stream.Write(bytes, 0, readCount);
+                    }
+                }
+                if (firstData == null || firstData.Key == DataType.FlushStream)
+                {
+                    while (true)
+                    {
                         firstData = iStream.ReadFirstData(readStream, ProviderSetting.MaximumReceiveStreamHeaderBlock);
                         if (firstData.Key == DataType.FlushStream)
                         {
                             var data = GoStreamReader.ReadBlockToEnd(readStream, firstData.Value, ProviderSetting.MaximumReceiveStreamHeaderBlock, false);
-                            return BitConverter.ToInt32(data, 0);
                         }
-                        return -1;
-                    };
-                    if (iStream.WriteManually != null)
-                        iStream.WriteManually(stream);
-                    else
-                    {
-                        long length = iStream.Length;
-                        long position = 0;
-                        int blockOfRead = 1024 * 10;
-                        while (length != position)
-                        {
-
-                            if (position + blockOfRead > length)
-                                blockOfRead = (int)(length - position);
-                            bytes = new byte[blockOfRead];
-                            var readCount = iStream.Stream.Read(bytes, 0, bytes.Length);
-                            position += readCount;
-                            stream.Write(bytes, 0, readCount);
-                        }
-                    }
-                    if (firstData == null || firstData.Key == DataType.FlushStream)
-                    {
-                        while (true)
-                        {
-                            firstData = iStream.ReadFirstData(readStream, ProviderSetting.MaximumReceiveStreamHeaderBlock);
-                            if (firstData.Key == DataType.FlushStream)
-                            {
-                                var data = GoStreamReader.ReadBlockToEnd(readStream, firstData.Value, ProviderSetting.MaximumReceiveStreamHeaderBlock, false);
-                            }
-                            else
-                                break;
-                        }
+                        else
+                            break;
                     }
                 }
+            }
 
 
-                var callBackBytes = GoStreamReader.ReadBlockToEnd(readStream, compressMode, ProviderSetting.MaximumReceiveStreamHeaderBlock, false);
-                var callbackInfo = ClientSerializationHelper.DeserializeObject<MethodCallbackInfo>(Encoding.UTF8.GetString(callBackBytes, 0, callBackBytes.Length));
+            var callBackBytes = GoStreamReader.ReadBlockToEnd(readStream, compressMode, ProviderSetting.MaximumReceiveStreamHeaderBlock, false);
+            var callbackInfo = ClientSerializationHelper.DeserializeObject<MethodCallbackInfo>(Encoding.UTF8.GetString(callBackBytes, 0, callBackBytes.Length));
+            var methodType = method.ReturnType;
+            if (isAsync)
+                methodType = method.ReturnType.GetListOfGenericArguments().FirstOrDefault();
 
-                var result = ClientSerializationHelper.DeserializeObject(callbackInfo.Data, method.ReturnType);
-                if (!isUpload)
-                {
-                    result.GetType().GetPropertyInfo("Stream").SetValue(result, stream, null);
-                    result.GetType().GetPropertyInfo("GetStreamAction"
+            var result = ClientSerializationHelper.DeserializeObject(callbackInfo.Data, methodType);
+            if (!isUpload)
+            {
+                result.GetType().GetPropertyInfo("Stream").SetValue(result, stream, null);
+                result.GetType().GetPropertyInfo("GetStreamAction"
 #if (!PORTABLE)
                         , BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance
 #endif
@@ -825,14 +875,70 @@ namespace SignalGo.Client
 #endif
                             ).SetValue(result, null, null);
                         }), null);
-                }
+            }
 
-                return result;
-            });
-            InstancesOfRegisterStreamService.TryAdd(callKey, objectInstance);
-            return (T)objectInstance;
+            return result;
         }
 
+        public static T SendOneWayMethod<T>(string serverAddress, int port, string serviceName, string methodName, params object[] parameters)
+        {
+            //if (string.IsNullOrEmpty(serverAddress))
+            //    serverAddress = _address;
+
+            //if (port == null || port.Value == 0)
+            //    port = _port;
+
+#if (NETSTANDARD1_6 || NETCOREAPP1_1)
+            var _newClient = new TcpClient();
+            bool isSuccess = _newClient.ConnectAsync(serverAddress, port).Wait(new TimeSpan(0, 0, 10));
+            if (!isSuccess)
+                throw new TimeoutException();
+#elif (PORTABLE)
+            var _newClient = new Sockets.Plugin.TcpSocketClient();
+            bool isSuccess = _newClient.ConnectAsync(serverAddress, port).Wait(new TimeSpan(0, 0, 10));
+            if (!isSuccess)
+                throw new TimeoutException();
+#else
+            var _newClient = new TcpClient(serverAddress, port);
+            _newClient.NoDelay = true;
+#endif
+#if (PORTABLE)
+            var stream = _newClient.WriteStream;
+            var readStream = _newClient.ReadStream;
+#else
+            var stream = _newClient.GetStream();
+            var readStream = stream;
+#endif
+            MethodCallInfo callInfo = new MethodCallInfo
+            {
+                ServiceName = serviceName,
+                MethodName = methodName
+            };
+            foreach (var item in parameters)
+            {
+                callInfo.Parameters.Add(new Shared.Models.ParameterInfo() { Value = ClientSerializationHelper.SerializeObject(item) });
+            }
+            if (methodName.EndsWith("Async"))
+                methodName = methodName.Substring(0, methodName.Length - 5);
+
+            var json = ClientSerializationHelper.SerializeObject(callInfo);
+            var jsonBytes = Encoding.UTF8.GetBytes(json);
+
+            var line = "SignalGo-OneWay/2.0" + Environment.NewLine;
+            var lineBytes = Encoding.UTF8.GetBytes(line);
+
+            GoStreamWriter.WriteToStream(stream, lineBytes, false);
+            GoStreamWriter.WriteBlockToStream(stream, jsonBytes);
+
+            var dataType = (DataType)stream.ReadByte();
+            var compressMode = (CompressMode)stream.ReadByte();
+            var readData = GoStreamReader.ReadBlockToEnd(stream, compressMode, uint.MaxValue, false);
+            json = Encoding.UTF8.GetString(readData, 0, readData.Length);
+            var callBack = ClientSerializationHelper.DeserializeObject<MethodCallbackInfo>(json);
+            if (callBack.IsException)
+                throw ClientSerializationHelper.DeserializeObject<Exception>(callBack.Data);
+            return ClientSerializationHelper.DeserializeObject<T>(callBack.Data);
+        }
 
         //public void RegisterServerServiceInterface(string serviceName)
         //{

@@ -90,6 +90,7 @@ namespace SignalGo.Client
         }
 
         volatile bool _oneTimeConnectedAsyncCalledWithAutoReconnect = false;
+        AutoResetEvent HoldThreadResetEvent { get; set; } = new AutoResetEvent(false);
         /// <summary>
         /// connect to server is background Thread
         /// </summary>
@@ -106,10 +107,14 @@ namespace SignalGo.Client
                 ProviderSetting.HoldMethodCallsWhenDisconnected = isHoldMethodCallsWhenDisconnected;
                 Connect(url, isWebsocket);
                 connectedAction(true);
+                HoldThreadResetEvent.Reset();
+                HoldThreadResetEvent.WaitOne();
             }, (ex) =>
             {
                 Disconnect();
-                connectedAction(false);
+                connectedAction(IsConnected);
+                HoldThreadResetEvent.Reset();
+                HoldThreadResetEvent.WaitOne();
             });
         }
 

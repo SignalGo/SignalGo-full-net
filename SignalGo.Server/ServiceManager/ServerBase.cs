@@ -136,6 +136,7 @@ namespace SignalGo.Server.ServiceManager
         /// Stream services to upload and download files
         /// </summary>
         internal ConcurrentDictionary<string, object> StreamServices { get; set; } = new ConcurrentDictionary<string, object>();
+        internal ConcurrentDictionary<string, object> OneWayServices { get; set; } = new ConcurrentDictionary<string, object>();
 
         /// <summary>
         /// Single instance services
@@ -255,6 +256,8 @@ namespace SignalGo.Server.ServiceManager
                     RegisterHttpService(serviceType);
                 else if (service.ServiceType == ServiceType.StreamService)
                     RegisterStreamService(serviceType);
+                else if (service.ServiceType == ServiceType.OneWayService)
+                    RegisterOneWayService(serviceType);
                 else
                     throw new NotSupportedException("your service is not type of ServerService or HttpService or StreamService");
             }
@@ -317,6 +320,12 @@ namespace SignalGo.Server.ServiceManager
             return value;
         }
 
+        internal object FindOneWayServiceByName(string name)
+        {
+            OneWayServices.TryGetValue(name, out object value);
+            return value;
+        }
+
         internal object FindClientServerByType(ClientInfo client, Type serviceType)
         {
             var serviceName = serviceType.GetClientServiceName();
@@ -374,6 +383,16 @@ namespace SignalGo.Server.ServiceManager
             var service = Activator.CreateInstance(type);
             StreamServices.TryAdd(name, service);
         }
+
+        internal void RegisterOneWayService(Type type)
+        {
+            var name = type.GetServerServiceName();
+            if (OneWayServices.ContainsKey(name))
+                throw new Exception("Duplicate call");
+            var service = Activator.CreateInstance(type);
+            OneWayServices.TryAdd(name, service);
+        }
+
         /// <summary>
         /// Called by the server to register stream service for download and upload stream or file
         /// </summary>
@@ -588,6 +607,23 @@ namespace SignalGo.Server.ServiceManager
                             {
                                 UploadStreamToClient(tcpClient.GetStream(), client);
                             }
+                            DisposeClient(client, "AddClient end signalgo stream");
+                            return;
+                        }
+                        if (headerResponse.Contains("SignalGo-OneWay/2.0"))
+                        {
+                            client = CreateClientInfo(false, tcpClient);
+                            //"SignalGo/1.0";
+                            //"SignalGo/1.0";
+                            client.IsWebSocket = false;
+                            if (SynchronizationContext.Current == null)
+                                SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());
+                            //ClientDispatchers.TryAdd(client, SynchronizationContext.Current);
+                            AllDispatchers.Add(SynchronizationContext.Current, client);
+                            client.MainContext = SynchronizationContext.Current;
+                            client.MainThread = System.Threading.Thread.CurrentThread;
+                            OneWayProvider.RunMethod(this, tcpClient.GetStream(), client);
+                            //upload from client and download from server
                             DisposeClient(client, "AddClient end signalgo stream");
                             return;
                         }
@@ -1163,17 +1199,24 @@ namespace SignalGo.Server.ServiceManager
                     }
                     else if (headers["content-type"] == "application/json")
                     {
-                        JObject des = JObject.Parse(parameters);
-                        if (IsMethodInfoOfJsonParameters(methods, des.Properties().Select(x => x.Name).ToList()))
+                        try
                         {
-                            foreach (var item in des.Properties())
+                            JObject des = JObject.Parse(parameters);
+                            if (IsMethodInfoOfJsonParameters(methods, des.Properties().Select(x => x.Name).ToList()))
                             {
-                                var value = des.GetValue(item.Name);
-                                values.Add(new Tuple<string, string>(item.Name, value.ToString()));
+                                foreach (var item in des.Properties())
+                                {
+                                    var value = des.GetValue(item.Name);
+                                    values.Add(new Tuple<string, string>(item.Name, value.ToString()));
+                                }
                             }
+                            else
+                                values.Add(new Tuple<string, string>("", parameters));
                         }
-                        else
-                            values.Add(new Tuple<string, string>("", parameters));
+                        catch (Exception ex)
+                        {
+                            AutoLogger.LogError(ex, $"Parse json exception: {parameters}");
+                        }
                     }
                     else
                     {
@@ -1265,8 +1308,17 @@ namespace SignalGo.Server.ServiceManager
                         {
                             var customDataExchanger = method.GetCustomAttributes(typeof(CustomDataExchangerAttribute), true).Cast<CustomDataExchangerAttribute>().Where(x => x.GetExchangerByUserCustomization(client)).ToList();
                             customDataExchanger.AddRange(GetMethodParameterBinds(index, method).Where(x => x.GetExchangerByUserCustomization(client)));
-                            var obj = ServerSerializationHelper.DeserializeByValidate(currentParam.Item2, item.ParameterType, this,
-                                customDataExchanger: customDataExchanger.ToArray());
+                            //object obj = null;
+                            //var type = SerializeHelper.GetTypeCodeOfObject(item.ParameterType);
+                            //if (type == SerializeObjectType.Object || type == SerializeObjectType.None)
+                            //{
+                            object obj = ServerSerializationHelper.DeserializeByValidate(currentParam.Item2, item.ParameterType, this,
+                            customDataExchanger: customDataExchanger.ToArray());
+                            //}
+                            //else
+                            //{
+                            //    obj = SerializeHelper.ConvertType(item.ParameterType, currentParam.Item2);
+                            //}
 
 
                             //if (obj == null)
@@ -2121,8 +2173,8 @@ namespace SignalGo.Server.ServiceManager
                 //response += len + newLine;
                 client.Client.Send(System.Text.Encoding.ASCII.GetBytes(response));
                 List<byte> allb = new List<byte>();
-                if (file.FileStream.CanSeek)
-                    file.FileStream.Seek(0, System.IO.SeekOrigin.Begin);
+                //if (file.FileStream.CanSeek)
+                //    file.FileStream.Seek(0, System.IO.SeekOrigin.Begin);
                 while (fileLength != file.FileStream.Position)
                 {
                     byte[] data = new byte[1024 * 20];
@@ -2574,10 +2626,14 @@ namespace SignalGo.Server.ServiceManager
                 //    }
                 //}
                 var keys = AllDispatchers.GetKeys(client);
-                foreach (var item in keys)
+                if (keys != null)
                 {
-                    DataExchanger.Clear(item);
+                    foreach (var item in keys)
+                    {
+                        DataExchanger.Clear(item);
+                    }
                 }
+
                 AllDispatchers.Remove(client);
                 OperationContextBase.SavedSettings.Remove(client);
                 //foreach (var item in contexts)
@@ -3611,6 +3667,7 @@ namespace SignalGo.Server.ServiceManager
                                     TestExample = hostUrl + "/" + controller.Url + "/" + method.Name
                                 };
 
+                                RuntimeTypeHelper.GetListOfUsedTypes(method.ReturnType, ref modelTypes);
                                 string testExampleParams = "";
                                 foreach (var paramInfo in method.GetParameters())
                                 {

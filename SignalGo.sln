@@ -1,21 +1,21 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
+# Blend for Visual Studio 15
 VisualStudioVersion = 15.0.27130.2027
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SignalGo.Server", "SignalGo.Server\SignalGo.Server.csproj", "{8170E507-F79C-49C4-9EC2-9112C565A98B}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SignalGo.Client", "SignalGo.Client\SignalGo.Client.csproj", "{DA4F99A9-69E4-48F1-8850-5298F7762AB9}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Client", "Client", "{EFF12755-71DE-414C-8F37-A760158FD6C0}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Server", "Server", "{9287AE81-1DFE-42EA-9E8A-D673C98F57FF}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared", "Shared", "{87B3E1DF-14EC-4B4E-BF30-A153F905A599}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SignalGo.Shared", "SignalGo.Shared\SignalGo.Shared.csproj", "{78D8601B-E331-47B7-A4A8-46B7460D82A4}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Test", "Test", "{A22888F1-4263-4605-A06D-8A2AAD8A148F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SignalGo.Server", "SignalGo.Server\SignalGo.Server.csproj", "{8170E507-F79C-49C4-9EC2-9112C565A98B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SignalGo.Client", "SignalGo.Client\SignalGo.Client.csproj", "{DA4F99A9-69E4-48F1-8850-5298F7762AB9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SignalGo.Shared", "SignalGo.Shared\SignalGo.Shared.csproj", "{78D8601B-E331-47B7-A4A8-46B7460D82A4}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SignalGoTest", "SignalGoTest\SignalGoTest.csproj", "{8257FD86-25FD-4F84-B403-8F96C62198E9}"
 EndProject

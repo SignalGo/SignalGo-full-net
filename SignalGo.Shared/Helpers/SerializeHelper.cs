@@ -153,7 +153,7 @@ namespace SignalGo.Shared.Helpers
             HandleDeserializingObjectList.TryAdd(typeof(TResultType), new SerializeDelegateHandler() { Delegate = func, ParameterType = typeof(TType) });
         }
 
-        internal static object ConvertType(Type toType, object value)
+        public static object ConvertType(Type toType, object value)
         {
             if (value == null)
                 return null;

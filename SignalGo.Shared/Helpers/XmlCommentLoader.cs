@@ -141,8 +141,8 @@ namespace SignalGo.Shared.Helpers
         public CommentOfClassInfo GetComment(Type classInfo)
         {
             var documentation = GetElementFromType(classInfo);
-            if (documentation == null)
-                return null;
+            //if (documentation == null)
+            //    return null;
             List<CommentOfMethodInfo> methods = new List<CommentOfMethodInfo>();
             foreach (var item in classInfo.GetListOfMethods())
             {
@@ -154,7 +154,7 @@ namespace SignalGo.Shared.Helpers
             return new CommentOfClassInfo()
             {
                 Name = classInfo.Name,
-                Summery = documentation["summary"]?.InnerText?.Trim(),
+                Summery = documentation == null ? null : documentation["summary"]?.InnerText?.Trim(),
                 Methods = methods
             };
         }
@@ -264,13 +264,15 @@ namespace SignalGo.Shared.Helpers
                         findElement = element;
                     }
                 }
-               
+
             }
 
             if (findElement == null)
             {
                 if (!SkipErrors)
                     throw new Exception($"element {name} not found!");
+                //else
+                //    return new XmlElement();
             }
 
             return findElement;
