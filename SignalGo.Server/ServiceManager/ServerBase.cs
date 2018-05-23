@@ -2574,7 +2574,7 @@ namespace SignalGo.Server.ServiceManager
 
         public void CheckClient(ClientInfo client)
         {
-            if (client != null && !client.TcpClient.Connected)
+            if (client != null && (client.TcpClient == null || !client.TcpClient.Connected))
                 DisposeClient(client, "CheckClient");
         }
 
