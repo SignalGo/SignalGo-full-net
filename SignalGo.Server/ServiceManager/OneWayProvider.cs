@@ -38,7 +38,7 @@ namespace SignalGo.Server.ServiceManager
                     serverBase.DisposeClient(client, "oneway RunMethod service not found!");
                 else
                 {
-                    var clientLimitationAttribute = service.GetType().GetCustomAttributes<ClientLimitationAttribute>(true).ToList();
+                    var clientLimitationAttribute = service.GetType().GetCustomAttributes<ClientLimitationAttribute>().ToList();
 
                     var serviceType = service.GetType();
 #if (NETSTANDARD1_6 || NETCOREAPP1_1)

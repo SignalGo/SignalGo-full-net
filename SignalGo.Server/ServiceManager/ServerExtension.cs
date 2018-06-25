@@ -83,8 +83,8 @@ namespace SignalGo.Server.ServiceManager
 
         static object SendCallClientMethod(this OperationCalls client, string callerName, params object[] args)
         {
-            if (SynchronizationContext.Current != null && ServerBase.AllDispatchers.ContainsKey(SynchronizationContext.Current) && ServerBase.AllDispatchers[SynchronizationContext.Current].FirstOrDefault().MainContext == SynchronizationContext.Current)
-                throw new Exception("Cannot call method from class Constractor or main Thread");
+            //if (SynchronizationContext.Current != null && ServerBase.AllDispatchers.ContainsKey(SynchronizationContext.Current) && ServerBase.AllDispatchers[SynchronizationContext.Current].FirstOrDefault().MainContext == SynchronizationContext.Current)
+            //    throw new Exception("Cannot call method from class Constractor or main Thread");
             var attribute = client.GetType().GetClientServiceAttribute();
             MethodCallInfo callInfo = new MethodCallInfo();
             callInfo.ServiceName = attribute.Name;

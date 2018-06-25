@@ -70,13 +70,13 @@ namespace SignalGo.Shared.Helpers
                 ns += ".";
             var attrib = serviceInterfaceType.GetCustomAttributes<ServiceContractAttribute>(true).Where(x => x.ServiceType == ServiceType.ServerService || x.ServiceType == ServiceType.ClientService || x.ServiceType == ServiceType.StreamService).FirstOrDefault();
 
-#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
+#if (NETSTANDARD1_6 || NETSTANDARD2_0 || NETCOREAPP1_1 || PORTABLE)
             var assembly = AssemblyBuilder.DefineDynamicAssembly(assemblyName,
              AssemblyBuilderAccess.Run);
 #else
             var assembly = AppDomain.CurrentDomain.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndSave);
 #endif
-#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
+#if (NETSTANDARD1_6 || NETSTANDARD2_0 || NETCOREAPP1_1 || PORTABLE)
             var module = assembly.DefineDynamicModule(moduleName);
 #else
             var module = assembly.DefineDynamicModule(moduleName, false);
@@ -189,7 +189,7 @@ namespace SignalGo.Shared.Helpers
                     generator.Emit(OpCodes.Ret);
                 }
             }
-#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
+#if (NETSTANDARD1_6 || NETSTANDARD2_0 || NETCOREAPP1_1 || PORTABLE)
             var newType = type.CreateTypeInfo();
             return Activator.CreateInstance(newType.AsType(), CallMethodAction);
 #else

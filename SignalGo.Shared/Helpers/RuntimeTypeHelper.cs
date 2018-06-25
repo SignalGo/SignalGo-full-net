@@ -69,6 +69,11 @@ namespace SignalGo.Shared.Helpers
                     GetListOfUsedTypes(item.PropertyType, ref findedTypes);
                 }
             }
+
+            foreach (var item in type.GetListOfProperties())
+            {
+                GetListOfUsedTypes(item.PropertyType, ref findedTypes);
+            }
         }
         /// <summary>
         /// Get friendly name of type

@@ -1243,7 +1243,11 @@ namespace SignalGo.Server.ServiceManager
 
                     if (method == null)
                     {
-                        data = newLine + "SignalGo Error: Method name not found: " + methodName + newLine;
+#if (NET35)
+                        data = newLine + $"SignalGo Error: Method name not found: " + methodName + $" values : {values.Count}" + newLine;
+#else
+                        data = newLine + $"SignalGo Error: Method name not found: " + methodName + $" values : {string.Join(",", values)}" + newLine;
+#endif
                         sendInternalErrorMessage(data);
                         AutoLogger.LogText(data);
                         return;
@@ -1707,6 +1711,8 @@ namespace SignalGo.Server.ServiceManager
                 if (content.Length < len)
                 {
                     var boundary = headers["content-type"].Split('=').Last();
+                    if (!boundary.Contains("--"))
+                        boundary = null;
                     var fileHeaderCount = 0;
                     string response = "";
                     fileHeaderCount = GetHttpFileFileHeader(client.TcpClient.GetStream(), ref boundary, len, out response);
@@ -1887,7 +1893,12 @@ namespace SignalGo.Server.ServiceManager
 
                         if (method == null)
                         {
-                            string data = newLine + "SignalGo Error: Method name not found: " + methodName + newLine;
+#if (NET35)
+                            string data = newLine + $"SignalGo Error: Method name not found: " + methodName + $" values : {values.Count}" + newLine;
+#else
+                            string data = newLine + $"SignalGo Error: Method name not found: " + methodName + $" values : {string.Join(",", values)}" + newLine;
+#endif
+
                             sendInternalErrorMessage(data);
                             AutoLogger.LogText(data);
                             return;
@@ -2080,6 +2091,18 @@ namespace SignalGo.Server.ServiceManager
                 {
                     var data = Encoding.UTF8.GetString(bytes.ToArray());
                     response = data;
+                    if (response.Contains("--") && string.IsNullOrEmpty(boundary))
+                    {
+                        var split = response.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
+                        foreach (var item in split)
+                        {
+                            if (response.Contains("--"))
+                            {
+                                boundary = item;
+                                break;
+                            }
+                        }
+                    }
                     return bytes.Count;
 
                 }
@@ -2277,7 +2300,7 @@ namespace SignalGo.Server.ServiceManager
             }
         }
 
-        #endregion
+#endregion
 
         /// <summary>
         /// Sdd assembly that include models to server reference when client wants to add or update service reference
@@ -2600,7 +2623,7 @@ namespace SignalGo.Server.ServiceManager
         {
             try
             {
-                //Console.WriteLine("Client disposed " + (client == null ? "null!" : client.ClientId) + " reason: " + reason);
+                Console.WriteLine($"Client disposed " + (client == null ? "null!" : client.ClientId) + " reason: " + reason);
                 if (client == null)
                     return;
                 try
@@ -2648,6 +2671,7 @@ namespace SignalGo.Server.ServiceManager
             }
             catch (Exception ex)
             {
+                Console.WriteLine("DisposeClient " + ex);
                 AutoLogger.LogError(ex, "DisposeClientError");
             }
         }

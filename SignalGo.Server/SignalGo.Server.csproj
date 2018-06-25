@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
   <PropertyGroup>
     <TargetFrameworks>netstandard1.6;net45;net40;netcoreapp1.1;net35</TargetFrameworks>
     <ProjectGuid>{8170E507-F79C-49C4-9EC2-9112C565A98B}</ProjectGuid>
@@ -51,6 +51,11 @@
       https://github.com/SignalGo/SignalGo-full-net
 
     </PackageReleaseNotes>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <UpgradeBackupLocation>
+    </UpgradeBackupLocation>
+    <OldToolsVersion>2.0</OldToolsVersion>
   </PropertyGroup>
   <PropertyGroup>
     <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\SignalGo.Server.xml</DocumentationFile>
@@ -66,7 +71,6 @@
     <PackageReference Include="TaskParallelLibrary" Version="1.0.2856" />
     <PackageReference Include="NetLegacySupport.Tuple" Version="1.1.1" />
   </ItemGroup>
-  
   <!-- Need to conditionally bring in references for the .NET Framework 4.0 target -->
   <ItemGroup Condition="'$(TargetFramework)' == 'net40'">
     <Reference Include="Microsoft.CSharp" />

@@ -218,22 +218,22 @@ namespace SignalGo.Client
                 {
                     connector.Disconnect();
                 }
-                if (connector.ProviderSetting.AutoReconnect && connector.ProviderSetting.HoldMethodCallsWhenDisconnected && !connector.IsConnected && !isIgnorePriority)
-                {
-                    AutoResetEvent resetEvent = new AutoResetEvent(true);
-                    resetEvent.Reset();
-                    connector.HoldMethodsToReconnect.Add(resetEvent);
-                    if (connector.IsConnected)
-                    {
-                        connector.HoldMethodsToReconnect.Remove(resetEvent);
-                        goto TryAgain;
-                    }
-                    else
-                    {
-                        resetEvent.WaitOne();
-                        goto TryAgain;
-                    }
-                }
+                //if (connector.ProviderSetting.AutoReconnect && connector.ProviderSetting.HoldMethodCallsWhenDisconnected && !connector.IsConnected && !isIgnorePriority)
+                //{
+                //    AutoResetEvent resetEvent = new AutoResetEvent(true);
+                //    resetEvent.Reset();
+                //    connector.HoldMethodsToReconnect.Add(resetEvent);
+                //    if (connector.IsConnected)
+                //    {
+                //        connector.HoldMethodsToReconnect.Remove(resetEvent);
+                //        goto TryAgain;
+                //    }
+                //    else
+                //    {
+                //        resetEvent.WaitOne();
+                //        goto TryAgain;
+                //    }
+                //}
                 throw ex;
             }
 
@@ -310,7 +310,7 @@ namespace SignalGo.Client
         }
         internal JsonSettingHelper JsonSettingHelper { get; set; } = new JsonSettingHelper();
         internal AutoLogger AutoLogger { get; set; } = new AutoLogger() { FileName = "ConnectorBase Logs.log" };
-        internal ConcurrentList<AutoResetEvent> HoldMethodsToReconnect = new ConcurrentList<AutoResetEvent>();
+        //internal ConcurrentList<AutoResetEvent> HoldMethodsToReconnect = new ConcurrentList<AutoResetEvent>();
         internal ConcurrentList<Delegate> PriorityActionsAfterConnected = new ConcurrentList<Delegate>();
         /// <summary>
         /// is WebSocket data provider
@@ -539,7 +539,7 @@ namespace SignalGo.Client
             return default(T);
         }
 
-#if (!NETSTANDARD1_6 && !NETCOREAPP1_1 && !NET35 && !PORTABLE)
+#if (!NETSTANDARD1_6 && !NETSTANDARD2_0 && !NETCOREAPP1_1 && !NET35 && !PORTABLE)
         /// <summary>
         /// register service and method to server for client call thats
         /// </summary>
@@ -952,7 +952,7 @@ namespace SignalGo.Client
         //    };
         //    var callback = this.SendData<MethodCallbackInfo>(callInfo);
         //}
-#if (!NETSTANDARD1_6 && !NETCOREAPP1_1 && !NET35 && !PORTABLE)
+#if (!NETSTANDARD1_6 && !NETSTANDARD2_0 && !NETCOREAPP1_1 && !NET35 && !PORTABLE)
         /// <summary>
         /// register a callback interface and get dynamic calls
         /// not work on ios
@@ -1464,36 +1464,43 @@ namespace SignalGo.Client
             OnConnectionChanged?.Invoke(ConnectionStatus.Disconnected);
 
             getServiceDetailEvent?.Reset();
-            lock (_autoReconnectLock)
+            if (!IsAutoReconnecting)
             {
-                if (ProviderSetting.AutoReconnect && !IsAutoReconnecting)
+                lock (_autoReconnectLock)
                 {
-                    IsAutoReconnecting = true;
-                    while (!IsConnected && !IsDisposed)
+                    if (ProviderSetting.AutoReconnect && !IsAutoReconnecting)
                     {
-                        try
+                        IsAutoReconnecting = true;
+                        while (!IsConnected && !IsDisposed)
                         {
-                            OnConnectionChanged?.Invoke(ConnectionStatus.Reconnecting);
-                            OnAutoReconnecting?.Invoke();
-                            Connect(ServerUrl);
-                        }
-                        catch (Exception ex)
-                        {
+                            try
+                            {
+                                OnConnectionChanged?.Invoke(ConnectionStatus.Reconnecting);
+                                OnAutoReconnecting?.Invoke();
+                                Connect(ServerUrl);
+                            }
+                            catch (Exception ex)
+                            {
 
+                            }
+                            finally
+                            {
+                                AutoReconnectDelayResetEvent.Reset();
+                                AutoReconnectDelayResetEvent.WaitOne(ProviderSetting.AutoReconnectTime);
+                            }
                         }
-                        finally
-                        {
-                            AutoReconnectDelayResetEvent.Reset();
-                            AutoReconnectDelayResetEvent.WaitOne(ProviderSetting.AutoReconnectTime);
-                        }
+                        //foreach (var item in HoldMethodsToReconnect.ToList())
+                        //{
+                        //    item.Set();
+                        //}
+                        //HoldMethodsToReconnect.Clear();
+                        IsAutoReconnecting = false;
                     }
-                    foreach (var item in HoldMethodsToReconnect.ToList())
-                    {
-                        item.Set();
-                    }
-                    HoldMethodsToReconnect.Clear();
-                    IsAutoReconnecting = false;
                 }
+            }
+            else
+            {
+
             }
         }
 

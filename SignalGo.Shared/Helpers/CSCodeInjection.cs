@@ -33,7 +33,7 @@ namespace SignalGo.Shared.Helpers
         /// invoke function for non-void methods call
         /// </summary>
         public static Func<object, MethodInfo, object[], object> InvokedServerMethodFunction { get; set; }
-#if (!NETSTANDARD1_6 && !NETCOREAPP1_1 && !PORTABLE)
+#if (!NETSTANDARD1_6 && !NETSTANDARD2_0 && !NETCOREAPP1_1 && !PORTABLE)
         /// <summary>
         /// generate a class from an interface type
         /// </summary>
@@ -87,7 +87,7 @@ namespace SignalGo.Shared.Helpers
 
             return callback;
         }
-#if (!NETSTANDARD1_6 && !NETCOREAPP1_1 && !PORTABLE)
+#if (!NETSTANDARD1_6 && !NETSTANDARD2_0 && !NETCOREAPP1_1 && !PORTABLE)
 
         static Type GenerateInterfaceServiceType(Type type, Type inter, List<Type> assemblyTypes, bool isServer)
         {
@@ -266,7 +266,7 @@ namespace SignalGo.Shared.Helpers
         //        return "";
         //    return attributes;
         //}
-#if (!NETSTANDARD1_6 && !NETCOREAPP1_1 && !PORTABLE)
+#if (!NETSTANDARD1_6 && !NETSTANDARD2_0 && !NETCOREAPP1_1 && !PORTABLE)
         public static Action<CompilerResults, List<Type>, string> OnErrorAction { get; set; }
         private static Assembly CompileSource(string sourceCode, List<Type> types)
         {
