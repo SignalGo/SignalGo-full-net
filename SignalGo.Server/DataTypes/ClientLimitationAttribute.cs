@@ -29,11 +29,18 @@ namespace SignalGo.Server.DataTypes
         //    DenyAccessList = denyAccessList;
         //}
 
+        /// <summary>
+        /// get list of ips can access your methods
+        /// </summary>
+        /// <returns></returns>
         public virtual string[] GetAllowAccessIpAddresses()
         {
             return AllowAccessList;
         }
-
+        /// <summary>
+        /// get list of ips blocked methods calls
+        /// </summary>
+        /// <returns></returns>
         public virtual string[] GetDenyAccessIpAddresses()
         {
             return DenyAccessList;
