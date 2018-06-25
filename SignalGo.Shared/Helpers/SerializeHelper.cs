@@ -109,7 +109,7 @@ namespace SignalGo.Shared.Helpers
                 { typeof(string), SerializeObjectType.String },
                 { typeof(void), SerializeObjectType.Void },
                 { typeof(IntPtr), SerializeObjectType.IntPtr },
-#if (!NETSTANDARD1_6 && !NETCOREAPP1_1 && !PORTABLE)
+#if (!NETSTANDARD && !NETCOREAPP && !PORTABLE)
                 { typeof(DBNull), SerializeObjectType.DBNull }
 #endif
         };
@@ -126,7 +126,7 @@ namespace SignalGo.Shared.Helpers
                 return SerializeObjectType.None;
             else if (TypeCodeMap.ContainsKey(type))
                 return TypeCodeMap[type];
-#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
+#if (NETSTANDARD || NETCOREAPP || PORTABLE)
             else if (type.GetTypeInfo().IsEnum)
                 return SerializeObjectType.Enum;
             else if (nullableType != null && nullableType.GetTypeInfo().IsEnum)
@@ -153,7 +153,7 @@ namespace SignalGo.Shared.Helpers
             HandleDeserializingObjectList.TryAdd(typeof(TResultType), new SerializeDelegateHandler() { Delegate = func, ParameterType = typeof(TType) });
         }
 
-        internal static object ConvertType(Type toType, object value)
+        public static object ConvertType(Type toType, object value)
         {
             if (value == null)
                 return null;

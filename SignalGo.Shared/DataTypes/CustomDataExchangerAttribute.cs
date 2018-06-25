@@ -146,7 +146,7 @@ namespace SignalGo.Shared.DataTypes
                     {
                         result.AddRange(item.GetListOfProperties().Select(x => x.Name));
                     }
-#if (NETSTANDARD1_6 || NETCOREAPP1_1)
+#if (NETSTANDARD || NETCOREAPP)
                     parent = parent.GetTypeInfo().BaseType;
 #else
                     parent = parent.GetBaseType();

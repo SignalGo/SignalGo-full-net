@@ -38,7 +38,7 @@ namespace SignalGo.Shared.Models
         /// <summary>
         /// get position of flush stream
         /// </summary>
-        Func<int> GetPositionFlush { get; set; }
+        Func<long> GetPositionFlush { get; set; }
     }
 
     public class BaseStreamInfo : IStreamInfo
@@ -47,7 +47,7 @@ namespace SignalGo.Shared.Models
         /// get position of flush stream
         /// </summary>
         [JsonIgnore()]
-        public Func<int> GetPositionFlush { get; set; }
+        public Func<long> GetPositionFlush { get; set; }
         /// <summary>
         /// status of request
         /// </summary>
@@ -102,7 +102,7 @@ namespace SignalGo.Shared.Models
             {
                 try
                 {
-#if (NETSTANDARD1_6)
+#if (NETSTANDARD)
                     var property = typeof(NetworkStream).GetTypeInfo().GetProperty("Socket", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Static);
 #else
                     var property = typeof(NetworkStream).GetProperty("Socket", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Static);
@@ -133,7 +133,7 @@ namespace SignalGo.Shared.Models
         /// <summary>
         /// set position of flush stream
         /// </summary>
-        public void SetPositionFlush(int position)
+        public void SetPositionFlush(long position)
         {
             DataType dataType = DataType.FlushStream;
             CompressMode compressMode = CompressMode.None;
@@ -185,7 +185,7 @@ namespace SignalGo.Shared.Models
             }
         }
 
-        public Func<int> GetPositionFlush
+        public Func<long> GetPositionFlush
         {
             get
             {
@@ -221,7 +221,7 @@ namespace SignalGo.Shared.Models
             {
                 try
                 {
-#if (NETSTANDARD1_6)
+#if (NETSTANDARD)
                     var property = typeof(NetworkStream).GetTypeInfo().GetProperty("Socket", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Static);
 #else
                     var property = typeof(NetworkStream).GetProperty("Socket", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Static);

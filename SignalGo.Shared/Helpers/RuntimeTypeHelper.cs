@@ -21,7 +21,7 @@ namespace SignalGo.Shared.Helpers
         public static List<Type> GetMethodTypes(Type serviceType, MethodCallInfo callInfo)
         {
             List<Type> methodParameterTypes = new List<Type>();
-#if (NETSTANDARD1_6)
+#if (NETSTANDARD)
             var methods = serviceType.GetTypeInfo().GetMethods();
 #else
             var methods = serviceType.GetListOfMethods();
@@ -68,6 +68,11 @@ namespace SignalGo.Shared.Helpers
                 {
                     GetListOfUsedTypes(item.PropertyType, ref findedTypes);
                 }
+            }
+
+            foreach (var item in type.GetListOfProperties())
+            {
+                GetListOfUsedTypes(item.PropertyType, ref findedTypes);
             }
         }
         /// <summary>

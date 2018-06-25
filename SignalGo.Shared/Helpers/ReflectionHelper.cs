@@ -56,7 +56,7 @@ namespace SignalGo.Shared.Helpers
         /// <returns></returns>
         public static IEnumerable<Type> GetListOfNestedTypes(this Type type)
         {
-#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
+#if (NETSTANDARD || NETCOREAPP || PORTABLE)
             var typeInfo = type.GetTypeInfo();
 #else
             Type typeInfo = type;
@@ -81,7 +81,7 @@ namespace SignalGo.Shared.Helpers
             {
 
                 result.Add(parent);
-#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
+#if (NETSTANDARD || NETCOREAPP || PORTABLE)
                 parent = parent.GetTypeInfo().BaseType;
 #else
                 parent = parent.BaseType;
@@ -93,7 +93,7 @@ namespace SignalGo.Shared.Helpers
         public static Assembly GetAssembly(this Type type)
         {
 
-#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
+#if (NETSTANDARD || NETCOREAPP || PORTABLE)
             return type.GetTypeInfo().Assembly;
 #else
             return type.Assembly;
@@ -107,7 +107,7 @@ namespace SignalGo.Shared.Helpers
         /// <returns></returns>
         public static IEnumerable<Type> GetListOfInterfaces(this Type type)
         {
-#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
+#if (NETSTANDARD || NETCOREAPP || PORTABLE)
             var typeInfo = type.GetTypeInfo();
 #else
             Type typeInfo = type;
@@ -125,7 +125,7 @@ namespace SignalGo.Shared.Helpers
         /// <returns></returns>
         public static Type GetBaseType(this Type type)
         {
-#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
+#if (NETSTANDARD || NETCOREAPP || PORTABLE)
             return type.GetTypeInfo().BaseType;
 #else
             return type.BaseType;
@@ -138,7 +138,7 @@ namespace SignalGo.Shared.Helpers
         /// <returns></returns>
         public static bool GetIsGenericType(this Type type)
         {
-#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
+#if (NETSTANDARD || NETCOREAPP || PORTABLE)
             return type.GetTypeInfo().IsGenericType;
 #else
             return type.IsGenericType;
@@ -153,7 +153,7 @@ namespace SignalGo.Shared.Helpers
         public static PropertyInfo GetPropertyInfo(this Type type, string name)
         {
             return type
-#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
+#if (NETSTANDARD || NETCOREAPP || PORTABLE)
                 .GetTypeInfo()
 #endif
 #if (PORTABLE)
@@ -173,7 +173,7 @@ namespace SignalGo.Shared.Helpers
         public static PropertyInfo GetPropertyInfo(this Type type, string name, BindingFlags flags)
         {
             return type
-#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
+#if (NETSTANDARD || NETCOREAPP || PORTABLE)
                 .GetTypeInfo()
 #endif
                 .GetProperty(name, flags | BindingFlags.IgnoreCase);
@@ -188,7 +188,7 @@ namespace SignalGo.Shared.Helpers
         public static MethodInfo FindMethod(this Type type, string name)
         {
             return type
-#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
+#if (NETSTANDARD || NETCOREAPP || PORTABLE)
                 .GetTypeInfo()
 #endif
 #if (PORTABLE)
@@ -209,7 +209,7 @@ namespace SignalGo.Shared.Helpers
         public static MethodInfo FindMethod(this Type type, string name, BindingFlags flags)
         {
             return type
-#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
+#if (NETSTANDARD || NETCOREAPP || PORTABLE)
                 .GetTypeInfo()
 #endif
                 .GetMethod(name, flags | BindingFlags.IgnoreCase);
@@ -223,7 +223,7 @@ namespace SignalGo.Shared.Helpers
         public static IEnumerable<PropertyInfo> GetListOfProperties(this Type type)
         {
             return type
-#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
+#if (NETSTANDARD || NETCOREAPP || PORTABLE)
                 .GetTypeInfo()
 #endif
 #if (PORTABLE)
@@ -242,7 +242,7 @@ namespace SignalGo.Shared.Helpers
         public static IEnumerable<PropertyInfo> GetListOfDeclaredProperties(this Type type)
         {
             return type
-#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
+#if (NETSTANDARD || NETCOREAPP || PORTABLE)
                 .GetTypeInfo()
 #endif
 #if (PORTABLE)
@@ -261,7 +261,7 @@ namespace SignalGo.Shared.Helpers
         public static IEnumerable<FieldInfo> GetListOfFields(this Type type)
         {
             return type
-#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
+#if (NETSTANDARD || NETCOREAPP || PORTABLE)
                 .GetTypeInfo()
 #endif
 #if (PORTABLE)
@@ -275,7 +275,7 @@ namespace SignalGo.Shared.Helpers
         public static FieldInfo GetFieldInfo(this Type type, string name)
         {
             return type
-#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
+#if (NETSTANDARD || NETCOREAPP || PORTABLE)
                 .GetTypeInfo()
 #endif
 #if (PORTABLE)
@@ -295,7 +295,7 @@ namespace SignalGo.Shared.Helpers
         public static bool GetIsAssignableFrom(this Type type, Type newType)
         {
             return type
-#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
+#if (NETSTANDARD || NETCOREAPP || PORTABLE)
                 .GetTypeInfo()
 #endif
 #if (PORTABLE)
@@ -313,7 +313,7 @@ namespace SignalGo.Shared.Helpers
         public static bool GetIsClass(this Type type)
         {
             return type
-#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
+#if (NETSTANDARD || NETCOREAPP || PORTABLE)
                 .GetTypeInfo()
 #endif
 #if (PORTABLE)
@@ -330,7 +330,7 @@ namespace SignalGo.Shared.Helpers
         public static bool GetIsInterface(this Type type)
         {
             return type
-#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
+#if (NETSTANDARD || NETCOREAPP || PORTABLE)
                 .GetTypeInfo()
 #endif
 #if (PORTABLE)
@@ -360,7 +360,7 @@ namespace SignalGo.Shared.Helpers
         public static bool GetIsEnum(this Type type)
         {
             return type
-#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
+#if (NETSTANDARD || NETCOREAPP || PORTABLE)
                 .GetTypeInfo()
 #endif
 #if (PORTABLE)
@@ -377,10 +377,10 @@ namespace SignalGo.Shared.Helpers
         public static IEnumerable<MethodInfo> GetListOfDeclaredMethods(this Type type)
         {
             return type
-#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
+#if (NETSTANDARD || NETCOREAPP || PORTABLE)
                 .GetTypeInfo()
 #endif
-#if (PORTABLE || NETSTANDARD1_6 || NETCOREAPP1_1)
+#if (PORTABLE || NETSTANDARD || NETCOREAPP)
                 .DeclaredMethods;
 #else
                 .GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Public);
@@ -395,10 +395,10 @@ namespace SignalGo.Shared.Helpers
         public static IEnumerable<MethodInfo> GetListOfMethods(this Type type)
         {
             return type
-#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
+#if (NETSTANDARD || NETCOREAPP || PORTABLE)
                 .GetTypeInfo()
 #endif
-#if (PORTABLE || NETSTANDARD1_6 || NETCOREAPP1_1)
+#if (PORTABLE || NETSTANDARD || NETCOREAPP)
                 .DeclaredMethods;
 #else
                 .GetMethods();
@@ -408,7 +408,7 @@ namespace SignalGo.Shared.Helpers
 
         public static List<MethodInfo> GetListOfMethodsWithAllOfBases(this Type type)
         {
-            var methods = type.GetListOfMethods().ToList();
+            var methods = new List<MethodInfo>();
             foreach (var item in type.GetListOfInterfaces())
             {
                 methods.AddRange(item.GetListOfMethods());
@@ -429,7 +429,7 @@ namespace SignalGo.Shared.Helpers
         {
 #if (PORTABLE)
             return type.GenericTypeArguments;
-#elif (NETSTANDARD1_6 || NETCOREAPP1_1)
+#elif (NETSTANDARD || NETCOREAPP)
             return type.GetTypeInfo().GetGenericArguments();
 #else
             return type.GetGenericArguments();
@@ -438,7 +438,7 @@ namespace SignalGo.Shared.Helpers
 
         public static Delegate CreateDelegate(Type type, MethodInfo method)
         {
-#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
+#if (NETSTANDARD || NETCOREAPP || PORTABLE)
             return method.CreateDelegate(type);
 #else
             return Delegate.CreateDelegate(type, method);

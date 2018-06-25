@@ -9,7 +9,11 @@ namespace SignalGo.Shared.Models
 {
     public class UltraMapDictionary
     {
+#if (PORTABLE)
+        private Dictionary<object,object> Items { get; set; } = new Dictionary<object, object>();
+#else
         private Hashtable Items { get; set; } = new Hashtable();
+#endif
         object lockTable = new object();
 
         public int Count

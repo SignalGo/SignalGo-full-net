@@ -595,7 +595,6 @@ namespace SignalGo.Shared.Converters
                 }
                 return null;
             }
-
             if (reader.TokenType == JsonToken.StartObject)
             {
                 var instance = ReadNewObject(reader, objectType, existingValue, serializer, false);
@@ -626,7 +625,7 @@ namespace SignalGo.Shared.Converters
             {
                 var defaultGeneratorType =
       typeof(DefaultGenerator<>).MakeGenericType(t);
-#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
+#if (NETSTANDARD || NETCOREAPP || PORTABLE)
                 MethodInfo method = defaultGeneratorType.GetTypeInfo().GetDeclaredMethod("GetDefault");
                 return method.Invoke(null, null);
 #else
@@ -638,7 +637,7 @@ namespace SignalGo.Shared.Converters
                      null, null, new object[0]);
 #endif
             }
-            catch (Exception ex)
+            catch
             {
                 return null;
             }
@@ -1219,7 +1218,7 @@ namespace SignalGo.Shared.Converters
             if (!SerializedObjects.Contains(value))
                 SerializedObjects.Add(value);
             var type = value.GetType();
-            if (HasJsonIgnore(type))
+            if (HasJsonIgnore(type) || type.FullName.StartsWith("System.Reflection."))
                 return;
             if (SerializeHelper.GetTypeCodeOfObject(type) != SerializeObjectType.Object)
             {
@@ -1248,7 +1247,7 @@ namespace SignalGo.Shared.Converters
 
             //MergeExchangeTypes(type, Mode);
 
-#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
+#if (NETSTANDARD || NETCOREAPP || PORTABLE)
                 if (type.GetTypeInfo().BaseType != null && type.Namespace == "System.Data.Entity.DynamicProxies")
                 {
                     type = type.GetTypeInfo().BaseType;
@@ -1438,7 +1437,7 @@ namespace SignalGo.Shared.Converters
                 }
                 else
                 {
-#if (NETSTANDARD1_6 || NETCOREAPP1_1)
+#if (NETSTANDARD || NETCOREAPP)
                     bool canWriteFast = itemType == typeof(string) || !(itemType.GetTypeInfo().IsClass || itemType.GetTypeInfo().IsInterface);
 #else
                     bool canWriteFast = itemType == typeof(string) || !(itemType.GetIsClass() || itemType.GetIsInterface());
@@ -1479,28 +1478,6 @@ namespace SignalGo.Shared.Converters
         {
             try
             {
-                //#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
-                //                if (baseType.GetTypeInfo().BaseType != null && baseType.Namespace == "System.Data.Entity.DynamicProxies")
-                //                {
-                //                    baseType = baseType.GetTypeInfo().BaseType;
-                //                }
-                //#else
-                //                if (baseType.GetBaseType() != null && baseType.Namespace == "System.Data.Entity.DynamicProxies")
-                //                {
-                //                    baseType = baseType.GetBaseType();
-                //                }
-                //#endif
-                //var implementICollection = baseType.GetCustomAttributes<CustomDataExchangerAttribute>(true).Where(x => x.LimitationMode == Mode || x.LimitationMode == LimitExchangeType.Both).FirstOrDefault();
-                //var canIgnore = implementICollection == null ? (bool?)null : implementICollection.CanIgnore(instance, null, null, baseType, Server, Client);
-                //if (canIgnore.HasValue)
-                //{
-                //    if (canIgnore.Value)
-                //        return;
-                //}
-                //else if (implementICollection != null && implementICollection.Type == baseType && (implementICollection.LimitationMode == LimitExchangeType.Both || implementICollection.LimitationMode == Mode))
-                //{
-                //    return;
-                //}
                 var implementICollection = GetCustomDataExchanger(baseType, instance);
                 if (CanIgnoreCustomDataExchanger(baseType, instance))
                     return;
@@ -1659,9 +1636,12 @@ namespace SignalGo.Shared.Converters
                                         writer.WritePropertyName(property.Name);
                                     else if (field != null)
                                         writer.WritePropertyName(field.Name);
-                                    SerializeHelper.HandleSerializingObjectList.TryGetValue(property.PropertyType, out Delegate serializeHandler);
-                                    if (serializeHandler != null)
-                                        propValue = serializeHandler.DynamicInvoke(propValue);
+                                    if (property != null)
+                                    {
+                                        SerializeHelper.HandleSerializingObjectList.TryGetValue(property.PropertyType, out Delegate serializeHandler);
+                                        if (serializeHandler != null)
+                                            propValue = serializeHandler.DynamicInvoke(propValue);
+                                    }
                                     serializer.Serialize(writer, propValue);
                                 }
                                 catch (Exception ex)

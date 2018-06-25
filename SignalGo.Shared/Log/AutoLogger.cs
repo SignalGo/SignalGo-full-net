@@ -120,7 +120,7 @@ namespace SignalGo.Shared.Log
             {
                 str.AppendLine("<StackTrace>");
                 StringBuilder builder = new StringBuilder();
-#if (NETSTANDARD1_6 || NETCOREAPP1_1)
+#if (NETSTANDARD || NETCOREAPP)
                 GetOneStackTraceText(new StackTrace(new Exception(text), true), builder);
 #else
                 GetOneStackTraceText(new StackTrace(true), builder);

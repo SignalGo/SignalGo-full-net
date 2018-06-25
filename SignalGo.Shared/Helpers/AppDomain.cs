@@ -1,4 +1,4 @@
-﻿#if (NETSTANDARD1_6 || NETCOREAPP1_1)
+﻿#if (NETSTANDARD || NETCOREAPP)
 //using Microsoft.Extensions.DependencyModel;
 using System;
 using System.Collections.Generic;

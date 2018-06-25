@@ -111,7 +111,7 @@ namespace SignalGo.Shared.Security
             {
                 
                 csp.ImportParameters(publicKey);
-#if (NETSTANDARD1_6 ||NETCOREAPP1_1)
+#if (NETSTANDARD ||NETCOREAPP)
                 var bytesCypherText = csp.Encrypt(bytes, RSAEncryptionPadding.OaepSHA1);
 #else
                 var bytesCypherText = csp.EncryptValue(bytes);
@@ -125,7 +125,7 @@ namespace SignalGo.Shared.Security
             using (var csp = RSA.Create())
             {
                 csp.ImportParameters(privateKey);
-#if (NETSTANDARD1_6 || NETCOREAPP1_1)
+#if (NETSTANDARD || NETCOREAPP)
                 var bytesCypherText = csp.Decrypt(bytes, RSAEncryptionPadding.OaepSHA1);
 #else
                                var bytesCypherText = csp.DecryptValue(bytes);

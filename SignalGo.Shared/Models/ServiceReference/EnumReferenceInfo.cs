@@ -10,6 +10,7 @@ namespace SignalGo.Shared.Models.ServiceReference
     {
         public string Name { get; set; }
         public string TypeName { get; set; }
+        public string NameSpace { get; set; }
         public List<KeyValue<string, string>> KeyValues { get; set; } = new List<KeyValue<string, string>>();
     }
 }

@@ -22,7 +22,7 @@ namespace SignalGo.Shared.Security
 
         public static byte[] EncryptBytes(byte[] bytes, byte[] key, byte[] IV)
         {
-#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
+#if (NETSTANDARD || NETCOREAPP || PORTABLE)
             throw new NotSupportedException("not support for this .net standard version!");
 #else
             if (bytes == null || bytes.Length <= 0)
@@ -61,7 +61,7 @@ namespace SignalGo.Shared.Security
 
         public static byte[] DecryptBytes(byte[] bytes, byte[] Key, byte[] IV)
         {
-#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
+#if (NETSTANDARD || NETCOREAPP || PORTABLE)
             throw new NotSupportedException("not support for this .net standard version!");
 #else
             if (bytes == null || bytes.Length <= 0)

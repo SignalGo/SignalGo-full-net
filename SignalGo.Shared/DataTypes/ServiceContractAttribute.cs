@@ -42,11 +42,16 @@ namespace SignalGo.Shared.DataTypes
         ///  service class is implemented server stream methods
         /// </summary>
         StreamService,
+        /// <summary>
+        /// one way signal go service that client will call then close
+        /// </summary>
+        OneWayService,
     }
 
     /// <summary>
     /// service contract is communicate services between client and server
     /// </summary>
+    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Interface, AllowMultiple = true)]
     public class ServiceContractAttribute : Attribute
     {
         /// <summary>
@@ -133,7 +138,7 @@ namespace SignalGo.Shared.DataTypes
         /// <returns></returns>
         public static ServiceContractAttribute GetServerServiceAttribute(this Type type)
         {
-            var serviceContract = type.GetCustomAttributes<ServiceContractAttribute>(true).Where(x => x.ServiceType == ServiceType.ServerService || x.ServiceType == ServiceType.HttpService || x.ServiceType == ServiceType.StreamService).FirstOrDefault();
+            var serviceContract = type.GetCustomAttributes<ServiceContractAttribute>(true).Where(x => x.ServiceType == ServiceType.ServerService || x.ServiceType == ServiceType.HttpService || x.ServiceType == ServiceType.StreamService || x.ServiceType == ServiceType.OneWayService).FirstOrDefault();
             if (serviceContract == null)
                 throw new Exception("your server class must have ServiceContract attribute that have ServiceType == ServiceType.SeverService parameter");
             return serviceContract;

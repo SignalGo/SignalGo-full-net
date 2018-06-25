@@ -46,7 +46,7 @@ namespace SignalGo.Shared.Security
 
         public static AESKey GenerateAESKeys()
         {
-#if (NETSTANDARD1_6 || NETCOREAPP1_1)
+#if (NETSTANDARD || NETCOREAPP)
             throw new NotSupportedException("not support for this .net standard version!");
 #else
             using (RijndaelManaged myRijndael = new RijndaelManaged())

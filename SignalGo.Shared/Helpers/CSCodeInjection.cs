@@ -1,4 +1,4 @@
-﻿#if (!NETSTANDARD1_6 && !NETCOREAPP1_1 && !PORTABLE)
+﻿#if (!NETSTANDARD && !NETCOREAPP && !PORTABLE)
 using Microsoft.CSharp;
 #endif
 using SignalGo.Shared.DataTypes;
@@ -33,7 +33,7 @@ namespace SignalGo.Shared.Helpers
         /// invoke function for non-void methods call
         /// </summary>
         public static Func<object, MethodInfo, object[], object> InvokedServerMethodFunction { get; set; }
-#if (!NETSTANDARD1_6 && !NETCOREAPP1_1 && !PORTABLE)
+#if (!NETSTANDARD && !NETCOREAPP && !PORTABLE)
         /// <summary>
         /// generate a class from an interface type
         /// </summary>
@@ -87,7 +87,7 @@ namespace SignalGo.Shared.Helpers
 
             return callback;
         }
-#if (!NETSTANDARD1_6 && !NETCOREAPP1_1 && !PORTABLE)
+#if (!NETSTANDARD && !NETCOREAPP && !PORTABLE)
 
         static Type GenerateInterfaceServiceType(Type type, Type inter, List<Type> assemblyTypes, bool isServer)
         {
@@ -266,7 +266,7 @@ namespace SignalGo.Shared.Helpers
         //        return "";
         //    return attributes;
         //}
-#if (!NETSTANDARD1_6 && !NETCOREAPP1_1 && !PORTABLE)
+#if (!NETSTANDARD && !NETCOREAPP && !PORTABLE)
         public static Action<CompilerResults, List<Type>, string> OnErrorAction { get; set; }
         private static Assembly CompileSource(string sourceCode, List<Type> types)
         {

@@ -19,7 +19,7 @@ namespace SignalGo.Shared.IO
         /// </summary>
         /// <param name="udpClient">client</param>
         /// <param name="data">bytes of data to write</param>
-#if (NETSTANDARD1_6 || NETCOREAPP1_1)
+#if (NETSTANDARD || NETCOREAPP)
         /// <param name="iPEndPoint">address to write</param>
         public static async void WriteToEnd(UdpClient udpClient, IPEndPoint iPEndPoint, byte[] data)
 #elif (PORTABLE)
@@ -39,7 +39,7 @@ namespace SignalGo.Shared.IO
                     countToWrite = count - lengthWrited;
                 }
                 byte[] bytes = data.ToList().GetRange(lengthWrited, count - lengthWrited).ToArray();
-#if (NETSTANDARD1_6 || NETCOREAPP1_1)
+#if (NETSTANDARD || NETCOREAPP)
                 var writeCount = await udpClient.SendAsync(bytes, data.Length, iPEndPoint);
 #elif (PORTABLE)
                 var writeCount = data.Length;

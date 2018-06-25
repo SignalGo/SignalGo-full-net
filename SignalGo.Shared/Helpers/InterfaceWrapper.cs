@@ -70,13 +70,13 @@ namespace SignalGo.Shared.Helpers
                 ns += ".";
             var attrib = serviceInterfaceType.GetCustomAttributes<ServiceContractAttribute>(true).Where(x => x.ServiceType == ServiceType.ServerService || x.ServiceType == ServiceType.ClientService || x.ServiceType == ServiceType.StreamService).FirstOrDefault();
 
-#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
+#if (NETSTANDARD || NETCOREAPP || PORTABLE)
             var assembly = AssemblyBuilder.DefineDynamicAssembly(assemblyName,
              AssemblyBuilderAccess.Run);
 #else
             var assembly = AppDomain.CurrentDomain.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndSave);
 #endif
-#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
+#if (NETSTANDARD || NETCOREAPP || PORTABLE)
             var module = assembly.DefineDynamicModule(moduleName);
 #else
             var module = assembly.DefineDynamicModule(moduleName, false);
@@ -90,7 +90,7 @@ namespace SignalGo.Shared.Helpers
 
             // Define _Service0..N-1 private service fields
             FieldBuilder[] fields = new FieldBuilder[1];
-#if (NETSTANDARD1_6 || NETCOREAPP1_1)
+#if (NETSTANDARD || NETCOREAPP)
             var cab = new CustomAttributeBuilder(
                 typeof(DebuggerBrowsableAttribute).GetTypeInfo().GetConstructor(new Type[] { typeof(DebuggerBrowsableState) }),
                 new Object[] { DebuggerBrowsableState.Never });
@@ -189,7 +189,7 @@ namespace SignalGo.Shared.Helpers
                     generator.Emit(OpCodes.Ret);
                 }
             }
-#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
+#if (NETSTANDARD || NETCOREAPP || PORTABLE)
             var newType = type.CreateTypeInfo();
             return Activator.CreateInstance(newType.AsType(), CallMethodAction);
 #else
