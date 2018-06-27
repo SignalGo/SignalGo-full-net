@@ -1,7 +1,9 @@
-﻿<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <!--<Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />-->
+  <!--<Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />-->
   <PropertyGroup>
-    <TargetFrameworks>net45;net40;net35;netstandard1.6;portable45-net45+win8;portable-net45+win8+wpa81;netstandard2.0;netcoreapp1.0;netcoreapp2.0</TargetFrameworks>
+    <!--<TargetFrameworks>portable-net45+win8+wpa81;portable45-net45+win8;</TargetFrameworks>-->
+    <TargetFrameworks>net45;net40;net35;netstandard1.6;netstandard2.0;netcoreapp2.0;netcoreapp1.0</TargetFrameworks>
     <!---->
     <MinimumVisualStudioVersion>10.0</MinimumVisualStudioVersion>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -77,7 +79,6 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
@@ -87,27 +88,37 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
 
 
-  <PropertyGroup Condition="'$(TargetFramework)'=='net45'">
+  <!--<PropertyGroup Condition="'$(TargetFramework)'=='net35'">
+    <Import>$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props</Import>
+  </PropertyGroup>-->
+
+  <!--<PropertyGroup Condition="'$(TargetFramework)'=='net45'">
     <AssemblyTitle>SignalGo.Shared</AssemblyTitle>
+    <Import>$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props</Import>
   </PropertyGroup>
   <PropertyGroup Condition="'$(TargetFramework)'=='net40'">
     <AssemblyTitle>SignalGo.Shared .NET 4.0</AssemblyTitle>
+    <Import>$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props</Import>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(TargetFramework)'=='net35'">
-    <AssemblyTitle>SignalGo.Shared .NET 3.5</AssemblyTitle>
+  <PropertyGroup Condition="'$(TargetFramework)'=='netstandard1.6'">
+    <AssemblyTitle>SignalGo.Shared .NET Standard</AssemblyTitle>
+    <Import>$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props</Import>
   </PropertyGroup>
-
+  
+  <PropertyGroup Condition="'$(TargetFramework)'=='netstandard2.0'">
+    <AssemblyTitle>SignalGo.Shared .NET Standard</AssemblyTitle>
+  </PropertyGroup>-->
+  <!--<Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />-->
   <PropertyGroup Condition="'$(TargetFramework)'=='portable45-net45+win8'">
     <TargetFrameworkIdentifier>.NETPortable</TargetFrameworkIdentifier>
     <AssemblyTitle>SignalGo.Shared .NET Portable</AssemblyTitle>
     <TargetFrameworkProfile>Profile7</TargetFrameworkProfile>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <NugetTargetMoniker>.NETPortable,Version=v4.5,Profile=Profile7</NugetTargetMoniker>
-    <LanguageTargets>$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets</LanguageTargets>
+    <!--<Import>$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets</Import>-->
     <DefineConstants>PORTABLE;$(AdditionalConstants)</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition="'$(TargetFramework)'=='portable-net45+win8+wpa81'">
@@ -116,7 +127,7 @@
     <TargetFrameworkProfile>Profile111</TargetFrameworkProfile>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <NugetTargetMoniker>.NETPortable,Version=v0.0,Profile=Profile111</NugetTargetMoniker>
-    <LanguageTargets>$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets</LanguageTargets>
+    <!--<Import>$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets</Import>-->
     <DefineConstants>PORTABLE;$(AdditionalConstants)</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net45|AnyCPU'">
@@ -162,7 +173,7 @@
     <PackageReference Include="System.Threading.Thread" Version="4.3.0" />
     <PackageReference Include="System.Reflection.TypeExtensions" Version="4.4.0" />
     <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
-    <!--<PackageReference Include="NETStandard.Library" Version="1.6.0" />-->
+    <PackageReference Include="NETStandard.Library" Version="1.6.1" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
     <PackageReference Include="System.Reflection" Version="4.3.0" />
@@ -172,7 +183,7 @@
     <PackageReference Include="System.Threading.Thread" Version="4.3.0" />
     <PackageReference Include="System.Reflection.TypeExtensions" Version="4.4.0" />
     <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
-    <!--<PackageReference Include="NETStandard.Library" Version="2.0.3" />-->
+    <PackageReference Include="NETStandard.Library" Version="2.0.0" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp1.0'">
@@ -191,7 +202,7 @@
     <PackageReference Include="System.Threading.Thread" Version="4.3.0" />
     <PackageReference Include="System.Reflection.TypeExtensions" Version="4.4.0" />
     <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
-    <!--<PackageReference Include="Microsoft.NETCore.App" Version="2.0.0" />-->
+    <PackageReference Include="Microsoft.NETCore.App" Version="2.0.0" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'portable45-net45+win8'">
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
@@ -207,4 +218,5 @@
     <Compile Remove="Log\MethodCallsLogger.cs" />
     <Compile Remove="Log\MethodCallsLogLoader.cs" />
   </ItemGroup>
+  <!--<Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />-->
 </Project>
