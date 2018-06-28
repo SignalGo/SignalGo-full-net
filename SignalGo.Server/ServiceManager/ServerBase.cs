@@ -1112,11 +1112,19 @@ namespace SignalGo.Server.ServiceManager
                 var len = int.Parse(headers["content-length"]);
                 if (content.Length < len)
                 {
-                    byte[] buffer = new byte[len - content.Length];
-                    var readCount = client.TcpClient.Client.Receive(buffer);
-                    var postResponse = Encoding.UTF8.GetString(buffer.ToList().GetRange(0, readCount).ToArray());
+                    List<byte> resultBytes = new List<byte>();
+                    int readedCount = 0;
+                    while (readedCount < len)
+                    {
+                        byte[] buffer = new byte[len - content.Length];
+                        var readCount = client.TcpClient.Client.Receive(buffer);
+                        if (readCount == 0)
+                            throw new Exception("zero byte readed socket disconnected!");
+                        resultBytes.AddRange(buffer.ToList().GetRange(0, readCount));
+                        readedCount += readCount;
+                    }
+                    var postResponse = Encoding.UTF8.GetString(resultBytes.ToArray(), 0, resultBytes.Count);
                     content = postResponse;
-
                 }
 
                 methodName = lines.Last();
@@ -2300,7 +2308,7 @@ namespace SignalGo.Server.ServiceManager
             }
         }
 
-#endregion
+        #endregion
 
         /// <summary>
         /// Sdd assembly that include models to server reference when client wants to add or update service reference
