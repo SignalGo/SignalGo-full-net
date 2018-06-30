@@ -7,6 +7,9 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
     <Grid>
-		<Button x:Name="btnLoad" Click="btnLoad_Click"/>
+		<StackPanel VerticalAlignment="Center">
+			<Button x:Name="btnLoad" Content="Load" Click="btnLoad_Click"/>
+			<Button x:Name="btnUnLoad" Content="UnLoad" Click="btnUnLoad_Click"/>
+		</StackPanel>
 	</Grid>
 </Window>
