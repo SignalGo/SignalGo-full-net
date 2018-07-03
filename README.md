@@ -1,4 +1,6 @@
-# [You can read Wiki by click here](https://github.com/SignalGo/SignalGo-full-net/wiki)
+# Wiki and Nuget
+[![NuGet](https://img.shields.io/badge/github-full%20wiki-brightgreen.svg)](https://github.com/SignalGo/SignalGo-full-net/wiki)
+[![NuGet](https://img.shields.io/badge/nuget-server.net%20v3.7.0-blue.svg)](https://www.nuget.org/packages/SignalGo.Net.Server/)  [![NuGet](https://img.shields.io/badge/nuget-client.net%20v3.7.0-blue.svg)](https://www.nuget.org/packages/SignalGo.Net.Client/)  [![NuGet](https://img.shields.io/badge/nuget-javascript%20v3.7.0-blue.svg)](https://www.nuget.org/packages/SignalGo.JavaScript.Client/)
 
 # Signal Go
 
@@ -35,6 +37,8 @@ SignalGo is a library for Cross-Platform developers that makes it incredibly sim
 
 14.Automatic handle object references and pointers in serialize and deserialize system
 
+15.Add service reference with visual studio for client side [![NuGet](https://img.shields.io/badge/github-wiki-brightgreen.svg)](https://github.com/SignalGo/SignalGo-full-net/wiki/Add-Service-Reference---Auto-generate-all-services-and-models-in-client-side)
+
 and other fetures...
 
 ## Simple Usage:
@@ -44,7 +48,7 @@ After you learn it [ServiceContractAttribute](https://github.com/SignalGo/Signal
 for example we have an interface that is our sevice level methods.
 
 ```csharp
-    [SignalGo.Shared.DataTypes.ServiceContract("TestServerModel")]
+    [SignalGo.Shared.DataTypes.ServiceContract("TestServerModel", ServiceType.ServerService, InstanceType = SignalGo.Shared.DataTypes.InstanceType.SingleInstance)]
     public interface ITestServerModel
     {
         Tuple<string> HelloWorld(string yourName);
@@ -71,7 +75,7 @@ static void Main(string[] args)
             // create instance of your server listener
             SignalGo.Server.ServiceManager.ServerProvider server = new SignalGo.Server.ServiceManager.ServerProvider();
             //register your service class that have implemented methods (not interfaces)
-            server.InitializeService<TestServerModel>();
+            server.RegisterServerService<TestServerModel>();
             //start your server provider (your server address is important for client to connect)
             server.Start("http://localhost:1132/SignalGoTestService");
             //this code hold windows close and don't let him to close after read one line this will be close.
@@ -92,7 +96,7 @@ So I think this is better for you if your service interface project be separated
                 //connect to your server must have full address that your server is listen
                 provider.Connect("http://localhost:1132/SignalGoTestService");
                 //register your service interfacce for client
-                var testServerModel = provider.RegisterClientServiceInterfaceWrapper<ITestServerModel>();
+                var testServerModel = provider.RegisterServerServiceInterfaceWrapper<ITestServerModel>();
                 //call server method and return value from your server to client
                 var result = testServerModel.HelloWorld("ali");
                 //print your result to console
@@ -102,9 +106,9 @@ So I think this is better for you if your service interface project be separated
 SignalGo have another way to register your service interface like:
 
 ```csharp
-var testServerModel = provider.RegisterClientServiceDynamic<ITestServerModel>();
+var testServerModel = provider.RegisterServerServiceDynamic<ITestServerModel>();
 //or
-var testServerModel = provider.RegisterClientServiceDynamic("TestServerModel");
+var testServerModel = provider.RegisterServerServiceDynamic("TestServerModel");
 ```
 
 ### [You can read more Wiki by click here](https://github.com/SignalGo/SignalGo-full-net/wiki)
@@ -117,8 +121,8 @@ var testServerModel = provider.RegisterClientServiceDynamic("TestServerModel");
 ```csharp
             ClientProvider connector = new ClientProvider();
             connector.Connect("http://localhost:1199/SignalGoTestServicesProject");
-            var callbacks = connector.RegisterServerCallback<ClientCallback>();
-            var service = connector.RegisterClientServiceInterface<ISignalGoServerMethods>();
+            var callbacks = connector.RegisterClientService<ClientCallback>();
+            var service = connector.RegisterServerServiceInterfaceWrapper<ISignalGoServerMethods>();
             connector.SetSecuritySettings(new SignalGo.Shared.Models.SecuritySettingsInfo() { SecurityMode = SignalGo.SecurityMode.RSA_AESSecurity });
                 
 ```
@@ -149,32 +153,56 @@ var testServerModel = provider.RegisterClientServiceDynamic("TestServerModel");
 #### server-side:
 
 ```csharp
-    [HttpSupport("AddressTest")]
-    public class SimpleHttpRequest : HttpRequestController
+    [ServiceContract("AddressTest", ServiceType.HttpService, InstanceType.SingleInstance)]
+    public class SimpleHttpRequest
     {
+        /// <summary>
+        /// test url example on your browser:
+        /// http://localhost:1199/AddressTest/DownloadImage?name=ali&num=0
+        /// http://localhost:1199/AddressTest/DownloadImage?name=ali&num=10
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="num"></param>
+        /// <returns></returns>
         public ActionResult DownloadImage(string name, int num)
         {
+            var current = OperationContext.Current.HttpClient;
             if (num <= 0)
             {
-                Status = System.Net.HttpStatusCode.Forbidden;
-                return Content("num is not true!");
+                current.Status = System.Net.HttpStatusCode.Forbidden;
+                return "num is not true!";
             }
-            ResponseHeaders.Add("Content-Type", "image/jpeg");
-            return new FileActionResult(@"D:\photo_2017-03-08_00-45-04.jpg");
+            current.ResponseHeaders.Add("Content-Type", "image/jpeg");
+            //your file address
+            string fileName = @"D:\ali.jpg";
+            if (!File.Exists(fileName))
+            {
+                current.Status = System.Net.HttpStatusCode.NotFound;
+                return "File not found!";
+            }
+            return new FileActionResult(fileName);
         }
-        
-        public ActionResult Hello(string name)
+
+        /// <summary>
+        /// test url example on your browser:
+        /// http://localhost:1199/AddressTest/Hello?name=ali
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="num"></param>
+        /// <returns></returns>
+        public string Hello(string name)
         {
-            return Content("hello:" + name);
+            return "hello:" + name;
         }
-        
-        public ActionResult TestUploadFile(Guid token, int profileId)
+
+        public string TestUploadFile(Guid token, int profileId)
         {
-            var fileInfo = TakeNextFile();
+            var current = OperationContext.Current.HttpClient;
+            var fileInfo = current.TakeNextFile();
             if (fileInfo == null)
             {
-                Status = System.Net.HttpStatusCode.NotFound;
-                return Content("file not found!");
+                current.Status = System.Net.HttpStatusCode.NotFound;
+                return "file not found!";
             }
             using (var streamWriter = new FileStream("D:\\testfileName.txt", FileMode.OpenOrCreate, FileAccess.ReadWrite))
             {
@@ -188,7 +216,7 @@ var testServerModel = provider.RegisterClientServiceDynamic("TestServerModel");
                 }
                 long fileLen = streamWriter.Length;
             }
-            return Content("success!");
+            return "success!";
         }
     }
 ```
@@ -202,8 +230,8 @@ after create your controller class you must register that in to your server afte
         {
             var server = new SignalGo.Server.ServiceManager.ServerProvider();
             server.Start("http://localhost:1199/SignalGoTestServicesProject");
-            server.InitializeService(typeof(SignalGoServerMethods));
-            server.RegisterClientCallbackInterfaceService<ISignalGoClientMethods>();
+            server.RegisterServerService<SignalGoServerMethods>();
+            server.RegisterClientService<ISignalGoClientMethods>();
             server.AddHttpService(typeof(SimpleHttpRequest));
         }
     }
@@ -220,13 +248,14 @@ http://localhost:1199/AddressTest/Hello?ali
 
 ![ScreenShot](https://github.com/SignalGo/SignalGoTest/blob/master/image2.png "signal go test image")
 
+
 ## Install package from nuget:
 
-Install-Package SignalGo.Net.Server
+Install-Package SignalGo.Net.Server  [![NuGet](https://img.shields.io/badge/nuget-server.net%20v3.6.0-blue.svg)](https://www.nuget.org/packages/SignalGo.Net.Server/)
 
-Install-Package SignalGo.Net.Client
+Install-Package SignalGo.Net.Client  [![NuGet](https://img.shields.io/badge/nuget-client.net%20v3.6.0-blue.svg)](https://www.nuget.org/packages/SignalGo.Net.Client/)
 
-Install-Package SignalGo.JavaScript.Client
+Install-Package SignalGo.JavaScript.Client  [![NuGet](https://img.shields.io/badge/nuget-javascript%20v3.6.0-blue.svg)](https://www.nuget.org/packages/SignalGo.JavaScript.Client/)
 
 # Pull Requests
 I welcome all pull requests from you guys.Here are 3 basic rules of your request:
