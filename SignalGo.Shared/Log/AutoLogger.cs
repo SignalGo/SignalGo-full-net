@@ -54,13 +54,18 @@ namespace SignalGo.Shared.Log
 #if (!PORTABLE)
             try
             {
+#if (NETSTANDARD1_6)
                 DirectoryLocation = Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location);
+#else
+                DirectoryLocation = Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory + "\\");
+#endif
                 if (!Directory.Exists(DirectoryLocation))
                     Directory.CreateDirectory(DirectoryLocation);
+                Console.WriteLine("log location:" + DirectoryLocation);
             }
-            catch
+            catch (Exception ex)
             {
-
+                Console.WriteLine(ex);
             }
             DirectoryName = "SignalGoDiagnostic";
             FileName = "SignalGo Logs.log";
