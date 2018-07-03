@@ -37,6 +37,9 @@
     <Reference Include="MvvmGo, Version=2.2.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\MvvmGo.1.0.0\lib\net45\MvvmGo.dll</HintPath>
     </Reference>
+    <Reference Include="Newtonsoft.Json, Version=11.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.11.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
@@ -57,7 +60,16 @@
       <Generator>MSBuild:Compile</Generator>
     </ApplicationDefinition>
     <Compile Include="Helpers\AssemblyLoader.cs" />
+    <Compile Include="Models\ServerInfo.cs" />
+    <Compile Include="ViewModels\AddNewServerViewModel.cs" />
+    <Compile Include="ViewModels\MainWindowViewModel.cs" />
     <Compile Include="ViewModels\ServerInfoViewModel.cs" />
+    <Compile Include="Views\AddNewServerPage.xaml.cs">
+      <DependentUpon>AddNewServerPage.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\FirstPage.xaml.cs">
+      <DependentUpon>FirstPage.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\ServerInfoPage.xaml.cs">
       <DependentUpon>ServerInfoPage.xaml</DependentUpon>
     </Compile>
@@ -73,6 +85,12 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="Views\AddNewServerPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\FirstPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Views\ServerInfoPage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -103,6 +121,16 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\SignalGo.Server\SignalGo.Server.csproj">
+      <Project>{8170e507-f79c-49c4-9ec2-9112c565a98b}</Project>
+      <Name>SignalGo.Server</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\SignalGo.Shared\SignalGo.Shared.csproj">
+      <Project>{78d8601b-e331-47b7-a4a8-46b7460d82a4}</Project>
+      <Name>SignalGo.Shared</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

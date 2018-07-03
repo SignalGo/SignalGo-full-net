@@ -1,6 +1,9 @@
 ﻿using SignalGo.ServerManager.Helpers;
+using SignalGo.ServerManager.ViewModels;
+using SignalGo.ServerManager.Views;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -12,6 +15,7 @@ using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
@@ -30,43 +34,53 @@ namespace SignalGo.ServerManager
     /// </summary>
     public partial class MainWindow : Window
     {
+        public static MainWindow This;
         public MainWindow()
         {
+            This = this;
             InitializeComponent();
+            mainframe.Navigate(new FirstPage());
+            Closing += MainWindow_Closing;
         }
 
-        List<ServerInfoBase> Domains = new List<ServerInfoBase>();
-        private void btnLoad_Click(object sender, RoutedEventArgs e)
+        private void MainWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            var path = @"C:\Users\ASUS\source\repos\TestClassLoaderinAppDomain\TestClassLoaderinAppDomain\bin\Debug\";
-
-            try
-            {
-                ServerInfoBase loader = new ServerInfoBase("test", System.IO.Path.Combine(path, "TestClassLoaderinAppDomain.dll"), path);
-                Domains.Add(loader);
-                GC.Collect();
-                GC.WaitForFullGCComplete();
-                GC.Collect();
-            }
-            catch (Exception ex)
-            {
-            }
-            finally
-            {
-                //AppDomain.Unload(newDomainName);
-            }
+            Process.GetCurrentProcess().Kill();
         }
 
-        private void btnUnLoad_Click(object sender, RoutedEventArgs e)
+        private void MainFrame_Navigating(object sender, NavigatingCancelEventArgs e)
         {
-            foreach (var item in Domains)
+            var ta = new ThicknessAnimation();
+            ta.Duration = TimeSpan.FromSeconds(0.3);
+            ta.DecelerationRatio = 0.7;
+            ta.To = new Thickness(0, 0, 0, 0);
+            if (e.NavigationMode == NavigationMode.New || e.NavigationMode == NavigationMode.Forward)
             {
-                item.Dispose();
+                ta.From = new Thickness(500, 0, -500, 0);
             }
-            Domains.Clear();
-            GC.Collect();
-            GC.WaitForFullGCComplete();
-            GC.Collect();
+            else if (e.NavigationMode == NavigationMode.Back)
+            {
+                ta.From = new Thickness(-500, 0, 500, 0);
+            }
+            else if (e.NavigationMode == NavigationMode.Refresh)
+            {
+                ta.From = new Thickness(0, 0, 0, 0);
+            }
+
+            (e.Content as Page).BeginAnimation(MarginProperty, ta);
+
+            //if (e.Content.GetType() == typeof(ManagePersonInfoes))
+            //{
+            //    var page = e.Content as ManagePersonInfoes;
+            //    var vm = page.DataContext as ManagePersonInfoesViewModel;
+            //    if (vm.DefaultPersonInfoes == null)
+            //        vm.RefreshPersons(0, 10);
+            //}
+        }
+
+        private void Frame_Loaded(object sender, RoutedEventArgs e)
+        {
+            MainWindowViewModel.MainFrame = (Frame)sender;
         }
     }
 }
