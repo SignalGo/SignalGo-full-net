@@ -9,6 +9,9 @@ using System.Text;
 
 namespace SignalGo.Shared.Helpers
 {
+    /// <summary>
+    /// convert datetime to localtime
+    /// </summary>
     public class ToLocalDateTimeConvertor : DateTimeConverterBase
     {
         public AutoLogger AutoLogger { get; set; }
@@ -49,8 +52,14 @@ namespace SignalGo.Shared.Helpers
         }
     }
 
+    /// <summary>
+    /// json serialize and deserialize error handling
+    /// </summary>
     public class JsonSettingHelper
     {
+        /// <summary>
+        /// log erros and warnings
+        /// </summary>
         public AutoLogger AutoLogger { get; set; } = new AutoLogger() { FileName = "JsonSettingHelper Logs.log" };
         public void Initialize()
         {

@@ -7,7 +7,7 @@ using System.Text;
 namespace SignalGo.Server.DataTypes
 {
     /// <summary>
-    /// limit client ip addresses
+    /// limit client ip addresses to use methods and services
     /// if you want read ip addresses from file you must implement this class and override Get ip addresses methods
     /// </summary>
     public class ClientLimitationAttribute : Attribute

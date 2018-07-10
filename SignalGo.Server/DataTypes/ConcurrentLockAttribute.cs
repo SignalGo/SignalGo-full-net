@@ -22,7 +22,10 @@ namespace SignalGo.Server.DataTypes
         /// lock per ip address, one ip cannot double call concurrent
         /// </summary>
         PerIpAddress = 3,
-
+        /// <summary>
+        /// lock per method,multipe users cannot call one method concurrent
+        /// </summary>
+        PerMethod = 4
     }
     /// <summary>
     /// lock method when multipe clients are calling

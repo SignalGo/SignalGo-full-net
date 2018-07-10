@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace SignalGo.Shared.Log
 {
@@ -108,7 +109,7 @@ namespace SignalGo.Shared.Log
         }
 #endif
 
-        object lockOBJ = new object();
+        readonly object _lockOBJ = new object();
         /// <summary>
         /// log text message
         /// </summary>
@@ -118,43 +119,44 @@ namespace SignalGo.Shared.Log
         {
             if (string.IsNullOrEmpty(DirectoryLocation) || !IsEnabled)
                 return;
-#if (!PORTABLE)
-            StringBuilder str = new StringBuilder();
-            str.AppendLine("<Text Log Start>");
-            str.AppendLine(text);
-            if (stacktrace)
+            Task.Run(() =>
             {
-                str.AppendLine("<StackTrace>");
-                StringBuilder builder = new StringBuilder();
+                StringBuilder str = new StringBuilder();
+                str.AppendLine("<Text Log Start>");
+                str.AppendLine(text);
+                if (stacktrace)
+                {
+                    str.AppendLine("<StackTrace>");
+                    StringBuilder builder = new StringBuilder();
 #if (NETSTANDARD || NETCOREAPP)
                 GetOneStackTraceText(new StackTrace(new Exception(text), true), builder);
 #else
-                GetOneStackTraceText(new StackTrace(true), builder);
+                    GetOneStackTraceText(new StackTrace(true), builder);
 #endif
-                str.AppendLine(builder.ToString());
+                    str.AppendLine(builder.ToString());
 
-                str.AppendLine("</StackTrace>");
-            }
-            str.AppendLine("<Text Log End>");
+                    str.AppendLine("</StackTrace>");
+                }
+                str.AppendLine("<Text Log End>");
 
-            string fileName = SavePath;
-            try
-            {
-                lock (lockOBJ)
+                string fileName = SavePath;
+                try
                 {
-                    using (var stream = new FileStream(fileName, FileMode.OpenOrCreate, FileAccess.ReadWrite))
+                    lock (_lockOBJ)
                     {
-                        stream.Seek(0, SeekOrigin.End);
-                        byte[] bytes = Encoding.UTF8.GetBytes(System.Environment.NewLine + str.ToString());
-                        stream.Write(bytes, 0, bytes.Length);
+                        using (var stream = new FileStream(fileName, FileMode.OpenOrCreate, FileAccess.ReadWrite))
+                        {
+                            stream.Seek(0, SeekOrigin.End);
+                            byte[] bytes = Encoding.UTF8.GetBytes(System.Environment.NewLine + str.ToString());
+                            stream.Write(bytes, 0, bytes.Length);
+                        }
                     }
                 }
-            }
-            catch
-            {
+                catch
+                {
 
-            }
-#endif
+                }
+            });
         }
 
 
@@ -167,39 +169,40 @@ namespace SignalGo.Shared.Log
         {
             if (string.IsNullOrEmpty(DirectoryLocation) || !IsEnabled)
                 return;
-#if (!PORTABLE)
-            try
+            Task.Run(() =>
             {
-                StringBuilder str = new StringBuilder();
-                str.AppendLine(title);
-                str.AppendLine(e.ToString());
-                str.AppendLine("Time : " + DateTime.Now.ToLocalTime().ToString());
-                str.AppendLine("--------------------------------------------------------------------------------------------------");
-                str.AppendLine("--------------------------------------------------------------------------------------------------");
-                string fileName = SavePath;
-
                 try
                 {
-                    lock (lockOBJ)
+                    StringBuilder str = new StringBuilder();
+                    str.AppendLine(title);
+                    str.AppendLine(e.ToString());
+                    str.AppendLine("Time : " + DateTime.Now.ToLocalTime().ToString());
+                    str.AppendLine("--------------------------------------------------------------------------------------------------");
+                    str.AppendLine("--------------------------------------------------------------------------------------------------");
+                    string fileName = SavePath;
+
+                    try
                     {
-                        using (FileStream stream = new FileStream(fileName, FileMode.OpenOrCreate, FileAccess.ReadWrite))
+                        lock (_lockOBJ)
                         {
-                            stream.Seek(0, SeekOrigin.End);
-                            byte[] bytes = Encoding.UTF8.GetBytes(System.Environment.NewLine + str.ToString());
-                            stream.Write(bytes, 0, bytes.Length);
+                            using (FileStream stream = new FileStream(fileName, FileMode.OpenOrCreate, FileAccess.ReadWrite))
+                            {
+                                stream.Seek(0, SeekOrigin.End);
+                                byte[] bytes = Encoding.UTF8.GetBytes(System.Environment.NewLine + str.ToString());
+                                stream.Write(bytes, 0, bytes.Length);
+                            }
                         }
+                    }
+                    catch
+                    {
+
                     }
                 }
                 catch
                 {
 
                 }
-            }
-            catch
-            {
-
-            }
-#endif
+            });
         }
     }
 }

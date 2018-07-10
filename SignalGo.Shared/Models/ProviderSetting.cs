@@ -12,6 +12,9 @@ namespace SignalGo.Shared.Models
     {
         /// <summary>
         /// when you want to use timeouts on your provider set it true
+        /// the properties of set timeout is SendDataTimeout and ReceiveDataTimeout
+        /// or you can set it to false and server will wait fo data for ever
+        /// default is false
         /// </summary>
         public bool IsEnabledToUseTimeout { get; set; }
         /// <summary>
