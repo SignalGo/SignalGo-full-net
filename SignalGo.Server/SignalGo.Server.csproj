@@ -37,19 +37,17 @@
     <PackageIconUrl>http://cdn.persiangig.com/preview/v14ukL88fq/SignalGo.png</PackageIconUrl>
     <PackageTags>SignalGo SignalR WCF Server Client Signal Sig RealTime Real-Time</PackageTags>
     <AssemblyName>SignalGo.Server</AssemblyName>
-    <AssemblyVersion>3.7</AssemblyVersion>
-    <FileVersion>3.7</FileVersion>
-    <VersionPrefix>3.7</VersionPrefix>
-    <Version>3.7</Version>
+    <AssemblyVersion>3.8</AssemblyVersion>
+    <FileVersion>3.8</FileVersion>
+    <VersionPrefix>3.8</VersionPrefix>
+    <Version>3.8</Version>
     <DebugType>full</DebugType>
     <PackageReleaseNotes>
       1.fix bugs and more improvement
-      2.support for tuples
-      3.rename InitializeService to RegisterServerService
-      rename RegisterClientServiceInterfaceWrapper to RegisterServerServiceInterfaceWrapper
+      2.support for oneway services
+      3.support for host a website on signalgo
       read document examples here:
       https://github.com/SignalGo/SignalGo-full-net
-
     </PackageReleaseNotes>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
