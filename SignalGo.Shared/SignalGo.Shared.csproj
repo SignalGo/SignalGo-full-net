@@ -6,10 +6,10 @@
     <MinimumVisualStudioVersion>10.0</MinimumVisualStudioVersion>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <AssemblyVersion>3.7</AssemblyVersion>
-    <FileVersion>3.7</FileVersion>
-    <VersionPrefix>3.7</VersionPrefix>
-    <Version>3.7</Version>
+    <AssemblyVersion>3.8</AssemblyVersion>
+    <FileVersion>3.8</FileVersion>
+    <VersionPrefix>3.8</VersionPrefix>
+    <Version>3.8</Version>
     <!--<VersionSuffix>beta1</VersionSuffix>-->
     <Authors>Ali Yousefi</Authors>
     <Company></Company>
@@ -47,9 +47,8 @@
     </Summary>
     <PackageReleaseNotes>
       1.fix bugs and more improvement
-      2.support for tuples
-      3.rename InitializeService to RegisterServerService
-      rename RegisterClientServiceInterfaceWrapper to RegisterServerServiceInterfaceWrapper
+      2.support for oneway services
+      3.support for host a website on signalgo
       read document examples here:
       https://github.com/SignalGo/SignalGo-full-net
 
@@ -156,7 +155,7 @@
     <PackageReference Include="System.Diagnostics.StackTrace" Version="4.3.0" />
     <PackageReference Include="System.Xml.XmlSerializer" Version="4.3.0" />
     <PackageReference Include="System.Threading.Thread" Version="4.3.0" />
-    <PackageReference Include="System.Reflection.TypeExtensions" Version="4.4.0" />
+    <PackageReference Include="System.Reflection.TypeExtensions" Version="4.5.0" />
     <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
@@ -165,7 +164,7 @@
     <PackageReference Include="System.Diagnostics.StackTrace" Version="4.3.0" />
     <PackageReference Include="System.Xml.XmlSerializer" Version="4.3.0" />
     <PackageReference Include="System.Threading.Thread" Version="4.3.0" />
-    <PackageReference Include="System.Reflection.TypeExtensions" Version="4.4.0" />
+    <PackageReference Include="System.Reflection.TypeExtensions" Version="4.5.0" />
     <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
     <PackageReference Include="NETStandard.Library" Version="2.0.3" />
   </ItemGroup>
@@ -175,7 +174,7 @@
     <PackageReference Include="System.Diagnostics.StackTrace" Version="4.3.0" />
     <PackageReference Include="System.Xml.XmlSerializer" Version="4.3.0" />
     <PackageReference Include="System.Threading.Thread" Version="4.3.0" />
-    <PackageReference Include="System.Reflection.TypeExtensions" Version="4.4.0" />
+    <PackageReference Include="System.Reflection.TypeExtensions" Version="4.5.0" />
     <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
     <PackageReference Include="runtime.win8-arm.Microsoft.NETCore.Runtime.CoreCLR" Version="1.0.7" />
   </ItemGroup>
