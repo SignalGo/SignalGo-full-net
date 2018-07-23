@@ -11,7 +11,7 @@ namespace SignalGo.Server.DataTypes
     public enum ConcurrentLockType : byte
     {
         /// <summary>
-        /// full lock for all clients call
+        /// full lock for all clients call per server
         /// </summary>
         Full = 1,
         /// <summary>
