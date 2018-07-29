@@ -20,7 +20,7 @@ namespace SignalGo.Server.ServiceManager
 {
     public abstract class ServerStreamBase : ServerBase
     {
-        public override StreamInfo RegisterFileToDownload(NetworkStream stream, CompressMode compressMode, ClientInfo client, bool isWebSocket)
+        public override StreamInfo RegisterFileToDownload(Stream stream, CompressMode compressMode, ClientInfo client, bool isWebSocket)
         {
             var bytes = GoStreamReader.ReadBlockToEnd(stream, compressMode, ProviderSetting.MaximumReceiveDataBlock, isWebSocket);
             var json = Encoding.UTF8.GetString(bytes);
@@ -68,7 +68,7 @@ namespace SignalGo.Server.ServiceManager
             }
         }
 
-        public override void WriteStreamToClient(StreamInfo streamInfo, NetworkStream toWrite, bool isWebSocket)
+        public override void WriteStreamToClient(StreamInfo streamInfo, Stream toWrite, bool isWebSocket)
         {
             var readStream = streamInfo.Stream;
             while (true)
@@ -81,7 +81,7 @@ namespace SignalGo.Server.ServiceManager
             }
         }
 
-        public override void RegisterFileToUpload(NetworkStream stream, CompressMode compressMode, ClientInfo client, bool isWebSocket)
+        public override void RegisterFileToUpload(Stream stream, CompressMode compressMode, ClientInfo client, bool isWebSocket)
         {
             var bytes = GoStreamReader.ReadBlockToEnd(stream, compressMode, ProviderSetting.MaximumReceiveDataBlock, isWebSocket);
             var json = Encoding.UTF8.GetString(bytes);
@@ -121,7 +121,7 @@ namespace SignalGo.Server.ServiceManager
         /// </summary>
         /// <param name="stream">client stream</param>
         /// <param name="client">client</param>
-        public override void DownloadStreamFromClient(NetworkStream stream, ClientInfo client)
+        public override void DownloadStreamFromClient(Stream stream, ClientInfo client)
         {
             MethodCallbackInfo callback = new MethodCallbackInfo();
             string guid = Guid.NewGuid().ToString();
@@ -207,7 +207,7 @@ namespace SignalGo.Server.ServiceManager
         /// </summary>
         /// <param name="stream">client stream</param>
         /// <param name="client">client</param>
-        public override void UploadStreamToClient(NetworkStream stream, ClientInfo client)
+        public override void UploadStreamToClient(Stream stream, ClientInfo client)
         {
             MethodCallbackInfo callback = new MethodCallbackInfo();
             IDisposable userStreamDisposable = null;

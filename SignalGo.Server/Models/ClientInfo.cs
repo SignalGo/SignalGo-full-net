@@ -3,6 +3,7 @@ using SignalGo.Shared.Http;
 using SignalGo.Shared.Models;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Sockets;
 using System.Text;
@@ -44,6 +45,8 @@ namespace SignalGo.Server.Models
         internal System.Net.IPEndPoint UdpIp { get; set; }
         internal bool IsWebSocket { get; set; }
         internal DateTime ConnectedDateTime { get; set; }
+
+        public Stream ClientStream { get; set; }
     }
 
     /// <summary>
