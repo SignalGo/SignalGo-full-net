@@ -56,9 +56,17 @@ namespace SignalGo.ServerManager.Helpers
             {
                 AutoLogger.Default.LogError(ex, "Dispose ServerInfoBase AssemblyLoader.");
             }
-            AppDomain.Unload(CurrentAppDomain);
+            try
+            {
+                AppDomain.Unload(CurrentAppDomain);
+                GC.SuppressFinalize(CurrentAppDomain);
+            }
+            catch (Exception ex)
+            {
+                AutoLogger.Default.LogError(ex, "Unload CurrentAppDomain AssemblyLoader.");
+            }
+
             GC.SuppressFinalize(this);
-            GC.SuppressFinalize(CurrentAppDomain);
             GC.Collect();
             GC.WaitForFullGCComplete();
             GC.Collect();
@@ -79,6 +87,7 @@ namespace SignalGo.ServerManager.Helpers
             serverPath = path;
             BaseDirectory = Path.GetDirectoryName(assemblyFileName);
             AppDomain.CurrentDomain.AssemblyResolve += CurrentDomain_AssemblyResolve;
+            AppDomain.CurrentDomain.UnhandledException += Appdomain_UnhandledException;
 
             //var seti = AppDomain.CurrentDomain.SetupInformation;
             mainAssembly = Assembly.LoadFile(assemblyFileName);
@@ -146,6 +155,11 @@ namespace SignalGo.ServerManager.Helpers
             //}
         }
 
+        private void Appdomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+        {
+            AutoLogger.Default.LogError((Exception)e.ExceptionObject, " new Appdomain_UnhandledException");
+        }
+
         public void StopServer(Action stopAction)
         {
             //bool finded = false;
@@ -202,11 +216,18 @@ namespace SignalGo.ServerManager.Helpers
         }
 
         string serverPath = "";
+        string currentLocationLoding = null;
         private Assembly CurrentDomain_AssemblyResolve(object sender, ResolveEventArgs args)
         {
             var fileName = System.IO.Path.Combine(serverPath, new AssemblyName(args.Name).Name + ".dll");
+            if (currentLocationLoding == fileName)
+                throw new Exception($"Assembly duplicate load {args.Name}");
+            currentLocationLoding = fileName;
             if (LoadedAssemblies.ContainsKey(fileName))
+            {
+                currentLocationLoding = null;
                 return LoadedAssemblies[fileName];
+            }
             Assembly asm = null;
             if (File.Exists(fileName))
             {
@@ -227,6 +248,7 @@ namespace SignalGo.ServerManager.Helpers
                 if (asm == null)
                     throw new Exception($"Assembly not found {args.Name}");
             }
+            currentLocationLoding = null;
             return asm;
         }
 

@@ -470,7 +470,7 @@ namespace SignalGo.Server.ServiceManager
         //        }
         //#endif
 
-        private ClientInfo CreateClientInfo(bool isHttp, TcpClient tcpClient,Stream clientStream)
+        private ClientInfo CreateClientInfo(bool isHttp, TcpClient tcpClient, Stream clientStream)
         {
             ClientInfo client = null;
             if (isHttp)
@@ -1119,7 +1119,7 @@ namespace SignalGo.Server.ServiceManager
                     while (readedCount < len)
                     {
                         byte[] buffer = new byte[len - content.Length];
-                        var readCount = client.TcpClient.Client.Receive(buffer);
+                        var readCount = client.ClientStream.Read(buffer, 0, len - content.Length);
                         if (readCount == 0)
                             throw new Exception("zero byte readed socket disconnected!");
                         resultBytes.AddRange(buffer.ToList().GetRange(0, readCount));
