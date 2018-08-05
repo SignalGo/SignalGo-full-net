@@ -115,9 +115,9 @@ namespace SignalGo.Server.ServiceManager
         internal ConcurrentDictionary<string, object> SingleInstanceServices { get; set; } = new ConcurrentDictionary<string, object>();
         /// <summary>
         /// multipe instance services that instance is per client
-        /// key is client info and value is service names and instance of services
+        /// key is client info id and value is service names and instance of services
         /// </summary>
-        internal ConcurrentDictionary<ClientInfo, ConcurrentDictionary<string, object>> MultipleInstanceServices { get; set; } = new ConcurrentDictionary<ClientInfo, ConcurrentDictionary<string, object>>();
+        internal ConcurrentDictionary<string, ConcurrentDictionary<string, object>> MultipleInstanceServices { get; set; } = new ConcurrentDictionary<string, ConcurrentDictionary<string, object>>();
 
         /// <summary>
         /// include models to server reference when client want to add or update service reference

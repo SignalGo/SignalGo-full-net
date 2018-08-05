@@ -37,9 +37,12 @@ namespace SignalGo.Server.Models
         public Action OnDisconnected { get; set; }
 
         internal TcpClient TcpClient { get; set; }
-        internal bool IsVerification { get; set; }
         internal bool IsWebSocket { get; set; }
         internal DateTime ConnectedDateTime { get; set; }
+        /// <summary>
+        /// stream of client to read and write
+        /// </summary>
+        public System.IO.Stream ClientStream { get; set; }
     }
 
     /// <summary>

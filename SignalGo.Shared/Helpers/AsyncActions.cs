@@ -75,28 +75,15 @@ namespace SignalGo.Shared
         /// </summary>
         /// <param name="action">your action</param>
         /// <param name="onException"></param>
-#if (PORTABLE)
-        public static System.Threading.Tasks.Task Run(Action action, Action<Exception> onException = null)
-#else
-        public static Thread Run(Action action, Action<Exception> onException = null)
-#endif
+        public static void Run(Action action, Action<Exception> onException = null)
         {
-#if (PORTABLE)
-            var thread = System.Threading.Tasks.Task.Factory.StartNew(() =>
-              {
-                  try
-                  {
-                      action();
-                  }
-                  catch (Exception ex)
-                  {
-                      onException?.Invoke(ex);
-                      AutoLogger.LogError(ex, "AsyncActions Run");
-                      OnActionException?.Invoke(ex);
-                  }
-              });
+#if (NET35 || NET40)
+            ThreadPool.QueueUserWorkItem(RunAction, null);
+            void RunAction(object state)
 #else
-            Thread thread = new Thread(() =>
+            System.Threading.Tasks.Task.Run(new Action(RunAction));
+            void RunAction()
+#endif
             {
                 try
                 {
@@ -116,40 +103,7 @@ namespace SignalGo.Shared
 
                     }
                 }
-            })
-            {
-                IsBackground = false
-            };
-            thread.Start();
-#endif
-            return thread;
-        }
-
-        /// <summary>
-        /// run your code with async await
-        /// </summary>
-        /// <param name="action"></param>
-        /// <returns></returns>
-        public static System.Threading.Tasks.Task RunAsync(Action action)
-        {
-            return System.Threading.Tasks.Task.Factory.StartNew(() =>
-            {
-                action();
-            });
-        }
-
-        /// <summary>
-        /// run your code with async await
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="func"></param>
-        /// <returns></returns>
-        public static System.Threading.Tasks.Task<T> RunAsync<T>(Func<T> func)
-        {
-            return System.Threading.Tasks.Task<T>.Factory.StartNew(() =>
-            {
-                return func();
-            });
+            }
         }
     }
 }

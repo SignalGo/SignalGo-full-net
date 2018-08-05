@@ -104,9 +104,6 @@ namespace SignalGo.Server.ServiceManager.Versions
             client.IPAddress = ((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address.ToString().Replace("::ffff:", "");
             client.ClientId = Guid.NewGuid().ToString() + "-" + Guid.NewGuid().ToString();
             _serverBase.Clients.TryAdd(client.ClientId, client);
-
-            //WaitedMethodsForResponse.TryAdd(client, new ConcurrentDictionary<string, KeyValue<AutoResetEvent, MethodCallbackInfo>>());
-            //ClientRegistredMethods.TryAdd(client, new ConcurrentDictionary<string, ConcurrentList<string>>());
             return client;
         }
 
@@ -149,13 +146,11 @@ namespace SignalGo.Server.ServiceManager.Versions
                 DisposeClient(client, "AddClient end signalgo stream");
                 return;
             }
-            else if (firstLineString.Contains("SignalGo/1.0"))
+            else if (firstLineString.Contains("SignalGo/4.0"))
             {
                 client = CreateClientInfo(false, tcpClient);
                 //"SignalGo/1.0";
                 client.IsWebSocket = false;
-                var bytes = System.Text.Encoding.UTF8.GetBytes("OK");
-                tcpClient.GetStream().Write(bytes, 0, bytes.Length);
             }
             else if (firstLineString.Contains("HTTP/1.1") || firstLineString.Contains("HTTP/1.0"))
             {

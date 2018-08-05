@@ -108,7 +108,6 @@ namespace SignalGo.Shared.Log
             builder.AppendLine("<------------------------------StackTrace One End------------------------------>");
         }
 #endif
-
         readonly object _lockOBJ = new object();
         /// <summary>
         /// log text message
@@ -118,8 +117,10 @@ namespace SignalGo.Shared.Log
         public void LogText(string text, bool stacktrace = false)
         {
             if (string.IsNullOrEmpty(DirectoryLocation) || !IsEnabled)
+            {
                 return;
-            Task.Run(() =>
+            }
+            AsyncActions.Run(() =>
             {
                 StringBuilder str = new StringBuilder();
                 str.AppendLine("<Text Log Start>");
@@ -129,7 +130,7 @@ namespace SignalGo.Shared.Log
                     str.AppendLine("<StackTrace>");
                     StringBuilder builder = new StringBuilder();
 #if (NETSTANDARD || NETCOREAPP)
-                GetOneStackTraceText(new StackTrace(new Exception(text), true), builder);
+                                                                GetOneStackTraceText(new StackTrace(new Exception(text), true), builder);
 #else
                     GetOneStackTraceText(new StackTrace(true), builder);
 #endif
@@ -169,7 +170,11 @@ namespace SignalGo.Shared.Log
         {
             if (string.IsNullOrEmpty(DirectoryLocation) || !IsEnabled)
                 return;
-            Task.Run(() =>
+#if (NET35 || NET40)
+            AsyncActions.Run(() =>
+#else
+            AsyncActions.Run(() =>
+#endif
             {
                 try
                 {
