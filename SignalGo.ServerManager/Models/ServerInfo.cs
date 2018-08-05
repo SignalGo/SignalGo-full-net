@@ -113,6 +113,7 @@ namespace SignalGo.ServerManager.Models
             }
         }
 
+        [JsonIgnore]
         public ServerInfoStatus Status
         {
             get

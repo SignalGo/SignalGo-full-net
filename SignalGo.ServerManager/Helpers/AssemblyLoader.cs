@@ -56,15 +56,8 @@ namespace SignalGo.ServerManager.Helpers
             {
                 AutoLogger.Default.LogError(ex, "Dispose ServerInfoBase AssemblyLoader.");
             }
-            try
-            {
-                AppDomain.Unload(CurrentAppDomain);
-                GC.SuppressFinalize(CurrentAppDomain);
-            }
-            catch (Exception ex)
-            {
-                AutoLogger.Default.LogError(ex, "Unload CurrentAppDomain AssemblyLoader.");
-            }
+            AppDomain.Unload(CurrentAppDomain);
+            GC.SuppressFinalize(CurrentAppDomain);
 
             GC.SuppressFinalize(this);
             GC.Collect();

@@ -74,6 +74,7 @@ namespace SignalGo.ServerManager.ViewModels
                     var servers = JsonConvert.DeserializeObject<List<ServerInfo>>(File.ReadAllText(path, Encoding.UTF8));
                     foreach (var item in servers)
                     {
+                        item.Status = ServerInfoStatus.Stopped;
                         This.Servers.Add(item);
                     }
                 }
