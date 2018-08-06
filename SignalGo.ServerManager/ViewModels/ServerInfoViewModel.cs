@@ -128,31 +128,31 @@ namespace SignalGo.ServerManager.ViewModels
     {
         public void Add(string serverName, string value)
         {
-            MainWindow.This.Dispatcher.Invoke(() =>
-            {
-                try
-                {
-                    var serverInfo = MainWindowViewModel.This.Servers.FirstOrDefault(x => x.Name == serverName);
-                    if (serverInfo == null)
-                        return;
-                    var _logs = serverInfo.Logs;
-                    TextLogInfo textLogInfo;
-                    if (_logs.Count == 0 || _logs.Last().IsDone)
-                    {
-                        textLogInfo = new TextLogInfo();
-                        _logs.Add(textLogInfo);
-                    }
-                    else
-                        textLogInfo = _logs.Last();
-                    textLogInfo.Text += value;
-                    if (value == "\n")
-                        textLogInfo.IsDone = true;
-                }
-                catch (Exception ex)
-                {
-                    AutoLogger.Default.LogError(ex, "LogSystem Add");
-                }
-            });
+            //MainWindow.This.Dispatcher.Invoke(() =>
+            //{
+            //    try
+            //    {
+            //        var serverInfo = MainWindowViewModel.This.Servers.FirstOrDefault(x => x.Name == serverName);
+            //        if (serverInfo == null)
+            //            return;
+            //        var _logs = serverInfo.Logs;
+            //        TextLogInfo textLogInfo;
+            //        if (_logs.Count == 0 || _logs.Last().IsDone)
+            //        {
+            //            textLogInfo = new TextLogInfo();
+            //            _logs.Add(textLogInfo);
+            //        }
+            //        else
+            //            textLogInfo = _logs.Last();
+            //        textLogInfo.Text += value;
+            //        if (value == "\n")
+            //            textLogInfo.IsDone = true;
+            //    }
+            //    catch (Exception ex)
+            //    {
+            //        AutoLogger.Default.LogError(ex, "LogSystem Add");
+            //    }
+            //});
         }
 
     }
