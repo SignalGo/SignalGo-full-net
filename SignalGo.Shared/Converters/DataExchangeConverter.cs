@@ -13,6 +13,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace SignalGo.Shared.Converters
 {
@@ -21,7 +22,7 @@ namespace SignalGo.Shared.Converters
         /// <summary>
         /// 
         /// </summary>
-        public static Dictionary<SynchronizationContext, List<CustomDataExchangerAttribute>> ListOfContextsDataExchangers = new Dictionary<SynchronizationContext, List<CustomDataExchangerAttribute>>();
+        public static Dictionary<int, List<CustomDataExchangerAttribute>> ListOfContextsDataExchangers = new Dictionary<int, List<CustomDataExchangerAttribute>>();
 
         public static void TakeOnly(object instance)
         {
@@ -49,10 +50,10 @@ namespace SignalGo.Shared.Converters
 
         public static void TakeOnly(object instance, params string[] property)
         {
-            if (SynchronizationContext.Current == null)
+            if (Task.CurrentId == null)
                 throw new Exception("current context is null please don't call this method inside of another thread!");
-            if (!ListOfContextsDataExchangers.ContainsKey(SynchronizationContext.Current))
-                ListOfContextsDataExchangers.Add(SynchronizationContext.Current, new List<CustomDataExchangerAttribute>());
+            if (!ListOfContextsDataExchangers.ContainsKey(Task.CurrentId.GetValueOrDefault()))
+                ListOfContextsDataExchangers.Add(Task.CurrentId.GetValueOrDefault(), new List<CustomDataExchangerAttribute>());
             CustomDataExchangerAttribute result = new CustomDataExchangerAttribute
             {
                 ExchangeType = CustomDataExchangerType.TakeOnly,
@@ -60,15 +61,15 @@ namespace SignalGo.Shared.Converters
                 Instance = instance,
                 LimitationMode = LimitExchangeType.Both
             };
-            ListOfContextsDataExchangers[SynchronizationContext.Current].Add(result);
+            ListOfContextsDataExchangers[Task.CurrentId.GetValueOrDefault()].Add(result);
         }
 
         public static void Ignore(object instance, params string[] property)
         {
-            if (SynchronizationContext.Current == null)
+            if (Task.CurrentId == null)
                 throw new Exception("current context is null please don't call this method inside of another thread!");
-            if (!ListOfContextsDataExchangers.ContainsKey(SynchronizationContext.Current))
-                ListOfContextsDataExchangers.Add(SynchronizationContext.Current, new List<CustomDataExchangerAttribute>());
+            if (!ListOfContextsDataExchangers.ContainsKey(Task.CurrentId.GetValueOrDefault()))
+                ListOfContextsDataExchangers.Add(Task.CurrentId.GetValueOrDefault(), new List<CustomDataExchangerAttribute>());
             CustomDataExchangerAttribute result = new CustomDataExchangerAttribute
             {
                 ExchangeType = CustomDataExchangerType.Ignore,
@@ -76,17 +77,17 @@ namespace SignalGo.Shared.Converters
                 Instance = instance,
                 LimitationMode = LimitExchangeType.Both
             };
-            ListOfContextsDataExchangers[SynchronizationContext.Current].Add(result);
+            ListOfContextsDataExchangers[Task.CurrentId.GetValueOrDefault()].Add(result);
 
         }
 
 
         public static void Take(Type type, params string[] property)
         {
-            if (SynchronizationContext.Current == null)
+            if (Task.CurrentId == null)
                 throw new Exception("current context is null please don't call this method inside of another thread!");
-            if (!ListOfContextsDataExchangers.ContainsKey(SynchronizationContext.Current))
-                ListOfContextsDataExchangers.Add(SynchronizationContext.Current, new List<CustomDataExchangerAttribute>());
+            if (!ListOfContextsDataExchangers.ContainsKey(Task.CurrentId.GetValueOrDefault()))
+                ListOfContextsDataExchangers.Add(Task.CurrentId.GetValueOrDefault(), new List<CustomDataExchangerAttribute>());
             CustomDataExchangerAttribute result = new CustomDataExchangerAttribute
             {
                 ExchangeType = CustomDataExchangerType.TakeOnly,
@@ -94,16 +95,16 @@ namespace SignalGo.Shared.Converters
                 Type = type,
                 LimitationMode = LimitExchangeType.Both
             };
-            ListOfContextsDataExchangers[SynchronizationContext.Current].Add(result);
+            ListOfContextsDataExchangers[Task.CurrentId.GetValueOrDefault()].Add(result);
 
         }
 
         public static void Ignore(Type type, params string[] property)
         {
-            if (SynchronizationContext.Current == null)
+            if (Task.CurrentId == null)
                 throw new Exception("current context is null please don't call this method inside of another thread!");
-            if (!ListOfContextsDataExchangers.ContainsKey(SynchronizationContext.Current))
-                ListOfContextsDataExchangers.Add(SynchronizationContext.Current, new List<CustomDataExchangerAttribute>());
+            if (!ListOfContextsDataExchangers.ContainsKey(Task.CurrentId.GetValueOrDefault()))
+                ListOfContextsDataExchangers.Add(Task.CurrentId.GetValueOrDefault(), new List<CustomDataExchangerAttribute>());
             CustomDataExchangerAttribute result = new CustomDataExchangerAttribute
             {
                 ExchangeType = CustomDataExchangerType.Ignore,
@@ -111,25 +112,25 @@ namespace SignalGo.Shared.Converters
                 Type = type,
                 LimitationMode = LimitExchangeType.Both
             };
-            ListOfContextsDataExchangers[SynchronizationContext.Current].Add(result);
+            ListOfContextsDataExchangers[Task.CurrentId.GetValueOrDefault()].Add(result);
         }
 
-        public static void Clear(SynchronizationContext synchronizationContext)
+        public static void Clear(int? id)
         {
-            if (synchronizationContext != null && ListOfContextsDataExchangers.ContainsKey(synchronizationContext))
+            if (id != null && ListOfContextsDataExchangers.ContainsKey(id.GetValueOrDefault()))
             {
-                ListOfContextsDataExchangers.Remove(synchronizationContext);
+                ListOfContextsDataExchangers.Remove(id.GetValueOrDefault());
             }
         }
 
         public static void Clear()
         {
-            Clear(SynchronizationContext.Current);
+            Clear(Task.CurrentId);
         }
 
         public static bool ExistContext()
         {
-            if (SynchronizationContext.Current != null && ListOfContextsDataExchangers.ContainsKey(SynchronizationContext.Current) && ListOfContextsDataExchangers[SynchronizationContext.Current].Count > 0)
+            if (Task.CurrentId != null && ListOfContextsDataExchangers.ContainsKey(Task.CurrentId.GetValueOrDefault()) && ListOfContextsDataExchangers[Task.CurrentId.GetValueOrDefault()].Count > 0)
             {
                 return true;
             }
@@ -138,9 +139,9 @@ namespace SignalGo.Shared.Converters
 
         public static List<CustomDataExchangerAttribute> GetContextAttributes()
         {
-            if (SynchronizationContext.Current != null && ListOfContextsDataExchangers.ContainsKey(SynchronizationContext.Current) && ListOfContextsDataExchangers[SynchronizationContext.Current].Count > 0)
+            if (Task.CurrentId!= null && ListOfContextsDataExchangers.ContainsKey(Task.CurrentId.GetValueOrDefault()) && ListOfContextsDataExchangers[Task.CurrentId.GetValueOrDefault()].Count > 0)
             {
-                return ListOfContextsDataExchangers[SynchronizationContext.Current].ToList();
+                return ListOfContextsDataExchangers[Task.CurrentId.GetValueOrDefault()].ToList();
             }
             return null;
         }
@@ -619,7 +620,7 @@ namespace SignalGo.Shared.Converters
             }
         }
 
-        internal static object GetDefault(Type t)
+        public static object GetDefault(Type t)
         {
             try
             {

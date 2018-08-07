@@ -145,6 +145,18 @@ namespace SignalGo.Shared.DataTypes
         }
 
         /// <summary>
+        /// get server service attribute from ServiceContractAttribute
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public static ServiceContractAttribute GetServerServiceAttribute(this Type type, string serviceName)
+        {
+            var serviceContract = type.GetCustomAttributes<ServiceContractAttribute>(true).Where(x => x.ServiceType == ServiceType.ServerService || x.ServiceType == ServiceType.HttpService || x.ServiceType == ServiceType.StreamService || x.ServiceType == ServiceType.OneWayService).Where(x => x.Name == serviceName).FirstOrDefault();
+            if (serviceContract == null)
+                throw new Exception("your server class must have ServiceContract attribute that have ServiceType == ServiceType.SeverService parameter");
+            return serviceContract;
+        }
+        /// <summary>
         /// get client service attribute from ServiceContractAttribute
         /// </summary>
         /// <param name="type"></param>
