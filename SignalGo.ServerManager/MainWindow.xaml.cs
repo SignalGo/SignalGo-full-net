@@ -1,5 +1,4 @@
-﻿using SignalGo.ServerManager.Helpers;
-using SignalGo.ServerManager.ViewModels;
+﻿using SignalGo.ServerManager.ViewModels;
 using SignalGo.ServerManager.Views;
 using System;
 using System.Collections.Generic;
@@ -22,13 +21,6 @@ using System.Windows.Shapes;
 
 namespace SignalGo.ServerManager
 {
-    public class Loader : MarshalByRefObject
-    {
-        public Assembly Load(byte[] bytes, AppDomain domain)
-        {
-            return domain.Load(bytes);
-        }
-    }
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
@@ -45,6 +37,17 @@ namespace SignalGo.ServerManager
 
         private void MainWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
+            foreach (var server in MainWindowViewModel.This.Servers)
+            {
+                try
+                {
+                    server.CurrentServerBase.Dispose();
+                }
+                catch (Exception ex)
+                {
+
+                }
+            }
             Process.GetCurrentProcess().Kill();
         }
 

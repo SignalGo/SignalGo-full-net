@@ -4177,17 +4177,25 @@ namespace SignalGo.Server.ServiceManager
         {
             IsDisposed = true;
             Stop();
+            GC.SuppressFinalize(this);
         }
 
         public void Stop()
         {
-            foreach (var item in Clients.ToList())
+            try
             {
-                DisposeClient(item.Value, "server stopped");
+                server.Stop();
+                foreach (var item in Clients.ToList())
+                {
+                    DisposeClient(item.Value, "server stopped");
+                }
+                IsStarted = false;
+                OnServerDisconnectedAction?.Invoke();
             }
-            server.Stop();
-            IsStarted = false;
-            OnServerDisconnectedAction?.Invoke();
+            catch (Exception ex)
+            {
+                AutoLogger.LogError(ex, "Stop server Exception");
+            }
         }
     }
 }

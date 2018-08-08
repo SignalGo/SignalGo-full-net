@@ -1,6 +1,5 @@
 ﻿using MvvmGo.ViewModels;
 using Newtonsoft.Json;
-using SignalGo.ServerManager.Helpers;
 using SignalGo.Shared.Log;
 using System;
 using System.Collections.Generic;
@@ -82,7 +81,9 @@ namespace SignalGo.ServerManager.Models
         public ObservableCollection<TextLogInfo> Logs { get; set; } = new ObservableCollection<TextLogInfo>();
 
         [JsonIgnore]
-        public ServerInfoBase CurrentServerBase { get; set; }
+        public ServerProcessInfoBase CurrentServerBase { get; set; }
+        [JsonIgnore]
+        public Action ProcessStarted { get; set; }
 
         string _Name;
         string _AssemblyPath;

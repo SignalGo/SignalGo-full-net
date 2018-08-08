@@ -2,6 +2,7 @@
 using MvvmGo.ViewModels;
 using SignalGo.Server.ServiceManager;
 using SignalGo.ServerManager.Models;
+using SignalGo.ServerManager.Views;
 using SignalGo.Shared.Log;
 using System;
 using System.Collections.Generic;
@@ -58,21 +59,25 @@ namespace SignalGo.ServerManager.ViewModels
         {
             if (ServerInfo.Status == ServerInfoStatus.Started)
             {
-                try
+                while (true)
                 {
-                    ServerInfo.CurrentServerBase.Dispose();
-                    ServerInfo.CurrentServerBase = null;
-                    ServerInfo.Status = ServerInfoStatus.Stopped;
-                }
-                catch (Exception ex)
-                {
-                    ServerInfo.Logs.Add(new TextLogInfo() { Text = ex.ToString(), IsDone = true });
-                }
-                finally
-                {
-                    GC.Collect();
-                    GC.WaitForFullGCComplete();
-                    GC.Collect();
+                    try
+                    {
+                        ServerInfo.CurrentServerBase.Dispose();
+                        ServerInfo.CurrentServerBase = null;
+                        ServerInfo.Status = ServerInfoStatus.Stopped;
+                        break;
+                    }
+                    catch (Exception ex)
+                    {
+                        AutoLogger.Default.LogError(ex, "Stop Server");
+                    }
+                    finally
+                    {
+                        GC.Collect();
+                        GC.WaitForFullGCComplete();
+                        GC.Collect();
+                    }
                 }
             }
         }
@@ -89,19 +94,14 @@ namespace SignalGo.ServerManager.ViewModels
                 try
                 {
                     serverInfo.Status = ServerInfoStatus.Started;
-                    serverInfo.CurrentServerBase = new Helpers.ServerInfoBase();
-                    //LogSystem logSystem = new LogSystem(ServerInfo.Logs);
-
-                    var logger = serverInfo.CurrentServerBase.Start(serverInfo.Name, serverInfo.AssemblyPath);
-                    LogSystem logSystem = new LogSystem();
-
-                    logger.TextAddedAction = logSystem.Add;
-                    //LogSystem logSystem = new LogSystem();
-                    //AssemblyLoader.ConsoleWriterAction = logSystem.Add;
+                    serverInfo.CurrentServerBase = new ServerProcessInfoBase();
+                    serverInfo.CurrentServerBase.Start("App_" + serverInfo.Name, serverInfo.AssemblyPath);
+                    ServerInfoPage.SendToMainHostForHidden(serverInfo.CurrentServerBase.BaseProcess);
+                    serverInfo.ProcessStarted?.Invoke();
                 }
                 catch (Exception ex)
                 {
-                    serverInfo.Logs.Add(new TextLogInfo() { Text = ex.ToString(), IsDone = true });
+                    AutoLogger.Default.LogError(ex, "StartServer");
                     if (serverInfo.CurrentServerBase != null)
                     {
                         serverInfo.CurrentServerBase.Dispose();
@@ -114,7 +114,7 @@ namespace SignalGo.ServerManager.ViewModels
 
         private void ClearLog()
         {
-            ServerInfo.Logs.Clear();
+            // ServerInfo.Logs.Clear();
         }
 
         private void Copy(TextLogInfo textLogInfo)
@@ -123,39 +123,4 @@ namespace SignalGo.ServerManager.ViewModels
         }
 
     }
-
-    public class LogSystem : MarshalByRefObject
-    {
-        public void Add(string serverName, string value)
-        {
-            //MainWindow.This.Dispatcher.Invoke(() =>
-            //{
-            //    try
-            //    {
-            //        var serverInfo = MainWindowViewModel.This.Servers.FirstOrDefault(x => x.Name == serverName);
-            //        if (serverInfo == null)
-            //            return;
-            //        var _logs = serverInfo.Logs;
-            //        TextLogInfo textLogInfo;
-            //        if (_logs.Count == 0 || _logs.Last().IsDone)
-            //        {
-            //            textLogInfo = new TextLogInfo();
-            //            _logs.Add(textLogInfo);
-            //        }
-            //        else
-            //            textLogInfo = _logs.Last();
-            //        textLogInfo.Text += value;
-            //        if (value == "\n")
-            //            textLogInfo.IsDone = true;
-            //    }
-            //    catch (Exception ex)
-            //    {
-            //        AutoLogger.Default.LogError(ex, "LogSystem Add");
-            //    }
-            //});
-        }
-
-    }
-
-
 }
