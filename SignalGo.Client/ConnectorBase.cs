@@ -177,7 +177,7 @@ namespace SignalGo.Client
                 connector.SendData(callInfo);
 
 
-                var seted = WaitedMethodsForResponse[callInfo.Guid].Key.WaitOne(connector.ProviderSetting.SendDataTimeout);
+                var seted = WaitedMethodsForResponse[callInfo.Guid].Key.WaitOne(connector.ProviderSetting.ServerServiceSetting.SendDataTimeout);
                 if (!seted)
                 {
                     if (connector.IsDisposed)
@@ -270,7 +270,7 @@ namespace SignalGo.Client
             connector.SendData(callInfo);
 
 
-            var seted = WaitedMethodsForResponse[callInfo.Guid].Key.WaitOne(connector.ProviderSetting.SendDataTimeout);
+            var seted = WaitedMethodsForResponse[callInfo.Guid].Key.WaitOne(connector.ProviderSetting.ServerServiceSetting.SendDataTimeout);
             if (!seted)
             {
                 if (connector.ProviderSetting.DisconnectClientWhenTimeout)
@@ -416,8 +416,19 @@ namespace SignalGo.Client
                 if (!isSuccess)
                     throw new TimeoutException();
 #else
-                _client = new TcpClient(address, port);
+                _client = new TcpClient();
                 _client.NoDelay = true;
+                var result = _client.BeginConnect(address, port, null, null);
+
+                var success = result.AsyncWaitHandle.WaitOne(TimeSpan.FromSeconds(5));
+
+                if (!success)
+                {
+                    throw new Exception("Failed to connect.");
+                }
+
+                // we have connected
+                _client.EndConnect(result);
 #endif
             }
         }

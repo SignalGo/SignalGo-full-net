@@ -100,7 +100,7 @@ namespace SignalGo.Server.ServiceManager
             var waitedMethodsForResponse = client.ServerBase.WaitedMethodsForResponse[client.CurrentClient];
             waitedMethodsForResponse.TryAdd(guid, new KeyValue<AutoResetEvent, MethodCallbackInfo>(new AutoResetEvent(false), null));
             client.ServerBase.CallClientMethod(client.CurrentClient, callInfo);
-            var seted = waitedMethodsForResponse[guid].Key.WaitOne(client.ServerBase.ProviderSetting.SendDataTimeout);
+            var seted = waitedMethodsForResponse[guid].Key.WaitOne(client.ServerBase.ProviderSetting.ServerServiceSetting.SendDataTimeout);
             if (!seted)
             {
                 client.ServerBase.CheckClient(client.CurrentClient);
@@ -186,7 +186,7 @@ namespace SignalGo.Server.ServiceManager
             var waitedMethodsForResponse = client.ServerBase.WaitedMethodsForResponse[client];
             waitedMethodsForResponse.TryAdd(guid, new KeyValue<AutoResetEvent, MethodCallbackInfo>(new AutoResetEvent(false), null));
             client.ServerBase.CallClientMethod(client, callInfo);
-            var seted = waitedMethodsForResponse[guid].Key.WaitOne(client.ServerBase.ProviderSetting.ReceiveDataTimeout);
+            var seted = waitedMethodsForResponse[guid].Key.WaitOne(client.ServerBase.ProviderSetting.ServerServiceSetting.ReceiveDataTimeout);
             if (!seted)
             {
                 client.ServerBase.CheckClient(client);

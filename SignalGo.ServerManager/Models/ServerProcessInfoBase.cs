@@ -46,9 +46,7 @@ namespace SignalGo.ServerManager.Models
             //processInfo.CreateNoWindow = true;
             //processInfo.UseShellExecute = false;
             BaseProcess = Process.Start(processInfo);
-            while (BaseProcess.MainWindowHandle.ToInt64() == 0)
-            {
-            }
+            BaseProcess.WaitForInputIdle();
         }
 
         /// <summary>

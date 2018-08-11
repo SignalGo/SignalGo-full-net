@@ -457,7 +457,7 @@ namespace SignalGo.Shared.Converters
                         else
                             return false;
                     }
-                    else if (items.Any(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.TakeOnly && x.Properties != null ))
+                    else if (items.Any(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.TakeOnly && x.Properties != null))
                     {
                         var find = items.FirstOrDefault(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.TakeOnly && x.Properties != null);
                         if (find.Properties.Contains(property.Name))
@@ -492,6 +492,13 @@ namespace SignalGo.Shared.Converters
             implementICollection = ExchangerTypes == null ? null : ExchangerTypes.Where(x => x.Type == type && (x.GetLimitationMode(IsClient) == Mode || x.GetLimitationMode(IsClient) == LimitExchangeType.Both));
             if (implementICollection == null || implementICollection.Count() == 0)
                 implementICollection = property.GetCustomAttributes<CustomDataExchangerAttribute>(true).Where(x => x.GetLimitationMode(IsClient) == Mode || x.GetLimitationMode(IsClient) == LimitExchangeType.Both);
+            if (type != null)
+            {
+                var newItems = implementICollection.ToList();
+                newItems.AddRange(type.GetCustomAttributes<CustomDataExchangerAttribute>(true).Where(x => x.GetLimitationMode(IsClient) == Mode || x.GetLimitationMode(IsClient) == LimitExchangeType.Both));
+                implementICollection = newItems;
+            }
+
 
             bool canIgnore = implementICollection == null ? false : implementICollection.Any(x => x.CanIgnore(instance, property, null, type, Server, Client) ?? false);
             if (canIgnore)
@@ -564,6 +571,12 @@ namespace SignalGo.Shared.Converters
             implementICollection = ExchangerTypes == null ? null : ExchangerTypes.Where(x => x.Type == type && (x.GetLimitationMode(IsClient) == Mode || x.GetLimitationMode(IsClient) == LimitExchangeType.Both));
             if (implementICollection == null)
                 implementICollection = fieldInfo.GetCustomAttributes<CustomDataExchangerAttribute>(true).Where(x => x.GetLimitationMode(IsClient) == Mode || x.GetLimitationMode(IsClient) == LimitExchangeType.Both);
+            if (type != null)
+            {
+                var newItems = implementICollection.ToList();
+                newItems.AddRange(type.GetCustomAttributes<CustomDataExchangerAttribute>(true).Where(x => x.GetLimitationMode(IsClient) == Mode || x.GetLimitationMode(IsClient) == LimitExchangeType.Both));
+                implementICollection = newItems;
+            }
 
             bool canIgnore = implementICollection == null ? false : implementICollection.Any(x => x.CanIgnore(instance, null, fieldInfo, type, Server, Client) ?? false);
             if (canIgnore)
@@ -884,7 +897,7 @@ namespace SignalGo.Shared.Converters
                 {
                     ReadFreeObject(reader);
                 }
-                else  if (reader.TokenType == JsonToken.StartArray)
+                else if (reader.TokenType == JsonToken.StartArray)
                 {
                     ReadFreeArray(reader);
                 }

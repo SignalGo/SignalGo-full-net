@@ -188,11 +188,7 @@ namespace SignalGo.Server.ServiceManager
                     }
 
                     server.Start();
-                    if (ProviderSetting.IsEnabledToUseTimeout)
-                    {
-                        server.Server.SendTimeout = (int)ProviderSetting.SendDataTimeout.TotalMilliseconds;
-                        server.Server.ReceiveTimeout = (int)ProviderSetting.ReceiveDataTimeout.TotalMilliseconds;
-                    }
+                    
                     IsStarted = true;
                     resetEvent.Set();
                     while (true)
@@ -477,6 +473,23 @@ namespace SignalGo.Server.ServiceManager
                 client = new HttpClientInfo();
             else
                 client = new ClientInfo();
+
+            if (isHttp)
+            {
+                if (ProviderSetting.HttpSetting.IsEnabledToUseTimeout)
+                {
+                    tcpClient.SendTimeout = (int)ProviderSetting.HttpSetting.SendDataTimeout.TotalMilliseconds;
+                    tcpClient.ReceiveTimeout = (int)ProviderSetting.HttpSetting.ReceiveDataTimeout.TotalMilliseconds;
+                }
+            }
+            else
+            {
+                if (ProviderSetting.ServerServiceSetting.IsEnabledToUseTimeout)
+                {
+                    tcpClient.SendTimeout = (int)ProviderSetting.ServerServiceSetting.SendDataTimeout.TotalMilliseconds;
+                    tcpClient.ReceiveTimeout = (int)ProviderSetting.ServerServiceSetting.ReceiveDataTimeout.TotalMilliseconds;
+                }
+            }
             client.ClientStream = clientStream;
             client.ConnectedDateTime = DateTime.Now.ToLocalTime();
             client.ServerBase = this;
