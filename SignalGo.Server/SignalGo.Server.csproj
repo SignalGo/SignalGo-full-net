@@ -4,7 +4,6 @@
     <!--netcoreapp1.0;netcoreapp2.0;-->
     <TargetFrameworks>netstandard1.6;net45;net40;net35;netstandard2.0;</TargetFrameworks>
     <ProjectGuid>{8170E507-F79C-49C4-9EC2-9112C565A98B}</ProjectGuid>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
     <Copyright>Copyright © ali.visual.studio@gmail.com 2016</Copyright>
     <Description>
       SignalGo is a library for Cross-Platform developers that makes it incredibly simple to add real-time web functionality to your applications. What is "real-time web" functionality? It's the ability to have your server-side code push content to the connected clients as it happens, in real-time. like WCF and SignalR
@@ -38,10 +37,10 @@
     <PackageIconUrl>http://cdn.persiangig.com/preview/v14ukL88fq/SignalGo.png</PackageIconUrl>
     <PackageTags>SignalGo SignalR WCF Server Client Signal Sig RealTime Real-Time</PackageTags>
     <AssemblyName>SignalGo.Server</AssemblyName>
-    <AssemblyVersion>3.7</AssemblyVersion>
-    <FileVersion>3.7</FileVersion>
-    <VersionPrefix>3.7</VersionPrefix>
-    <Version>3.7</Version>
+    <AssemblyVersion>4.0</AssemblyVersion>
+    <FileVersion>4.0</FileVersion>
+    <VersionPrefix>4.0</VersionPrefix>
+    <Version>4.0</Version>
     <DebugType>full</DebugType>
     <PackageReleaseNotes>
       1.fix bugs and more improvement
@@ -96,6 +95,7 @@
     <PackageReference Include="System.Threading.Thread" Version="4.3.0" />
     <PackageReference Include="System.Reflection.TypeExtensions" Version="4.5.0" />
     <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
+    <PackageReference Include="NETStandard.Library" Version="1.6.1" />
   </ItemGroup>
    <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
@@ -104,7 +104,8 @@
     <PackageReference Include="System.Threading.Thread" Version="4.3.0" />
     <PackageReference Include="System.Reflection.TypeExtensions" Version="4.5.0" />
     <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
-  </ItemGroup>
+     <PackageReference Include="NETStandard.Library" Version="2.0.0" />
+   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp1.0'">
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
     <PackageReference Include="System.Diagnostics.StackTrace" Version="4.3.0" />
