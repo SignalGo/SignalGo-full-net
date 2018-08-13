@@ -1,10 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <!--<Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />-->
-  <!--<Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />-->
   <PropertyGroup>
-    <!--<TargetFrameworks>portable-net45+win8+wpa81;portable45-net45+win8;netcoreapp2.0;netcoreapp1.0</TargetFrameworks>-->
     <TargetFrameworks>net45;net40;net35;netstandard1.6;netstandard2.0;</TargetFrameworks>
-    <!---->
     <MinimumVisualStudioVersion>10.0</MinimumVisualStudioVersion>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -90,46 +86,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
 
-
-  <!--<PropertyGroup Condition="'$(TargetFramework)'=='net35'">
-    <Import>$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props</Import>
-  </PropertyGroup>-->
-
-  <!--<PropertyGroup Condition="'$(TargetFramework)'=='net45'">
-    <AssemblyTitle>SignalGo.Shared</AssemblyTitle>
-    <Import>$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props</Import>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(TargetFramework)'=='net40'">
-    <AssemblyTitle>SignalGo.Shared .NET 4.0</AssemblyTitle>
-    <Import>$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props</Import>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(TargetFramework)'=='netstandard1.6'">
-    <AssemblyTitle>SignalGo.Shared .NET Standard</AssemblyTitle>
-    <Import>$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props</Import>
-  </PropertyGroup>
-  
-  <PropertyGroup Condition="'$(TargetFramework)'=='netstandard2.0'">
-    <AssemblyTitle>SignalGo.Shared .NET Standard</AssemblyTitle>
-  </PropertyGroup>-->
-  <!--<Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />-->
-  <PropertyGroup Condition="'$(TargetFramework)'=='portable45-net45+win8'">
-    <TargetFrameworkIdentifier>.NETPortable</TargetFrameworkIdentifier>
-    <AssemblyTitle>SignalGo.Shared .NET Portable</AssemblyTitle>
-    <TargetFrameworkProfile>Profile7</TargetFrameworkProfile>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <NugetTargetMoniker>.NETPortable,Version=v4.5,Profile=Profile7</NugetTargetMoniker>
-    <!--<Import>$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets</Import>-->
-    <DefineConstants>PORTABLE;$(AdditionalConstants)</DefineConstants>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(TargetFramework)'=='portable-net45+win8+wpa81'">
-    <TargetFrameworkIdentifier>.NETPortable</TargetFrameworkIdentifier>
-    <AssemblyTitle>SignalGo.Shared .NET Portable</AssemblyTitle>
-    <TargetFrameworkProfile>Profile111</TargetFrameworkProfile>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <NugetTargetMoniker>.NETPortable,Version=v0.0,Profile=Profile111</NugetTargetMoniker>
-    <!--<Import>$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets</Import>-->
-    <DefineConstants>PORTABLE;$(AdditionalConstants)</DefineConstants>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net45|AnyCPU'">
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningsAsErrors />

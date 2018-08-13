@@ -1,9 +1,18 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <!--netcoreapp1.0;netcoreapp2.0;-->
-    <TargetFrameworks>netstandard1.6;net45;net40;net35;netstandard2.0;</TargetFrameworks>
-    <ProjectGuid>{8170E507-F79C-49C4-9EC2-9112C565A98B}</ProjectGuid>
+    <TargetFrameworks>net45;net40;net35;netstandard1.6;netstandard2.0;</TargetFrameworks>
+    <MinimumVisualStudioVersion>10.0</MinimumVisualStudioVersion>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <AssemblyVersion>4.0</AssemblyVersion>
+    <FileVersion>4.0</FileVersion>
+    <VersionPrefix>4.0</VersionPrefix>
+    <Version>4.0</Version>
+    <!--<VersionSuffix>beta1</VersionSuffix>-->
+    <Authors>Ali Yousefi</Authors>
+    <Company></Company>
+    <DebugType>full</DebugType>
     <Copyright>Copyright © ali.visual.studio@gmail.com 2016</Copyright>
     <Description>
       SignalGo is a library for Cross-Platform developers that makes it incredibly simple to add real-time web functionality to your applications. What is "real-time web" functionality? It's the ability to have your server-side code push content to the connected clients as it happens, in real-time. like WCF and SignalR
@@ -37,11 +46,6 @@
     <PackageIconUrl>http://cdn.persiangig.com/preview/v14ukL88fq/SignalGo.png</PackageIconUrl>
     <PackageTags>SignalGo SignalR WCF Server Client Signal Sig RealTime Real-Time</PackageTags>
     <AssemblyName>SignalGo.Server</AssemblyName>
-    <AssemblyVersion>4.0</AssemblyVersion>
-    <FileVersion>4.0</FileVersion>
-    <VersionPrefix>4.0</VersionPrefix>
-    <Version>4.0</Version>
-    <DebugType>full</DebugType>
     <PackageReleaseNotes>
       1.fix bugs and more improvement
       2.support for tuples
@@ -52,9 +56,15 @@
 
     </PackageReleaseNotes>
   </PropertyGroup>
-  <PropertyGroup>
-    <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\SignalGo.Server.xml</DocumentationFile>
+
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net45|AnyCPU'">
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsAsErrors />
   </PropertyGroup>
+  
+  <!--<PropertyGroup>
+    <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\SignalGo.Server.xml</DocumentationFile>
+  </PropertyGroup>-->
   <ItemGroup Condition="'$(TargetFramework)' == 'net35'">
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -66,6 +76,7 @@
     <PackageReference Include="TaskParallelLibrary" Version="1.0.2856" />
     <PackageReference Include="NetLegacySupport.Tuple" Version="1.1.1" />
   </ItemGroup>
+  
   
   <!-- Need to conditionally bring in references for the .NET Framework 4.0 target -->
   <ItemGroup Condition="'$(TargetFramework)' == 'net40'">
@@ -129,9 +140,6 @@
       <Project>{78D8601B-E331-47B7-A4A8-46B7460D82A4}</Project>
       <Name>SignalGo.Shared</Name>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Properties\" />
   </ItemGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
