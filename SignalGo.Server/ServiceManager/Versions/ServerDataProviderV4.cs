@@ -115,7 +115,7 @@ namespace SignalGo.Server.ServiceManager.Versions
         /// <param name="isHttp"></param>
         /// <param name="tcpClient"></param>
         /// <returns></returns>
-        ClientInfo CreateClientInfo(bool isHttp, TcpClient tcpClient)
+        public ClientInfo CreateClientInfo(bool isHttp, TcpClient tcpClient)
         {
             ClientInfo client = null;
             if (isHttp)
@@ -163,6 +163,7 @@ namespace SignalGo.Server.ServiceManager.Versions
                     //}
                     //DisposeClient(client, "AddClient end signalgo stream");
                     //return;
+                    throw new NotSupportedException();
                 }
                 if (firstLineString.Contains("SignalGo-OneWay/2.0"))
                 {
@@ -180,8 +181,9 @@ namespace SignalGo.Server.ServiceManager.Versions
 
                     SignalGoDuplexServiceProvider.StartToReadingClientData(client, _serverBase);
                 }
-                else if (firstLineString.Contains("HTTP/1.1") || firstLineString.Contains("HTTP/1.0"))
+                else if (firstLineString.Contains("HTTP/"))
                 {
+                    HttpProvider.StartToReadingClientData(tcpClient, _serverBase, reader, firstLineString);
                     //while (true)
                     //{
                     //    var line = reader.ReadLine();

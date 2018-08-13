@@ -33,7 +33,7 @@ namespace SignalGo.Server.ServiceManager
             if (string.IsNullOrEmpty(uri.AbsolutePath))
                 throw new Exception("this path is not support,please set full path example: http://localhost:5050/SignalGo");
 
-            serverDataProvider.Start(this, uri.Port);
+            ServerDataProvider.Start(this, uri.Port);
         }
 
         /// <summary>

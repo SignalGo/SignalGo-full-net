@@ -44,7 +44,7 @@ namespace ServerConsoleTest
 
                 ClientProvider clientProvider = new ClientProvider();
                 clientProvider.Connect("http://localhost:3284/TestServices/SignalGo");
-                var service  = clientProvider.RegisterServerServiceInterfaceWrapper<ITestManager>();
+                var service = clientProvider.RegisterServerServiceInterfaceWrapper<ITestManager>();
                 var result = service.HelloWorld("userName", "passs");
                 Console.WriteLine("server started");
             }

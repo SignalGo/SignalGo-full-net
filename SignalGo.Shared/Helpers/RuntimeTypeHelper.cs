@@ -18,7 +18,7 @@ namespace SignalGo.Shared.Helpers
         /// <param name="serviceType"></param>
         /// <param name="callInfo"></param>
         /// <returns></returns>
-        public static List<Type> GetMethodTypes(Type serviceType, MethodCallInfo callInfo)
+        public static List<Type> GetMethodTypes(Type serviceType, string methodName,string[] parameters)
         {
             List<Type> methodParameterTypes = new List<Type>();
 #if (NETSTANDARD)
@@ -29,12 +29,12 @@ namespace SignalGo.Shared.Helpers
             //int sLen = streamType == null ? 0 : 1;
             foreach (var item in methods)
             {
-                if (item.Name == callInfo.MethodName)
+                if (item.Name == methodName)
                 {
                     var plength = item.GetParameters().Length;
-                    if (plength != callInfo.Parameters.Count)
+                    if (plength != parameters.Length)
                         continue;
-                    foreach (var p in item.GetParameters())
+                    foreach (var p in parameters)
                     {
                         methodParameterTypes.Add(p.ParameterType);
                     }

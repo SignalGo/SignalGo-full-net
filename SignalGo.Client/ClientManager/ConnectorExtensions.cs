@@ -151,7 +151,7 @@ namespace SignalGo.Client.ClientManager
 
         static string SendData(this ConnectorBase connector, MethodCallInfo callInfo)
         {
-            TryAgain:
+            //TryAgain:
             bool isIgnorePriority = false;
             try
             {

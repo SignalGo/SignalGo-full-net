@@ -46,7 +46,7 @@ namespace SignalGo.Server.ServiceManager
         /// <summary>
         /// server data provider communication between client and server
         /// </summary>
-        internal IServerDataProvider serverDataProvider = new ServerDataProviderV4();
+        internal IServerDataProvider ServerDataProvider { get; set; } = new ServerDataProviderV4();
         /// <summary>
         /// log errors and warnings
         /// </summary>

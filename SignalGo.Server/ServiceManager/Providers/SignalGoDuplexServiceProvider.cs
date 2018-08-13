@@ -62,6 +62,7 @@ namespace SignalGo.Server.ServiceManager.Providers
 
                         CallMethod(callInfo, client, json, serverBase);
                     }
+
                     //reponse of client method that server called to client
                     else if (dataType == DataType.ResponseCallMethod)
                     {
@@ -141,9 +142,8 @@ namespace SignalGo.Server.ServiceManager.Providers
             }
             catch (Exception ex)
             {
-                //Console.WriteLine(ex);
-                serverBase.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase StartToReadingClientData");
-                serverBase.DisposeClient(client, "StartToReadingClientData exception");
+                serverBase.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase SignalGoDuplexServiceProvider StartToReadingClientData");
+                serverBase.DisposeClient(client, "SignalGoDuplexServiceProvider StartToReadingClientData exception");
             }
         }
     }

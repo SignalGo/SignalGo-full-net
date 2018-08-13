@@ -14,8 +14,7 @@ namespace SignalGo.Shared.Models
         /// <summary>
         /// type of parameter
         /// </summary>
-        [JsonIgnore]
-        public string Type { get; set; }
+        public string Name { get; set; }
         /// <summary>
         /// value of parameter
         /// </summary>
