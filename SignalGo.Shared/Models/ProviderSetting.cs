@@ -6,11 +6,47 @@ using System.Text;
 
 namespace SignalGo.Shared.Models
 {
+    public class BaseSetting
+    {
+        /// <summary>
+        /// if http protocolsetting is https
+        /// </summary>
+        public bool IsHttps { get; set; }
+        /// <summary>
+        /// when you want to use timeouts on your provider set it true
+        /// </summary>
+        public bool IsEnabledToUseTimeout { get; set; }
+        /// <summary>
+        /// maximum value of timeout to wait for send data
+        /// </summary>
+        public TimeSpan SendDataTimeout { get; set; } = new TimeSpan(0, 0, 30);
+        /// <summary>
+        /// maximum value of timeout to wait for receive callbackinfo data
+        /// </summary>
+        public TimeSpan ReceiveDataTimeout { get; set; } = new TimeSpan(0, 0, 30);
+    }
+
+    public class HttpSetting : BaseSetting
+    {
+        /// <summary>
+        /// handle cross origin access from browser origin header
+        /// </summary>
+        public bool HandleCrossOriginAccess { get; set; }
+
+        /// <summary>
+        /// X509Certificate
+        /// </summary>
+        public System.Security.Cryptography.X509Certificates.X509Certificate X509Certificate { get; set; }
+    }
+
     /// <summary>
     /// server or client connector provider setting
     /// </summary>
     public class ProviderSetting
     {
+        public HttpSetting HttpSetting { get; set; } = new HttpSetting();
+        public BaseSetting ServerServiceSetting { get; set; } = new BaseSetting();
+
         /// <summary>
         /// when you want to use timeouts on your provider set it true
         /// the properties of set timeout is SendDataTimeout and ReceiveDataTimeout

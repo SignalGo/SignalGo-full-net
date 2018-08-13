@@ -127,6 +127,7 @@ namespace SignalGo.Server.ServiceManager.Versions
             client.IPAddress = ((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address.ToString().Replace("::ffff:", "");
             client.ClientId = Guid.NewGuid().ToString() + "-" + Guid.NewGuid().ToString();
             _serverBase.Clients.TryAdd(client.ClientId, client);
+            client.ClientStream = tcpClient.GetTcpStream(_serverBase);
             return client;
         }
 
@@ -176,6 +177,7 @@ namespace SignalGo.Server.ServiceManager.Versions
                     client = CreateClientInfo(false, tcpClient);
                     //"SignalGo/1.0";
                     client.IsWebSocket = false;
+
                     SignalGoDuplexServiceProvider.StartToReadingClientData(client, _serverBase);
                 }
                 else if (firstLineString.Contains("HTTP/1.1") || firstLineString.Contains("HTTP/1.0"))

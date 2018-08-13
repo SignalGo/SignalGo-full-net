@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Reflection;
 using SignalGo.Shared.Helpers;
+using SignalGo.Client.ClientManager;
 
 namespace SignalGo.Client
 {

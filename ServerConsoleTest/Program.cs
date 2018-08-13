@@ -1,4 +1,5 @@
-﻿using SignalGo.Server.ServiceManager;
+﻿using SignalGo.Client;
+using SignalGo.Server.ServiceManager;
 using SignalGo.Shared.DataTypes;
 using System;
 using System.Collections.Generic;
@@ -37,8 +38,14 @@ namespace ServerConsoleTest
         {
             try
             {
-                ServerProvider provider = new ServerProvider();
-                provider.Start("http://localhost:3284/TestServices/SignalGo");
+                ServerProvider serverProvider = new ServerProvider();
+                serverProvider.RegisterServerService(typeof(TestService));
+                serverProvider.Start("http://localhost:3284/TestServices/SignalGo");
+
+                ClientProvider clientProvider = new ClientProvider();
+                clientProvider.Connect("http://localhost:3284/TestServices/SignalGo");
+                var service  = clientProvider.RegisterServerServiceInterfaceWrapper<ITestManager>();
+                var result = service.HelloWorld("userName", "passs");
                 Console.WriteLine("server started");
             }
             catch (Exception ex)

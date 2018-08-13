@@ -197,7 +197,20 @@ namespace SignalGo.Shared.Helpers
                 .GetMethod(name, BindingFlags.IgnoreCase | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
 #endif
         }
-
+        /// <summary>
+        /// get method
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        public static MethodInfo FindMethod(this Type type, string name, Type[] parameterTypes)
+        {
+            return type
+#if (NETSTANDARD || NETCOREAPP || PORTABLE)
+                .GetTypeInfo()
+#endif
+                .GetMethods(BindingFlags.IgnoreCase | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static).FirstOrDefault(x => x.Name == name && x.GetParameters().Count(y => parameterTypes.Any(j => j == y.ParameterType)) == parameterTypes.Length);
+        }
 #if (!PORTABLE)
         /// <summary>
         /// get method

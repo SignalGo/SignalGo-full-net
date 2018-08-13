@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using SignalGo.Client.ClientManager;
 using SignalGo.Shared.IO;
 using SignalGo.Shared.Models;
 using System;

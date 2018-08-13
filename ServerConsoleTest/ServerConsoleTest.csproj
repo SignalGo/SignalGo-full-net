@@ -49,6 +49,10 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\SignalGo.Client\SignalGo.Client.csproj">
+      <Project>{DA4F99A9-69E4-48F1-8850-5298F7762AB9}</Project>
+      <Name>SignalGo.Client</Name>
+    </ProjectReference>
     <ProjectReference Include="..\SignalGo.Server\SignalGo.Server.csproj">
       <Project>{8170e507-f79c-49c4-9ec2-9112c565a98b}</Project>
       <Name>SignalGo.Server</Name>

@@ -8,7 +8,9 @@ using SignalGo.Shared.Helpers;
 using SignalGo.Shared.Models;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Net.Sockets;
 using System.Reflection;
 using System.Text;
 using System.Threading;
@@ -17,6 +19,21 @@ namespace SignalGo.Server.ServiceManager
 {
     public static class ServerExtension
     {
+        public static Stream GetTcpStream(this TcpClient tcpClient, ServerBase serverBase)
+        {
+            if (serverBase.ProviderSetting.HttpSetting.IsHttps)
+            {
+#if (!NETSTANDARD && !NETCOREAPP)
+                return SslTcpManager.GetStream(tcpClient, serverBase.ProviderSetting.HttpSetting.X509Certificate);
+#else
+                throw new NotSupportedException();
+#endif
+            }
+            else
+            {
+                return tcpClient.GetStream();
+            }
+        }
         //static ServerExtension()
         //{
         //    Init();
