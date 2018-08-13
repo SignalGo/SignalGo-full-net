@@ -33,7 +33,7 @@ namespace SignalGo.Server.ServiceManager
             if (string.IsNullOrEmpty(uri.AbsolutePath))
                 throw new Exception("this path is not support,please set full path example: http://localhost:5050/SignalGo");
 
-            Connect(uri.Port, new string[] { uri.AbsolutePath });
+            serverDataProvider.Start(this, uri.Port);
         }
 
         /// <summary>
@@ -146,48 +146,39 @@ namespace SignalGo.Server.ServiceManager
                     Console.WriteLine(item.FullName);
                 }
             }
-            if (ClientServices.Count > 0)
-            {
-                Console.WriteLine("Registering ClientServices:");
-                foreach (var item in ClientServices)
-                {
-#if (!NETSTANDARD1_6 && !NETCOREAPP1_1)
-                    if (item.GetIsInterface())
-                        RegisterClientServiceInterface(item);
-                    else
-#endif
-                    RegisterClientService(item);
-                    Console.WriteLine(item.FullName);
-                }
-            }
+//            if (ClientServices.Count > 0)
+//            {
+//                Console.WriteLine("Registering ClientServices:");
+//                foreach (var item in ClientServices)
+//                {
+//#if (!NETSTANDARD1_6 && !NETCOREAPP1_1)
+//                    if (item.GetIsInterface())
+//                        RegisterClientServiceInterface(item);
+//                    else
+//#endif
+//                    RegisterClientService(item);
+//                    Console.WriteLine(item.FullName);
+//                }
+//            }
 
-            if (HttpServices.Count > 0)
-            {
-                Console.WriteLine("Registering HttpServices:");
-                foreach (var item in HttpServices)
-                {
-                    RegisterHttpService(item);
-                    Console.WriteLine(item.FullName);
-                }
-            }
-            if (StreamServices.Count > 0)
-            {
-                Console.WriteLine("Registering StreamServices:");
-                foreach (var item in StreamServices)
-                {
-                    RegisterStreamService(item);
-                    Console.WriteLine(item.FullName);
-                }
-            }
-            //foreach (var item in assembly.GetTypes())
-            //{
-            //    var attributes = item.GetCustomAttributes<HttpSupportAttribute>();
-            //    if (attributes.Length > 0)
-            //    {
-            //        AddHttpService(item);
-            //        Console.WriteLine("Add Controller: " + attributes[0].Addresses.FirstOrDefault());
-            //    }
-            //}
+//            if (HttpServices.Count > 0)
+//            {
+//                Console.WriteLine("Registering HttpServices:");
+//                foreach (var item in HttpServices)
+//                {
+//                    RegisterHttpService(item);
+//                    Console.WriteLine(item.FullName);
+//                }
+//            }
+//            if (StreamServices.Count > 0)
+//            {
+//                Console.WriteLine("Registering StreamServices:");
+//                foreach (var item in StreamServices)
+//                {
+//                    RegisterStreamService(item);
+//                    Console.WriteLine(item.FullName);
+//                }
+//            }
         }
         //public void StartWebSocket(string url)
         //{

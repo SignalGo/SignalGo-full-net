@@ -1,7 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net45;net40;net35;netstandard1.6;netstandard2.0;</TargetFrameworks>
+    <!---->
+  <TargetFrameworks>net40;net35;net45;netstandard1.6;netstandard2.0;</TargetFrameworks>
     <MinimumVisualStudioVersion>10.0</MinimumVisualStudioVersion>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -61,7 +62,7 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningsAsErrors />
   </PropertyGroup>
-  
+
   <!--<PropertyGroup>
     <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\SignalGo.Server.xml</DocumentationFile>
   </PropertyGroup>-->
@@ -76,8 +77,8 @@
     <PackageReference Include="TaskParallelLibrary" Version="1.0.2856" />
     <PackageReference Include="NetLegacySupport.Tuple" Version="1.1.1" />
   </ItemGroup>
-  
-  
+
+
   <!-- Need to conditionally bring in references for the .NET Framework 4.0 target -->
   <ItemGroup Condition="'$(TargetFramework)' == 'net40'">
     <Reference Include="Microsoft.CSharp" />
@@ -106,17 +107,18 @@
     <PackageReference Include="System.Threading.Thread" Version="4.3.0" />
     <PackageReference Include="System.Reflection.TypeExtensions" Version="4.5.0" />
     <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
-    <PackageReference Include="NETStandard.Library" Version="1.6.1" />
+    <!--<PackageReference Include="NETStandard.Library" Version="1.6.1" />-->
   </ItemGroup>
-   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
     <PackageReference Include="System.Diagnostics.StackTrace" Version="4.3.0" />
     <PackageReference Include="System.Xml.XmlSerializer" Version="4.3.0" />
     <PackageReference Include="System.Threading.Thread" Version="4.3.0" />
     <PackageReference Include="System.Reflection.TypeExtensions" Version="4.5.0" />
     <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
-     <PackageReference Include="NETStandard.Library" Version="2.0.0" />
-   </ItemGroup>
+    <PackageReference Include="NETStandard.Library" Version="2.0.3" />
+    <!--<PackageReference Include="NETStandard.Library" Version="2.0.0" />-->
+  </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp1.0'">
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
     <PackageReference Include="System.Diagnostics.StackTrace" Version="4.3.0" />
@@ -134,6 +136,7 @@
     <PackageReference Include="System.Reflection.TypeExtensions" Version="4.5.0" />
     <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
     <PackageReference Include="Microsoft.NETCore.App" Version="2.0.0" />
+    <Reference Include="netstandard" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SignalGo.Shared\SignalGo.Shared.csproj">

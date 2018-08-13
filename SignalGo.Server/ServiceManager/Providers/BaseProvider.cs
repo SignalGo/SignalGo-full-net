@@ -24,8 +24,13 @@ namespace SignalGo.Server.ServiceManager.Providers
     {
         static internal void CallMethod(MethodCallInfo callInfo, ClientInfo client, string json, ServerBase serverBase)
         {
+#if (NET40 || NET35)
+            Task.Factory.StartNew(() =>
+#else
             Task.Run(() =>
+#endif
             {
+                OperationContext.CurrentTaskServer = serverBase;
                 object result = null;
                 MethodInfo method = null;
                 Exception exception = null;

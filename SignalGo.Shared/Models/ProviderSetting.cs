@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SignalGo.Shared.DataTypes;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -63,5 +64,21 @@ namespace SignalGo.Shared.Models
         /// </summary>
         public int PriorityFunctionDelayTime { get; set; } = 2000;
 
+        /// <summary>
+        /// data exchanger is limitation of data types and properties to send and receive from client and server
+        /// </summary>
+        public bool IsEnabledDataExchanger { get; set; } = true;
+        /// <summary>
+        /// enable $Id 
+        /// </summary>
+        public bool IsEnabledReferenceResolver { get; set; } = true;
+        /// <summary>
+        ///  enable $ref 
+        /// </summary>
+        public bool IsEnabledReferenceResolverForArray { get; set; } = true;
+        /// <summary>
+        /// http attributes
+        /// </summary>
+        public List<HttpKeyAttribute> HttpKeyResponses { get; set; }
     }
 }

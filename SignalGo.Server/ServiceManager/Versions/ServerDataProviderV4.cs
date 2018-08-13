@@ -1,4 +1,5 @@
 ﻿using SignalGo.Server.Models;
+using SignalGo.Server.ServiceManager.Providers;
 using SignalGo.Shared.Http;
 using SignalGo.Shared.IO;
 using System;
@@ -10,11 +11,15 @@ using System.Threading.Tasks;
 
 namespace SignalGo.Server.ServiceManager.Versions
 {
-    public class ServerDataProviderV4
+    public class ServerDataProviderV4 : IServerDataProvider
     {
         TcpListener _server;
         ServerBase _serverBase;
-        internal async void Start(ServerBase serverBase, int port)
+#if (NET35 || NET40)
+        public void Start(ServerBase serverBase, int port)
+#else
+        public async void Start(ServerBase serverBase, int port)
+#endif
         {
             _serverBase = serverBase;
             Exception exception = null;
@@ -36,7 +41,11 @@ namespace SignalGo.Server.ServiceManager.Versions
                 serverBase.IsStarted = true;
                 while (true)
                 {
+#if (NET35 || NET40)
+                    var client = _server.AcceptTcpClient();
+#else
                     var client = await _server.AcceptTcpClientAsync();
+#endif
                     InitializeClient(client);
                 }
             }
@@ -56,18 +65,32 @@ namespace SignalGo.Server.ServiceManager.Versions
         /// initialzie and read client
         /// </summary>
         /// <param name="tcpClient"></param>
+#if (NET35 || NET40)
+        public void InitializeClient(TcpClient tcpClient)
+#else
         public async void InitializeClient(TcpClient tcpClient)
+#endif
         {
+#if (NET35 || NET40)
+            Task.Factory.StartNew(() =>
+#else
             await Task.Run(() =>
+#endif
             {
                 try
                 {
+                    OperationContext.CurrentTaskServer = _serverBase;
                     var stream = ReadFirstLineOfClient(tcpClient, out string firstLine, out byte[] bytes);
                     ExchangeClient(stream, firstLine, bytes, tcpClient);
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
+#if (NETSTANDARD)
+                    tcpClient.Dispose();
 
+#else
+                    tcpClient.Close();
+#endif
                 }
             });
         }
@@ -117,181 +140,189 @@ namespace SignalGo.Server.ServiceManager.Versions
         {
             //File.WriteAllBytes("I:\\signalgotext.txt", reader.LastBytesReaded);
             ClientInfo client = null;
-            if (firstLineString.Contains("SignalGo-Stream/2.0"))
+            try
             {
-                client = CreateClientInfo(false, tcpClient);
-                //"SignalGo/1.0";
-                //"SignalGo/1.0";
-                client.IsWebSocket = false;
-                var firstByte = GoStreamReader.ReadOneByte(tcpClient.GetStream(), CompressMode.None, 1, false);
+                if (firstLineString.Contains("SignalGo-Stream/2.0"))
+                {
+                    //client = CreateClientInfo(false, tcpClient);
+                    ////"SignalGo/1.0";
+                    ////"SignalGo/1.0";
+                    //client.IsWebSocket = false;
+                    //var firstByte = GoStreamReader.ReadOneByte(tcpClient.GetStream(), CompressMode.None, 1, false);
 
-                //upload from client and download from server
-                if (firstByte == 0)
-                {
-                    DownloadStreamFromClient(tcpClient.GetStream(), client);
+                    ////upload from client and download from server
+                    //if (firstByte == 0)
+                    //{
+                    //    DownloadStreamFromClient(tcpClient.GetStream(), client);
+                    //}
+                    ////download from server and upload from client
+                    //else
+                    //{
+                    //    UploadStreamToClient(tcpClient.GetStream(), client);
+                    //}
+                    //DisposeClient(client, "AddClient end signalgo stream");
+                    //return;
                 }
-                //download from server and upload from client
-                else
+                if (firstLineString.Contains("SignalGo-OneWay/2.0"))
                 {
-                    UploadStreamToClient(tcpClient.GetStream(), client);
+                    //client = CreateClientInfo(false, tcpClient);
+                    //client.IsWebSocket = false;
+                    //OneWayProvider.RunMethod(this, tcpClient.GetStream(), client);
+                    //DisposeClient(client, "AddClient end signalgo stream");
+                    //return;
                 }
-                DisposeClient(client, "AddClient end signalgo stream");
-                return;
-            }
-            if (firstLineString.Contains("SignalGo-OneWay/2.0"))
-            {
-                client = CreateClientInfo(false, tcpClient);
-                client.IsWebSocket = false;
-                OneWayProvider.RunMethod(this, tcpClient.GetStream(), client);
-                DisposeClient(client, "AddClient end signalgo stream");
-                return;
-            }
-            else if (firstLineString.Contains("SignalGo/4.0"))
-            {
-                client = CreateClientInfo(false, tcpClient);
-                //"SignalGo/1.0";
-                client.IsWebSocket = false;
-            }
-            else if (firstLineString.Contains("HTTP/1.1") || firstLineString.Contains("HTTP/1.0"))
-            {
-                while (true)
-                {
-                    var line = reader.ReadLine();
-                    firstLineString += line;
-                    if (line == "\r\n")
-                        break;
-                }
-                if (firstLineString.Contains("Sec-WebSocket-Key"))
+                else if (firstLineString.Contains("SignalGo/4.0"))
                 {
                     client = CreateClientInfo(false, tcpClient);
+                    //"SignalGo/1.0";
+                    client.IsWebSocket = false;
+                    SignalGoDuplexServiceProvider.StartToReadingClientData(client, _serverBase);
+                }
+                else if (firstLineString.Contains("HTTP/1.1") || firstLineString.Contains("HTTP/1.0"))
+                {
+                    //while (true)
+                    //{
+                    //    var line = reader.ReadLine();
+                    //    firstLineString += line;
+                    //    if (line == "\r\n")
+                    //        break;
+                    //}
+                    //if (firstLineString.Contains("Sec-WebSocket-Key"))
+                    //{
+                    //    client = CreateClientInfo(false, tcpClient);
 
-                    client.IsWebSocket = true;
-                    var key = firstLineString.Replace("ey:", "`").Split('`')[1].Replace("\r", "").Split('\n')[0].Trim();
-                    var acceptKey = AcceptKey(ref key);
-                    var newLine = "\r\n";
+                    //    client.IsWebSocket = true;
+                    //    var key = firstLineString.Replace("ey:", "`").Split('`')[1].Replace("\r", "").Split('\n')[0].Trim();
+                    //    var acceptKey = AcceptKey(ref key);
+                    //    var newLine = "\r\n";
 
-                    var response = "HTTP/1.0 101 Switching Protocols" + newLine
-                     + "Upgrade: websocket" + newLine
-                     + "Connection: Upgrade" + newLine
-                     + "Sec-WebSocket-Accept: " + acceptKey + newLine + newLine;
-                    var bytes = System.Text.Encoding.UTF8.GetBytes(response);
-                    tcpClient.GetStream().Write(bytes, 0, bytes.Length);
+                    //    var response = "HTTP/1.0 101 Switching Protocols" + newLine
+                    //     + "Upgrade: websocket" + newLine
+                    //     + "Connection: Upgrade" + newLine
+                    //     + "Sec-WebSocket-Accept: " + acceptKey + newLine + newLine;
+                    //    var bytes = System.Text.Encoding.UTF8.GetBytes(response);
+                    //    tcpClient.GetStream().Write(bytes, 0, bytes.Length);
+                    //}
+                    //else
+                    //{
+                    //    client = CreateClientInfo(true, tcpClient);
+
+                    //    string[] lines = null;
+                    //    if (firstLineString.Contains("\r\n\r\n"))
+                    //        lines = firstLineString.Substring(0, firstLineString.IndexOf("\r\n\r\n")).Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                    //    else
+                    //        lines = firstLineString.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                    //    var newLine = "\r\n";
+                    //    string response = "";
+                    //    if (lines.Length > 0)
+                    //    {
+                    //        var methodName = GetHttpMethodName(lines[0]);
+                    //        var address = GetHttpAddress(lines[0]);
+                    //        if (methodName.ToLower() == "get" && !string.IsNullOrEmpty(address) && address != "/")
+                    //        {
+                    //            var headers = GetHttpHeaders(lines.Skip(1).ToArray());
+                    //            if (headers["content-type"] != null && headers["content-type"] == "SignalGo Service Reference")
+                    //            {
+                    //                var doClient = (HttpClientInfo)client;
+                    //                doClient.RequestHeaders = headers;
+                    //                SendSignalGoServiceReference(doClient);
+                    //            }
+                    //            else
+                    //                RunHttpRequest(address, "GET", "", headers, (HttpClientInfo)client);
+                    //            DisposeClient(client, "AddClient finish get call");
+                    //            return;
+                    //        }
+                    //        else if (methodName.ToLower() == "post" && !string.IsNullOrEmpty(address) && address != "/")
+                    //        {
+                    //            var indexOfStartedContent = firstLineString.IndexOf("\r\n\r\n");
+                    //            string content = "";
+                    //            if (indexOfStartedContent > 0)
+                    //            {
+                    //                indexOfStartedContent += 4;
+                    //                content = firstLineString.Substring(indexOfStartedContent, firstLineString.Length - indexOfStartedContent);
+                    //            }
+                    //            var headers = GetHttpHeaders(lines.Skip(1).ToArray());
+                    //            if (headers["content-type"] != null && headers["content-type"].ToLower().Contains("multipart/form-data"))
+                    //            {
+                    //                RunPostHttpRequestFile(address, "POST", content, headers, (HttpClientInfo)client);
+                    //            }
+                    //            else if (headers["content-type"] != null && headers["content-type"] == "SignalGo Service Reference")
+                    //            {
+                    //                SendSignalGoServiceReference((HttpClientInfo)client);
+                    //                return;
+                    //            }
+                    //            else
+                    //            {
+                    //                RunHttpRequest(address, "POST", content, headers, (HttpClientInfo)client);
+                    //            }
+                    //            DisposeClient(client, "AddClient finish post call");
+                    //            return;
+                    //        }
+                    //        else if (methodName.ToLower() == "options" && !string.IsNullOrEmpty(address) && address != "/")
+                    //        {
+                    //            string settingHeaders = "";
+                    //            var headers = GetHttpHeaders(lines.Skip(1).ToArray());
+
+                    //            if (HttpProtocolSetting != null)
+                    //            {
+                    //                if (HttpProtocolSetting.HandleCrossOriginAccess)
+                    //                {
+                    //                    settingHeaders = "Access-Control-Allow-Origin: " + headers["origin"] + newLine +
+                    //                    "Access-Control-Allow-Credentials: true" + newLine
+                    //                    //"Access-Control-Allow-Methods: " + "POST,GET,OPTIONS" + newLine
+                    //                    ;
+
+                    //                    if (!string.IsNullOrEmpty(headers["Access-Control-Request-Headers"]))
+                    //                    {
+                    //                        settingHeaders += "Access-Control-Allow-Headers: " + headers["Access-Control-Request-Headers"] + newLine;
+                    //                    }
+                    //                }
+                    //            }
+                    //            string message = newLine + $"Success" + newLine;
+                    //            response = $"HTTP/1.1 {(int)HttpStatusCode.OK} {HttpRequestController.GetStatusDescription((int)HttpStatusCode.OK)}" + newLine
+                    //                + "Content-Type: text/html; charset=utf-8" + newLine
+                    //                + settingHeaders
+                    //                + "Connection: Close" + newLine;
+                    //            client.TcpClient.Client.Send(System.Text.Encoding.UTF8.GetBytes(response + message));
+                    //            DisposeClient(client, "AddClient finish post call");
+                    //            return;
+                    //        }
+                    //        else if (RegisteredHttpServiceTypes.ContainsKey("") && (string.IsNullOrEmpty(address) || address == "/"))
+                    //        {
+                    //            var headers = GetHttpHeaders(lines.Skip(1).ToArray());
+                    //            RunIndexHttpRequest(headers, (HttpClientInfo)client);
+                    //            DisposeClient(client, "Index Page call");
+                    //            return;
+                    //        }
+                    //    }
+
+                    //    response = "HTTP/1.1 200 OK" + newLine
+                    //         + "Content-Type: text/html" + newLine
+                    //         + "Connection: Close" + newLine;
+                    //    tcpClient.Client.Send(System.Text.Encoding.ASCII.GetBytes(response + newLine + "SignalGo Server OK" + newLine));
+                    //    DisposeClient(client, "AddClient http ok signalGo");
+                    //    return;
+                    //}
+
                 }
                 else
                 {
-                    client = CreateClientInfo(true, tcpClient);
+                    //if (firstLineString == null)
+                    //    firstLineString = "";
+                    //if (reader.LastByteRead >= 0)
+                    //    _serverBase.AutoLogger.LogText($"Header not suport msg: {firstLineString} {(client == null ? "null" : client.IPAddress)} IsConnected:{(client == null ? "null" : client.TcpClient.Connected.ToString())} LastByte:{reader.LastByteRead}");
 
-                    string[] lines = null;
-                    if (firstLineString.Contains("\r\n\r\n"))
-                        lines = firstLineString.Substring(0, firstLineString.IndexOf("\r\n\r\n")).Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-                    else
-                        lines = firstLineString.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-                    var newLine = "\r\n";
-                    string response = "";
-                    if (lines.Length > 0)
-                    {
-                        var methodName = GetHttpMethodName(lines[0]);
-                        var address = GetHttpAddress(lines[0]);
-                        if (methodName.ToLower() == "get" && !string.IsNullOrEmpty(address) && address != "/")
-                        {
-                            var headers = GetHttpHeaders(lines.Skip(1).ToArray());
-                            if (headers["content-type"] != null && headers["content-type"] == "SignalGo Service Reference")
-                            {
-                                var doClient = (HttpClientInfo)client;
-                                doClient.RequestHeaders = headers;
-                                SendSignalGoServiceReference(doClient);
-                            }
-                            else
-                                RunHttpRequest(address, "GET", "", headers, (HttpClientInfo)client);
-                            DisposeClient(client, "AddClient finish get call");
-                            return;
-                        }
-                        else if (methodName.ToLower() == "post" && !string.IsNullOrEmpty(address) && address != "/")
-                        {
-                            var indexOfStartedContent = firstLineString.IndexOf("\r\n\r\n");
-                            string content = "";
-                            if (indexOfStartedContent > 0)
-                            {
-                                indexOfStartedContent += 4;
-                                content = firstLineString.Substring(indexOfStartedContent, firstLineString.Length - indexOfStartedContent);
-                            }
-                            var headers = GetHttpHeaders(lines.Skip(1).ToArray());
-                            if (headers["content-type"] != null && headers["content-type"].ToLower().Contains("multipart/form-data"))
-                            {
-                                RunPostHttpRequestFile(address, "POST", content, headers, (HttpClientInfo)client);
-                            }
-                            else if (headers["content-type"] != null && headers["content-type"] == "SignalGo Service Reference")
-                            {
-                                SendSignalGoServiceReference((HttpClientInfo)client);
-                                return;
-                            }
-                            else
-                            {
-                                RunHttpRequest(address, "POST", content, headers, (HttpClientInfo)client);
-                            }
-                            DisposeClient(client, "AddClient finish post call");
-                            return;
-                        }
-                        else if (methodName.ToLower() == "options" && !string.IsNullOrEmpty(address) && address != "/")
-                        {
-                            string settingHeaders = "";
-                            var headers = GetHttpHeaders(lines.Skip(1).ToArray());
-
-                            if (HttpProtocolSetting != null)
-                            {
-                                if (HttpProtocolSetting.HandleCrossOriginAccess)
-                                {
-                                    settingHeaders = "Access-Control-Allow-Origin: " + headers["origin"] + newLine +
-                                    "Access-Control-Allow-Credentials: true" + newLine
-                                    //"Access-Control-Allow-Methods: " + "POST,GET,OPTIONS" + newLine
-                                    ;
-
-                                    if (!string.IsNullOrEmpty(headers["Access-Control-Request-Headers"]))
-                                    {
-                                        settingHeaders += "Access-Control-Allow-Headers: " + headers["Access-Control-Request-Headers"] + newLine;
-                                    }
-                                }
-                            }
-                            string message = newLine + $"Success" + newLine;
-                            response = $"HTTP/1.1 {(int)HttpStatusCode.OK} {HttpRequestController.GetStatusDescription((int)HttpStatusCode.OK)}" + newLine
-                                + "Content-Type: text/html; charset=utf-8" + newLine
-                                + settingHeaders
-                                + "Connection: Close" + newLine;
-                            client.TcpClient.Client.Send(System.Text.Encoding.UTF8.GetBytes(response + message));
-                            DisposeClient(client, "AddClient finish post call");
-                            return;
-                        }
-                        else if (RegisteredHttpServiceTypes.ContainsKey("") && (string.IsNullOrEmpty(address) || address == "/"))
-                        {
-                            var headers = GetHttpHeaders(lines.Skip(1).ToArray());
-                            RunIndexHttpRequest(headers, (HttpClientInfo)client);
-                            DisposeClient(client, "Index Page call");
-                            return;
-                        }
-                    }
-
-                    response = "HTTP/1.1 200 OK" + newLine
-                         + "Content-Type: text/html" + newLine
-                         + "Connection: Close" + newLine;
-                    tcpClient.Client.Send(System.Text.Encoding.ASCII.GetBytes(response + newLine + "SignalGo Server OK" + newLine));
-                    DisposeClient(client, "AddClient http ok signalGo");
-                    return;
+                    //DisposeClient(client, "AddClient header not support");
+                    //return;
                 }
 
+                //StartToReadingClientData(client);
+                //OnConnectedClientAction?.Invoke(client);
             }
-            else
+            catch (Exception)
             {
-                if (firstLineString == null)
-                    firstLineString = "";
-                if (reader.LastByteRead >= 0)
-                    _serverBase.AutoLogger.LogText($"Header not suport msg: {firstLineString} {(client == null ? "null" : client.IPAddress)} IsConnected:{(client == null ? "null" : client.TcpClient.Connected.ToString())} LastByte:{reader.LastByteRead}");
-
-                DisposeClient(client, "AddClient header not support");
-                return;
+                _serverBase.DisposeClient(client, "exception");
             }
-
-            StartToReadingClientData(client);
-            OnConnectedClientAction?.Invoke(client);
         }
     }
 }

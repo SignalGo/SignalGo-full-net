@@ -2,6 +2,7 @@
 using SignalGo.Server.Helpers;
 using SignalGo.Server.IO;
 using SignalGo.Server.Models;
+using SignalGo.Server.ServiceManager.Versions;
 using SignalGo.Server.Settings;
 using SignalGo.Shared;
 using SignalGo.Shared.Converters;
@@ -41,6 +42,11 @@ namespace SignalGo.Server.ServiceManager
         {
             JsonSettingHelper.Initialize();
         }
+
+        /// <summary>
+        /// server data provider communication between client and server
+        /// </summary>
+        internal IServerDataProvider serverDataProvider = new ServerDataProviderV4();
         /// <summary>
         /// log errors and warnings
         /// </summary>
