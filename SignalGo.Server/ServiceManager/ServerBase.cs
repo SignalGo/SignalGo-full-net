@@ -134,7 +134,7 @@ namespace SignalGo.Server.ServiceManager
             var service = serviceType.GetServerServiceAttribute();
             if (service != null)
             {
-                var name = service.Name;
+                var name = service.Name.ToLower();
                 if (!RegisteredServiceTypes.ContainsKey(name))
                     RegisteredServiceTypes.TryAdd(name, serviceType);
             }

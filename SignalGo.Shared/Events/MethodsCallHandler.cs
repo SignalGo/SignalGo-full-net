@@ -8,8 +8,8 @@ using System.Threading.Tasks;
 
 namespace SignalGo.Shared.Events
 {
-    public delegate void BeginHttpCallAction(object clientInfo, string callGuid, string address, System.Reflection.MethodInfo method, List<string> values);
-    public delegate void EndHttpCallAction(object clientInfo, string callGuid, string address, System.Reflection.MethodInfo method, List<string> values, object result, Exception exception);
+    public delegate void BeginHttpCallAction(object clientInfo, string callGuid, string address, System.Reflection.MethodInfo method, SignalGo.Shared.Models.ParameterInfo[] values);
+    public delegate void EndHttpCallAction(object clientInfo, string callGuid, string address, System.Reflection.MethodInfo method, SignalGo.Shared.Models.ParameterInfo[] values, object result, Exception exception);
 
     public delegate void BeginMethodCallAction(object clientInfo, string callGuid, string serviceName, System.Reflection.MethodInfo method, ParameterInfo[] values);
     public delegate void EndMethodCallAction(object clientInfo, string callGuid, string serviceName, System.Reflection.MethodInfo method, ParameterInfo[] values, string result, Exception exception);

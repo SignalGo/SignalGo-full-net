@@ -19,20 +19,20 @@ namespace SignalGo.Shared.Helpers
         /// <summary>
         /// invoke action for void methods call
         /// </summary>
-        public static Action<object, MethodInfo, object[]> InvokedClientMethodAction { get; set; }
+        public static Action<object, MethodInfo, Shared.Models.ParameterInfo[]> InvokedClientMethodAction { get; set; }
         /// <summary>
         /// invoke function for non-void methods call
         /// </summary>
-        public static Func<object, MethodInfo, object[], object> InvokedClientMethodFunction { get; set; }
+        public static Func<object, MethodInfo, Shared.Models.ParameterInfo[], object> InvokedClientMethodFunction { get; set; }
 
         /// <summary>
         /// invoke action for void methods call
         /// </summary>
-        public static Action<object, MethodInfo, object[]> InvokedServerMethodAction { get; set; }
+        public static Action<object, MethodInfo, Shared.Models.ParameterInfo[]> InvokedServerMethodAction { get; set; }
         /// <summary>
         /// invoke function for non-void methods call
         /// </summary>
-        public static Func<object, MethodInfo, object[], object> InvokedServerMethodFunction { get; set; }
+        public static Func<object, MethodInfo, Shared.Models.ParameterInfo[], object> InvokedServerMethodFunction { get; set; }
 #if (!NETSTANDARD && !NETCOREAPP && !PORTABLE)
         /// <summary>
         /// generate a class from an interface type
@@ -52,14 +52,14 @@ namespace SignalGo.Shared.Helpers
             var field = callback.GetType()
                 .GetPropertyInfo("InvokedServerMethodAction");
 
-            field.SetValue(callback, new Action<object, MethodInfo, object[]>((t, method, param) =>
+            field.SetValue(callback, new Action<object, MethodInfo, Shared.Models.ParameterInfo[]>((t, method, param) =>
             {
                 InvokedServerMethodAction?.Invoke(t, method, param);
             }), null);
 
             var field2 = callback.GetType()
                 .GetPropertyInfo("InvokedServerMethodFunction");
-            field2.SetValue(callback, new Func<object, MethodInfo, object[], object>((t, method, param) =>
+            field2.SetValue(callback, new Func<object, MethodInfo, Shared.Models.ParameterInfo[], object>((t, method, param) =>
             {
                 return InvokedServerMethodFunction?.Invoke(t, method, param);
             }), null);
@@ -73,14 +73,14 @@ namespace SignalGo.Shared.Helpers
             var field = callback.GetType()
                 .GetPropertyInfo("InvokedServerMethodAction");
 
-            field.SetValue(callback, new Action<object, MethodInfo, object[]>((t, method, param) =>
+            field.SetValue(callback, new Action<object, MethodInfo, Shared.Models.ParameterInfo[]>((t, method, param) =>
             {
                 InvokedServerMethodAction?.Invoke(t, method, param);
             }), null);
 
             var field2 = callback.GetType()
                 .GetPropertyInfo("InvokedServerMethodFunction");
-            field2.SetValue(callback, new Func<object, MethodInfo, object[], object>((t, method, param) =>
+            field2.SetValue(callback, new Func<object, MethodInfo, Shared.Models.ParameterInfo[], object>((t, method, param) =>
             {
                 return InvokedServerMethodFunction?.Invoke(t, method, param);
             }), null);

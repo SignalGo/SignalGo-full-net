@@ -5,6 +5,7 @@ using SignalGo.Shared.Converters;
 using SignalGo.Shared.DataTypes;
 using SignalGo.Shared.Events;
 using SignalGo.Shared.Helpers;
+using SignalGo.Shared.Http;
 using SignalGo.Shared.IO;
 using SignalGo.Shared.Models;
 using System;
@@ -30,17 +31,19 @@ namespace SignalGo.Server.ServiceManager.Providers
             Task.Run(() =>
 #endif
             {
-                var callback = CallMethod(callInfo.ServiceName, callInfo.MethodName, callInfo.Guid, callInfo.Parameters.ToArray(), client, json, serverBase);
+                var callback = CallMethod(callInfo.ServiceName, callInfo.Guid, callInfo.MethodName, callInfo.Parameters.ToArray(), client, json, serverBase, null, null, out List<HttpKeyAttribute> httpKeyAttributes, out Type serviceType, out MethodInfo method, out object serviceInsatnce);
                 SendCallbackData(callback, client, serverBase);
             });
         }
 
-        static internal MethodCallbackInfo CallMethod(string serviceName, string guid, string methodName, SignalGo.Shared.Models.ParameterInfo[] parameters, ClientInfo client, string json, ServerBase serverBase, out List<HttpKeyAttribute> httpKeyAttributes)
+        static internal MethodCallbackInfo CallMethod(string serviceName, string guid, string methodName, SignalGo.Shared.Models.ParameterInfo[] parameters, ClientInfo client, string json, ServerBase serverBase, HttpPostedFileInfo fileInfo, Func<MethodInfo, bool> canTakeMethod, out List<HttpKeyAttribute> httpKeyAttributes, out Type serviceType, out MethodInfo method, out object service)
         {
             httpKeyAttributes = new List<HttpKeyAttribute>();
             OperationContext.CurrentTaskServer = serverBase;
             object result = null;
-            MethodInfo method = null;
+            method = null;
+            serviceType = null;
+            service = null;
             Exception exception = null;
             MethodCallbackInfo callback = new MethodCallbackInfo()
             {
@@ -51,19 +54,30 @@ namespace SignalGo.Server.ServiceManager.Providers
             {
                 serverBase.TaskOfClientInfoes.TryAdd(Task.CurrentId.GetValueOrDefault(), client.ClientId);
 
-                if (!serverBase.RegisteredServiceTypes.TryGetValue(serviceName, out Type serviceType))
+                if (!serverBase.RegisteredServiceTypes.TryGetValue(serviceName, out serviceType))
                     throw new Exception($"{client.IPAddress} {client.ClientId} Service {serviceName} not found");
 
-                var service = GetInstanceOfService(client, serviceName, serviceType, serverBase);
+                service = GetInstanceOfService(client, serviceName, serviceType, serverBase);
                 if (service == null)
                     throw new Exception($"{client.IPAddress} {client.ClientId} service {serviceName} not found");
 
+                if (fileInfo != null)
+                {
+                    if (service is IHttpClientInfo serviceClientInfo)
+                    {
+                        serviceClientInfo.SetFirstFile(fileInfo);
+                    }
+                    else if (client is HttpClientInfo httpClientInfo)
+                    {
+                        httpClientInfo.SetFirstFile(fileInfo);
+                    }
+                }
                 List<SecurityContractAttribute> securityAttributes = new List<SecurityContractAttribute>();
                 List<CustomDataExchangerAttribute> customDataExchanger = new List<CustomDataExchangerAttribute>();
                 List<ClientLimitationAttribute> clientLimitationAttribute = new List<ClientLimitationAttribute>();
                 List<ConcurrentLockAttribute> concurrentLockAttributes = new List<ConcurrentLockAttribute>();
 
-                var allMethods = GetMethods(client, methodName, parameters, serviceType, customDataExchanger, securityAttributes, clientLimitationAttribute, concurrentLockAttributes).ToList();
+                var allMethods = GetMethods(client, methodName, parameters, serviceType, customDataExchanger, securityAttributes, clientLimitationAttribute, concurrentLockAttributes, canTakeMethod).ToList();
                 method = allMethods.FirstOrDefault();
                 if (method == null)
                 {
@@ -97,6 +111,16 @@ namespace SignalGo.Server.ServiceManager.Providers
                         parametersValues.Add(ServerSerializationHelper.Deserialize(item.Value, prms[index].ParameterType, serverBase, customDataExchanger: parameterDataExchanger.ToArray(), client: client));
                     }
                     index++;
+                }
+                if (parameters.Length != prms.Length)
+                {
+                    for (int i = 0; i < prms.Length; i++)
+                    {
+                        if (parameters.Length <= i || prms[i].Name != parameters[i].Name)
+                        {
+                            parametersValues.Insert(i, prms[i].DefaultValue);
+                        }
+                    }
                 }
 
                 foreach (ClientLimitationAttribute attrib in clientLimitationAttribute)
@@ -166,7 +190,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                                     {
                                         lock (serverBase)
                                         {
-                                            result = method.Invoke(service, parameters.ToArray());
+                                            result = method.Invoke(service, parametersValues.ToArray());
                                         }
                                         break;
                                     }
@@ -174,7 +198,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                                     {
                                         lock (client)
                                         {
-                                            result = method.Invoke(service, parameters.ToArray());
+                                            result = method.Invoke(service, parametersValues.ToArray());
                                         }
                                         break;
                                     }
@@ -182,7 +206,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                                     {
                                         lock (client.IPAddress)
                                         {
-                                            result = method.Invoke(service, parameters.ToArray());
+                                            result = method.Invoke(service, parametersValues.ToArray());
                                         }
                                         break;
                                     }
@@ -190,14 +214,14 @@ namespace SignalGo.Server.ServiceManager.Providers
                                     {
                                         lock (method)
                                         {
-                                            result = method.Invoke(service, parameters.ToArray());
+                                            result = method.Invoke(service, parametersValues.ToArray());
                                         }
                                         break;
                                     }
                             }
                         }
                         else
-                            result = method.Invoke(service, parameters.ToArray());
+                            result = method.Invoke(service, parametersValues.ToArray());
 
                         var httpKeyOnMethod = (HttpKeyAttribute)method.GetCustomAttributes(typeof(HttpKeyAttribute), true).FirstOrDefault();
                         if (httpKeyOnMethod != null)
@@ -382,14 +406,17 @@ namespace SignalGo.Server.ServiceManager.Providers
             , List<CustomDataExchangerAttribute> customDataExchangerAttributes
             , List<SecurityContractAttribute> securityContractAttributes
             , List<ClientLimitationAttribute> clientLimitationAttributes
-            , List<ConcurrentLockAttribute> concurrentLockAttributes)
+            , List<ConcurrentLockAttribute> concurrentLockAttributes
+            , Func<MethodInfo, bool> canTakeMethod)
         {
             var list = serviceType.GetTypesByAttribute<ServiceContractAttribute>(x => true).ToList();
             foreach (var item in list)
             {
-                var method = FindMethod(serviceType, methodName, parameters);
+                var method = FindMethod(serviceType, methodName, parameters, canTakeMethod);
                 if (method != null && method.IsPublic && !method.IsStatic)
                 {
+                    if (canTakeMethod != null && !canTakeMethod(method))
+                        continue;
                     securityContractAttributes.AddRange(method.GetCustomAttributes(typeof(SecurityContractAttribute), true).Cast<SecurityContractAttribute>());
                     customDataExchangerAttributes.AddRange(method.GetCustomAttributes(typeof(CustomDataExchangerAttribute), true).Cast<CustomDataExchangerAttribute>().Where(x => x.GetExchangerByUserCustomization(client)));
                     clientLimitationAttributes.AddRange(method.GetCustomAttributes(typeof(ClientLimitationAttribute), true).Cast<ClientLimitationAttribute>());
@@ -419,14 +446,14 @@ namespace SignalGo.Server.ServiceManager.Providers
 
         static ConcurrentDictionary<string, MethodInfo> CachedMethods { get; set; } = new ConcurrentDictionary<string, MethodInfo>();
 
-        static System.Reflection.MethodInfo FindMethod(Type serviceType, string methodName, Shared.Models.ParameterInfo[] parameters)
+        static System.Reflection.MethodInfo FindMethod(Type serviceType, string methodName, Shared.Models.ParameterInfo[] parameters, Func<MethodInfo, bool> canTakeMethod)
         {
             methodName = methodName.ToLower();
             var key = GenerateMethodKey(serviceType, methodName, parameters);
             if (CachedMethods.TryGetValue(key, out MethodInfo methodInfo))
                 return methodInfo;
 
-            var method = FindMethodByType(serviceType, methodName, parameters);
+            var method = FindMethodByType(serviceType, methodName, parameters, canTakeMethod);
             if (method != null)
             {
                 CachedMethods.TryAdd(key, method);
@@ -435,7 +462,7 @@ namespace SignalGo.Server.ServiceManager.Providers
 
             foreach (var item in serviceType.GetInterfaces())
             {
-                method = FindMethodByType(item, methodName, parameters);
+                method = FindMethodByType(item, methodName, parameters, canTakeMethod);
                 if (method != null)
                 {
                     CachedMethods.TryAdd(key, method);
@@ -449,7 +476,7 @@ namespace SignalGo.Server.ServiceManager.Providers
 #endif
             while (parent != null)
             {
-                method = FindMethodByType(parent, methodName, parameters);
+                method = FindMethodByType(parent, methodName, parameters, canTakeMethod);
                 if (method != null)
                 {
                     CachedMethods.TryAdd(key, method);
@@ -458,7 +485,7 @@ namespace SignalGo.Server.ServiceManager.Providers
 
                 foreach (var item in parent.GetInterfaces())
                 {
-                    method = FindMethodByType(item, methodName, parameters);
+                    method = FindMethodByType(item, methodName, parameters, canTakeMethod);
                     if (method != null)
                     {
                         CachedMethods.TryAdd(key, method);
@@ -475,15 +502,24 @@ namespace SignalGo.Server.ServiceManager.Providers
             return null;
         }
 
-        static System.Reflection.MethodInfo FindMethodByType(Type serviceType, string methodName, Shared.Models.ParameterInfo[] parameters)
+        static System.Reflection.MethodInfo FindMethodByType(Type serviceType, string methodName, Shared.Models.ParameterInfo[] parameters, Func<MethodInfo, bool> canTakeMethod)
         {
-            foreach (var method in serviceType.GetMethods().Where(x => x.Name.ToLower() == methodName && !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_")))))
+            IEnumerable<MethodInfo> query = null;
+            if (methodName == "-noName-" && canTakeMethod != null)
+            {
+                query = serviceType.GetMethods().Where(x => canTakeMethod(x) && !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_"))));
+            }
+            else
+            {
+                query = serviceType.GetMethods().Where(x => x.Name.Equals(methodName, StringComparison.OrdinalIgnoreCase) && !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_"))));
+            }
+            foreach (var method in query)
             {
                 var param = method.GetParameters();
                 bool hasError = false;
                 foreach (var p in parameters)
                 {
-                    if (!param.Any(x => x.Name == p.Name && param.IndexOf(x) == parameters.IndexOf(p)))
+                    if (!string.IsNullOrEmpty(p.Name) && !param.Any(x => x.Name.Equals(p.Name, StringComparison.OrdinalIgnoreCase) && param.IndexOf(x) == parameters.IndexOf(p)))
                     {
                         hasError = true;
                         break;
@@ -494,7 +530,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 {
                     foreach (var p in param)
                     {
-                        if (!parameters.Any(x => x.Name == p.Name))
+                        if (!parameters.Any(x => x.Name.Equals(p.Name, StringComparison.OrdinalIgnoreCase)))
                         {
                             if (!p.HasDefaultValue)
                                 hasError = true;

@@ -34,10 +34,10 @@ namespace SignalGo.Shared.Helpers
                     var plength = item.GetParameters().Length;
                     if (plength != parameters.Length)
                         continue;
-                    foreach (var p in parameters)
-                    {
-                        methodParameterTypes.Add(p.ParameterType);
-                    }
+                    //foreach (var p in parameters)
+                    //{
+                    //    methodParameterTypes.Add(p.ParameterType);
+                    //}
                     break;
                 }
             }

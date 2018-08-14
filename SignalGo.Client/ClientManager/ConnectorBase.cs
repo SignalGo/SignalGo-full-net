@@ -333,7 +333,7 @@ namespace SignalGo.Client.ClientManager
                         methodName = methodName.Substring(0, methodName.Length - 5);
                     var task = Task.Factory.StartNew(() =>
                     {
-                        ConnectorExtensions.SendData(this, serviceName, methodName, args);
+                        ConnectorExtensions.SendData(this, serviceName, methodName, method.MethodToParameters(args).ToArray());
                     });
                     return task;
                 }
@@ -376,14 +376,14 @@ namespace SignalGo.Client.ClientManager
                 {
                     if (typeof(void) == method.ReturnType)
                     {
-                        ConnectorExtensions.SendData(this, serviceName, method.Name, args);
+                        ConnectorExtensions.SendData(this, serviceName, method.Name, method.MethodToParameters(args).ToArray());
                         return null;
                     }
                     else
                     {
                         var getServiceMethod = type.FindMethod(method.Name);
                         var customDataExchanger = getServiceMethod.GetCustomAttributes(typeof(CustomDataExchangerAttribute), true).Cast<CustomDataExchangerAttribute>().Where(x => x.GetExchangerByUserCustomization(this)).ToList();
-                        var data = ConnectorExtensions.SendData(this, serviceName, method.Name, args);
+                        var data = ConnectorExtensions.SendData(this, serviceName, method.Name, method.MethodToParameters(args).ToArray());
                         if (data == null)
                             return null;
                         var result = ClientSerializationHelper.DeserializeObject(data.ToString(), method.ReturnType, customDataExchanger: customDataExchanger.ToArray());
@@ -464,7 +464,7 @@ namespace SignalGo.Client.ClientManager
             });
         }
 
-        public object UploadStream(string name, string serverAddress, int? port, string serviceName, MethodInfo method, object[] args, bool isAsync)
+        public object UploadStream(string name, string serverAddress, int? port, string serviceName, MethodInfo method,object[] args, bool isAsync)
         {
             if (string.IsNullOrEmpty(serverAddress))
                 serverAddress = _address;
@@ -512,13 +512,13 @@ namespace SignalGo.Client.ClientManager
             BaseStreamInfo iStream = null;
             foreach (var item in args)
             {
-                if (item is BaseStreamInfo)
+                if (item is BaseStreamInfo value)
                 {
-                    iStream = (BaseStreamInfo)item;
+                    iStream = value;
                     iStream.ClientId = ClientId;
                 }
-                callInfo.Parameters.Add(new Shared.Models.ParameterInfo() { Value = ClientSerializationHelper.SerializeObject(item) });
             }
+            callInfo.Parameters = method.MethodToParameters(args).ToArray();
             string methodName = method.Name;
             if (methodName.EndsWith("Async"))
                 methodName = methodName.Substring(0, methodName.Length - 5);
@@ -606,7 +606,7 @@ namespace SignalGo.Client.ClientManager
             return result;
         }
 
-        public static T SendOneWayMethod<T>(string serverAddress, int port, string serviceName, string methodName, params object[] parameters)
+        public static T SendOneWayMethod<T>(string serverAddress, int port, string serviceName, string methodName, params Shared.Models.ParameterInfo[] parameters)
         {
             //if (string.IsNullOrEmpty(serverAddress))
             //    serverAddress = _address;
@@ -640,10 +640,8 @@ namespace SignalGo.Client.ClientManager
                 ServiceName = serviceName,
                 MethodName = methodName
             };
-            foreach (var item in parameters)
-            {
-                callInfo.Parameters.Add(new Shared.Models.ParameterInfo() { Value = ClientSerializationHelper.SerializeObject(item) });
-            }
+            callInfo.Parameters = parameters;
+
             if (methodName.EndsWith("Async"))
                 methodName = methodName.Substring(0, methodName.Length - 5);
 
@@ -1015,11 +1013,11 @@ namespace SignalGo.Client.ClientManager
             {
                 OnCalledMethodAction?.Invoke(callInfo);
                 var service = Callbacks[callInfo.ServiceName].Value;
-#if (PORTABLE)
+                //#if (PORTABLE)
                 var method = service.GetType().FindMethod(callInfo.MethodName);
-#else
-                var method = service.GetType().GetMethod(callInfo.MethodName, RuntimeTypeHelper.GetMethodTypes(service.GetType(), callInfo).ToArray());
-#endif
+                //#else
+                //                var method = service.GetType().GetMethod(callInfo.MethodName, RuntimeTypeHelper.GetMethodTypes(service.GetType(), callInfo).ToArray());
+                //#endif
                 if (method == null)
                     throw new Exception($"Method {callInfo.MethodName} from service {callInfo.ServiceName} not found! serviceType: {service.GetType().FullName}");
                 List<object> parameters = new List<object>();

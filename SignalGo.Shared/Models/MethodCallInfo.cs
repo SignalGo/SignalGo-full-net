@@ -44,7 +44,7 @@ namespace SignalGo.Shared.Models
         /// <summary>
         /// method parameters
         /// </summary>
-        public List<ParameterInfo> Parameters { get; set; } = new List<ParameterInfo>();
+        public ParameterInfo[] Parameters { get; set; }
         /// <summary>
         /// sender of call from ignalGo service or not
         /// </summary>

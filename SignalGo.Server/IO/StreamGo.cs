@@ -10,9 +10,9 @@ namespace SignalGo.Server.IO
 {
     internal class StreamGo : Stream
     {
-        NetworkStream CurrentStream { get; set; }
+        Stream CurrentStream { get; set; }
 
-        public StreamGo(NetworkStream currentStream)
+        public StreamGo(Stream currentStream)
         {
             CurrentStream = currentStream;
         }

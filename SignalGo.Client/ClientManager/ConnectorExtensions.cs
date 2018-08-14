@@ -6,6 +6,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -39,6 +40,28 @@ namespace SignalGo.Client.ClientManager
             };
         }
 
+        public static IEnumerable<Shared.Models.ParameterInfo> MethodToParameters(this MethodInfo methodInfo, params object[] args)
+        {
+            var methodParams = methodInfo.GetParameters();
+
+            for (int i = 0; i < args.Length; i++)
+            {
+                yield return new Shared.Models.ParameterInfo() { Name = methodParams[i].Name, Value = ClientSerializationHelper.SerializeObject(args[i]) };
+            }
+        }
+
+#if (!NET35)
+        public static IEnumerable<Shared.Models.ParameterInfo> MethodToParameters(this System.Dynamic.InvokeMemberBinder methodInfo, params object[] args)
+        {
+            var methodParams = methodInfo.CallInfo.ArgumentNames;
+
+            for (int i = 0; i < args.Length; i++)
+            {
+                yield return new Shared.Models.ParameterInfo() { Name = methodParams[i], Value = ClientSerializationHelper.SerializeObject(args[i]) };
+            }
+        }
+#endif
+
         /// <summary>
         /// call method wait for complete response from clients
         /// </summary>
@@ -51,7 +74,7 @@ namespace SignalGo.Client.ClientManager
         /// <param name="callerName">method name</param>
         /// <param name="args">argumants of method</param>
         /// <returns></returns>
-        internal static T SendData<T>(this OperationCalls client, string callerName, params object[] args)
+        internal static T SendData<T>(this OperationCalls client, string callerName, params Shared.Models.ParameterInfo[] args)
         {
             var data = SendData(client, callerName, "", args);
             if (data == null || data.ToString() == "")
@@ -78,7 +101,7 @@ namespace SignalGo.Client.ClientManager
         /// <param name="client"></param>
         /// <param name="callerName"></param>
         /// <param name="args"></param>
-        internal static void SendDataInvoke(this OperationCalls client, string callerName, params object[] args)
+        internal static void SendDataInvoke(this OperationCalls client, string callerName, params Shared.Models.ParameterInfo[] args)
         {
             SendData(client, callerName, "", args);
         }
@@ -91,7 +114,7 @@ namespace SignalGo.Client.ClientManager
         /// <param name="attibName"></param>
         /// <param name="args"></param>
         /// <returns></returns>
-        internal static object SendDataNoParam(this OperationCalls client, string callerName, string attibName, object[] args)
+        internal static object SendDataNoParam(this OperationCalls client, string callerName, string attibName, Shared.Models.ParameterInfo[] args)
         {
             return SendData(client, callerName, attibName, args);
         }
@@ -104,7 +127,7 @@ namespace SignalGo.Client.ClientManager
         /// <param name="attibName">service name</param>
         /// <param name="args">method parameters</param>
         /// <returns></returns>
-        internal static object SendData(this OperationCalls client, string callerName, string attibName, params object[] args)
+        internal static object SendData(this OperationCalls client, string callerName, string attibName, params Shared.Models.ParameterInfo[] args)
         {
             string serviceName = "";
             if (string.IsNullOrEmpty(attibName))
@@ -119,31 +142,33 @@ namespace SignalGo.Client.ClientManager
         /// send data to server
         /// </summary>
         /// <returns></returns>
-        internal static string SendData(ConnectorBase connector, string serviceName, string methodName, params object[] args)
+        internal static string SendData(ConnectorBase connector, string serviceName, string methodName, params Shared.Models.ParameterInfo[] args)
         {
             MethodCallInfo callInfo = new MethodCallInfo();
             callInfo.ServiceName = serviceName;
 
             callInfo.MethodName = methodName;
-            foreach (var item in args)
-            {
-                callInfo.Parameters.Add(new Shared.Models.ParameterInfo() { Value = ClientSerializationHelper.SerializeObject(item), Type = item?.GetType().FullName });
-            }
+            callInfo.Parameters = args;
+            //foreach (var item in args)
+            //{
+            //    callInfo.Parameters.Add(new Shared.Models.ParameterInfo() { Value = ClientSerializationHelper.SerializeObject(item), Name = item?.GetType().FullName });
+            //}
             var guid = Guid.NewGuid().ToString();
             callInfo.Guid = guid;
             return SendData(connector, callInfo);
         }
 
-        internal static Task<T> SendDataTask<T>(ConnectorBase connector, string serviceName, string methodName, params object[] args)
+        internal static Task<T> SendDataTask<T>(ConnectorBase connector, string serviceName, string methodName, params Shared.Models.ParameterInfo[] args)
         {
             MethodCallInfo callInfo = new MethodCallInfo();
             callInfo.ServiceName = serviceName;
 
             callInfo.MethodName = methodName;
-            foreach (var item in args)
-            {
-                callInfo.Parameters.Add(new Shared.Models.ParameterInfo() { Value = ClientSerializationHelper.SerializeObject(item), Type = item?.GetType().FullName });
-            }
+            callInfo.Parameters = args;
+            //foreach (var item in args)
+            //{
+            //    callInfo.Parameters.Add(new Shared.Models.ParameterInfo() { Value = ClientSerializationHelper.SerializeObject(item), Name = item?.GetType().FullName });
+            //}
             var guid = Guid.NewGuid().ToString();
             callInfo.Guid = guid;
             return SendDataAsync<T>(connector, callInfo);
@@ -158,11 +183,11 @@ namespace SignalGo.Client.ClientManager
                 var valueData = new KeyValue<AutoResetEvent, MethodCallbackInfo>(new AutoResetEvent(false), null);
                 var added = WaitedMethodsForResponse.TryAdd(callInfo.Guid, valueData);
                 var service = connector.Services.ContainsKey(callInfo.ServiceName) ? connector.Services[callInfo.ServiceName] : null;
-#if (PORTABLE)
+                //#if (PORTABLE)
                 var method = service?.GetType().FindMethod(callInfo.MethodName);
-#else
-                var method = service?.GetType().FindMethod(callInfo.MethodName, RuntimeTypeHelper.GetMethodTypes(service.GetType(), callInfo).ToArray());
-#endif
+                //#else
+                //                var method = service?.GetType().FindMethod(callInfo.MethodName, RuntimeTypeHelper.GetMethodTypes(service.GetType(), callInfo).ToArray());
+                //#endif
                 isIgnorePriority = method?.GetCustomAttributes<PriorityCallAttribute>().Count() > 0;
 
                 connector.SendData(callInfo);
@@ -247,10 +272,8 @@ namespace SignalGo.Client.ClientManager
                 ServiceName = serviceName,
                 MethodName = serviceDetailMethod.MethodName
             };
-            foreach (var item in requestInfo.Parameters)
-            {
-                callInfo.Parameters.Add(new Shared.Models.ParameterInfo() { Value = item.Value.ToString(), Type = item.FullTypeName });
-            }
+            callInfo.Parameters = requestInfo.Parameters.Select(x => new Shared.Models.ParameterInfo() { Value = x.Value.ToString(), Name = x.Name }).ToArray();
+
 
             var guid = Guid.NewGuid().ToString();
             callInfo.Guid = guid;

@@ -36,12 +36,12 @@ namespace SignalGo.Client
             var type = ReturnTypes[binder.Name];
             if (type == typeof(void))
             {
-                this.SendDataNoParam(binder.Name, ServiceName, args);
+                this.SendDataNoParam(binder.Name, ServiceName, binder.MethodToParameters(args).ToArray());
                 result = null;
             }
             else
             {
-                var data = this.SendDataNoParam(binder.Name, ServiceName, args).ToString();
+                var data = this.SendDataNoParam(binder.Name, ServiceName, binder.MethodToParameters(args).ToArray()).ToString();
                 result = Newtonsoft.Json.JsonConvert.DeserializeObject(data, type);
             }
             return true;
@@ -79,7 +79,7 @@ namespace SignalGo.Client
 
         public override bool TryInvokeMember(InvokeMemberBinder binder, object[] args, out object result)
         {
-            result = this.SendDataNoParam(binder.Name, ServiceName, args);
+            result = this.SendDataNoParam(binder.Name, ServiceName, binder.MethodToParameters(args).ToArray());
             return true;
         }
     }

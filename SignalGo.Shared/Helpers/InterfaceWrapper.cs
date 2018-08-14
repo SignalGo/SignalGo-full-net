@@ -130,8 +130,11 @@ namespace SignalGo.Shared.Helpers
                     var methodImpl = type.DefineMethod(method.Name,
                         MethodAttributes.Public | MethodAttributes.Virtual,
                         method.ReturnType, (from arg in args select arg.ParameterType).ToArray());
-                    type.DefineMethodOverride(methodImpl, method);
-
+                    for (int i = 0; i < args.Length; i++)
+                    {
+                        var parameterBuilder = methodImpl.DefineParameter(i+1, ParameterAttributes.None, args[i].Name);
+                        
+                    }
                     // Generate code to simply call down into each service object
                     // Any return values are discarded, except the last one, which is returned
                     generator = methodImpl.GetILGenerator();
@@ -166,6 +169,7 @@ namespace SignalGo.Shared.Helpers
                                         : OpCodes.Ldarg, index + 1);
                                     break;
                             }
+                            //generator.Emit(OpCodes.Ldstr, args[index].Name);
                             generator.Emit(OpCodes.Box, args[index].ParameterType);
                             generator.Emit(OpCodes.Stelem_Ref);
                         }
