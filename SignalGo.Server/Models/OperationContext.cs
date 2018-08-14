@@ -329,7 +329,7 @@ namespace SignalGo.Server.Models
             if (setting == null)
                 throw new Exception("setting is null or empty! please fill all parameters");
             if (string.IsNullOrEmpty(customClientId))
-                throw new Exception("customClientId is null or empty! please fill all parameters");
+                throw new Exception("customClientId is null or empty! please fill all parameters on headers or etc");
             //if (!CustomClientSavedSettings.ContainsKey(customClientId))
             //    ;
             else if (!CustomClientSavedSettings.TryAdd(customClientId, new HashSet<object>() { setting }) && CustomClientSavedSettings.TryGetValue(customClientId, out HashSet<object> result) && !result.Contains(setting))

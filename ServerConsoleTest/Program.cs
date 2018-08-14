@@ -1,4 +1,5 @@
 ﻿using SignalGo.Client;
+using SignalGo.Server.Models;
 using SignalGo.Server.ServiceManager;
 using SignalGo.Shared.DataTypes;
 using System;
@@ -22,6 +23,7 @@ namespace ServerConsoleTest
     {
         public bool HelloWorld(string userName, string password)
         {
+            OperationContext<UserInfo>.CurrentSetting = new UserInfo() { Name = userName };
             return true;
         }
 
@@ -32,7 +34,7 @@ namespace ServerConsoleTest
 
         public string Test()
         {
-            return "yes";
+            return OperationContext<UserInfo>.CurrentSetting.Name;
         }
     }
 
@@ -43,6 +45,17 @@ namespace ServerConsoleTest
         {
             return true;
         }
+    }
+
+    public class UserInfo
+    {
+        public string Name { get; set; }
+        
+        [HttpKey(ResponseHeaderName = "Set-Cookie", RequestHeaderName = "Cookie", Perfix = "; path=/", KeyName = "_session", HeaderValueSeparate = ";", HeaderKeyValueSeparate = "=")]
+        public string Session { get; set; }
+
+        [HttpKey(IsExpireField = true)]
+        public DateTime ExpireDateTime { get; set; }
     }
 
     class Program
@@ -58,8 +71,15 @@ namespace ServerConsoleTest
                 ClientProvider clientProvider = new ClientProvider();
                 clientProvider.Connect("http://localhost:3284/TestServices/SignalGo");
                 var service = clientProvider.RegisterServerServiceInterfaceWrapper<ITestManager>();
-                var result = service.HelloWorld("userName", "passee");
+                var result = service.HelloWorld("ali123", "passee");
                 var result2 = service.Test();
+
+                ClientProvider clientProvider2 = new ClientProvider();
+                clientProvider2.Connect("http://localhost:3284/TestServices/SignalGo");
+                var service2 = clientProvider2.RegisterServerServiceInterfaceWrapper<ITestManager>();
+                var result3 = service2.HelloWorld("reza123", "passee");
+                var result4 = service2.Test();
+                result2 = service.Test();
                 Console.WriteLine("seerver started");
             }
             catch (Exception ex)
