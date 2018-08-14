@@ -10,10 +10,12 @@ using System.Threading.Tasks;
 namespace ServerConsoleTest
 {
     [ServiceContract("HealthFamilyService", ServiceType.HttpService)]
+    [ServiceContract("HealthFamilyService", ServiceType.ServerService)]
     public interface ITestManager
     {
         bool HelloWorld(string userName, string password);
         string HelloWorld2(string userName, string password);
+        string Test();
     }
 
     public partial class TestService : ITestManager
@@ -26,6 +28,11 @@ namespace ServerConsoleTest
         public string HelloWorld2(string userName, string password)
         {
             return "hello deafult : " + password;
+        }
+
+        public string Test()
+        {
+            return "yes";
         }
     }
 
@@ -48,10 +55,11 @@ namespace ServerConsoleTest
                 serverProvider.RegisterServerService(typeof(TestService));
                 serverProvider.Start("http://localhost:3284/TestServices/SignalGo");
 
-                //ClientProvider clientProvider = new ClientProvider();
-                //clientProvider.Connect("http://localhost:3284/TestServices/SignalGo");
-                //var service = clientProvider.RegisterServerServiceInterfaceWrapper<ITestManager>();
-                //var result = service.HelloWorld2("userName","passee");
+                ClientProvider clientProvider = new ClientProvider();
+                clientProvider.Connect("http://localhost:3284/TestServices/SignalGo");
+                var service = clientProvider.RegisterServerServiceInterfaceWrapper<ITestManager>();
+                var result = service.HelloWorld("userName", "passee");
+                var result2 = service.Test();
                 Console.WriteLine("seerver started");
             }
             catch (Exception ex)

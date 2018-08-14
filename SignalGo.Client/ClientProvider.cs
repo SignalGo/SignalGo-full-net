@@ -182,7 +182,7 @@ namespace SignalGo.Client
 #else
                 var stream = _client.GetStream();
 #endif
-                GoStreamWriter.WriteToStream(stream, data.ToArray(), IsWebSocket);
+                StreamHelper.WriteToStream(stream, data.ToArray());
             }
         }
     }

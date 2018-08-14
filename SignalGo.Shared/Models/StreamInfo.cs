@@ -125,8 +125,8 @@ namespace SignalGo.Shared.Models
 
         public KeyValue<DataType, CompressMode> ReadFirstData(Stream stream, uint maximumReceiveStreamHeaderBlock)
         {
-            var responseType = (DataType)GoStreamReader.ReadOneByte(stream, CompressMode.None, maximumReceiveStreamHeaderBlock, false);
-            var compressMode = (CompressMode)GoStreamReader.ReadOneByte(stream, CompressMode.None, maximumReceiveStreamHeaderBlock, false);
+            var responseType = (DataType)SignalGoStreamBase.CurrentBase.ReadOneByte(stream, CompressMode.None, maximumReceiveStreamHeaderBlock);
+            var compressMode = (CompressMode)SignalGoStreamBase.CurrentBase.ReadOneByte(stream, CompressMode.None, maximumReceiveStreamHeaderBlock);
             return new KeyValue<DataType, CompressMode>(responseType, compressMode);
         }
 
@@ -137,9 +137,9 @@ namespace SignalGo.Shared.Models
         {
             DataType dataType = DataType.FlushStream;
             CompressMode compressMode = CompressMode.None;
-            GoStreamWriter.WriteToStream(Stream, new byte[] { (byte)dataType, (byte)compressMode }, false);
+            SignalGoStreamBase.CurrentBase.WriteToStream(Stream, new byte[] { (byte)dataType, (byte)compressMode });
             byte[] data = BitConverter.GetBytes(position);
-            GoStreamWriter.WriteBlockToStream(Stream, data);
+            SignalGoStreamBase.CurrentBase.WriteBlockToStream(Stream, data);
         }
     }
 

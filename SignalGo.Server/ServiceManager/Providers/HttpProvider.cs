@@ -41,7 +41,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 if (headerResponse.Contains("Sec-WebSocket-Key"))
                 {
                     client = serverBase.ServerDataProvider.CreateClientInfo(false, tcpClient);
-                    client.IsWebSocket = true;
+                    client.StreamHelper = SignalGoStreamWebSocket.CurrentWebSocket;
                     var key = headerResponse.Replace("ey:", "`").Split('`')[1].Replace("\r", "").Split('\n')[0].Trim();
                     var acceptKey = AcceptKey(ref key);
                     var newLine = "\r\n";
@@ -53,11 +53,12 @@ namespace SignalGo.Server.ServiceManager.Providers
                      + "Sec-WebSocket-Accept: " + acceptKey + newLine + newLine;
                     var bytes = System.Text.Encoding.UTF8.GetBytes(response);
                     client.ClientStream.Write(bytes, 0, bytes.Length);
-                    SignalGoDuplexServiceProvider.StartToReadingClientData(client, serverBase);
+                    WebSocketProvider.StartToReadingClientData(client, serverBase);
                 }
                 else
                 {
                     client = serverBase.ServerDataProvider.CreateClientInfo(true, tcpClient);
+                    client.StreamHelper = SignalGoStreamBase.CurrentBase;
 
                     string[] lines = null;
                     if (headerResponse.Contains("\r\n\r\n"))

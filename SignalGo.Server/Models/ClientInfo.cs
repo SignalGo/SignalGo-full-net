@@ -1,5 +1,6 @@
 ﻿using SignalGo.Server.ServiceManager;
 using SignalGo.Shared.Http;
+using SignalGo.Shared.IO;
 using SignalGo.Shared.Models;
 using System;
 using System.Collections.Generic;
@@ -37,12 +38,15 @@ namespace SignalGo.Server.Models
         public Action OnDisconnected { get; set; }
 
         internal TcpClient TcpClient { get; set; }
-        internal bool IsWebSocket { get; set; }
         internal DateTime ConnectedDateTime { get; set; }
         /// <summary>
         /// stream of client to read and write
         /// </summary>
         public System.IO.Stream ClientStream { get; set; }
+        /// <summary>
+        /// client Stream
+        /// </summary>
+        internal ISignalGoStream StreamHelper { get; set; } = null;
     }
 
     /// <summary>

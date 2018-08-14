@@ -177,7 +177,7 @@ namespace SignalGo.Server.ServiceManager.Versions
                 {
                     client = CreateClientInfo(false, tcpClient);
                     //"SignalGo/1.0";
-                    client.IsWebSocket = false;
+                    client.StreamHelper = SignalGoStreamBase.CurrentBase;
 
                     SignalGoDuplexServiceProvider.StartToReadingClientData(client, _serverBase);
                 }

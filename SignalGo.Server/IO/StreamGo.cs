@@ -57,11 +57,7 @@ namespace SignalGo.Server.IO
                 IsReadFinishedBytes = true;
                 //Console.WriteLine("length:" + Length + "pos:" + Position);
                 //Console.WriteLine("need take:" + (Length - Position + BoundarySize));
-#if (!PORTABLE)
-                var endBuffer = GoStreamReader.ReadBlockSize(CurrentStream, (ulong)(Length - Position + BoundarySize));
-#else
-                var endBuffer = GoStreamReader.ReadBlockSize(CurrentStream, (ulong)(Length - Position + BoundarySize));
-#endif
+                var endBuffer = SignalGoStreamBase.CurrentBase.ReadBlockSize(CurrentStream, (ulong)(Length - Position + BoundarySize));
                 //Console.WriteLine("sizeTake:" + endBuffer.Length);
                 if (endBuffer.Length == 0)
                     return 0;
@@ -104,7 +100,7 @@ namespace SignalGo.Server.IO
         {
             if (!IsReadFinishedBytes)
             {
-                GoStreamReader.ReadBlockSize(CurrentStream, BoundarySize);
+                SignalGoStreamBase.CurrentBase.ReadBlockSize(CurrentStream, BoundarySize);
             }
             IsReadFinishedBytes = true;
         }

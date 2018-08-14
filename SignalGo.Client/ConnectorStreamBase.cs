@@ -57,7 +57,7 @@ namespace SignalGo.Client
             byte[] dataLen = BitConverter.GetBytes(jsonBytes.Length);
             bytes.AddRange(dataLen);
             bytes.AddRange(jsonBytes);
-            GoStreamWriter.WriteToStream(wrtiteStream, bytes.ToArray(), IsWebSocket);
+            StreamHelper.WriteToStream(wrtiteStream, bytes.ToArray());
 
             ///send method data
             json = JsonConvert.SerializeObject(Data);
@@ -71,7 +71,7 @@ namespace SignalGo.Client
             if (bytes.Count > ProviderSetting.MaximumSendDataBlock)
                 throw new Exception("SendData data length is upper than MaximumSendDataBlock");
 
-            GoStreamWriter.WriteToStream(wrtiteStream, bytes.ToArray(), IsWebSocket);
+            StreamHelper.WriteToStream(wrtiteStream, bytes.ToArray());
 
             //get OK SignalGo/1.0
             //int o = socketStream.ReadByte();
@@ -85,7 +85,7 @@ namespace SignalGo.Client
             // server is called client method
             if (dataType == DataType.ResponseCallMethod)
             {
-                var bytesArray = GoStreamReader.ReadBlockToEnd(readStream, compresssMode, ProviderSetting.MaximumReceiveDataBlock, IsWebSocket);
+                var bytesArray = StreamHelper.ReadBlockToEnd(readStream, compresssMode, ProviderSetting.MaximumReceiveDataBlock);
                 json = Encoding.UTF8.GetString(bytesArray, 0, bytesArray.Length);
                 MethodCallInfo callInfo = JsonConvert.DeserializeObject<MethodCallInfo>(json);
                 var data = JsonConvert.DeserializeObject<StreamInfo>(callInfo.Data.ToString());
@@ -133,11 +133,8 @@ namespace SignalGo.Client
             byte[] dataLen = BitConverter.GetBytes(jsonBytes.Length);
             bytes.AddRange(dataLen);
             bytes.AddRange(jsonBytes);
-#if (PORTABLE)
-            GoStreamWriter.WriteToStream(downloadFileSocket.WriteStream, bytes.ToArray(), IsWebSocket);
-#else
-            GoStreamWriter.WriteToStream(downloadFileSocket.GetStream(), bytes.ToArray(), IsWebSocket);
-#endif
+
+            StreamHelper.WriteToStream(downloadFileSocket.GetStream(), bytes.ToArray());
             ///send method data
             json = JsonConvert.SerializeObject(Data);
             bytes = new List<byte>();
@@ -150,11 +147,7 @@ namespace SignalGo.Client
             if (bytes.Count > ProviderSetting.MaximumSendDataBlock)
                 throw new Exception("SendData data length is upper than MaximumSendDataBlock");
 
-#if (PORTABLE)
-            GoStreamWriter.WriteToStream(downloadFileSocket.WriteStream, bytes.ToArray(), IsWebSocket);
-#else
-            GoStreamWriter.WriteToStream(downloadFileSocket.GetStream(), bytes.ToArray(), IsWebSocket);
-#endif
+            StreamHelper.WriteToStream(downloadFileSocket.GetStream(), bytes.ToArray());
         }
     }
 }

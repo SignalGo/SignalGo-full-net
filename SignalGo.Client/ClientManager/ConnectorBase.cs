@@ -30,6 +30,8 @@ namespace SignalGo.Client.ClientManager
         {
             JsonSettingHelper.Initialize();
         }
+
+        internal ISignalGoStream StreamHelper { get; set; } = null; 
         internal JsonSettingHelper JsonSettingHelper { get; set; } = new JsonSettingHelper();
         internal AutoLogger AutoLogger { get; set; } = new AutoLogger() { FileName = "ConnectorBase Logs.log" };
         //internal ConcurrentList<AutoResetEvent> HoldMethodsToReconnect = new ConcurrentList<AutoResetEvent>();
@@ -124,6 +126,10 @@ namespace SignalGo.Client.ClientManager
                     throw new Exception("client is connected!");
                 if (IsDisposed)
                     throw new ObjectDisposedException("Connector");
+                if (IsWebSocket)
+                    StreamHelper = SignalGoStreamWebSocket.CurrentWebSocket;
+                else
+                    StreamHelper = SignalGoStreamBase.CurrentBase;
                 _ManulyDisconnected = false;
                 _address = address;
                 _port = port;
@@ -527,7 +533,7 @@ namespace SignalGo.Client.ClientManager
             var json = ClientSerializationHelper.SerializeObject(callInfo);
 
             var jsonBytes = Encoding.UTF8.GetBytes(json);
-            GoStreamWriter.WriteBlockToStream(stream, jsonBytes);
+            StreamHelper.WriteBlockToStream(stream, jsonBytes);
             CompressMode compressMode = CompressMode.None;
             if (isUpload)
             {
@@ -539,7 +545,7 @@ namespace SignalGo.Client.ClientManager
                     firstData = iStream.ReadFirstData(readStream, ProviderSetting.MaximumReceiveStreamHeaderBlock);
                     if (firstData.Key == DataType.FlushStream)
                     {
-                        var data = GoStreamReader.ReadBlockToEnd(readStream, firstData.Value, ProviderSetting.MaximumReceiveStreamHeaderBlock, false);
+                        var data = StreamHelper.ReadBlockToEnd(readStream, firstData.Value, ProviderSetting.MaximumReceiveStreamHeaderBlock);
                         return BitConverter.ToInt32(data, 0);
                     }
                     return -1;
@@ -569,7 +575,7 @@ namespace SignalGo.Client.ClientManager
                         firstData = iStream.ReadFirstData(readStream, ProviderSetting.MaximumReceiveStreamHeaderBlock);
                         if (firstData.Key == DataType.FlushStream)
                         {
-                            var data = GoStreamReader.ReadBlockToEnd(readStream, firstData.Value, ProviderSetting.MaximumReceiveStreamHeaderBlock, false);
+                            var data = StreamHelper.ReadBlockToEnd(readStream, firstData.Value, ProviderSetting.MaximumReceiveStreamHeaderBlock);
                         }
                         else
                             break;
@@ -578,7 +584,7 @@ namespace SignalGo.Client.ClientManager
             }
 
 
-            var callBackBytes = GoStreamReader.ReadBlockToEnd(readStream, compressMode, ProviderSetting.MaximumReceiveStreamHeaderBlock, false);
+            var callBackBytes = StreamHelper.ReadBlockToEnd(readStream, compressMode, ProviderSetting.MaximumReceiveStreamHeaderBlock);
             var callbackInfo = ClientSerializationHelper.DeserializeObject<MethodCallbackInfo>(Encoding.UTF8.GetString(callBackBytes, 0, callBackBytes.Length));
             var methodType = method.ReturnType;
             if (isAsync)
@@ -650,13 +656,13 @@ namespace SignalGo.Client.ClientManager
 
             var line = "SignalGo-OneWay/2.0" + Environment.NewLine;
             var lineBytes = Encoding.UTF8.GetBytes(line);
-
-            GoStreamWriter.WriteToStream(stream, lineBytes, false);
-            GoStreamWriter.WriteBlockToStream(stream, jsonBytes);
+            var streamHelper = new SignalGoStreamBase();
+            streamHelper.WriteToStream(stream, lineBytes);
+            streamHelper.WriteBlockToStream(stream, jsonBytes);
 
             var dataType = (DataType)stream.ReadByte();
             var compressMode = (CompressMode)stream.ReadByte();
-            var readData = GoStreamReader.ReadBlockToEnd(stream, compressMode, uint.MaxValue, false);
+            var readData = streamHelper.ReadBlockToEnd(stream, compressMode, uint.MaxValue);
             json = Encoding.UTF8.GetString(readData, 0, readData.Length);
             var callBack = ClientSerializationHelper.DeserializeObject<MethodCallbackInfo>(json);
             if (callBack.IsException)
@@ -828,7 +834,7 @@ namespace SignalGo.Client.ClientManager
                         // server is called client method
                         if (dataType == DataType.CallMethod)
                         {
-                            var bytes = GoStreamReader.ReadBlockToEnd(stream, compresssMode, ProviderSetting.MaximumReceiveDataBlock, IsWebSocket);
+                            var bytes = StreamHelper.ReadBlockToEnd(stream, compresssMode, ProviderSetting.MaximumReceiveDataBlock);
                             if (SecuritySettings != null)
                                 bytes = DecryptBytes(bytes);
                             var json = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
@@ -846,7 +852,7 @@ namespace SignalGo.Client.ClientManager
                         //after client called server method, server response to client
                         else if (dataType == DataType.ResponseCallMethod)
                         {
-                            var bytes = GoStreamReader.ReadBlockToEnd(stream, compresssMode, ProviderSetting.MaximumReceiveDataBlock, IsWebSocket);
+                            var bytes = StreamHelper.ReadBlockToEnd(stream, compresssMode, ProviderSetting.MaximumReceiveDataBlock);
                             if (SecuritySettings != null)
                                 bytes = DecryptBytes(bytes);
                             var json = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
@@ -861,7 +867,7 @@ namespace SignalGo.Client.ClientManager
                         }
                         else if (dataType == DataType.GetServiceDetails)
                         {
-                            var bytes = GoStreamReader.ReadBlockToEnd(stream, compresssMode, ProviderSetting.MaximumReceiveDataBlock, IsWebSocket);
+                            var bytes = StreamHelper.ReadBlockToEnd(stream, compresssMode, ProviderSetting.MaximumReceiveDataBlock);
                             if (SecuritySettings != null)
                                 bytes = DecryptBytes(bytes);
                             var json = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
@@ -873,7 +879,7 @@ namespace SignalGo.Client.ClientManager
                         }
                         else if (dataType == DataType.GetMethodParameterDetails)
                         {
-                            var bytes = GoStreamReader.ReadBlockToEnd(stream, compresssMode, ProviderSetting.MaximumReceiveDataBlock, IsWebSocket);
+                            var bytes = StreamHelper.ReadBlockToEnd(stream, compresssMode, ProviderSetting.MaximumReceiveDataBlock);
                             if (SecuritySettings != null)
                                 bytes = DecryptBytes(bytes);
                             var json = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
@@ -883,7 +889,7 @@ namespace SignalGo.Client.ClientManager
                         }
                         else if (dataType == DataType.GetClientId)
                         {
-                            var bytes = GoStreamReader.ReadBlockToEnd(stream, compresssMode, ProviderSetting.MaximumReceiveDataBlock, IsWebSocket);
+                            var bytes = StreamHelper.ReadBlockToEnd(stream, compresssMode, ProviderSetting.MaximumReceiveDataBlock);
                             if (SecuritySettings != null)
                                 bytes = DecryptBytes(bytes);
                             ClientId = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
@@ -916,7 +922,7 @@ namespace SignalGo.Client.ClientManager
 #else
                 var stream = _client.GetStream();
 #endif
-                GoStreamWriter.WriteToStream(stream, new byte[] { (byte)DataType.PingPong }, IsWebSocket);
+                StreamHelper.WriteToStream(stream, new byte[] { (byte)DataType.PingPong });
                 return PingAndWaitForPong.WaitOne(new TimeSpan(0, 0, 3));
             }
             catch (Exception ex)
@@ -984,7 +990,7 @@ namespace SignalGo.Client.ClientManager
                 bytes.AddRange(jsonBytes);
                 if (bytes.Count > ProviderSetting.MaximumSendDataBlock)
                     throw new Exception("SendData data length is upper than MaximumSendDataBlock");
-                GoStreamWriter.WriteToStream(stream, bytes.ToArray(), IsWebSocket);
+                StreamHelper.WriteToStream(stream, bytes.ToArray());
             }
             catch (Exception ex)
             {
@@ -1079,7 +1085,7 @@ namespace SignalGo.Client.ClientManager
 #else
             var stream = _client.GetStream();
 #endif
-            GoStreamWriter.WriteToStream(stream, data.ToArray(), IsWebSocket);
+            StreamHelper.WriteToStream(stream, data.ToArray());
         }
 
 
@@ -1110,7 +1116,7 @@ namespace SignalGo.Client.ClientManager
 #else
                 var stream = _client.GetStream();
 #endif
-                GoStreamWriter.WriteToStream(stream, data.ToArray(), IsWebSocket);
+                StreamHelper.WriteToStream(stream, data.ToArray());
             });
             getServiceDetailEvent.WaitOne();
             if (getServiceDetialExceptionResult != null)
@@ -1144,7 +1150,7 @@ namespace SignalGo.Client.ClientManager
 #else
                 var stream = _client.GetStream();
 #endif
-                GoStreamWriter.WriteToStream(stream, data.ToArray(), IsWebSocket);
+                StreamHelper.WriteToStream(stream, data.ToArray());
             });
             getServiceDetailEvent.WaitOne();
             return getmethodParameterDetailsResult;

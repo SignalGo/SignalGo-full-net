@@ -23,21 +23,22 @@ namespace SignalGo.Server.ServiceManager.Providers
     /// </summary>
     public abstract class BaseProvider
     {
-        static internal void CallMethod(MethodCallInfo callInfo, ClientInfo client, string json, ServerBase serverBase)
+        static internal Task<MethodCallbackInfo> CallMethod(MethodCallInfo callInfo, ClientInfo client, string json, ServerBase serverBase)
         {
 #if (NET40 || NET35)
-            Task.Factory.StartNew(() =>
+            return Task.Factory.StartNew(() =>
 #else
-            Task.Run(() =>
+            return Task.Run(() =>
 #endif
             {
-                var callback = CallMethod(callInfo.ServiceName, callInfo.Guid, callInfo.MethodName, callInfo.Parameters.ToArray(), client, json, serverBase, null, null, out List<HttpKeyAttribute> httpKeyAttributes, out Type serviceType, out MethodInfo method, out object serviceInsatnce);
-                SendCallbackData(callback, client, serverBase);
+                return CallMethod(callInfo.ServiceName, callInfo.Guid, callInfo.MethodName, callInfo.Parameters.ToArray(), client, json, serverBase, null, null, out List<HttpKeyAttribute> httpKeyAttributes, out Type serviceType, out MethodInfo method, out object serviceInsatnce);
+                //SendCallbackData(callback, client, serverBase);
             });
         }
 
         static internal MethodCallbackInfo CallMethod(string serviceName, string guid, string methodName, SignalGo.Shared.Models.ParameterInfo[] parameters, ClientInfo client, string json, ServerBase serverBase, HttpPostedFileInfo fileInfo, Func<MethodInfo, bool> canTakeMethod, out List<HttpKeyAttribute> httpKeyAttributes, out Type serviceType, out MethodInfo method, out object service)
         {
+            serviceName = serviceName.ToLower();
             httpKeyAttributes = new List<HttpKeyAttribute>();
             OperationContext.CurrentTaskServer = serverBase;
             object result = null;
@@ -267,97 +268,7 @@ namespace SignalGo.Server.ServiceManager.Providers
             DataExchanger.Clear();
             return callback;
         }
-        /// <summary>
-        /// send result of calling method from client
-        /// client is waiting for get response from server when calling method
-        /// </summary>
-        /// <param name="callback"></param>
-        /// <param name="client"></param>
-        /// <param name="serverBase"></param>
-        static void SendCallbackData(MethodCallbackInfo callback, ClientInfo client, ServerBase serverBase)
-        {
-            try
-            {
-                if (client.IsWebSocket)
-                {
-                    string json = ServerSerializationHelper.SerializeObject(callback, serverBase);
-                    if (json.Length > 30000)
-                    {
-                        var listOfParts = GeneratePartsOfData(json);
-                        int i = 1;
-                        foreach (var item in listOfParts)
-                        {
-                            var cb = callback.Clone();
-                            cb.PartNumber = i == listOfParts.Count ? (short)-1 : (short)i;
-                            cb.Data = item;
-                            json = (int)DataType.ResponseCallMethod + "," + (int)CompressMode.None + "/" + ServerSerializationHelper.SerializeObject(cb, serverBase);
-                            var result = Encoding.UTF8.GetBytes(json);
-                            //if (ClientsSettings.ContainsKey(client))
-                            //    result = EncryptBytes(result, client);
-                            GoStreamWriter.WriteToStream(client.ClientStream, result, client.IsWebSocket);
-                            i++;
-                        }
-                    }
-                    else
-                    {
-                        json = (int)DataType.ResponseCallMethod + "," + (int)CompressMode.None + "/" + json;
-                        var result = Encoding.UTF8.GetBytes(json);
-                        //if (ClientsSettings.ContainsKey(client))
-                        //    result = EncryptBytes(result, client);
-                        GoStreamWriter.WriteToStream(client.ClientStream, result, client.IsWebSocket);
-                    }
 
-                }
-                else
-                {
-                    string json = ServerSerializationHelper.SerializeObject(callback, serverBase);
-                    byte[] bytes = Encoding.UTF8.GetBytes(json);
-                    //if (ClientsSettings.ContainsKey(client))
-                    //    bytes = EncryptBytes(bytes, client);
-                    byte[] len = BitConverter.GetBytes(bytes.Length);
-                    List<byte> data = new List<byte>
-                    {
-                        (byte)DataType.ResponseCallMethod,
-                        (byte)CompressMode.None
-                    };
-                    data.AddRange(len);
-                    data.AddRange(bytes);
-                    if (data.Count > serverBase.ProviderSetting.MaximumSendDataBlock)
-                        throw new Exception($"{client.IPAddress} {client.ClientId} SendCallbackData data length exceeds MaximumSendDataBlock");
-
-                    GoStreamWriter.WriteToStream(client.ClientStream, data.ToArray(), client.IsWebSocket);
-                }
-
-            }
-            catch (Exception ex)
-            {
-                serverBase.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase SendCallbackData");
-                if (!client.TcpClient.Connected)
-                    serverBase.DisposeClient(client, "SendCallbackData exception");
-            }
-            finally
-            {
-                //ClientConnectedCallingCount--;
-            }
-        }
-
-        static List<string> GeneratePartsOfData(string data)
-        {
-            int partCount = (int)Math.Ceiling((double)data.Length / 30000);
-            List<string> partData = new List<string>();
-            for (int i = 0; i < partCount; i++)
-            {
-                if (i != partCount - 1)
-                {
-                    partData.Add(data.Substring((i * 30000), 30000));
-                }
-                else
-                {
-                    partData.Add(data.Substring((i * 30000), data.Length - (i * 30000)));
-                }
-            }
-            return partData;
-        }
 
         static object GetInstanceOfService(ClientInfo client, string serviceName, Type serviceType, ServerBase serverBase)
         {
@@ -412,7 +323,7 @@ namespace SignalGo.Server.ServiceManager.Providers
             var list = serviceType.GetTypesByAttribute<ServiceContractAttribute>(x => true).ToList();
             foreach (var item in list)
             {
-                var method = FindMethod(serviceType, methodName, parameters, canTakeMethod);
+                var method = FindMethod(item, methodName, parameters, canTakeMethod);
                 if (method != null && method.IsPublic && !method.IsStatic)
                 {
                     if (canTakeMethod != null && !canTakeMethod(method))
