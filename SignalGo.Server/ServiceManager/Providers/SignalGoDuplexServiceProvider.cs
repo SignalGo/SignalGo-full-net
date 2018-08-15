@@ -1,5 +1,6 @@
 ﻿using SignalGo.Server.Helpers;
 using SignalGo.Server.Models;
+using SignalGo.Shared.Helpers;
 using SignalGo.Shared.IO;
 using SignalGo.Shared.Managers;
 using SignalGo.Shared.Models;
@@ -81,16 +82,8 @@ namespace SignalGo.Server.ServiceManager.Providers
                             else
                                 continue;
                         }
-                        throw new NotSupportedException();
-                        //var geted = WaitedMethodsForResponse.TryGetValue(client, out ConcurrentDictionary<string, KeyValue<AutoResetEvent, MethodCallbackInfo>> keyValue);
-                        //if (geted)
-                        //{
-                        //    if (keyValue.ContainsKey(callback.Guid))
-                        //    {
-                        //        keyValue[callback.Guid].Value = callback;
-                        //        keyValue[callback.Guid].Key.Set();
-                        //    }
-                        //}
+                        if (serverBase.ClientServiceCallMethodsResult.TryGetValue(callback.Guid, out KeyValue<Type, object> resultTask))
+                            resultTask.Value.GetType().FindMethod("SetResult").Invoke(resultTask.Value, new object[] { ServerSerializationHelper.Deserialize(callback.Data, resultTask.Key, serverBase) });
                     }
                     else if (dataType == DataType.GetServiceDetails)
                     {

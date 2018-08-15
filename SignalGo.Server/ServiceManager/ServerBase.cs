@@ -27,6 +27,7 @@ using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace SignalGo.Server.ServiceManager
 {
@@ -115,6 +116,10 @@ namespace SignalGo.Server.ServiceManager
         /// key is task id and value is client id
         /// </summary>
         internal ConcurrentDictionary<int, string> TaskOfClientInfoes { get; set; } = new ConcurrentDictionary<int, string>();
+        /// <summary>
+        /// all of the clients service call methods from server those wait for recevice data from client and set result to task that waited
+        /// </summary>
+        internal ConcurrentDictionary<string, KeyValue<Type, object>> ClientServiceCallMethodsResult { get; set; } = new ConcurrentDictionary<string, KeyValue<Type, object>>();
 
         /// <summary>
         /// Error handling methods that return types (not void)
@@ -144,6 +149,20 @@ namespace SignalGo.Server.ServiceManager
             }
         }
 
+        public void RegisterClientService(Type serviceType)
+        {
+            var service = serviceType.GetClientServiceAttribute();
+            if (service != null)
+            {
+                var name = service.Name.ToLower();
+                if (!RegisteredServiceTypes.ContainsKey(name))
+                    RegisteredServiceTypes.TryAdd(name, serviceType);
+            }
+            else
+            {
+                throw new NotSupportedException("your service is not type of ServerService or HttpService or StreamService");
+            }
+        }
 
         internal void DisposeClient(ClientInfo client, string reason)
         {

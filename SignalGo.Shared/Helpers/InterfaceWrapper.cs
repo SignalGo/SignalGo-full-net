@@ -38,7 +38,7 @@ namespace SignalGo.Shared.Helpers
                     break;
             }
         }
-        public static TService Wrap<TService>(Func<string, MethodInfo, object[], object> CallMethodAction)
+        public static TService Wrap<TService>(Func<string, MethodInfo, Shared.Models.ParameterInfo[], object> CallMethodAction)
             where TService : class
         {
             return (TService)Wrap(typeof(TService), CallMethodAction);
@@ -58,7 +58,7 @@ namespace SignalGo.Shared.Helpers
             return result;
         }
 
-        internal static Object Wrap(Type serviceInterfaceType, Func<string, MethodInfo, object[], object> CallMethodAction)
+        internal static Object Wrap(Type serviceInterfaceType, Func<string, MethodInfo, Shared.Models.ParameterInfo[], object> CallMethodAction)
         {
             //this method load GetCurrentMethod for xamarin linked assembly
             //var fix = System.Reflection.MethodInfo.GetCurrentMethod();
@@ -70,11 +70,15 @@ namespace SignalGo.Shared.Helpers
                 ns += ".";
             var attrib = serviceInterfaceType.GetCustomAttributes<ServiceContractAttribute>(true).Where(x => x.ServiceType == ServiceType.ServerService || x.ServiceType == ServiceType.ClientService || x.ServiceType == ServiceType.StreamService).FirstOrDefault();
 
-#if (NETSTANDARD || NETCOREAPP || PORTABLE)
-            var assembly = AssemblyBuilder.DefineDynamicAssembly(assemblyName,
-             AssemblyBuilderAccess.Run);
+#if (NET35)
+            var assembly = AppDomain.CurrentDomain.DefineDynamicAssembly(assemblyName,
+                        AssemblyBuilderAccess.Run);
+#elif (NET40)
+            var assembly = AppDomain.CurrentDomain.DefineDynamicAssembly(assemblyName,
+                        AssemblyBuilderAccess.RunAndCollect);
 #else
-            var assembly = AppDomain.CurrentDomain.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndSave);
+            var assembly = AssemblyBuilder.DefineDynamicAssembly(assemblyName,
+                        AssemblyBuilderAccess.RunAndCollect);
 #endif
 #if (NETSTANDARD || NETCOREAPP || PORTABLE)
             var module = assembly.DefineDynamicModule(moduleName);
@@ -132,8 +136,8 @@ namespace SignalGo.Shared.Helpers
                         method.ReturnType, (from arg in args select arg.ParameterType).ToArray());
                     for (int i = 0; i < args.Length; i++)
                     {
-                        var parameterBuilder = methodImpl.DefineParameter(i+1, ParameterAttributes.None, args[i].Name);
-                        
+                        var parameterBuilder = methodImpl.DefineParameter(i + 1, ParameterAttributes.None, args[i].Name);
+
                     }
                     // Generate code to simply call down into each service object
                     // Any return values are discarded, except the last one, which is returned
@@ -144,13 +148,15 @@ namespace SignalGo.Shared.Helpers
                     generator.Emit(OpCodes.Ldfld, fields[0]);//stack
                     if (attrib == null)
                         throw new Exception("attrib not found");
+                    //add name of service
                     generator.Emit(OpCodes.Ldstr, attrib.Name);
                     var getCurgntMethod = typeof(MethodBase).FindMethod("GetCurrentMethod");
                     if (getCurgntMethod == null)
                         throw new Exception("GetCurrentMethod not found");
+                    //add current method info
                     generator.Emit(OpCodes.Call, getCurgntMethod);
 
-
+                    //add obj[] argumants
                     if (args.Length > 0)
                     {
                         EmitInt32(generator, args.Length);

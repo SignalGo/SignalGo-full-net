@@ -31,7 +31,7 @@ namespace SignalGo.Client.ClientManager
             JsonSettingHelper.Initialize();
         }
 
-        internal ISignalGoStream StreamHelper { get; set; } = null; 
+        internal ISignalGoStream StreamHelper { get; set; } = null;
         internal JsonSettingHelper JsonSettingHelper { get; set; } = new JsonSettingHelper();
         internal AutoLogger AutoLogger { get; set; } = new AutoLogger() { FileName = "ConnectorBase Logs.log" };
         //internal ConcurrentList<AutoResetEvent> HoldMethodsToReconnect = new ConcurrentList<AutoResetEvent>();
@@ -339,7 +339,7 @@ namespace SignalGo.Client.ClientManager
                         methodName = methodName.Substring(0, methodName.Length - 5);
                     var task = Task.Factory.StartNew(() =>
                     {
-                        ConnectorExtensions.SendData(this, serviceName, methodName, method.MethodToParameters(args).ToArray());
+                        ConnectorExtensions.SendData(this, serviceName, methodName, method.MethodToParameters(x => ClientSerializationHelper.SerializeObject(x), args).ToArray());
                     });
                     return task;
                 }
@@ -354,7 +354,7 @@ namespace SignalGo.Client.ClientManager
                     var findMethod = typeof(ConnectorExtensions).FindMethod("SendDataTask", BindingFlags.Static | BindingFlags.NonPublic);
                     var methodType = method.ReturnType.GetListOfGenericArguments().FirstOrDefault();
                     var madeMethod = findMethod.MakeGenericMethod(methodType);
-                    return madeMethod.Invoke(this, new object[] { this, serviceName, methodName, args });
+                    return madeMethod.Invoke(this, new object[] { this, serviceName, methodName, method.MethodToParameters(x => ClientSerializationHelper.SerializeObject(x), args).ToArray() });
 
 #else
                     throw new NotSupportedException();
@@ -382,14 +382,14 @@ namespace SignalGo.Client.ClientManager
                 {
                     if (typeof(void) == method.ReturnType)
                     {
-                        ConnectorExtensions.SendData(this, serviceName, method.Name, method.MethodToParameters(args).ToArray());
+                        ConnectorExtensions.SendData(this, serviceName, method.Name, method.MethodToParameters(x => ClientSerializationHelper.SerializeObject(x), args).ToArray());
                         return null;
                     }
                     else
                     {
                         var getServiceMethod = type.FindMethod(method.Name);
                         var customDataExchanger = getServiceMethod.GetCustomAttributes(typeof(CustomDataExchangerAttribute), true).Cast<CustomDataExchangerAttribute>().Where(x => x.GetExchangerByUserCustomization(this)).ToList();
-                        var data = ConnectorExtensions.SendData(this, serviceName, method.Name, method.MethodToParameters(args).ToArray());
+                        var data = ConnectorExtensions.SendData(this, serviceName, method.Name, method.MethodToParameters(x => ClientSerializationHelper.SerializeObject(x), args).ToArray());
                         if (data == null)
                             return null;
                         var result = ClientSerializationHelper.DeserializeObject(data.ToString(), method.ReturnType, customDataExchanger: customDataExchanger.ToArray());
@@ -470,7 +470,7 @@ namespace SignalGo.Client.ClientManager
             });
         }
 
-        public object UploadStream(string name, string serverAddress, int? port, string serviceName, MethodInfo method,object[] args, bool isAsync)
+        public object UploadStream(string name, string serverAddress, int? port, string serviceName, MethodInfo method, object[] args, bool isAsync)
         {
             if (string.IsNullOrEmpty(serverAddress))
                 serverAddress = _address;
@@ -524,7 +524,7 @@ namespace SignalGo.Client.ClientManager
                     iStream.ClientId = ClientId;
                 }
             }
-            callInfo.Parameters = method.MethodToParameters(args).ToArray();
+            callInfo.Parameters = method.MethodToParameters(x => ClientSerializationHelper.SerializeObject(x), args).ToArray();
             string methodName = method.Name;
             if (methodName.EndsWith("Async"))
                 methodName = methodName.Substring(0, methodName.Length - 5);
@@ -1009,7 +1009,11 @@ namespace SignalGo.Client.ClientManager
         /// call a method of client from server
         /// </summary>
         /// <param name="callInfo">method call data</param>
+#if (NET40 || NET35)
         internal void CallMethod(MethodCallInfo callInfo)
+#else
+        internal async void CallMethod(MethodCallInfo callInfo)
+#endif
         {
             MethodCallbackInfo callback = new MethodCallbackInfo()
             {
@@ -1037,7 +1041,34 @@ namespace SignalGo.Client.ClientManager
                     method.Invoke(service, parameters.ToArray());
                 else
                 {
-                    var data = method.Invoke(service, parameters.ToArray());
+                    object data = null;
+                    //this is async action
+                    if (method.ReturnType == typeof(Task))
+                    {
+#if (NET40 || NET35)
+                        ((Task)method.Invoke(service, parameters.ToArray())).Wait();
+#else
+                        await (Task)method.Invoke(service, parameters.ToArray());
+#endif
+                    }
+                    //this is async function
+                    else if (method.ReturnType.GetBaseType() == typeof(Task))
+                    {
+#if (NET40 || NET35)
+                        var task = ((Task)method.Invoke(service, parameters.ToArray()));
+                        task.Wait();
+                        data = task.GetType().GetProperty("Result").GetValue(task,null);
+#else
+                        var task = ((Task)method.Invoke(service, parameters.ToArray()));
+                        await task;
+                        data = task.GetType().GetProperty("Result").GetValue(task, null);
+#endif
+
+                    }
+                    else
+                    {
+                        data = method.Invoke(service, parameters.ToArray());
+                    }
                     callback.Data = data == null ? null : ClientSerializationHelper.SerializeObject(data);
                 }
             }

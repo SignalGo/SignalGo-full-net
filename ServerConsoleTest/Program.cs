@@ -10,12 +10,30 @@ using System.Threading.Tasks;
 
 namespace ServerConsoleTest
 {
+
+    [ServiceContract("HealthFamilyClientService", ServiceType.ClientService)]
+    public interface ITestClientService
+    {
+        Task<string> CallMe(string data);
+    }
+
+    public class ClientService : ITestClientService
+    {
+        public Task<string> CallMe(string data)
+        {
+            return Task.Run(() =>
+            {
+                return "hello im data: " + data;
+            });
+        }
+    }
+
     [ServiceContract("HealthFamilyService", ServiceType.HttpService)]
     [ServiceContract("HealthFamilyService", ServiceType.ServerService)]
     public interface ITestManager
     {
         bool HelloWorld(string userName, string password);
-        string HelloWorld2(string userName, string password);
+        Task<string> HelloWorld2(string userName, string password);
         string Test();
     }
 
@@ -27,9 +45,16 @@ namespace ServerConsoleTest
             return true;
         }
 
-        public string HelloWorld2(string userName, string password)
+        public async Task<string> HelloWorld2(string userName, string password)
         {
-            return "hello deafult : " + password;
+            var callback = OperationContext.Current.GetClientService<ITestClientService>();
+            var result = await Task.Factory.StartNew(async () =>
+               {
+                   var returNew = await callback.CallMe("hello client");
+                   var q = returNew;
+                   return returNew;
+               });
+            return "ok you right";
         }
 
         public string Test()
@@ -50,7 +75,7 @@ namespace ServerConsoleTest
     public class UserInfo
     {
         public string Name { get; set; }
-        
+
         [HttpKey(ResponseHeaderName = "Set-Cookie", RequestHeaderName = "Cookie", Perfix = "; path=/", KeyName = "_session", HeaderValueSeparate = ";", HeaderKeyValueSeparate = "=")]
         public string Session { get; set; }
 
@@ -66,6 +91,7 @@ namespace ServerConsoleTest
             {
                 ServerProvider serverProvider = new ServerProvider();
                 serverProvider.RegisterServerService(typeof(TestService));
+                serverProvider.RegisterClientService(typeof(ITestClientService));
                 serverProvider.Start("http://localhost:3284/TestServices/SignalGo");
 
                 ClientProvider clientProvider = new ClientProvider();
@@ -77,7 +103,9 @@ namespace ServerConsoleTest
                 ClientProvider clientProvider2 = new ClientProvider();
                 clientProvider2.Connect("http://localhost:3284/TestServices/SignalGo");
                 var service2 = clientProvider2.RegisterServerServiceInterfaceWrapper<ITestManager>();
+                clientProvider2.RegisterClientService<ClientService>();
                 var result3 = service2.HelloWorld("reza123", "passee");
+                var result5 = service2.HelloWorld2("reza123", "passee").GetAwaiter().GetResult();
                 var result4 = service2.Test();
                 result2 = service.Test();
                 Console.WriteLine("seerver started");

@@ -40,27 +40,6 @@ namespace SignalGo.Client.ClientManager
             };
         }
 
-        public static IEnumerable<Shared.Models.ParameterInfo> MethodToParameters(this MethodInfo methodInfo, params object[] args)
-        {
-            var methodParams = methodInfo.GetParameters();
-
-            for (int i = 0; i < args.Length; i++)
-            {
-                yield return new Shared.Models.ParameterInfo() { Name = methodParams[i].Name, Value = ClientSerializationHelper.SerializeObject(args[i]) };
-            }
-        }
-
-#if (!NET35)
-        public static IEnumerable<Shared.Models.ParameterInfo> MethodToParameters(this System.Dynamic.InvokeMemberBinder methodInfo, params object[] args)
-        {
-            var methodParams = methodInfo.CallInfo.ArgumentNames;
-
-            for (int i = 0; i < args.Length; i++)
-            {
-                yield return new Shared.Models.ParameterInfo() { Name = methodParams[i], Value = ClientSerializationHelper.SerializeObject(args[i]) };
-            }
-        }
-#endif
 
         /// <summary>
         /// call method wait for complete response from clients

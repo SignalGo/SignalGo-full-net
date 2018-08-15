@@ -28,7 +28,7 @@ namespace SignalGo.Server.ServiceManager.Providers
 #if (NET40 || NET35)
             return Task.Factory.StartNew(() =>
 #else
-            return Task.Run(() =>
+            return Task.Factory.StartNew(() =>
 #endif
             {
                 return CallMethod(callInfo.ServiceName, callInfo.Guid, callInfo.MethodName, callInfo.Parameters.ToArray(), client, json, serverBase, null, null, out List<HttpKeyAttribute> httpKeyAttributes, out Type serviceType, out MethodInfo method, out object serviceInsatnce);
@@ -230,6 +230,30 @@ namespace SignalGo.Server.ServiceManager.Providers
                         if (serverBase.ProviderSetting.HttpKeyResponses != null)
                         {
                             httpKeyAttributes.AddRange(serverBase.ProviderSetting.HttpKeyResponses);
+                        }
+
+                        if (result != null && result.GetType() == typeof(Task))
+                        {
+                            var taskResult = (Task)result;
+#if (NET40 || NET35)
+                            taskResult.Wait();
+#else
+                            taskResult.Wait();
+#endif
+                            result = null;
+                        }
+                        //this is async function
+                        else if (result != null && result.GetType().GetBaseType() == typeof(Task))
+                        {
+#if (NET40 || NET35)
+                            var task = (Task)result;
+                            task.Wait();
+                            result = task.GetType().GetProperty("Result").GetValue(task, null);
+#else
+                            var task = ((Task)result);
+                            task.Wait();
+                            result = task.GetType().GetProperty("Result").GetValue(task, null);
+#endif
                         }
 
                         callback.Data = result == null ? null : ServerSerializationHelper.SerializeObject(result, serverBase, customDataExchanger: customDataExchanger.ToArray(), client: client);

@@ -14,10 +14,11 @@ using System.Net.Sockets;
 using System.Reflection;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace SignalGo.Server.ServiceManager
 {
-    public static class ServerExtension
+    public static class ServerExtensions
     {
         public static Stream GetTcpStream(this TcpClient tcpClient, ServerBase serverBase)
         {
@@ -98,20 +99,57 @@ namespace SignalGo.Server.ServiceManager
         //    return null;
         //}
 
+        //internal static object SendDataWithCallClientServiceMethod(ServerBase serverBase,ClientInfo client,string serviceName, string methodName, params Shared.Models.ParameterInfo[] args)
+        //{
+        //    MethodCallInfo callInfo = new MethodCallInfo();
+        //    callInfo.ServiceName = serviceName;
+        //    callInfo.MethodName = methodName;
+        //    callInfo.Parameters = args;
+        //    var guid = Guid.NewGuid().ToString();
+        //    callInfo.Guid = guid;
+        //    var bytes = Encoding.UTF8.GetBytes(ServerSerializationHelper.SerializeObject(callInfo, serverBase));
+        //    client.StreamHelper.WriteBlockToStream(client.ClientStream, bytes);
+        //}
+
+        internal static Task SendDataWithCallClientServiceMethod(ServerBase serverBase, ClientInfo client, Type returnType, string serviceName, string methodName, params Shared.Models.ParameterInfo[] args)
+        {
+            Func<Task<string>> run = () =>
+            {
+                var taskCompletionSource = new TaskCompletionSource<string>();
+                MethodCallInfo callInfo = new MethodCallInfo();
+                callInfo.ServiceName = serviceName;
+                callInfo.MethodName = methodName;
+                callInfo.Parameters = args;
+                var guid = Guid.NewGuid().ToString();
+                callInfo.Guid = guid;
+                serverBase.ClientServiceCallMethodsResult.TryAdd(guid, new KeyValue<Type, object>(returnType, taskCompletionSource));
+                List<byte> bytes = new List<byte>
+                {
+                     (byte)DataType.CallMethod,
+                     (byte)CompressMode.None
+                };
+                var jsonBytes = Encoding.UTF8.GetBytes(ServerSerializationHelper.SerializeObject(callInfo, serverBase));
+                byte[] dataLen = BitConverter.GetBytes(jsonBytes.Length);
+                bytes.AddRange(dataLen);
+                bytes.AddRange(jsonBytes);
+
+                client.StreamHelper.WriteToStream(client.ClientStream, bytes.ToArray());
+                return taskCompletionSource.Task;
+            };
+#if (NET35 || NET40)
+            return null;// Task<object>.Factory.StartNew(run);
+#else
+            return Task.Run(run);
+#endif
+        }
+
         //static object SendCallClientMethod(this OperationCalls client, string callerName, params object[] args)
         //{
         //    if (SynchronizationContext.Current != null && ServerBase.AllDispatchers.ContainsKey(SynchronizationContext.Current) && ServerBase.AllDispatchers[SynchronizationContext.Current].FirstOrDefault().MainContext == SynchronizationContext.Current)
         //        throw new Exception("Cannot call method from class Constractor or main Thread");
         //    var attribute = client.GetType().GetClientServiceAttribute();
-        //    MethodCallInfo callInfo = new MethodCallInfo();
-        //    callInfo.ServiceName = attribute.Name;
-        //    callInfo.MethodName = callerName;
-        //    foreach (var item in args)
-        //    {
-        //        callInfo.Parameters.Add(new Shared.Models.ParameterInfo() { Value = item == null ? null : ServerSerializationHelper.SerializeObject(item, client.ServerBase), Type = item == null ? null : item.GetType().FullName });
-        //    }
-        //    var guid = Guid.NewGuid().ToString();
-        //    callInfo.Guid = guid;
+
+
         //    var waitedMethodsForResponse = client.ServerBase.WaitedMethodsForResponse[client.CurrentClient];
         //    waitedMethodsForResponse.TryAdd(guid, new KeyValue<AutoResetEvent, MethodCallbackInfo>(new AutoResetEvent(false), null));
         //    client.ServerBase.CallClientMethod(client.CurrentClient, callInfo);
@@ -143,7 +181,7 @@ namespace SignalGo.Server.ServiceManager
         //        {
 
         //#if (NETSTANDARD1_6 || NETCOREAPP1_1)
-        //            string serviceName = ((ServiceContractAttribute)client.GetType().GetTypeInfo().GetCustomAttributes(typeof(ServiceContractAttribute), true).FirstOrDefault()).Name;
+        //                    string serviceName = ((ServiceContractAttribute)client.GetType().GetTypeInfo().GetCustomAttributes(typeof(ServiceContractAttribute), true).FirstOrDefault()).Name;
         //#else
         //            string serviceName = ((ServiceContractAttribute)client.GetType().GetCustomAttributes(typeof(ServiceContractAttribute), true).FirstOrDefault()).Name;
         //#endif
@@ -162,7 +200,7 @@ namespace SignalGo.Server.ServiceManager
         //                throw new Exception("Cannot call method from class Constractor or main Thread");
         //            MethodCallInfo callInfo = new MethodCallInfo();
         //#if (NETSTANDARD1_6 || NETCOREAPP1_1)
-        //            callInfo.ServiceName = serviceName;
+        //                    callInfo.ServiceName = serviceName;
         //#else
         //            callInfo.ServiceName = serviceName;
         //#endif

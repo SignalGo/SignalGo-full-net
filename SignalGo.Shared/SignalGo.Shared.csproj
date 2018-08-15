@@ -64,7 +64,7 @@
     <RootNamespace>SignalGo.Shared</RootNamespace>
     <AssemblyName>SignalGo.Shared</AssemblyName>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
-    <NetStandardImplicitPackageVersion>1.6.1</NetStandardImplicitPackageVersion>
+    <!--<NetStandardImplicitPackageVersion>1.6.1</NetStandardImplicitPackageVersion>-->
     <MinClientVersion>2.12</MinClientVersion>
   </PropertyGroup>
 

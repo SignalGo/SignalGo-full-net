@@ -12,6 +12,28 @@ namespace SignalGo.Shared.Helpers
     /// </summary>
     public static class ReflectionHelper
     {
+
+        public static IEnumerable<Shared.Models.ParameterInfo> MethodToParameters(this MethodInfo methodInfo, Func<object, string> serialize, params object[] args)
+        {
+            var methodParams = methodInfo.GetParameters();
+
+            for (int i = 0; i < args.Length; i++)
+            {
+                yield return new Shared.Models.ParameterInfo() { Name = methodParams[i].Name, Value = serialize(args[i]) };
+            }
+        }
+
+#if (!NET35)
+        public static IEnumerable<Shared.Models.ParameterInfo> MethodToParameters(this System.Dynamic.InvokeMemberBinder methodInfo,Func<object,string> serialize, params object[] args)
+        {
+            var methodParams = methodInfo.CallInfo.ArgumentNames;
+
+            for (int i = 0; i < args.Length; i++)
+            {
+                yield return new Shared.Models.ParameterInfo() { Name = methodParams[i], Value = serialize(args[i]) };
+            }
+        }
+#endif
         /// <summary>
         /// get all project Assemblies
         /// </summary>
