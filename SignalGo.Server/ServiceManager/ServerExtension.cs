@@ -113,36 +113,37 @@ namespace SignalGo.Server.ServiceManager
 
         internal static Task SendDataWithCallClientServiceMethod(ServerBase serverBase, ClientInfo client, Type returnType, string serviceName, string methodName, params Shared.Models.ParameterInfo[] args)
         {
-            Func<Task<string>> run = () =>
-            {
-                var taskCompletionSource = new TaskCompletionSource<string>();
-                MethodCallInfo callInfo = new MethodCallInfo();
-                callInfo.ServiceName = serviceName;
-                callInfo.MethodName = methodName;
-                callInfo.Parameters = args;
-                var guid = Guid.NewGuid().ToString();
-                callInfo.Guid = guid;
-                serverBase.ClientServiceCallMethodsResult.TryAdd(guid, new KeyValue<Type, object>(returnType, taskCompletionSource));
-                List<byte> bytes = new List<byte>
+            //var method = typeof(ServerExtensions).GetMethod("SendDataWithCallClientServiceMethodGeneric").MakeGenericMethod(returnType);
+            //Func<object> run = () =>
+            //{
+            //    return SendDataWithCallClientServiceMethodGeneric<int>(serverBase, client, returnType, serviceName, methodName, args);
+            //};
+#if (NET35 || NET40)
+            return null;// Task<object>.Factory.StartNew(run);
+#else
+            var type = typeof(TaskCompletionSource<>).MakeGenericType(returnType);
+            var taskCompletionSource = Activator.CreateInstance(type);
+            MethodCallInfo callInfo = new MethodCallInfo();
+            callInfo.ServiceName = serviceName;
+            callInfo.MethodName = methodName;
+            callInfo.Parameters = args;
+            var guid = Guid.NewGuid().ToString();
+            callInfo.Guid = guid;
+            serverBase.ClientServiceCallMethodsResult.TryAdd(guid, new KeyValue<Type, object>(returnType, taskCompletionSource));
+            List<byte> bytes = new List<byte>
                 {
                      (byte)DataType.CallMethod,
                      (byte)CompressMode.None
                 };
-                var jsonBytes = Encoding.UTF8.GetBytes(ServerSerializationHelper.SerializeObject(callInfo, serverBase));
-                byte[] dataLen = BitConverter.GetBytes(jsonBytes.Length);
-                bytes.AddRange(dataLen);
-                bytes.AddRange(jsonBytes);
+            var jsonBytes = Encoding.UTF8.GetBytes(ServerSerializationHelper.SerializeObject(callInfo, serverBase));
+            byte[] dataLen = BitConverter.GetBytes(jsonBytes.Length);
+            bytes.AddRange(dataLen);
+            bytes.AddRange(jsonBytes);
 
-                client.StreamHelper.WriteToStream(client.ClientStream, bytes.ToArray());
-                return taskCompletionSource.Task;
-            };
-#if (NET35 || NET40)
-            return null;// Task<object>.Factory.StartNew(run);
-#else
-            return Task.Run(run);
+            client.StreamHelper.WriteToStream(client.ClientStream, bytes.ToArray());
+            return (Task)taskCompletionSource.GetType().GetProperty("Task").GetValue(taskCompletionSource, null);
 #endif
         }
-
         //static object SendCallClientMethod(this OperationCalls client, string callerName, params object[] args)
         //{
         //    if (SynchronizationContext.Current != null && ServerBase.AllDispatchers.ContainsKey(SynchronizationContext.Current) && ServerBase.AllDispatchers[SynchronizationContext.Current].FirstOrDefault().MainContext == SynchronizationContext.Current)

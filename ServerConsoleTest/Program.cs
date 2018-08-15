@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ServerConsoleTest
@@ -14,14 +15,17 @@ namespace ServerConsoleTest
     [ServiceContract("HealthFamilyClientService", ServiceType.ClientService)]
     public interface ITestClientService
     {
-        string CallMe(string data);
+        Task<int> CallMe(string data);
     }
 
     public class ClientService : ITestClientService
     {
-        public string CallMe(string data)
+        public Task<int> CallMe(string data)
         {
-            return "hello im data: " + data;
+            return Task.Factory.StartNew(() =>
+            {
+                return 16;
+            });
         }
     }
 
@@ -30,7 +34,7 @@ namespace ServerConsoleTest
     public interface ITestManager
     {
         bool HelloWorld(string userName, string password);
-        string HelloWorld2(string userName, string password);
+        Task<int> HelloWorld2(string userName, string password);
         string Test();
     }
 
@@ -42,11 +46,15 @@ namespace ServerConsoleTest
             return true;
         }
 
-        public string HelloWorld2(string userName, string password)
+        public async Task<int> HelloWorld2(string userName, string password)
         {
             var callback = OperationContext.Current.GetClientService<ITestClientService>();
-            var returNew = callback.CallMe("hello client");
-            return "ok you right";
+            var result =await Task.Run(async () =>
+            {
+                var returNew = await callback.CallMe("hello client");
+                return returNew;
+            });
+            return 18;
         }
 
         public string Test()
@@ -97,7 +105,7 @@ namespace ServerConsoleTest
                 var service2 = clientProvider2.RegisterServerServiceInterfaceWrapper<ITestManager>();
                 clientProvider2.RegisterClientService<ClientService>();
                 var result3 = service2.HelloWorld("reza123", "passee");
-                var result5 = service2.HelloWorld2("reza123", "passee");
+                var result5 = service2.HelloWorld2("reza123", "passee").GetAwaiter().GetResult();
                 var result4 = service2.Test();
                 result2 = service.Test();
                 Console.WriteLine("seerver started");
