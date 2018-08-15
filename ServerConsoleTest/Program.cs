@@ -22,7 +22,7 @@ namespace ServerConsoleTest
     {
         public Task<int> CallMe(string data)
         {
-            return Task.Factory.StartNew(() =>
+            return Task.Run(() =>
             {
                 return 16;
             });
@@ -48,13 +48,10 @@ namespace ServerConsoleTest
 
         public async Task<int> HelloWorld2(string userName, string password)
         {
+            var setting = OperationContext<UserInfo>.CurrentSetting;
             var callback = OperationContext.Current.GetClientService<ITestClientService>();
-            var result =await Task.Run(async () =>
-            {
-                var returNew = await callback.CallMe("hello client");
-                return returNew;
-            });
-            return 18;
+            var returNew = await callback.CallMe("hello client");
+            return returNew;
         }
 
         public string Test()

@@ -7,6 +7,7 @@ using SignalGo.Shared.Models;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace SignalGo.Server.ServiceManager.Providers
 {
@@ -18,7 +19,7 @@ namespace SignalGo.Server.ServiceManager.Providers
 #if (NET35 || NET40)
         public static void StartToReadingClientData(ClientInfo client, ServerBase serverBase)
 #else
-        public static async void StartToReadingClientData(ClientInfo client, ServerBase serverBase)
+        public static void StartToReadingClientData(ClientInfo client, ServerBase serverBase)
 #endif
         {
             try
@@ -53,13 +54,8 @@ namespace SignalGo.Server.ServiceManager.Providers
                             else
                                 continue;
                         }
-#if (NET35 || NET40)
-                        var callbackResult = CallMethod(callInfo, client, json, serverBase).Result;
+                        var callbackResult = CallMethod(callInfo, client, json, serverBase);
                         SendCallbackData(callbackResult, client, serverBase);
-#else
-                        var callbackResult = await CallMethod(callInfo, client, json, serverBase);
-                        SendCallbackData(callbackResult, client, serverBase);
-#endif
 
                     }
 
@@ -146,11 +142,20 @@ namespace SignalGo.Server.ServiceManager.Providers
         /// <param name="callback"></param>
         /// <param name="client"></param>
         /// <param name="serverBase"></param>
-        static void SendCallbackData(MethodCallbackInfo callback, ClientInfo client, ServerBase serverBase)
+#if (NET35 || NET40)
+        static void SendCallbackData(Task<MethodCallbackInfo> callback, ClientInfo client, ServerBase serverBase)
+#else
+        static async void SendCallbackData(Task<MethodCallbackInfo> callback, ClientInfo client, ServerBase serverBase)
+#endif
         {
             try
             {
-                string json = ServerSerializationHelper.SerializeObject(callback, serverBase);
+#if (NET35 || NET40)
+                var result = callback.Result;
+#else
+                var result = await callback;
+#endif
+                string json = ServerSerializationHelper.SerializeObject(result, serverBase);
                 byte[] bytes = Encoding.UTF8.GetBytes(json);
                 //if (ClientsSettings.ContainsKey(client))
                 //    bytes = EncryptBytes(bytes, client);
