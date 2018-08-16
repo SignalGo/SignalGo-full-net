@@ -26,14 +26,23 @@ namespace SignalGo.Server.ServiceManager.Providers
     /// </summary>
     public class HttpProvider : BaseProvider
     {
+#if (NET35 || NET40)
         public static void StartToReadingClientData(TcpClient tcpClient, ServerBase serverBase, CustomStreamReader reader, string headerResponse)
+#else
+        public static async void StartToReadingClientData(TcpClient tcpClient, ServerBase serverBase, CustomStreamReader reader, string headerResponse)
+#endif
         {
+            Console.WriteLine($"Http Client Connected: {((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address.ToString().Replace("::ffff:", "")}");
             ClientInfo client = null;
             try
             {
                 while (true)
                 {
+#if (NET35 || NET40)
                     var line = reader.ReadLine();
+#else
+                    var line =await reader.ReadLine();
+#endif
                     headerResponse += line;
                     if (line == "\r\n")
                         break;
@@ -116,9 +125,8 @@ namespace SignalGo.Server.ServiceManager.Providers
                             if (serverBase.ProviderSetting.HttpSetting.HandleCrossOriginAccess)
                             {
                                 settingHeaders = "Access-Control-Allow-Origin: " + headers["origin"] + newLine +
-                                "Access-Control-Allow-Credentials: true" + newLine
-                                //"Access-Control-Allow-Methods: " + "POST,GET,OPTIONS" + newLine
-                                ;
+                                "Access-Control-Allow-Credentials: true" + newLine;
+                                //"Access-Control-Allow-Methods: " + "POST,GET,OPTIONS" + newLine;
 
                                 if (!string.IsNullOrEmpty(headers["Access-Control-Request-Headers"]))
                                 {
@@ -150,9 +158,10 @@ namespace SignalGo.Server.ServiceManager.Providers
                     serverBase.DisposeClient(client, "AddClient http ok signalGo");
                 }
             }
-            catch (Exception ex)
+            catch// (Exception ex)
             {
-                serverBase.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase HttpProvider StartToReadingClientData");
+                //if (client != null)
+                //serverBase.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase HttpProvider StartToReadingClientData");
                 serverBase.DisposeClient(client, "HttpProvider StartToReadingClientData exception");
             }
         }
@@ -262,7 +271,11 @@ namespace SignalGo.Server.ServiceManager.Providers
         /// <param name="address">address</param>
         /// <param name="headers">headers</param>
         /// <param name="client">client</param>
+#if (NET35 || NET40)
         private static void RunHttpRequest(ServerBase serverBase, string address, string httpMethod, string content, Shared.Http.WebHeaderCollection headers, HttpClientInfo client)
+#else
+        private static async void RunHttpRequest(ServerBase serverBase, string address, string httpMethod, string content, Shared.Http.WebHeaderCollection headers, HttpClientInfo client)
+#endif
         {
             var newLine = "\r\n";
 
@@ -300,12 +313,24 @@ namespace SignalGo.Server.ServiceManager.Providers
                     int readedCount = 0;
                     while (readedCount < len)
                     {
-                        byte[] buffer = new byte[len - content.Length];
-                        var readCount = client.ClientStream.Read(buffer, 0, len - content.Length);
-                        if (readCount == 0)
-                            throw new Exception("zero byte readed socket disconnected!");
-                        resultBytes.AddRange(buffer.ToList().GetRange(0, readCount));
-                        readedCount += readCount;
+                        try
+                        {
+                            byte[] buffer = new byte[len - content.Length];
+#if (NET35 || NET40)
+                            var readCount = client.ClientStream.Read(buffer, 0, len - content.Length);
+#else
+                            var readCount = await client.ClientStream.ReadAsync(buffer, 0, len - content.Length);
+#endif
+                            if (readCount == 0)
+                                throw new Exception("zero byte readed socket disconnected!");
+                            resultBytes.AddRange(buffer.ToList().GetRange(0, readCount));
+                            readedCount += readCount;
+                        }
+                        catch
+                        {
+                            serverBase.DisposeClient(client, "HttpProvider RunHttpRequest exception");
+                            return;
+                        }
                     }
                     var postResponse = Encoding.UTF8.GetString(resultBytes.ToArray(), 0, resultBytes.Count);
                     content = postResponse;

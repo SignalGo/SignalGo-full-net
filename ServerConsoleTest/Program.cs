@@ -22,6 +22,8 @@ namespace ServerConsoleTest
     {
         public Task<int> CallMe(string data)
         {
+
+            throw new Exception();
             return Task.Run(() =>
             {
                 return 16;
@@ -34,7 +36,7 @@ namespace ServerConsoleTest
     public interface ITestManager
     {
         bool HelloWorld(string userName, string password);
-        Task<int> HelloWorld2(string userName, string password);
+        int HelloWorld2(string userName, string password);
         string Test();
     }
 
@@ -46,12 +48,12 @@ namespace ServerConsoleTest
             return true;
         }
 
-        public async Task<int> HelloWorld2(string userName, string password)
+        public int HelloWorld2(string userName, string password)
         {
             var setting = OperationContext<UserInfo>.CurrentSetting;
             var callback = OperationContext.Current.GetClientService<ITestClientService>();
-            var returNew = await callback.CallMe("hello client");
-            return returNew;
+            callback.CallMe("hello client");
+            return 45;
         }
 
         public string Test()
@@ -102,7 +104,7 @@ namespace ServerConsoleTest
                 var service2 = clientProvider2.RegisterServerServiceInterfaceWrapper<ITestManager>();
                 clientProvider2.RegisterClientService<ClientService>();
                 var result3 = service2.HelloWorld("reza123", "passee");
-                var result5 = service2.HelloWorld2("reza123", "passee").GetAwaiter().GetResult();
+                var result5 = service2.HelloWorld2("reza123", "passee");
                 var result4 = service2.Test();
                 result2 = service.Test();
                 Console.WriteLine("seerver started");

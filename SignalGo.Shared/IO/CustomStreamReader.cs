@@ -7,6 +7,7 @@ using System.Net.Sockets;
 #endif
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace SignalGo.Shared.IO
 {
@@ -65,7 +66,14 @@ namespace SignalGo.Shared.IO
         }
 
         public byte[] LastBytesReaded { get; set; }
+
+        public string Line { get; set; }
+
+#if (NET35 || NET40)
         public string ReadLine()
+#else
+        public async Task<string> ReadLine()
+#endif
         {
             List<byte> result = new List<byte>();
 #if (!PORTABLE)
@@ -78,10 +86,12 @@ namespace SignalGo.Shared.IO
                     break;
                 isFirst = false;
 #endif
-                int data = CurrentStream.ReadByte();
+#if (NET35 || NET40)
+                byte data = SignalGoStreamBase.CurrentBase.ReadOneByte(CurrentStream, CompressMode.None, 0);
+#else
+                byte data = await SignalGoStreamBase.CurrentBase.ReadOneByteAsync(CurrentStream);
+#endif
                 LastByteRead = data;
-                if (data == -1)
-                    break;
                 result.Add((byte)data);
                 if (data == 13)
                 {
@@ -89,10 +99,13 @@ namespace SignalGo.Shared.IO
                     if (!CheckDataAvalable(isFirst))
                         break;
 #endif
-                    data = CurrentStream.ReadByte();
+#if (NET35 || NET40)
+                    data = SignalGoStreamBase.CurrentBase.ReadOneByte(CurrentStream, CompressMode.None, 0);
+#else
+                    data = await SignalGoStreamBase.CurrentBase.ReadOneByteAsync(CurrentStream);
+#endif
                     LastByteRead = data;
-                    if (data == -1)
-                        break;
+
                     result.Add((byte)data);
                     if (data == 10)
                         break;
@@ -100,7 +113,8 @@ namespace SignalGo.Shared.IO
             }
             while (true);
             LastBytesReaded = result.ToArray();
-            return Encoding.UTF8.GetString(LastBytesReaded, 0, LastBytesReaded.Length);
+            Line = Encoding.UTF8.GetString(LastBytesReaded, 0, LastBytesReaded.Length);
+            return Line;
         }
 #if (!PORTABLE)
         bool CheckDataAvalable(bool isFirstCall)

@@ -41,12 +41,19 @@ namespace SignalGo.Server.ServiceManager.Versions
                 serverBase.IsStarted = true;
                 while (true)
                 {
+                    try
+                    {
 #if (NET35 || NET40)
-                    var client = _server.AcceptTcpClient();
+                        var client = _server.AcceptTcpClient();
 #else
-                    var client = await _server.AcceptTcpClientAsync();
+                        var client = await _server.AcceptTcpClientAsync();
 #endif
-                    InitializeClient(client);
+                        InitializeClient(client);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex);
+                    }
                 }
             }
             catch (Exception ex)
@@ -74,14 +81,18 @@ namespace SignalGo.Server.ServiceManager.Versions
 #if (NET35 || NET40)
             Task.Factory.StartNew(() =>
 #else
-            await Task.Run(() =>
+            await Task.Run(async () =>
 #endif
             {
                 try
                 {
                     OperationContext.CurrentTaskServer = _serverBase;
-                    var stream = ReadFirstLineOfClient(tcpClient, out string firstLine, out byte[] bytes);
-                    ExchangeClient(stream, firstLine, bytes, tcpClient);
+#if (NET35 || NET40)
+                    var stream = ReadFirstLineOfClient(tcpClient);
+#else
+                    var stream = await ReadFirstLineOfClient(tcpClient);
+#endif
+                    ExchangeClient(stream, stream.Line, stream.LastBytesReaded, tcpClient);
                 }
                 catch (Exception)
                 {
@@ -101,12 +112,19 @@ namespace SignalGo.Server.ServiceManager.Versions
         /// <param name="tcpClient"></param>
         /// <param name="result"></param>
         /// <returns></returns>
-        public CustomStreamReader ReadFirstLineOfClient(TcpClient tcpClient, out string firstLine, out byte[] result)
+#if (NET35 || NET40)
+        public CustomStreamReader ReadFirstLineOfClient(TcpClient tcpClient)
+#else
+        public async Task<CustomStreamReader> ReadFirstLineOfClient(TcpClient tcpClient)
+#endif
         {
             var reader = new CustomStreamReader(tcpClient.GetStream());
+
+#if (NET35 || NET40)
             var data = reader.ReadLine();
-            result = reader.LastBytesReaded;
-            firstLine = data;
+#else
+            var data =await reader.ReadLine();
+#endif
             return reader;
         }
         /// <summary>

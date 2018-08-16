@@ -443,7 +443,6 @@ namespace SignalGo.Server.Models
             {
                 var objectInstance = InterfaceWrapper.Wrap<T>((serviceName, method, args) =>
                 {
-                    var tt = typeof(T);
                     //this is async action
                     if (method.ReturnType == typeof(Task))
                     {

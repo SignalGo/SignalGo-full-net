@@ -17,7 +17,7 @@ namespace SignalGo.Shared.Log
         /// <summary>
         /// is enabled log system
         /// </summary>
-        public bool IsEnabled { get; set; } = true;
+        public static bool IsEnabled { get; set; } = true;
         /// <summary>
         /// full path of log
         /// </summary>

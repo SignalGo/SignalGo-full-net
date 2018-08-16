@@ -91,5 +91,25 @@ namespace SignalGo.Shared.IO
                 throw new Exception($"read one byte is correct or disconnected client! {data}");
             return (byte)data;
         }
+#if (NET35 || NET40)
+        public virtual byte ReadOneByteAsync(Stream stream)
+#else
+        public virtual async Task<byte> ReadOneByteAsync(Stream stream)
+#endif
+        {
+#if (NET35 || NET40)
+            var data = stream.ReadByte();
+#else
+            byte[] bytes = new byte[1];
+            var data = await stream.ReadAsync(bytes, 0, bytes.Length);
+#endif
+            if (data <= 0)
+                throw new Exception($"read one byte is correct or disconnected client! {data}");
+#if (NET35 || NET40)
+            return (byte)data;
+#else
+            return bytes[0];
+#endif
+        }
     }
 }

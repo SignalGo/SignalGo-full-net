@@ -28,7 +28,7 @@ namespace SignalGo.Server.ServiceManager.Providers
 #if (NET40 || NET35)
             return Task.Factory.StartNew(() =>
 #else
-            return Task.Factory.StartNew(() =>
+            return Task.Run(() =>
 #endif
             {
                 return CallMethod(callInfo.ServiceName, callInfo.Guid, callInfo.MethodName, callInfo.Parameters.ToArray(), client, json, serverBase, null, null, out List<HttpKeyAttribute> httpKeyAttributes, out Type serviceType, out MethodInfo method, out object serviceInsatnce);

@@ -168,9 +168,10 @@ namespace SignalGo.Server.ServiceManager
         {
             try
             {
-                Console.WriteLine($"Client disposed " + (client == null ? "null!" : client.ClientId) + " reason: " + reason);
+                //Console.WriteLine($"Client disposed " + (client == null ? "null!" : client.ClientId) + " reason: " + reason);
                 if (client == null)
                     return;
+                Clients.Remove(client.ClientId);
                 try
                 {
 #if (NETSTANDARD1_6 || NETCOREAPP1_1)
@@ -185,16 +186,17 @@ namespace SignalGo.Server.ServiceManager
                 }
                 //ClientRemove(client);
 
-                foreach (var item in TaskOfClientInfoes.Where(x => x.Value == client.ClientId).ToArray())
+                foreach (var item in TaskOfClientInfoes.Where(x => x.Value == client.ClientId))
                 {
                     DataExchanger.Clear(item.Key);
+                    TaskOfClientInfoes.Remove(item.Key);
                 }
 
                 OperationContextBase.SavedSettings.Remove(client);
 
                 client.OnDisconnected?.Invoke();
                 OnDisconnectedClientAction?.Invoke(client);
-                GC.Collect();
+                //GC.Collect();
             }
             catch (Exception ex)
             {

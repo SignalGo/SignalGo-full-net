@@ -19,6 +19,7 @@ namespace SignalGo.Server.ServiceManager.Providers
         {
             try
             {
+                Console.WriteLine($"WebSocket Client Connected: {client.IPAddress}");
                 var stream = client.ClientStream;
                 while (client.TcpClient.Connected)
                 {
