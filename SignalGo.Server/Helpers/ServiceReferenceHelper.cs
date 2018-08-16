@@ -89,25 +89,16 @@ namespace SignalGo.Server.Helpers
 
             foreach (var serviceInfo in serverBase.RegisteredServiceTypes)
             {
-                GenerateServiceClass(serviceInfo.Key, serviceInfo.Value, ClassReferenceType.ServiceLevel, ServiceType.ServerService);
+                var attributes = serviceInfo.Value.GetServiceContractAttributes();
+                if (attributes.Any(x => x.ServiceType == ServiceType.ServerService))
+                    GenerateServiceClass(serviceInfo.Key, serviceInfo.Value, ClassReferenceType.ServiceLevel, ServiceType.ServerService);
+                else if (attributes.Any(x => x.ServiceType == ServiceType.ClientService))
+                    GenerateServiceClass(serviceInfo.Key, serviceInfo.Value, ClassReferenceType.CallbackLevel, ServiceType.ClientService);
+                else if (attributes.Any(x => x.ServiceType == ServiceType.StreamService))
+                    GenerateServiceClass(serviceInfo.Key, serviceInfo.Value, ClassReferenceType.StreamLevel, ServiceType.StreamService);
+
             }
-
-            //foreach (var serviceInfo in serverBase.RegisteredClientServicesTypes)
-            //{
-            //    GenerateServiceClass(serviceInfo.Key, serviceInfo.Value, ClassReferenceType.CallbackLevel, ServiceType.ClientService);
-            //}
-
-
-            //foreach (var serviceInfo in serverBase.StreamServices)
-            //{
-            //    GenerateServiceClass(serviceInfo.Key, serviceInfo.Value.GetType(), ClassReferenceType.StreamLevel, ServiceType.StreamService);
-            //}
-
-            //foreach (var serviceInfo in serverBase.RegisteredHttpServiceTypes)
-            //{
-            //    GenerateHttpServiceClass(serviceInfo.Key, serviceInfo.Value);
-            //}
-
+            
             Type find = null;
             while ((find = TypeToGenerate.FirstOrDefault()) != null)
             {

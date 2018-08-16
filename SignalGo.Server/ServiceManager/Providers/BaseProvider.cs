@@ -1,6 +1,7 @@
 ﻿using SignalGo.Server.DataTypes;
 using SignalGo.Server.Helpers;
 using SignalGo.Server.Models;
+using SignalGo.Shared;
 using SignalGo.Shared.Converters;
 using SignalGo.Shared.DataTypes;
 using SignalGo.Shared.Events;
@@ -31,7 +32,15 @@ namespace SignalGo.Server.ServiceManager.Providers
             return Task.Run(() =>
 #endif
             {
-                return CallMethod(callInfo.ServiceName, callInfo.Guid, callInfo.MethodName, callInfo.Parameters.ToArray(), client, json, serverBase, null, null, out List<HttpKeyAttribute> httpKeyAttributes, out Type serviceType, out MethodInfo method, out object serviceInsatnce);
+                serverBase.TaskOfClientInfoes.TryAdd(Task.CurrentId.GetValueOrDefault(), client.ClientId);
+                try
+                {
+                    return CallMethod(callInfo.ServiceName, callInfo.Guid, callInfo.MethodName, callInfo.Parameters.ToArray(), client, json, serverBase, null, null, out List<HttpKeyAttribute> httpKeyAttributes, out Type serviceType, out MethodInfo method, out object serviceInsatnce);
+                }
+                finally
+                {
+                    serverBase.TaskOfClientInfoes.Remove(Task.CurrentId.GetValueOrDefault());
+                }
                 //SendCallbackData(callback, client, serverBase);
             });
         }
@@ -53,7 +62,6 @@ namespace SignalGo.Server.ServiceManager.Providers
 
             try
             {
-                serverBase.TaskOfClientInfoes.TryAdd(Task.CurrentId.GetValueOrDefault(), client.ClientId);
 
                 if (!serverBase.RegisteredServiceTypes.TryGetValue(serviceName, out serviceType))
                     throw new Exception($"{client.IPAddress} {client.ClientId} Service {serviceName} not found");
@@ -278,7 +286,7 @@ namespace SignalGo.Server.ServiceManager.Providers
             }
             finally
             {
-                serverBase.TaskOfClientInfoes.TryRemove(Task.CurrentId.GetValueOrDefault(), out string clientId);
+                //serverBase.TaskOfClientInfoes.TryRemove(Task.CurrentId.GetValueOrDefault(), out string clientId);
 
                 try
                 {
@@ -301,7 +309,11 @@ namespace SignalGo.Server.ServiceManager.Providers
             if (attribute.InstanceType == InstanceType.SingleInstance)
             {
                 //single instance services must create instance when server starting so this must always true
-                serverBase.SingleInstanceServices.TryGetValue(attribute.Name, out object result);
+                if (!serverBase.SingleInstanceServices.TryGetValue(attribute.Name, out object result))
+                {
+                    result = Activator.CreateInstance(serviceType);
+                    serverBase.SingleInstanceServices.TryAdd(attribute.Name, result);
+                }
                 return result;
             }
             else

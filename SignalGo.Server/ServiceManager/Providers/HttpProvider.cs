@@ -3,6 +3,7 @@ using SignalGo.Server.DataTypes;
 using SignalGo.Server.Helpers;
 using SignalGo.Server.IO;
 using SignalGo.Server.Models;
+using SignalGo.Shared;
 using SignalGo.Shared.DataTypes;
 using SignalGo.Shared.Events;
 using SignalGo.Shared.Helpers;
@@ -18,6 +19,7 @@ using System.Net.Sockets;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace SignalGo.Server.ServiceManager.Providers
 {
@@ -41,7 +43,7 @@ namespace SignalGo.Server.ServiceManager.Providers
 #if (NET35 || NET40)
                     var line = reader.ReadLine();
 #else
-                    var line =await reader.ReadLine();
+                    var line = await reader.ReadLine();
 #endif
                     headerResponse += line;
                     if (line == "\r\n")
@@ -66,103 +68,118 @@ namespace SignalGo.Server.ServiceManager.Providers
                 }
                 else
                 {
-                    client = serverBase.ServerDataProvider.CreateClientInfo(true, tcpClient);
-                    client.StreamHelper = SignalGoStreamBase.CurrentBase;
-
-                    string[] lines = null;
-                    if (headerResponse.Contains("\r\n\r\n"))
-                        lines = headerResponse.Substring(0, headerResponse.IndexOf("\r\n\r\n")).Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-                    else
-                        lines = headerResponse.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-                    var newLine = "\r\n";
-                    string response = "";
-                    if (lines.Length > 0)
+#if (NET35 || NET40)
+                    Task.Factory.StartNew(() =>
+#else
+                    await Task.Run(() =>
+#endif
                     {
-                        var methodName = GetHttpMethodName(lines[0]);
-                        var address = GetHttpAddress(lines[0]);
-                        if (methodName.ToLower() == "get" && !string.IsNullOrEmpty(address) && address != "/")
+                        try
                         {
-                            var headers = GetHttpHeaders(lines.Skip(1).ToArray());
-                            if (headers["content-type"] != null && headers["content-type"] == "SignalGo Service Reference")
-                            {
-                                var doClient = (HttpClientInfo)client;
-                                doClient.RequestHeaders = headers;
-                                SendSignalGoServiceReference(doClient, serverBase);
-                            }
-                            else
-                                RunHttpRequest(serverBase, address, "GET", "", headers, (HttpClientInfo)client);
-                            serverBase.DisposeClient(client, "AddClient finish get call");
-                        }
-                        else if (methodName.ToLower() == "post" && !string.IsNullOrEmpty(address) && address != "/")
-                        {
-                            var indexOfStartedContent = headerResponse.IndexOf("\r\n\r\n");
-                            string content = "";
-                            if (indexOfStartedContent > 0)
-                            {
-                                indexOfStartedContent += 4;
-                                content = headerResponse.Substring(indexOfStartedContent, headerResponse.Length - indexOfStartedContent);
-                            }
-                            var headers = GetHttpHeaders(lines.Skip(1).ToArray());
-                            if (headers["content-type"] != null && headers["content-type"].ToLower().Contains("multipart/form-data"))
-                            {
-                                RunPostHttpRequestFile(address, "POST", content, headers, (HttpClientInfo)client, serverBase);
-                            }
-                            else if (headers["content-type"] != null && headers["content-type"] == "SignalGo Service Reference")
-                            {
-                                SendSignalGoServiceReference((HttpClientInfo)client, serverBase);
-                            }
-                            else
-                            {
-                                RunHttpRequest(serverBase, address, "POST", content, headers, (HttpClientInfo)client);
-                            }
-                            serverBase.DisposeClient(client, "AddClient finish post call");
-                        }
-                        else if (methodName.ToLower() == "options" && !string.IsNullOrEmpty(address) && address != "/")
-                        {
-                            string settingHeaders = "";
-                            var headers = GetHttpHeaders(lines.Skip(1).ToArray());
+                            //serverBase.TaskOfClientInfoes
+                            client = serverBase.ServerDataProvider.CreateClientInfo(true, tcpClient);
+                            client.StreamHelper = SignalGoStreamBase.CurrentBase;
 
-                            if (serverBase.ProviderSetting.HttpSetting.HandleCrossOriginAccess)
+                            string[] lines = null;
+                            if (headerResponse.Contains("\r\n\r\n"))
+                                lines = headerResponse.Substring(0, headerResponse.IndexOf("\r\n\r\n")).Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                            else
+                                lines = headerResponse.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                            var newLine = "\r\n";
+                            string response = "";
+                            if (lines.Length > 0)
                             {
-                                settingHeaders = "Access-Control-Allow-Origin: " + headers["origin"] + newLine +
-                                "Access-Control-Allow-Credentials: true" + newLine;
-                                //"Access-Control-Allow-Methods: " + "POST,GET,OPTIONS" + newLine;
-
-                                if (!string.IsNullOrEmpty(headers["Access-Control-Request-Headers"]))
+                                var methodName = GetHttpMethodName(lines[0]);
+                                var address = GetHttpAddress(lines[0]);
+                                if (methodName.ToLower() == "get" && !string.IsNullOrEmpty(address) && address != "/")
                                 {
-                                    settingHeaders += "Access-Control-Allow-Headers: " + headers["Access-Control-Request-Headers"] + newLine;
+                                    var headers = GetHttpHeaders(lines.Skip(1).ToArray());
+                                    if (headers["content-type"] != null && headers["content-type"] == "SignalGo Service Reference")
+                                    {
+                                        var doClient = (HttpClientInfo)client;
+                                        doClient.RequestHeaders = headers;
+                                        SendSignalGoServiceReference(doClient, serverBase);
+                                    }
+                                    else
+                                        RunHttpRequest(serverBase, address, "GET", "", headers, (HttpClientInfo)client);
+                                    serverBase.DisposeClient(client, "AddClient finish get call");
+                                }
+                                else if (methodName.ToLower() == "post" && !string.IsNullOrEmpty(address) && address != "/")
+                                {
+                                    var indexOfStartedContent = headerResponse.IndexOf("\r\n\r\n");
+                                    string content = "";
+                                    if (indexOfStartedContent > 0)
+                                    {
+                                        indexOfStartedContent += 4;
+                                        content = headerResponse.Substring(indexOfStartedContent, headerResponse.Length - indexOfStartedContent);
+                                    }
+                                    var headers = GetHttpHeaders(lines.Skip(1).ToArray());
+                                    if (headers["content-type"] != null && headers["content-type"].ToLower().Contains("multipart/form-data"))
+                                    {
+                                        RunPostHttpRequestFile(address, "POST", content, headers, (HttpClientInfo)client, serverBase);
+                                    }
+                                    else if (headers["content-type"] != null && headers["content-type"] == "SignalGo Service Reference")
+                                    {
+                                        SendSignalGoServiceReference((HttpClientInfo)client, serverBase);
+                                    }
+                                    else
+                                    {
+                                        RunHttpRequest(serverBase, address, "POST", content, headers, (HttpClientInfo)client);
+                                    }
+                                    serverBase.DisposeClient(client, "AddClient finish post call");
+                                }
+                                else if (methodName.ToLower() == "options" && !string.IsNullOrEmpty(address) && address != "/")
+                                {
+                                    string settingHeaders = "";
+                                    var headers = GetHttpHeaders(lines.Skip(1).ToArray());
+
+                                    if (serverBase.ProviderSetting.HttpSetting.HandleCrossOriginAccess)
+                                    {
+                                        settingHeaders = "Access-Control-Allow-Origin: " + headers["origin"] + newLine +
+                                        "Access-Control-Allow-Credentials: true" + newLine;
+                                        //"Access-Control-Allow-Methods: " + "POST,GET,OPTIONS" + newLine;
+
+                                        if (!string.IsNullOrEmpty(headers["Access-Control-Request-Headers"]))
+                                        {
+                                            settingHeaders += "Access-Control-Allow-Headers: " + headers["Access-Control-Request-Headers"] + newLine;
+                                        }
+                                    }
+                                    string message = newLine + $"Success" + newLine;
+                                    response = $"HTTP/1.1 {(int)HttpStatusCode.OK} {HttpRequestController.GetStatusDescription((int)HttpStatusCode.OK)}" + newLine
+                                        + "Content-Type: text/html; charset=utf-8" + newLine
+                                        + settingHeaders
+                                        + "Connection: Close" + newLine;
+                                    var bytesResult = System.Text.Encoding.UTF8.GetBytes(response + message);
+                                    client.ClientStream.Write(bytesResult, 0, bytesResult.Length);
+                                    serverBase.DisposeClient(client, "AddClient finish post call");
+                                }
+                                else if (serverBase.RegisteredServiceTypes.ContainsKey("") && (string.IsNullOrEmpty(address) || address == "/"))
+                                {
+                                    var headers = GetHttpHeaders(lines.Skip(1).ToArray());
+                                    RunIndexHttpRequest(headers, (HttpClientInfo)client, serverBase);
+                                    serverBase.DisposeClient(client, "Index Page call");
                                 }
                             }
-                            string message = newLine + $"Success" + newLine;
-                            response = $"HTTP/1.1 {(int)HttpStatusCode.OK} {HttpRequestController.GetStatusDescription((int)HttpStatusCode.OK)}" + newLine
-                                + "Content-Type: text/html; charset=utf-8" + newLine
-                                + settingHeaders
-                                + "Connection: Close" + newLine;
-                            var bytesResult = System.Text.Encoding.UTF8.GetBytes(response + message);
-                            client.ClientStream.Write(bytesResult, 0, bytesResult.Length);
-                            serverBase.DisposeClient(client, "AddClient finish post call");
-                        }
-                        else if (serverBase.RegisteredServiceTypes.ContainsKey("") && (string.IsNullOrEmpty(address) || address == "/"))
-                        {
-                            var headers = GetHttpHeaders(lines.Skip(1).ToArray());
-                            RunIndexHttpRequest(headers, (HttpClientInfo)client, serverBase);
-                            serverBase.DisposeClient(client, "Index Page call");
-                        }
-                    }
 
-                    response = "HTTP/1.1 200 OK" + newLine
-                         + "Content-Type: text/html" + newLine
-                         + "Connection: Close" + newLine;
-                    var bytes = System.Text.Encoding.ASCII.GetBytes(response + newLine + "SignalGo Server OK" + newLine);
-                    client.ClientStream.Write(bytes, 0, bytes.Length);
-                    serverBase.DisposeClient(client, "AddClient http ok signalGo");
+                            response = "HTTP/1.1 200 OK" + newLine
+                                 + "Content-Type: text/html" + newLine
+                                 + "Connection: Close" + newLine;
+                            var bytes = System.Text.Encoding.ASCII.GetBytes(response + newLine + "SignalGo Server OK" + newLine);
+                            client.ClientStream.Write(bytes, 0, bytes.Length);
+                            serverBase.DisposeClient(client, "AddClient http ok signalGo");
+                        }
+                        catch
+                        {
+                            serverBase.DisposeClient(client, "HttpProvider StartToReadingClientData exception");
+                        }
+                    });
                 }
             }
             catch// (Exception ex)
             {
                 //if (client != null)
                 //serverBase.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase HttpProvider StartToReadingClientData");
-                serverBase.DisposeClient(client, "HttpProvider StartToReadingClientData exception");
+                serverBase.DisposeClient(client, "HttpProvider StartToReadingClientData exception 2");
             }
         }
 
@@ -518,7 +535,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 else
                 {
                     data = newLine + ex.ToString() + address + newLine;
-                    SendInternalErrorMessage(data, serverBase, client, headers, newLine);
+                    SendInternalErrorMessage(data, serverBase, client, headers, newLine, HttpStatusCode.InternalServerError);
                 }
                 if (!(ex is SocketException))
                     serverBase.AutoLogger.LogError(ex, "RunHttpRequest");
@@ -530,7 +547,7 @@ namespace SignalGo.Server.ServiceManager.Providers
             }
         }
 
-        static void SendInternalErrorMessage(string msg, ServerBase serverBase, HttpClientInfo client, Shared.Http.WebHeaderCollection headers, string newLine)
+        static void SendInternalErrorMessage(string msg, ServerBase serverBase, HttpClientInfo client, Shared.Http.WebHeaderCollection headers, string newLine, HttpStatusCode httpStatusCode)
         {
             try
             {
@@ -545,8 +562,8 @@ namespace SignalGo.Server.ServiceManager.Providers
                         settingHeaders += "Access-Control-Allow-Headers: " + headers["Access-Control-Request-Headers"] + newLine;
                     }
                 }
-                string message = newLine + $"Internal Server Error: {msg}" + newLine;
-                var response = $"HTTP/1.1 {(int)HttpStatusCode.InternalServerError} {HttpRequestController.GetStatusDescription((int)HttpStatusCode.InternalServerError)}" + newLine
+                string message = newLine + $"{msg}" + newLine;
+                var response = $"HTTP/1.1 {(int)httpStatusCode} {HttpRequestController.GetStatusDescription((int)httpStatusCode)}" + newLine
                     + "Content-Type: text/html; charset=utf-8" + newLine
                     + settingHeaders +
                     "Content-Length: " + (message.Length - 2) + newLine
@@ -566,55 +583,63 @@ namespace SignalGo.Server.ServiceManager.Providers
         static void CallHttpMethod(HttpClientInfo client, Shared.Http.WebHeaderCollection headers, string address, string methodName, IEnumerable<Shared.Models.ParameterInfo> values, ServerBase serverBase, MethodInfo method
             , string data, string newLine, HttpPostedFileInfo fileInfo, Func<MethodInfo, bool> canTakeMethod, out Type serviceType, out object serviceInstance)
         {
-
-            client.RequestHeaders = headers;
-            var result = CallMethod(address, _guid, methodName, values == null ? null : values.ToArray(), client, "", serverBase, fileInfo, canTakeMethod, out List<HttpKeyAttribute> httpKeyAttributes, out serviceType, out method, out serviceInstance);
-
-            if (result.IsException || result.IsAccessDenied)
+            try
             {
-                data = newLine + result.Data + newLine;
+                serverBase.TaskOfClientInfoes.TryAdd(Task.CurrentId.GetValueOrDefault(), client.ClientId);
 
-                SendInternalErrorMessage(data, serverBase, client, headers, newLine);
-                serverBase.AutoLogger.LogText(data);
-                return;
-            }
+                client.RequestHeaders = headers;
+                var result = CallMethod(address, _guid, methodName, values == null ? null : values.ToArray(), client, "", serverBase, fileInfo, canTakeMethod, out List<HttpKeyAttribute> httpKeyAttributes, out serviceType, out method, out serviceInstance);
 
-            //MethodsCallHandler.BeginHttpMethodCallAction?.Invoke(client, callGuid, address, method, valueitems);
-            //service = Activator.CreateInstance(RegisteredHttpServiceTypes[address]);
-            if (serviceInstance is IHttpClientInfo)
-            {
-                ((IHttpClientInfo)serviceInstance).RequestHeaders = client.RequestHeaders = headers;
-                ((IHttpClientInfo)serviceInstance).ResponseHeaders = client.ResponseHeaders;
-                ((IHttpClientInfo)serviceInstance).IPAddress = client.IPAddress;
-            }
-            if (serverBase.ProviderSetting.HttpSetting.HandleCrossOriginAccess)
-            {
-                client.ResponseHeaders.Add("Access-Control-Allow-Origin", headers["origin"]);
-                client.ResponseHeaders.Add("Access-Control-Allow-Credentials", "true");
-                if (!string.IsNullOrEmpty(headers["Access-Control-Request-Headers"]))
+                if (result.IsException || result.IsAccessDenied)
                 {
-                    client.ResponseHeaders.Add("Access-Control-Allow-Headers", headers["Access-Control-Request-Headers"]);
+                    data = newLine + result.Data + newLine;
+
+                    SendInternalErrorMessage(data, serverBase, client, headers, newLine, (result.IsAccessDenied ? HttpStatusCode.Forbidden : HttpStatusCode.InternalServerError));
+                    serverBase.AutoLogger.LogText(data);
+                    return;
+                }
+
+                //MethodsCallHandler.BeginHttpMethodCallAction?.Invoke(client, callGuid, address, method, valueitems);
+                //service = Activator.CreateInstance(RegisteredHttpServiceTypes[address]);
+                if (serviceInstance is IHttpClientInfo)
+                {
+                    ((IHttpClientInfo)serviceInstance).RequestHeaders = client.RequestHeaders = headers;
+                    ((IHttpClientInfo)serviceInstance).ResponseHeaders = client.ResponseHeaders;
+                    ((IHttpClientInfo)serviceInstance).IPAddress = client.IPAddress;
+                }
+                if (serverBase.ProviderSetting.HttpSetting.HandleCrossOriginAccess)
+                {
+                    client.ResponseHeaders.Add("Access-Control-Allow-Origin", headers["origin"]);
+                    client.ResponseHeaders.Add("Access-Control-Allow-Credentials", "true");
+                    if (!string.IsNullOrEmpty(headers["Access-Control-Request-Headers"]))
+                    {
+                        client.ResponseHeaders.Add("Access-Control-Allow-Headers", headers["Access-Control-Request-Headers"]);
+                    }
+                }
+                var httpKeyOnMethod = (HttpKeyAttribute)method.GetCustomAttributes(typeof(HttpKeyAttribute), true).FirstOrDefault();
+                if (httpKeyOnMethod != null)
+                    httpKeyAttributes.Add(httpKeyOnMethod);
+                if (serverBase.ProviderSetting.HttpKeyResponses != null)
+                {
+                    httpKeyAttributes.AddRange(serverBase.ProviderSetting.HttpKeyResponses);
+                }
+
+                FillReponseHeaders(client, httpKeyAttributes);
+
+                if (result.Data == null)
+                {
+                    data = newLine + $"result from method invoke {methodName}, is null " + address + newLine;
+                    SendInternalErrorMessage(data, serverBase, client, headers, newLine, HttpStatusCode.OK);
+                    serverBase.AutoLogger.LogText("RunHttpGETRequest : " + data);
+                }
+                else
+                {
+                    RunHttpActionResult(client, result.Data, client, serverBase);
                 }
             }
-            var httpKeyOnMethod = (HttpKeyAttribute)method.GetCustomAttributes(typeof(HttpKeyAttribute), true).FirstOrDefault();
-            if (httpKeyOnMethod != null)
-                httpKeyAttributes.Add(httpKeyOnMethod);
-            if (serverBase.ProviderSetting.HttpKeyResponses != null)
+            finally
             {
-                httpKeyAttributes.AddRange(serverBase.ProviderSetting.HttpKeyResponses);
-            }
-
-            FillReponseHeaders(client, httpKeyAttributes);
-
-            if (result.Data == null)
-            {
-                data = newLine + $"result from method invoke {methodName}, is null " + address + newLine;
-                SendInternalErrorMessage(data, serverBase, client, headers, newLine);
-                serverBase.AutoLogger.LogText("RunHttpGETRequest : " + data);
-            }
-            else
-            {
-                RunHttpActionResult(client, result.Data, client, serverBase);
+                serverBase.TaskOfClientInfoes.Remove(Task.CurrentId.GetValueOrDefault());
             }
         }
 
@@ -655,7 +680,7 @@ namespace SignalGo.Server.ServiceManager.Providers
             if (lines.Count <= 1)
             {
                 string msg = newLine + "SignalGo Error: method not found from address: " + address + newLine;
-                SendInternalErrorMessage(msg, serverBase, client, headers, newLine);
+                SendInternalErrorMessage(msg, serverBase, client, headers, newLine, HttpStatusCode.InternalServerError);
                 serverBase.AutoLogger.LogText(msg);
             }
             else
@@ -872,7 +897,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     else
                     {
                         data = newLine + ex.ToString() + address + newLine;
-                        SendInternalErrorMessage(data, serverBase, client, headers, newLine);
+                        SendInternalErrorMessage(data, serverBase, client, headers, newLine, HttpStatusCode.InternalServerError);
                     }
                     if (!(ex is SocketException))
                         serverBase.AutoLogger.LogError(ex, "RunPostHttpRequestFile");
@@ -1001,7 +1026,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 else
                 {
                     var data = newLine + ex.ToString() + "" + newLine;
-                    SendInternalErrorMessage(data, serverBase, client, headers, newLine);
+                    SendInternalErrorMessage(data, serverBase, client, headers, newLine, HttpStatusCode.InternalServerError);
                 }
                 if (!(ex is SocketException))
                     serverBase.AutoLogger.LogError(ex, "RunPostHttpRequestFile");

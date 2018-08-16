@@ -132,6 +132,49 @@ namespace SignalGo.Shared.DataTypes
         }
 
         /// <summary>
+        /// check if type is server service
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public static bool IsServerService(this Type type)
+        {
+            return type.GetCustomAttributes<ServiceContractAttribute>(true).Any(x => x.ServiceType == ServiceType.ServerService);
+        }
+
+        /// <summary>
+        /// check if type is client service
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public static bool IsClientService(this Type type)
+        {
+            return type.GetCustomAttributes<ServiceContractAttribute>(true).Any(x => x.ServiceType == ServiceType.ClientService);
+        }
+
+        /// <summary>
+        /// check if type is client service
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public static bool IsHttpService(this Type type)
+        {
+            return type.GetCustomAttributes<ServiceContractAttribute>(true).Any(x => x.ServiceType == ServiceType.HttpService);
+        }
+
+        /// <summary>
+        /// get all server service attribute from ServiceContractAttribute
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public static ServiceContractAttribute[] GetServiceContractAttributes(this Type type)
+        {
+            var serviceContract = type.GetCustomAttributes<ServiceContractAttribute>(true);
+            if (serviceContract.Length == 0)
+                throw new Exception("your server class must have ServiceContract attribute that have ServiceType == ServiceType.SeverService parameter");
+            return serviceContract;
+        }
+
+        /// <summary>
         /// get server service attribute from ServiceContractAttribute
         /// </summary>
         /// <param name="type"></param>

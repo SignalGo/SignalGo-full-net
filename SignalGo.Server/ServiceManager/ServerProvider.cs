@@ -73,10 +73,10 @@ namespace SignalGo.Server.ServiceManager
         /// <param name="assemblies">add your assemblies they have servicecontract over classes</param>
         public void AutoRegisterServices(List<Assembly> assemblies)
         {
-            List<Type> ServerServices = new List<Type>();
-            List<Type> ClientServices = new List<Type>();
-            List<Type> HttpServices = new List<Type>();
-            List<Type> StreamServices = new List<Type>();
+            //List<Type> ServerServices = new List<Type>();
+            //List<Type> ClientServices = new List<Type>();
+            //List<Type> HttpServices = new List<Type>();
+            //List<Type> StreamServices = new List<Type>();
             List<Type> AllTypes = GetAllTypes(assemblies).ToList();
 
             foreach (var type in AllTypes)
@@ -88,97 +88,101 @@ namespace SignalGo.Server.ServiceManager
                     {
                         if (att.ServiceType == ServiceType.ServerService)
                         {
-                            if (!ServerServices.Contains(type))
-                            {
-                                if (type.GetIsInterface())
-                                {
-                                    var find = GetMainInheritancedType(type, AllTypes);
-                                    if (find != null)
-                                        ServerServices.Add(find);
-                                }
-                                else
-                                    ServerServices.Add(type);
-                            }
+                            //if (!ServerServices.Contains(type))
+                            //{
+                            //    if (type.GetIsInterface())
+                            //    {
+                            //        var find = GetMainInheritancedType(type, AllTypes);
+                            //        if (find != null)
+                            //            ServerServices.Add(find);
+                            //    }
+                            //    else
+                            //        ServerServices.Add(type);
+                            //}
+                            RegisterServerService(type);
                         }
                         else if (att.ServiceType == ServiceType.ClientService)
                         {
-                            if (!ClientServices.Contains(type) && type.GetIsInterface())
-                                ClientServices.Add(type);
+                            //if (!ClientServices.Contains(type) && type.GetIsInterface())
+                            //    ClientServices.Add(type);
+                            RegisterServerService(type);
                         }
                         else if (att.ServiceType == ServiceType.HttpService)
                         {
-                            if (!HttpServices.Contains(type))
-                            {
-                                if (type.GetIsInterface())
-                                {
-                                    var find = GetMainInheritancedType(type, AllTypes);
-                                    if (find != null)
-                                        HttpServices.Add(find);
-                                }
-                                else
-                                    HttpServices.Add(type);
-                            }
+                            //if (!HttpServices.Contains(type))
+                            //{
+                            //    if (type.GetIsInterface())
+                            //    {
+                            //        var find = GetMainInheritancedType(type, AllTypes);
+                            //        if (find != null)
+                            //            HttpServices.Add(find);
+                            //    }
+                            //    else
+                            //        HttpServices.Add(type);
+                            //}
+                            RegisterServerService(type);
                         }
                         else if (att.ServiceType == ServiceType.StreamService)
                         {
-                            if (!StreamServices.Contains(type))
-                            {
-                                if (type.GetIsInterface())
-                                {
-                                    var find = GetMainInheritancedType(type, AllTypes);
-                                    if (find != null)
-                                        StreamServices.Add(find);
-                                }
-                                else
-                                    StreamServices.Add(type);
-                            }
+                            RegisterServerService(type);
+                            //if (!StreamServices.Contains(type))
+                            //{
+                            //    if (type.GetIsInterface())
+                            //    {
+                            //        var find = GetMainInheritancedType(type, AllTypes);
+                            //        if (find != null)
+                            //            StreamServices.Add(find);
+                            //    }
+                            //    else
+                            //        StreamServices.Add(type);
+                            //}
                         }
                     }
                 }
             }
 
-            if (ServerServices.Count > 0)
-            {
-                Console.WriteLine("Registering ServerServices:");
-                foreach (var item in ServerServices)
-                {
-                    RegisterServerService(item);
-                    Console.WriteLine(item.FullName);
-                }
-            }
-//            if (ClientServices.Count > 0)
-//            {
-//                Console.WriteLine("Registering ClientServices:");
-//                foreach (var item in ClientServices)
-//                {
-//#if (!NETSTANDARD1_6 && !NETCOREAPP1_1)
-//                    if (item.GetIsInterface())
-//                        RegisterClientServiceInterface(item);
-//                    else
-//#endif
-//                    RegisterClientService(item);
-//                    Console.WriteLine(item.FullName);
-//                }
-//            }
+            //if (ServerServices.Count > 0)
+            //{
+            //    Console.WriteLine("Registering ServerServices:");
+            //    foreach (var item in ServerServices)
+            //    {
+            //        RegisterServerService(item);
+            //        Console.WriteLine(item.FullName);
+            //    }
+            //}
+            //            if (ClientServices.Count > 0)
+            //            {
+            //                Console.WriteLine("Registering ClientServices:");
+            //                foreach (var item in ClientServices)
+            //                {
+            //#if (!NETSTANDARD1_6 && !NETCOREAPP1_1)
+            //                    if (item.GetIsInterface())
+            //                        RegisterClientServiceInterface(item);
+            //                    else
+            //#endif
+            //                    RegisterClientService(item);
+            //                    Console.WriteLine(item.FullName);
+            //                }
+            //            }
 
-//            if (HttpServices.Count > 0)
-//            {
-//                Console.WriteLine("Registering HttpServices:");
-//                foreach (var item in HttpServices)
-//                {
-//                    RegisterHttpService(item);
-//                    Console.WriteLine(item.FullName);
-//                }
-//            }
-//            if (StreamServices.Count > 0)
-//            {
-//                Console.WriteLine("Registering StreamServices:");
-//                foreach (var item in StreamServices)
-//                {
-//                    RegisterStreamService(item);
-//                    Console.WriteLine(item.FullName);
-//                }
-//            }
+            //            if (HttpServices.Count > 0)
+            //            {
+            //                Console.WriteLine("Registering HttpServices:");
+            //                foreach (var item in HttpServices)
+            //                {
+            //                    RegisterHttpService(item);
+            //                    Console.WriteLine(item.FullName);
+            //                }
+            //            }
+            //            if (StreamServices.Count > 0)
+            //            {
+            //                Console.WriteLine("Registering StreamServices:");
+            //                foreach (var item in StreamServices)
+            //                {
+            //                    RegisterStreamService(item);
+            //                    Console.WriteLine(item.FullName);
+            //                }
+            //            }
         }
         //public void StartWebSocket(string url)
         //{

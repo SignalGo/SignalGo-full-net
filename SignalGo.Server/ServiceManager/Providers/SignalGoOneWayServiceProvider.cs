@@ -4,7 +4,8 @@ using System.Text;
 
 namespace SignalGo.Server.ServiceManager.Providers
 {
-    class OneWayServiceProvider
+    public class OneWayServiceProvider
     {
+
     }
 }

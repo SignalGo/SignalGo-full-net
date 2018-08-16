@@ -14,28 +14,28 @@ namespace SignalGo.Server.DataTypes
     /// </summary>
     public abstract class SecurityContractAttribute : Attribute
     {
-        /// <summary>
-        /// call your security method for http calls
-        /// </summary>
-        /// <param name="client">client if that called method</param>
-        /// <param name="controller">controller if available</param>
-        /// <param name="serviceName">service name</param>
-        /// <param name="methodName">method name</param>
-        /// <param name="address">address</param>
-        /// <param name="parameters">parameters</param>
-        /// <returns></returns>
-        public abstract bool CheckHttpPermission(ClientInfo client, IHttpClientInfo controller, string serviceName, string methodName, string address, List<object> parameters);
-        /// <summary>
-        /// result of your security method for http calls when access dined
-        /// </summary>
-        /// <param name="client">client if that called method</param>
-        /// <param name="controller">controller if available</param>
-        /// <param name="serviceName">service name</param>
-        /// <param name="methodName">method name</param>
-        /// <param name="address">address</param>
-        /// <param name="parameters">parameters</param>
-        /// <returns></returns>
-        public abstract object GetHttpValueWhenDenyPermission(ClientInfo client, IHttpClientInfo controller, string serviceName, string methodName, string address, List<object> parameters);
+        ///// <summary>
+        ///// call your security method for http calls
+        ///// </summary>
+        ///// <param name="client">client if that called method</param>
+        ///// <param name="controller">controller if available</param>
+        ///// <param name="serviceName">service name</param>
+        ///// <param name="methodName">method name</param>
+        ///// <param name="address">address</param>
+        ///// <param name="parameters">parameters</param>
+        ///// <returns></returns>
+        //public abstract bool CheckHttpPermission(ClientInfo client, IHttpClientInfo controller, string serviceName, string methodName, string address, List<object> parameters);
+        ///// <summary>
+        ///// result of your security method for http calls when access dined
+        ///// </summary>
+        ///// <param name="client">client if that called method</param>
+        ///// <param name="controller">controller if available</param>
+        ///// <param name="serviceName">service name</param>
+        ///// <param name="methodName">method name</param>
+        ///// <param name="address">address</param>
+        ///// <param name="parameters">parameters</param>
+        ///// <returns></returns>
+        //public abstract object GetHttpValueWhenDenyPermission(ClientInfo client, IHttpClientInfo controller, string serviceName, string methodName, string address, List<object> parameters);
 
         /// <summary>
         /// call your check security method
