@@ -159,14 +159,17 @@ namespace SignalGo.Server.ServiceManager.Providers
                                     RunIndexHttpRequest(headers, (HttpClientInfo)client, serverBase);
                                     serverBase.DisposeClient(client, "Index Page call");
                                 }
+                                else
+                                {
+                                    response = "HTTP/1.1 200 OK" + newLine + "Content-Type: text/html" + newLine + "Connection: Close" + newLine;
+                                    var bytes = System.Text.Encoding.ASCII.GetBytes(response + newLine + "SignalGo Server OK" + newLine);
+                                    client.ClientStream.Write(bytes, 0, bytes.Length);
+                                    serverBase.DisposeClient(client, "AddClient http ok signalGo");
+                                }
                             }
+                            else
+                                serverBase.DisposeClient(client, "HttpProvider StartToReadingClientData no line detected");
 
-                            response = "HTTP/1.1 200 OK" + newLine
-                                 + "Content-Type: text/html" + newLine
-                                 + "Connection: Close" + newLine;
-                            var bytes = System.Text.Encoding.ASCII.GetBytes(response + newLine + "SignalGo Server OK" + newLine);
-                            client.ClientStream.Write(bytes, 0, bytes.Length);
-                            serverBase.DisposeClient(client, "AddClient http ok signalGo");
                         }
                         catch
                         {
@@ -291,7 +294,7 @@ namespace SignalGo.Server.ServiceManager.Providers
 #if (NET35 || NET40)
         private static void RunHttpRequest(ServerBase serverBase, string address, string httpMethod, string content, Shared.Http.WebHeaderCollection headers, HttpClientInfo client)
 #else
-        private static async void RunHttpRequest(ServerBase serverBase, string address, string httpMethod, string content, Shared.Http.WebHeaderCollection headers, HttpClientInfo client)
+        private static void RunHttpRequest(ServerBase serverBase, string address, string httpMethod, string content, Shared.Http.WebHeaderCollection headers, HttpClientInfo client)
 #endif
         {
             var newLine = "\r\n";
@@ -336,7 +339,7 @@ namespace SignalGo.Server.ServiceManager.Providers
 #if (NET35 || NET40)
                             var readCount = client.ClientStream.Read(buffer, 0, len - content.Length);
 #else
-                            var readCount = await client.ClientStream.ReadAsync(buffer, 0, len - content.Length);
+                            var readCount = client.ClientStream.ReadAsync(buffer, 0, len - content.Length).GetAwaiter().GetResult();
 #endif
                             if (readCount == 0)
                                 throw new Exception("zero byte readed socket disconnected!");
@@ -588,7 +591,11 @@ namespace SignalGo.Server.ServiceManager.Providers
                 serverBase.TaskOfClientInfoes.TryAdd(Task.CurrentId.GetValueOrDefault(), client.ClientId);
 
                 client.RequestHeaders = headers;
-                var result = CallMethod(address, _guid, methodName, values == null ? null : values.ToArray(), client, "", serverBase, fileInfo, canTakeMethod, out List<HttpKeyAttribute> httpKeyAttributes, out serviceType, out method, out serviceInstance);
+                foreach (var item in values.Where(x => x.Value == "null"))
+                {
+                    item.Value = null;
+                }
+                var result = CallMethod(address, _guid, methodName, values == null ? null : values.ToArray(), client, "", serverBase, fileInfo, canTakeMethod, out List<HttpKeyAttribute> httpKeyAttributes, out serviceType, out method, out serviceInstance, out FileActionResult fileActionResult);
 
                 if (result.IsException || result.IsAccessDenied)
                 {
@@ -625,8 +632,9 @@ namespace SignalGo.Server.ServiceManager.Providers
                 }
 
                 FillReponseHeaders(client, httpKeyAttributes);
-
-                if (result.Data == null)
+                if (fileActionResult != null)
+                    RunHttpActionResult(client, fileActionResult, client, serverBase);
+                else if (result.Data == null)
                 {
                     data = newLine + $"result from method invoke {methodName}, is null " + address + newLine;
                     SendInternalErrorMessage(data, serverBase, client, headers, newLine, HttpStatusCode.OK);
@@ -1067,90 +1075,97 @@ namespace SignalGo.Server.ServiceManager.Providers
 
         static void RunHttpActionResult(IHttpClientInfo controller, object result, ClientInfo client, ServerBase serverBase)
         {
-            var newLine = "\r\n";
-
-            var response = $"HTTP/1.1 {(int)controller.Status} {HttpRequestController.GetStatusDescription((int)controller.Status)}" + newLine;
-
-            //foreach (string item in headers)
-            //{
-            //    response += item + ": " + headers[item] + newLine;
-            //}
-
-            if (result is FileActionResult && controller.Status == HttpStatusCode.OK)
+            try
             {
-                response += controller.ResponseHeaders.ToString();
-                var file = (FileActionResult)result;
-                long fileLength = -1;
-                //string len = "";
-                try
-                {
-                    fileLength = file.FileStream.Length;
-                    //len = "Content-Length: " + fileLength;
-                }
-                catch { }
-                //response += len + newLine;
-                var bytes = System.Text.Encoding.ASCII.GetBytes(response);
-                client.ClientStream.Write(bytes, 0, bytes.Length);
-                List<byte> allb = new List<byte>();
-                //if (file.FileStream.CanSeek)
-                //    file.FileStream.Seek(0, System.IO.SeekOrigin.Begin);
-                while (fileLength != file.FileStream.Position)
-                {
-                    byte[] data = new byte[1024 * 20];
-                    var readCount = file.FileStream.Read(data, 0, data.Length);
-                    if (readCount == 0)
-                        break;
-                    bytes = data.ToList().GetRange(0, readCount).ToArray();
-                    client.ClientStream.Write(bytes, 0, bytes.Length);
-                }
-                file.FileStream.Dispose();
-            }
-            else
-            {
-                byte[] dataBytes = null;
-                if (result is ActionResult)
-                {
-                    var data = (((ActionResult)result).Data is string ? ((ActionResult)result).Data.ToString() : ServerSerializationHelper.SerializeObject(((ActionResult)result).Data, serverBase));
-                    dataBytes = System.Text.Encoding.UTF8.GetBytes(data);
-                    if (controller.ResponseHeaders["content-length"] == null)
-                        controller.ResponseHeaders.Add("Content-Length", (dataBytes.Length).ToString());
+                var newLine = "\r\n";
 
-                    if (controller.ResponseHeaders["Content-Type"] == null)
+                var response = $"HTTP/1.1 {(int)controller.Status} {HttpRequestController.GetStatusDescription((int)controller.Status)}" + newLine;
+
+                //foreach (string item in headers)
+                //{
+                //    response += item + ": " + headers[item] + newLine;
+                //}
+
+                if (result is FileActionResult && controller.Status == HttpStatusCode.OK)
+                {
+                    response += controller.ResponseHeaders.ToString();
+                    var file = (FileActionResult)result;
+                    long fileLength = -1;
+                    //string len = "";
+                    try
                     {
-                        if (((ActionResult)result).Data is string)
-                            controller.ResponseHeaders.Add("Content-Type", "text/html; charset=utf-8");
-                        else
-                            controller.ResponseHeaders.Add("Content-Type", "application/json; charset=utf-8");
+                        fileLength = file.FileStream.Length;
+                        //len = "Content-Length: " + fileLength;
                     }
+                    catch { }
+                    //response += len + newLine;
+                    var bytes = System.Text.Encoding.ASCII.GetBytes(response);
+                    client.ClientStream.Write(bytes, 0, bytes.Length);
+                    List<byte> allb = new List<byte>();
+                    //if (file.FileStream.CanSeek)
+                    //    file.FileStream.Seek(0, System.IO.SeekOrigin.Begin);
+                    while (fileLength != file.FileStream.Position)
+                    {
+                        byte[] data = new byte[1024 * 20];
+                        var readCount = file.FileStream.Read(data, 0, data.Length);
+                        if (readCount == 0)
+                            break;
+                        bytes = data.ToList().GetRange(0, readCount).ToArray();
+                        client.ClientStream.Write(bytes, 0, bytes.Length);
+                    }
+                    file.FileStream.Dispose();
                 }
                 else
                 {
-                    var data = ServerSerializationHelper.SerializeObject(result, serverBase);
-                    dataBytes = System.Text.Encoding.UTF8.GetBytes(data);
-                    if (controller.ResponseHeaders["content-length"] == null)
-                        controller.ResponseHeaders.Add("Content-Length", (dataBytes.Length).ToString());
-
-                    if (controller.ResponseHeaders["Content-Type"] == null)
+                    byte[] dataBytes = null;
+                    if (result is ActionResult)
                     {
-                        //if (result.Data is string)
-                        //    controller.ResponseHeaders.Add("Content-Type", "text/html; charset=utf-8");
-                        //else
-                        controller.ResponseHeaders.Add("Content-Type", "application/json; charset=utf-8");
+                        var data = (((ActionResult)result).Data is string ? ((ActionResult)result).Data.ToString() : ServerSerializationHelper.SerializeObject(((ActionResult)result).Data, serverBase));
+                        dataBytes = System.Text.Encoding.UTF8.GetBytes(data);
+                        if (controller.ResponseHeaders["content-length"] == null)
+                            controller.ResponseHeaders.Add("Content-Length", (dataBytes.Length).ToString());
+
+                        if (controller.ResponseHeaders["Content-Type"] == null)
+                        {
+                            if (((ActionResult)result).Data is string)
+                                controller.ResponseHeaders.Add("Content-Type", "text/html; charset=utf-8");
+                            else
+                                controller.ResponseHeaders.Add("Content-Type", "application/json; charset=utf-8");
+                        }
                     }
+                    else
+                    {
+                        var data = result is string ? (string)result : ServerSerializationHelper.SerializeObject(result, serverBase);
+                        dataBytes = System.Text.Encoding.UTF8.GetBytes(data);
+                        if (controller.ResponseHeaders["content-length"] == null)
+                            controller.ResponseHeaders.Add("Content-Length", (dataBytes.Length).ToString());
+
+                        if (controller.ResponseHeaders["Content-Type"] == null)
+                        {
+                            //if (result.Data is string)
+                            //    controller.ResponseHeaders.Add("Content-Type", "text/html; charset=utf-8");
+                            //else
+                            controller.ResponseHeaders.Add("Content-Type", "application/json; charset=utf-8");
+                        }
+                    }
+
+                    if (controller.ResponseHeaders["Connection"] == null)
+                        controller.ResponseHeaders.Add("Connection", "close");
+
+                    response += controller.ResponseHeaders.ToString();
+
+                    var bytes = System.Text.Encoding.UTF8.GetBytes(response);
+                    client.ClientStream.Write(bytes, 0, bytes.Length);
+
+                    //response += "Content-Type: text/html" + newLine + "Connection: Close" + newLine;
+                    client.ClientStream.Write(dataBytes, 0, dataBytes.Length);
+                    client.ClientStream.Flush();
+                    System.Threading.Thread.Sleep(100);
                 }
+            }
+            catch (Exception ex)
+            {
 
-                if (controller.ResponseHeaders["Connection"] == null)
-                    controller.ResponseHeaders.Add("Connection", "close");
-
-                response += controller.ResponseHeaders.ToString();
-
-                var bytes = System.Text.Encoding.UTF8.GetBytes(response);
-                client.ClientStream.Write(bytes, 0, bytes.Length);
-
-                //response += "Content-Type: text/html" + newLine + "Connection: Close" + newLine;
-                client.ClientStream.Write(dataBytes, 0, dataBytes.Length);
-                client.ClientStream.Flush();
-                System.Threading.Thread.Sleep(100);
             }
         }
 

@@ -51,8 +51,8 @@ namespace ServerConsoleTest
         public int HelloWorld2(string userName, string password)
         {
             var setting = OperationContext<UserInfo>.CurrentSetting;
-            var callback = OperationContext.Current.GetClientService<ITestClientService>();
-            callback.CallMe("hello client");
+            //var callback = OperationContext.Current.GetClientService<ITestClientService>();
+            //callback.CallMe("hello client");
             return 45;
         }
 
@@ -93,20 +93,20 @@ namespace ServerConsoleTest
                 serverProvider.RegisterClientService(typeof(ITestClientService));
                 serverProvider.Start("http://localhost:3284/TestServices/SignalGo");
 
-                ClientProvider clientProvider = new ClientProvider();
-                clientProvider.Connect("http://localhost:3284/TestServices/SignalGo");
-                var service = clientProvider.RegisterServerServiceInterfaceWrapper<ITestManager>();
-                var result = service.HelloWorld("ali123", "passee");
-                var result2 = service.Test();
+                //ClientProvider clientProvider = new ClientProvider();
+                //clientProvider.Connect("http://localhost:3284/TestServices/SignalGo");
+                //var service = clientProvider.RegisterServerServiceInterfaceWrapper<ITestManager>();
+                //var result = service.HelloWorld("ali123", "passee");
+                //var result2 = service.Test();
 
-                ClientProvider clientProvider2 = new ClientProvider();
-                clientProvider2.Connect("http://localhost:3284/TestServices/SignalGo");
-                var service2 = clientProvider2.RegisterServerServiceInterfaceWrapper<ITestManager>();
-                clientProvider2.RegisterClientService<ClientService>();
-                var result3 = service2.HelloWorld("reza123", "passee");
-                var result5 = service2.HelloWorld2("reza123", "passee");
-                var result4 = service2.Test();
-                result2 = service.Test();
+                //ClientProvider clientProvider2 = new ClientProvider();
+                //clientProvider2.Connect("http://localhost:3284/TestServices/SignalGo");
+                //var service2 = clientProvider2.RegisterServerServiceInterfaceWrapper<ITestManager>();
+                //clientProvider2.RegisterClientService<ClientService>();
+                //var result3 = service2.HelloWorld("reza123", "passee");
+                //var result5 = service2.HelloWorld2("reza123", "passee");
+                //var result4 = service2.Test();
+                //result2 = service.Test();
                 Console.WriteLine("seerver started");
             }
             catch (Exception ex)

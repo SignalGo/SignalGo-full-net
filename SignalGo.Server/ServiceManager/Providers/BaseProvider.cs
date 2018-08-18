@@ -35,7 +35,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 serverBase.TaskOfClientInfoes.TryAdd(Task.CurrentId.GetValueOrDefault(), client.ClientId);
                 try
                 {
-                    return CallMethod(callInfo.ServiceName, callInfo.Guid, callInfo.MethodName, callInfo.Parameters.ToArray(), client, json, serverBase, null, null, out List<HttpKeyAttribute> httpKeyAttributes, out Type serviceType, out MethodInfo method, out object serviceInsatnce);
+                    return CallMethod(callInfo.ServiceName, callInfo.Guid, callInfo.MethodName, callInfo.Parameters.ToArray(), client, json, serverBase, null, null, out List<HttpKeyAttribute> httpKeyAttributes, out Type serviceType, out MethodInfo method, out object serviceInsatnce, out FileActionResult fileActionResult);
                 }
                 finally
                 {
@@ -45,7 +45,7 @@ namespace SignalGo.Server.ServiceManager.Providers
             });
         }
 
-        static internal MethodCallbackInfo CallMethod(string serviceName, string guid, string methodName, SignalGo.Shared.Models.ParameterInfo[] parameters, ClientInfo client, string json, ServerBase serverBase, HttpPostedFileInfo fileInfo, Func<MethodInfo, bool> canTakeMethod, out List<HttpKeyAttribute> httpKeyAttributes, out Type serviceType, out MethodInfo method, out object service)
+        static internal MethodCallbackInfo CallMethod(string serviceName, string guid, string methodName, SignalGo.Shared.Models.ParameterInfo[] parameters, ClientInfo client, string json, ServerBase serverBase, HttpPostedFileInfo fileInfo, Func<MethodInfo, bool> canTakeMethod, out List<HttpKeyAttribute> httpKeyAttributes, out Type serviceType, out MethodInfo method, out object service, out FileActionResult fileActionResult)
         {
             serviceName = serviceName.ToLower();
             httpKeyAttributes = new List<HttpKeyAttribute>();
@@ -55,6 +55,7 @@ namespace SignalGo.Server.ServiceManager.Providers
             serviceType = null;
             service = null;
             Exception exception = null;
+            fileActionResult = null;
             MethodCallbackInfo callback = new MethodCallbackInfo()
             {
                 Guid = guid
@@ -117,7 +118,11 @@ namespace SignalGo.Server.ServiceManager.Providers
                     {
                         var parameterDataExchanger = customDataExchanger.ToList();
                         parameterDataExchanger.AddRange(GetMethodParameterBinds(index, allMethods.ToArray()).Where(x => x.GetExchangerByUserCustomization(client)));
-                        parametersValues.Add(ServerSerializationHelper.Deserialize(item.Value, prms[index].ParameterType, serverBase, customDataExchanger: parameterDataExchanger.ToArray(), client: client));
+                        var resultJson = ServerSerializationHelper.Deserialize(item.Value, prms[index].ParameterType, serverBase, customDataExchanger: parameterDataExchanger.ToArray(), client: client);
+                        if (resultJson == null)
+                            parametersValues.Add(item.Value);
+                        else
+                            parametersValues.Add(resultJson);
                     }
                     index++;
                 }
@@ -264,7 +269,10 @@ namespace SignalGo.Server.ServiceManager.Providers
 #endif
                         }
 
-                        callback.Data = result == null ? null : ServerSerializationHelper.SerializeObject(result, serverBase, customDataExchanger: customDataExchanger.ToArray(), client: client);
+                        if (result is FileActionResult fResult)
+                            fileActionResult = fResult;
+                        else
+                            callback.Data = result == null ? null : ServerSerializationHelper.SerializeObject(result, serverBase, customDataExchanger: customDataExchanger.ToArray(), client: client);
                     }
                     catch (Exception ex)
                     {
