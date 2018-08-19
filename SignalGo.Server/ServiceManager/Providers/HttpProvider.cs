@@ -591,9 +591,12 @@ namespace SignalGo.Server.ServiceManager.Providers
                 serverBase.TaskOfClientInfoes.TryAdd(Task.CurrentId.GetValueOrDefault(), client.ClientId);
 
                 client.RequestHeaders = headers;
-                foreach (var item in values.Where(x => x.Value == "null"))
+                if (values != null)
                 {
-                    item.Value = null;
+                    foreach (var item in values.Where(x => x.Value == "null"))
+                    {
+                        item.Value = null;
+                    }
                 }
                 var result = CallMethod(address, _guid, methodName, values == null ? null : values.ToArray(), client, "", serverBase, fileInfo, canTakeMethod,out IStreamInfo streamInfo, out List<HttpKeyAttribute> httpKeyAttributes, out serviceType, out method, out serviceInstance, out FileActionResult fileActionResult);
 

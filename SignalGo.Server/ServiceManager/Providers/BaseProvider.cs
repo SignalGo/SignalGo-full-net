@@ -96,9 +96,12 @@ namespace SignalGo.Server.ServiceManager.Providers
                     exceptionResult.AppendLine("<Exception>");
                     exceptionResult.AppendLine($"method {methodName} not found");
                     exceptionResult.AppendLine("<Parameters>");
-                    foreach (var item in parameters)
+                    if (parameters != null)
                     {
-                        exceptionResult.AppendLine((item.Value ?? "null;") + " name: " + (item.Name ?? "no name"));
+                        foreach (var item in parameters)
+                        {
+                            exceptionResult.AppendLine((item.Value ?? "null;") + " name: " + (item.Name ?? "no name"));
+                        }
                     }
                     exceptionResult.AppendLine("</Parameters>");
                     exceptionResult.AppendLine("<JSON>");
@@ -109,41 +112,44 @@ namespace SignalGo.Server.ServiceManager.Providers
                 }
 
                 List<object> parametersValues = new List<object>();
-                int index = 0;
-                var prms = method.GetParameters();
-                foreach (var item in parameters)
+                if (parameters != null)
                 {
-                    if (item.Value == null)
-                        parametersValues.Add(DataExchangeConverter.GetDefault(prms[index].ParameterType));
-                    else
+                    int index = 0;
+                    var prms = method.GetParameters();
+                    foreach (var item in parameters)
                     {
-                        var parameterDataExchanger = customDataExchanger.ToList();
-                        parameterDataExchanger.AddRange(GetMethodParameterBinds(index, allMethods.ToArray()).Where(x => x.GetExchangerByUserCustomization(client)));
-                        var resultJson = ServerSerializationHelper.Deserialize(item.Value, prms[index].ParameterType, serverBase, customDataExchanger: parameterDataExchanger.ToArray(), client: client);
-
-                        if (resultJson == null)
-                        {
-                            if (string.IsNullOrEmpty(item.Value))
-                                parametersValues.Add(null);
-                            else
-                                parametersValues.Add(item.Value);
-                        }
+                        if (item.Value == null)
+                            parametersValues.Add(DataExchangeConverter.GetDefault(prms[index].ParameterType));
                         else
                         {
-                            parametersValues.Add(resultJson);
-                            if (resultJson is IStreamInfo _streamInfo)
-                                _streamInfo.Stream = client.ClientStream;
+                            var parameterDataExchanger = customDataExchanger.ToList();
+                            parameterDataExchanger.AddRange(GetMethodParameterBinds(index, allMethods.ToArray()).Where(x => x.GetExchangerByUserCustomization(client)));
+                            var resultJson = ServerSerializationHelper.Deserialize(item.Value, prms[index].ParameterType, serverBase, customDataExchanger: parameterDataExchanger.ToArray(), client: client);
+
+                            if (resultJson == null)
+                            {
+                                if (string.IsNullOrEmpty(item.Value))
+                                    parametersValues.Add(null);
+                                else
+                                    parametersValues.Add(item.Value);
+                            }
+                            else
+                            {
+                                parametersValues.Add(resultJson);
+                                if (resultJson is IStreamInfo _streamInfo)
+                                    _streamInfo.Stream = client.ClientStream;
+                            }
                         }
+                        index++;
                     }
-                    index++;
-                }
-                if (parameters.Length != prms.Length)
-                {
-                    for (int i = 0; i < prms.Length; i++)
+                    if (parameters.Length != prms.Length)
                     {
-                        if (parameters.Length <= i || prms[i].Name != parameters[i].Name)
+                        for (int i = 0; i < prms.Length; i++)
                         {
-                            parametersValues.Insert(i, prms[i].DefaultValue);
+                            if (parameters.Length <= i || prms[i].Name != parameters[i].Name)
+                            {
+                                parametersValues.Insert(i, prms[i].DefaultValue);
+                            }
                         }
                     }
                 }
@@ -476,7 +482,7 @@ namespace SignalGo.Server.ServiceManager.Providers
         static System.Reflection.MethodInfo FindMethodByType(Type serviceType, string methodName, Shared.Models.ParameterInfo[] parameters, Func<MethodInfo, bool> canTakeMethod)
         {
             IEnumerable<MethodInfo> query = null;
-            if (methodName == "-noName-" && canTakeMethod != null)
+            if (methodName == "-noname-" && canTakeMethod != null)
             {
                 query = serviceType.GetMethods().Where(x => canTakeMethod(x) && !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_"))));
             }
@@ -488,14 +494,16 @@ namespace SignalGo.Server.ServiceManager.Providers
             {
                 var param = method.GetParameters();
                 bool hasError = false;
-                foreach (var p in parameters)
+                if (parameters != null)
                 {
-                    if (!string.IsNullOrEmpty(p.Name) && !param.Any(x => x.Name.Equals(p.Name, StringComparison.OrdinalIgnoreCase) && param.IndexOf(x) == parameters.IndexOf(p)))
+                    foreach (var p in parameters)
                     {
-                        hasError = true;
-                        break;
+                        if (!string.IsNullOrEmpty(p.Name) && !param.Any(x => x.Name.Equals(p.Name, StringComparison.OrdinalIgnoreCase) && param.IndexOf(x) == parameters.IndexOf(p)))
+                        {
+                            hasError = true;
+                            break;
+                        }
                     }
-                }
 #if (!NET35 && !NET40)
                 if (!hasError && param.Length != parameters.Length)
                 {
@@ -510,6 +518,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     }
                 }
 #endif
+                }
                 if (hasError)
                     continue;
                 else
@@ -520,6 +529,8 @@ namespace SignalGo.Server.ServiceManager.Providers
 
         static string GenerateMethodKey(Type serviceType, string methodName, Shared.Models.ParameterInfo[] parameters)
         {
+            if (parameters == null)
+                return "";
             var name = serviceType.FullName + methodName;
             foreach (var item in parameters)
             {
