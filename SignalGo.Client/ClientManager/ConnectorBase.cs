@@ -672,7 +672,7 @@ namespace SignalGo.Client.ClientManager
             json = Encoding.UTF8.GetString(readData, 0, readData.Length);
             var callBack = ClientSerializationHelper.DeserializeObject<MethodCallbackInfo>(json);
             if (callBack.IsException)
-                throw ClientSerializationHelper.DeserializeObject<Exception>(callBack.Data);
+                throw new Exception(callBack.Data);
             return ClientSerializationHelper.DeserializeObject<T>(callBack.Data);
         }
 

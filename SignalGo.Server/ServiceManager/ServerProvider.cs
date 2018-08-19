@@ -137,6 +137,21 @@ namespace SignalGo.Server.ServiceManager
                             //        StreamServices.Add(type);
                             //}
                         }
+                        else if (att.ServiceType == ServiceType.OneWayService)
+                        {
+                            RegisterServerService(type);
+                            //if (!StreamServices.Contains(type))
+                            //{
+                            //    if (type.GetIsInterface())
+                            //    {
+                            //        var find = GetMainInheritancedType(type, AllTypes);
+                            //        if (find != null)
+                            //            StreamServices.Add(find);
+                            //    }
+                            //    else
+                            //        StreamServices.Add(type);
+                            //}
+                        }
                     }
                 }
             }

@@ -169,10 +169,9 @@ namespace SignalGo.Server.ServiceManager.Versions
                 }
                 else if (firstLineString.Contains("SignalGo-OneWay/4.0"))
                 {
-                    //client = CreateClientInfo(false, tcpClient);
-                    //client.IsWebSocket = false;
-                    //OneWayProvider.RunMethod(this, tcpClient.GetStream(), client);
-                    _serverBase.DisposeClient(client, "AddClient end signalgo OneWay");
+                    client = CreateClientInfo(false, tcpClient);
+                    client.StreamHelper = SignalGoStreamBase.CurrentBase;
+                    OneWayServiceProvider.StartToReadingClientData(client, _serverBase);
                 }
                 else if (firstLineString.Contains("SignalGo/4.0"))
                 {

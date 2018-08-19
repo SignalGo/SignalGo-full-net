@@ -110,6 +110,18 @@ namespace SignalGo.Shared.DataTypes
     public static class ServiceContractExtensions
     {
         /// <summary>
+        /// get service name from ServiceContractAttribute
+        /// </summary>
+        /// <param name="serviceContract"></param>
+        /// <returns></returns>
+        public static string GetServiceName(this ServiceContractAttribute serviceContract)
+        {
+            if (serviceContract.ServiceType == ServiceType.HttpService)
+                return serviceContract.Name.ToLower();
+            return (serviceContract.Name + serviceContract.ServiceType.ToString()).ToLower();
+        }
+
+        /// <summary>
         /// get server service name from ServiceContractAttribute
         /// </summary>
         /// <param name="type"></param>
@@ -117,7 +129,9 @@ namespace SignalGo.Shared.DataTypes
         public static string GetServerServiceName(this Type type)
         {
             var serviceContract = type.GetServerServiceAttribute();
-            return serviceContract.Name;
+            if (serviceContract.ServiceType == ServiceType.HttpService)
+                return serviceContract.Name.ToLower();
+            return (serviceContract.Name + serviceContract.ServiceType.ToString()).ToLower();
         }
 
         /// <summary>
@@ -128,7 +142,9 @@ namespace SignalGo.Shared.DataTypes
         public static string GetClientServiceName(this Type type)
         {
             var serviceContract = type.GetClientServiceAttribute();
-            return serviceContract.Name;
+            if (serviceContract.ServiceType == ServiceType.HttpService)
+                return serviceContract.Name.ToLower();
+            return (serviceContract.Name + serviceContract.ServiceType.ToString()).ToLower();
         }
 
         /// <summary>
@@ -194,7 +210,7 @@ namespace SignalGo.Shared.DataTypes
         /// <returns></returns>
         public static ServiceContractAttribute GetServerServiceAttribute(this Type type, string serviceName)
         {
-            var serviceContract = type.GetCustomAttributes<ServiceContractAttribute>(true).Where(x => x.ServiceType == ServiceType.ServerService || x.ServiceType == ServiceType.HttpService || x.ServiceType == ServiceType.StreamService || x.ServiceType == ServiceType.OneWayService).Where(x => x.Name.Equals(serviceName, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
+            var serviceContract = type.GetCustomAttributes<ServiceContractAttribute>(true).Where(x => x.ServiceType == ServiceType.ServerService || x.ServiceType == ServiceType.HttpService || x.ServiceType == ServiceType.StreamService || x.ServiceType == ServiceType.OneWayService).Where(x => x.GetServiceName().Equals(serviceName, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
             if (serviceContract == null)
                 throw new Exception("your server class must have ServiceContract attribute that have ServiceType == ServiceType.SeverService parameter");
             return serviceContract;

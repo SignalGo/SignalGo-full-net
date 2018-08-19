@@ -129,24 +129,32 @@ namespace SignalGo.Server.ServiceManager
         /// object is your return value
         /// </summary>
         public Func<Exception, Type, MethodInfo, object> ErrorHandlingFunction { get; set; }
-
+        /// <summary>
+        /// Register server service
+        /// </summary>
+        /// <param name="serviceType"></param>
+        public void RegisterServerService<T>()
+        {
+            RegisterServerService(typeof(T));
+        }
         /// <summary>
         /// Register server service
         /// </summary>
         /// <param name="serviceType"></param>
         public void RegisterServerService(Type serviceType)
         {
-            var service = serviceType.GetServerServiceAttribute();
-            if (service != null)
+            var services = serviceType.GetServiceContractAttributes();
+            foreach (var service in services)
             {
-                var name = service.Name.ToLower();
+                var name = service.GetServiceName().ToLower();
                 if (!RegisteredServiceTypes.ContainsKey(name))
                     RegisteredServiceTypes.TryAdd(name, serviceType);
             }
-            else
-            {
-                throw new NotSupportedException("your service is not type of ServerService or HttpService or StreamService");
-            }
+        }
+
+        public void RegisterClientService<T>()
+        {
+            RegisterClientService(typeof(T));
         }
 
         public void RegisterClientService(Type serviceType)
@@ -154,7 +162,7 @@ namespace SignalGo.Server.ServiceManager
             var service = serviceType.GetClientServiceAttribute();
             if (service != null)
             {
-                var name = service.Name.ToLower();
+                var name = service.GetServiceName().ToLower();
                 if (!RegisteredServiceTypes.ContainsKey(name))
                     RegisteredServiceTypes.TryAdd(name, serviceType);
             }
