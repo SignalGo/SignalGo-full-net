@@ -595,7 +595,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 {
                     item.Value = null;
                 }
-                var result = CallMethod(address, _guid, methodName, values == null ? null : values.ToArray(), client, "", serverBase, fileInfo, canTakeMethod, out List<HttpKeyAttribute> httpKeyAttributes, out serviceType, out method, out serviceInstance, out FileActionResult fileActionResult);
+                var result = CallMethod(address, _guid, methodName, values == null ? null : values.ToArray(), client, "", serverBase, fileInfo, canTakeMethod,out IStreamInfo streamInfo, out List<HttpKeyAttribute> httpKeyAttributes, out serviceType, out method, out serviceInstance, out FileActionResult fileActionResult);
 
                 if (result.IsException || result.IsAccessDenied)
                 {

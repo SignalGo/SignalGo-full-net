@@ -337,11 +337,14 @@ namespace SignalGo.Client.ClientManager
                     string methodName = method.Name;
                     if (methodName.EndsWith("Async"))
                         methodName = methodName.Substring(0, methodName.Length - 5);
-                    var task = Task.Factory.StartNew(() =>
+#if (NET40 || NET35)
+                    return Task.Factory.StartNew(() =>
+#else
+                    return Task.Run(() =>
+#endif
                     {
                         ConnectorExtensions.SendData(this, serviceName, methodName, method.MethodToParameters(x => ClientSerializationHelper.SerializeObject(x), args).ToArray());
                     });
-                    return task;
                 }
                 //this is async function
                 else if (method.ReturnType.GetBaseType() == typeof(Task))
@@ -354,7 +357,7 @@ namespace SignalGo.Client.ClientManager
                     var findMethod = typeof(ConnectorExtensions).FindMethod("SendDataTask", BindingFlags.Static | BindingFlags.NonPublic);
                     var methodType = method.ReturnType.GetListOfGenericArguments().FirstOrDefault();
                     var madeMethod = findMethod.MakeGenericMethod(methodType);
-                    return madeMethod.Invoke(this, new object[] { this, serviceName, methodName, method.MethodToParameters(x => ClientSerializationHelper.SerializeObject(x), args).ToArray() });
+                    return madeMethod.Invoke(this, new object[] { this, serviceName, methodName, method, args });
 
 #else
                     throw new NotSupportedException();
@@ -501,7 +504,7 @@ namespace SignalGo.Client.ClientManager
 
             //var json = JsonConvert.SerializeObject(Data);
             //var jsonBytes = Encoding.UTF8.GetBytes(json);
-            var header = "SignalGo-Stream/2.0\r\n";
+            var header = "SignalGo-Stream/4.0\r\n";
             var bytes = Encoding.UTF8.GetBytes(header);
             stream.Write(bytes, 0, bytes.Length);
             bool isUpload = false;
@@ -582,8 +585,11 @@ namespace SignalGo.Client.ClientManager
                     }
                 }
             }
-
-
+            else
+            {
+                var dataTypeByte = StreamHelper.ReadOneByte(readStream, compressMode, ProviderSetting.MaximumReceiveStreamHeaderBlock);
+                var compressModeByte = StreamHelper.ReadOneByte(readStream, compressMode, ProviderSetting.MaximumReceiveStreamHeaderBlock);
+            }
             var callBackBytes = StreamHelper.ReadBlockToEnd(readStream, compressMode, ProviderSetting.MaximumReceiveStreamHeaderBlock);
             var callbackInfo = ClientSerializationHelper.DeserializeObject<MethodCallbackInfo>(Encoding.UTF8.GetString(callBackBytes, 0, callBackBytes.Length));
             var methodType = method.ReturnType;
@@ -600,7 +606,7 @@ namespace SignalGo.Client.ClientManager
 #endif
                         ).SetValue(result, new Action(() =>
                         {
-                            stream.Write(new byte[] { 0 }, 0, 1);
+                            //stream.Write(new byte[] { 0 }, 0, 1);
                             result.GetType().GetPropertyInfo("GetStreamAction"
 #if (!PORTABLE)
                         , BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance
@@ -654,7 +660,7 @@ namespace SignalGo.Client.ClientManager
             var json = ClientSerializationHelper.SerializeObject(callInfo);
             var jsonBytes = Encoding.UTF8.GetBytes(json);
 
-            var line = "SignalGo-OneWay/2.0" + Environment.NewLine;
+            var line = "SignalGo-OneWay/4.0" + Environment.NewLine;
             var lineBytes = Encoding.UTF8.GetBytes(line);
             var streamHelper = new SignalGoStreamBase();
             streamHelper.WriteToStream(stream, lineBytes);

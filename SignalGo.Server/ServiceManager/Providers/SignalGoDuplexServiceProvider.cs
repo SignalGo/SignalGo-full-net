@@ -16,11 +16,7 @@ namespace SignalGo.Server.ServiceManager.Providers
     /// </summary>
     public class SignalGoDuplexServiceProvider : BaseProvider
     {
-#if (NET35 || NET40)
         public static void StartToReadingClientData(ClientInfo client, ServerBase serverBase)
-#else
-        public static void StartToReadingClientData(ClientInfo client, ServerBase serverBase)
-#endif
         {
             try
             {
@@ -56,8 +52,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                                 continue;
                         }
                         var callbackResult = CallMethod(callInfo, client, json, serverBase);
-                        SendCallbackData(callbackResult, client, serverBase);
-
+                        SendCallbackDataAsync(callbackResult, client, serverBase);
                     }
 
                     //reponse of client method that server called to client
@@ -133,55 +128,6 @@ namespace SignalGo.Server.ServiceManager.Providers
             {
                 serverBase.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase SignalGoDuplexServiceProvider StartToReadingClientData");
                 serverBase.DisposeClient(client, "SignalGoDuplexServiceProvider StartToReadingClientData exception");
-            }
-        }
-
-        /// <summary>
-        /// send result of calling method from client
-        /// client is waiting for get response from server when calling method
-        /// </summary>
-        /// <param name="callback"></param>
-        /// <param name="client"></param>
-        /// <param name="serverBase"></param>
-#if (NET35 || NET40)
-        static void SendCallbackData(Task<MethodCallbackInfo> callback, ClientInfo client, ServerBase serverBase)
-#else
-        static async void SendCallbackData(Task<MethodCallbackInfo> callback, ClientInfo client, ServerBase serverBase)
-#endif
-        {
-            try
-            {
-#if (NET35 || NET40)
-                var result = callback.Result;
-#else
-                var result = await callback;
-#endif
-                string json = ServerSerializationHelper.SerializeObject(result, serverBase);
-                byte[] bytes = Encoding.UTF8.GetBytes(json);
-                //if (ClientsSettings.ContainsKey(client))
-                //    bytes = EncryptBytes(bytes, client);
-                byte[] len = BitConverter.GetBytes(bytes.Length);
-                List<byte> data = new List<byte>
-                    {
-                        (byte)DataType.ResponseCallMethod,
-                        (byte)CompressMode.None
-                    };
-                data.AddRange(len);
-                data.AddRange(bytes);
-                if (data.Count > serverBase.ProviderSetting.MaximumSendDataBlock)
-                    throw new Exception($"{client.IPAddress} {client.ClientId} SendCallbackData data length exceeds MaximumSendDataBlock");
-
-                client.StreamHelper.WriteToStream(client.ClientStream, data.ToArray());
-            }
-            catch (Exception ex)
-            {
-                serverBase.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase SendCallbackData");
-                if (!client.TcpClient.Connected)
-                    serverBase.DisposeClient(client, "SendCallbackData exception");
-            }
-            finally
-            {
-                //ClientConnectedCallingCount--;
             }
         }
     }

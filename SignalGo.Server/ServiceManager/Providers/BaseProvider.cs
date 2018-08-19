@@ -35,7 +35,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 serverBase.TaskOfClientInfoes.TryAdd(Task.CurrentId.GetValueOrDefault(), client.ClientId);
                 try
                 {
-                    return CallMethod(callInfo.ServiceName, callInfo.Guid, callInfo.MethodName, callInfo.Parameters.ToArray(), client, json, serverBase, null, null, out List<HttpKeyAttribute> httpKeyAttributes, out Type serviceType, out MethodInfo method, out object serviceInsatnce, out FileActionResult fileActionResult);
+                    return CallMethod(callInfo.ServiceName, callInfo.Guid, callInfo.MethodName, callInfo.Parameters.ToArray(), client, json, serverBase, null, null, out IStreamInfo streamInfo, out List<HttpKeyAttribute> httpKeyAttributes, out Type serviceType, out MethodInfo method, out object serviceInsatnce, out FileActionResult fileActionResult);
                 }
                 finally
                 {
@@ -45,7 +45,7 @@ namespace SignalGo.Server.ServiceManager.Providers
             });
         }
 
-        static internal MethodCallbackInfo CallMethod(string serviceName, string guid, string methodName, SignalGo.Shared.Models.ParameterInfo[] parameters, ClientInfo client, string json, ServerBase serverBase, HttpPostedFileInfo fileInfo, Func<MethodInfo, bool> canTakeMethod, out List<HttpKeyAttribute> httpKeyAttributes, out Type serviceType, out MethodInfo method, out object service, out FileActionResult fileActionResult)
+        static internal MethodCallbackInfo CallMethod(string serviceName, string guid, string methodName, SignalGo.Shared.Models.ParameterInfo[] parameters, ClientInfo client, string json, ServerBase serverBase, HttpPostedFileInfo fileInfo, Func<MethodInfo, bool> canTakeMethod, out IStreamInfo streamInfo, out List<HttpKeyAttribute> httpKeyAttributes, out Type serviceType, out MethodInfo method, out object service, out FileActionResult fileActionResult)
         {
             serviceName = serviceName.ToLower();
             httpKeyAttributes = new List<HttpKeyAttribute>();
@@ -56,6 +56,7 @@ namespace SignalGo.Server.ServiceManager.Providers
             service = null;
             Exception exception = null;
             fileActionResult = null;
+            streamInfo = null;
             MethodCallbackInfo callback = new MethodCallbackInfo()
             {
                 Guid = guid
@@ -119,10 +120,20 @@ namespace SignalGo.Server.ServiceManager.Providers
                         var parameterDataExchanger = customDataExchanger.ToList();
                         parameterDataExchanger.AddRange(GetMethodParameterBinds(index, allMethods.ToArray()).Where(x => x.GetExchangerByUserCustomization(client)));
                         var resultJson = ServerSerializationHelper.Deserialize(item.Value, prms[index].ParameterType, serverBase, customDataExchanger: parameterDataExchanger.ToArray(), client: client);
+
                         if (resultJson == null)
-                            parametersValues.Add(item.Value);
+                        {
+                            if (string.IsNullOrEmpty(item.Value))
+                                parametersValues.Add(null);
+                            else
+                                parametersValues.Add(item.Value);
+                        }
                         else
+                        {
                             parametersValues.Add(resultJson);
+                            if (resultJson is IStreamInfo _streamInfo)
+                                _streamInfo.Stream = client.ClientStream;
+                        }
                     }
                     index++;
                 }
@@ -191,7 +202,8 @@ namespace SignalGo.Server.ServiceManager.Providers
                         break;
                     }
                 }
-
+                //var data = (IStreamInfo)parametersValues.FirstOrDefault(x => x.GetType() == typeof(StreamInfo) || (x.GetType().GetIsGenericType() && x.GetType().GetGenericTypeDefinition() == typeof(StreamInfo<>)));
+                //var upStream = new UploadStreamGo(stream);
                 if (canCall)
                 {
                     try
@@ -272,7 +284,11 @@ namespace SignalGo.Server.ServiceManager.Providers
                         if (result is FileActionResult fResult)
                             fileActionResult = fResult;
                         else
+                        {
+                            if (result is IStreamInfo iSResult)
+                                streamInfo = iSResult;
                             callback.Data = result == null ? null : ServerSerializationHelper.SerializeObject(result, serverBase, customDataExchanger: customDataExchanger.ToArray(), client: client);
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -510,6 +526,69 @@ namespace SignalGo.Server.ServiceManager.Providers
                 name += " " + item.Name + " ";
             }
             return name;
+        }
+
+
+        /// <summary>
+        /// send result of calling method from client
+        /// client is waiting for get response from server when calling method
+        /// </summary>
+        /// <param name="callback"></param>
+        /// <param name="client"></param>
+        /// <param name="serverBase"></param>
+#if (NET35 || NET40)
+        internal static void SendCallbackDataAsync(Task<MethodCallbackInfo> callback, ClientInfo client, ServerBase serverBase)
+#else
+        internal static async void SendCallbackDataAsync(Task<MethodCallbackInfo> callback, ClientInfo client, ServerBase serverBase)
+#endif
+        {
+            try
+            {
+#if (NET35 || NET40)
+                var result = callback.Result;
+#else
+                var result = await callback;
+#endif
+                SendCallbackData(result, client, serverBase);
+            }
+            catch (Exception ex)
+            {
+                serverBase.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase SendCallbackData");
+                if (!client.TcpClient.Connected)
+                    serverBase.DisposeClient(client, "SendCallbackData exception");
+            }
+            finally
+            {
+                //ClientConnectedCallingCount--;
+            }
+        }
+
+
+        /// <summary>
+        /// send result of calling method from client
+        /// client is waiting for get response from server when calling method
+        /// </summary>
+        /// <param name="callback"></param>
+        /// <param name="client"></param>
+        /// <param name="serverBase"></param>
+        internal static void SendCallbackData(MethodCallbackInfo callback, ClientInfo client, ServerBase serverBase)
+        {
+            string json = ServerSerializationHelper.SerializeObject(callback, serverBase);
+            byte[] bytes = Encoding.UTF8.GetBytes(json);
+            //if (ClientsSettings.ContainsKey(client))
+            //    bytes = EncryptBytes(bytes, client);
+            byte[] len = BitConverter.GetBytes(bytes.Length);
+            List<byte> data = new List<byte>
+                    {
+                        (byte)DataType.ResponseCallMethod,
+                        (byte)CompressMode.None
+                    };
+            data.AddRange(len);
+            data.AddRange(bytes);
+            if (data.Count > serverBase.ProviderSetting.MaximumSendDataBlock)
+                throw new Exception($"{client.IPAddress} {client.ClientId} SendCallbackData data length exceeds MaximumSendDataBlock");
+
+            client.StreamHelper.WriteToStream(client.ClientStream, data.ToArray());
         }
     }
 }

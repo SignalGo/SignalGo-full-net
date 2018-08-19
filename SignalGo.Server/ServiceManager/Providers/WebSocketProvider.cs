@@ -160,7 +160,7 @@ namespace SignalGo.Server.ServiceManager.Providers
         /// <param name="callback"></param>
         /// <param name="client"></param>
         /// <param name="serverBase"></param>
-        static void SendCallbackData(MethodCallbackInfo callback, ClientInfo client, ServerBase serverBase)
+        new static void SendCallbackData(MethodCallbackInfo callback, ClientInfo client, ServerBase serverBase)
         {
             try
             {

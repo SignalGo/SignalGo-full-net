@@ -137,20 +137,18 @@ namespace SignalGo.Client.ClientManager
             return SendData(connector, callInfo);
         }
 
-        internal static Task<T> SendDataTask<T>(ConnectorBase connector, string serviceName, string methodName, params Shared.Models.ParameterInfo[] args)
+        internal static Task<T> SendDataTask<T>(ConnectorBase connector, string serviceName, string methodName, MethodInfo method, params object[] args)
         {
             MethodCallInfo callInfo = new MethodCallInfo();
             callInfo.ServiceName = serviceName;
-
             callInfo.MethodName = methodName;
-            callInfo.Parameters = args;
             //foreach (var item in args)
             //{
             //    callInfo.Parameters.Add(new Shared.Models.ParameterInfo() { Value = ClientSerializationHelper.SerializeObject(item), Name = item?.GetType().FullName });
             //}
             var guid = Guid.NewGuid().ToString();
             callInfo.Guid = guid;
-            return SendDataAsync<T>(connector, callInfo);
+            return SendDataAsync<T>(connector, method, callInfo, args);
         }
 
         static string SendData(this ConnectorBase connector, MethodCallInfo callInfo)
@@ -234,10 +232,15 @@ namespace SignalGo.Client.ClientManager
 
         }
 
-        static Task<T> SendDataAsync<T>(this ConnectorBase connector, MethodCallInfo callInfo)
+        static Task<T> SendDataAsync<T>(this ConnectorBase connector, MethodInfo method, MethodCallInfo callInfo, object[] args)
         {
+#if (NET40 || NET35)
             return Task<T>.Factory.StartNew(() =>
+#else
+            return Task.Run(() =>
+#endif
             {
+                callInfo.Parameters = method.MethodToParameters(x => ClientSerializationHelper.SerializeObject(x), args).ToArray();
                 var result = SendData(connector, callInfo);
                 var deserialeResult = ClientSerializationHelper.DeserializeObject(result, typeof(T));
                 return (T)deserialeResult;

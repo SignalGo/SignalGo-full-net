@@ -651,7 +651,11 @@ namespace SignalGo.Server.Helpers
 
         internal static Type GetEnumType(string enumName)
         {
+#if (NETSTANDARD)
+            foreach (var assembly in SignalGo.Shared.Helpers.AppDomain.CurrentDomain.GetAssemblies())
+#else
             foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+#endif
             {
                 var type = assembly.GetType(enumName);
                 if (type == null)
