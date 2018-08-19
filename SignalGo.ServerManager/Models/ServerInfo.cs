@@ -1,5 +1,6 @@
 ﻿using MvvmGo.ViewModels;
-using SignalGo.ServerManager.Helpers;
+using Newtonsoft.Json;
+using SignalGo.Shared.Log;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -21,12 +22,26 @@ namespace SignalGo.ServerManager.Models
 
         public override void Write(char value)
         {
-            TextAddedAction?.Invoke(ServerName, value.ToString());
+            try
+            {
+                TextAddedAction?.Invoke(ServerName, value.ToString());
+            }
+            catch (Exception ex)
+            {
+                AutoLogger.Default.LogError(ex, "Write char");
+            }
         }
 
         public override void Write(string value)
         {
-            TextAddedAction?.Invoke(ServerName, value);
+            try
+            {
+                TextAddedAction?.Invoke(ServerName, value);
+            }
+            catch (Exception ex)
+            {
+                AutoLogger.Default.LogError(ex, "Write string");
+            }
         }
 
         public override Encoding Encoding
@@ -62,9 +77,14 @@ namespace SignalGo.ServerManager.Models
 
     public class ServerInfo : BaseViewModel
     {
+        [JsonIgnore]
         public ObservableCollection<TextLogInfo> Logs { get; set; } = new ObservableCollection<TextLogInfo>();
 
-        public ServerInfoBase CurrentServerBase { get; set; }
+        [JsonIgnore]
+        public ServerProcessInfoBase CurrentServerBase { get; set; }
+        [JsonIgnore]
+        public Action ProcessStarted { get; set; }
+
         string _Name;
         string _AssemblyPath;
         ServerInfoStatus _status = ServerInfoStatus.Stopped;
@@ -94,6 +114,7 @@ namespace SignalGo.ServerManager.Models
             }
         }
 
+        [JsonIgnore]
         public ServerInfoStatus Status
         {
             get

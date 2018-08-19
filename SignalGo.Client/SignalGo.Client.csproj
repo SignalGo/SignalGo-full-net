@@ -2,7 +2,7 @@
 <Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
   <!--<Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />-->
   <PropertyGroup>
-    <TargetFrameworks>net45;net40;net35;netstandard1.6;portable45-net45+win8;portable-net45+win8+wpa81;netstandard2.0;</TargetFrameworks>
+    <TargetFrameworks>net45;net40;net35;netstandard1.6;netstandard2.0;</TargetFrameworks>
     <MinimumVisualStudioVersion>10.0</MinimumVisualStudioVersion>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -88,24 +88,6 @@
   <PropertyGroup Condition="'$(TargetFramework)'=='net45'">
     <DefineConstants>NET45;$(AdditionalConstants)</DefineConstants>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(TargetFramework)'=='portable45-net45+win8'">
-    <TargetFrameworkIdentifier>.NETPortable</TargetFrameworkIdentifier>
-    <AssemblyTitle>SignalGo.Shared .NET Portable</AssemblyTitle>
-    <TargetFrameworkProfile>Profile7</TargetFrameworkProfile>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <NugetTargetMoniker>.NETPortable,Version=v4.5,Profile=Profile7</NugetTargetMoniker>
-    <LanguageTargets>$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets</LanguageTargets>
-    <DefineConstants>PORTABLE;$(AdditionalConstants)</DefineConstants>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(TargetFramework)'=='portable-net45+win8+wpa81'">
-    <TargetFrameworkIdentifier>.NETPortable</TargetFrameworkIdentifier>
-    <AssemblyTitle>SignalGo.Shared .NET Portable</AssemblyTitle>
-    <TargetFrameworkProfile>Profile111</TargetFrameworkProfile>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <NugetTargetMoniker>.NETPortable,Version=v0.0,Profile=Profile111</NugetTargetMoniker>
-    <LanguageTargets>$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets</LanguageTargets>
-    <DefineConstants>PORTABLE;$(AdditionalConstants)</DefineConstants>
-  </PropertyGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'portable45-net45+win8'">
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
     <PackageReference Include="rda.SocketsForPCL" Version="2.0.2" />
@@ -183,8 +165,6 @@
       <Project>{78D8601B-E331-47B7-A4A8-46B7460D82A4}</Project>
       <Name>SignalGo.Shared</Name>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <Folder Include="Properties\" />
   </ItemGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

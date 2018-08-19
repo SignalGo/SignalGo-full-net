@@ -12,21 +12,23 @@ namespace SignalGo.Shared.IO
 {
     public class CustomStreamReader : Stream
     {
-#if (!PORTABLE)
-        NetworkStream CurrentStream { get; set; }
 
-        public CustomStreamReader(NetworkStream currentStream)
-        {
-            CurrentStream = currentStream;
-        }
-#else
         Stream CurrentStream { get; set; }
+#if (!PORTABLE)
+        NetworkStream NetworkStream { get; set; }
+#endif
 
         public CustomStreamReader(Stream currentStream)
         {
             CurrentStream = currentStream;
-        }
+#if (!PORTABLE)
+            if (currentStream is NetworkStream)
+            {
+                NetworkStream = currentStream as NetworkStream;
+            }
 #endif
+        }
+
         public int LastByteRead { get; set; } = -5;
 
         public override bool CanRead => CurrentStream.CanRead;
@@ -68,16 +70,12 @@ namespace SignalGo.Shared.IO
         public string ReadLine()
         {
             List<byte> result = new List<byte>();
-#if (!PORTABLE)
             bool isFirst = true;
-#endif
             do
             {
-#if (!PORTABLE)
                 if (!CheckDataAvalable(isFirst))
                     break;
                 isFirst = false;
-#endif
                 int data = CurrentStream.ReadByte();
                 LastByteRead = data;
                 if (data == -1)
@@ -85,10 +83,8 @@ namespace SignalGo.Shared.IO
                 result.Add((byte)data);
                 if (data == 13)
                 {
-#if (!PORTABLE)
                     if (!CheckDataAvalable(isFirst))
                         break;
-#endif
                     data = CurrentStream.ReadByte();
                     LastByteRead = data;
                     if (data == -1)
@@ -102,20 +98,24 @@ namespace SignalGo.Shared.IO
             LastBytesReaded = result.ToArray();
             return Encoding.UTF8.GetString(LastBytesReaded, 0, LastBytesReaded.Length);
         }
-#if (!PORTABLE)
         bool CheckDataAvalable(bool isFirstCall)
         {
-            if (isFirstCall || CurrentStream.DataAvailable)
+#if (!PORTABLE)
+            if (NetworkStream == null)
+                return true;
+            if (isFirstCall || NetworkStream.DataAvailable)
                 return true;
             for (int i = 0; i < 50; i++)
             {
-                if (!CurrentStream.DataAvailable)
+                if (!NetworkStream.DataAvailable)
                     Thread.Sleep(100);
                 else
                     break;
             }
-            return CurrentStream.DataAvailable;
-        }
+            return NetworkStream.DataAvailable;
+#else
+            return true;
 #endif
+        }
     }
 }

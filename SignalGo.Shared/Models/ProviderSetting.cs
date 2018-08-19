@@ -5,10 +5,7 @@ using System.Text;
 
 namespace SignalGo.Shared.Models
 {
-    /// <summary>
-    /// server or client connector provider setting
-    /// </summary>
-    public class ProviderSetting
+    public class HttpSetting
     {
         /// <summary>
         /// when you want to use timeouts on your provider set it true
@@ -22,6 +19,30 @@ namespace SignalGo.Shared.Models
         /// maximum value of timeout to wait for receive callbackinfo data
         /// </summary>
         public TimeSpan ReceiveDataTimeout { get; set; } = new TimeSpan(0, 0, 30);
+    }
+
+    public class ServerServiceSetting
+    {
+        /// <summary>
+        /// when you want to use timeouts on your provider set it true
+        /// </summary>
+        public bool IsEnabledToUseTimeout { get; set; }
+        /// <summary>
+        /// maximum value of timeout to wait for send data
+        /// </summary>
+        public TimeSpan SendDataTimeout { get; set; } = new TimeSpan(0, 0, 30);
+        /// <summary>
+        /// maximum value of timeout to wait for receive callbackinfo data
+        /// </summary>
+        public TimeSpan ReceiveDataTimeout { get; set; } = new TimeSpan(0, 0, 30);
+    }
+    /// <summary>
+    /// server or client connector provider setting
+    /// </summary>
+    public class ProviderSetting
+    {
+        public HttpSetting HttpSetting { get; set; } = new HttpSetting();
+        public ServerServiceSetting ServerServiceSetting { get; set; } = new ServerServiceSetting();
         /// <summary>
         /// maximum send data block
         /// </summary>

@@ -3,6 +3,7 @@ using MvvmGo.ViewModels;
 using Newtonsoft.Json;
 using SignalGo.ServerManager.Models;
 using SignalGo.ServerManager.Views;
+using SignalGo.Shared.Log;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -65,14 +66,27 @@ namespace SignalGo.ServerManager.ViewModels
 
         public void Load()
         {
-            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "database.db") ;
-            if (File.Exists(path))
+            try
             {
-                var servers = JsonConvert.DeserializeObject<List<ServerInfo>>(File.ReadAllText(path, Encoding.UTF8));
-                foreach (var item in servers)
+                var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "database.db");
+                if (File.Exists(path))
                 {
-                    This.Servers.Add(item);
+                    var servers = JsonConvert.DeserializeObject<List<ServerInfo>>(File.ReadAllText(path, Encoding.UTF8));
+                    foreach (var item in servers)
+                    {
+                        item.Status = ServerInfoStatus.Stopped;
+                        This.Servers.Add(item);
+                    }
                 }
+
+                foreach (var server in Servers)
+                {
+                    ServerInfoViewModel.StartServer(server);
+                }
+            }
+            catch (Exception ex)
+            {
+                AutoLogger.Default.LogError(ex, "Load");
             }
         }
     }

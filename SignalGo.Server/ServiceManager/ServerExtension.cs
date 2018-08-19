@@ -8,7 +8,9 @@ using SignalGo.Shared.Helpers;
 using SignalGo.Shared.Models;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Net.Sockets;
 using System.Reflection;
 using System.Text;
 using System.Threading;
@@ -98,7 +100,7 @@ namespace SignalGo.Server.ServiceManager
             var waitedMethodsForResponse = client.ServerBase.WaitedMethodsForResponse[client.CurrentClient];
             waitedMethodsForResponse.TryAdd(guid, new KeyValue<AutoResetEvent, MethodCallbackInfo>(new AutoResetEvent(false), null));
             client.ServerBase.CallClientMethod(client.CurrentClient, callInfo);
-            var seted = waitedMethodsForResponse[guid].Key.WaitOne(client.ServerBase.ProviderSetting.SendDataTimeout);
+            var seted = waitedMethodsForResponse[guid].Key.WaitOne(client.ServerBase.ProviderSetting.ServerServiceSetting.SendDataTimeout);
             if (!seted)
             {
                 client.ServerBase.CheckClient(client.CurrentClient);
@@ -184,13 +186,13 @@ namespace SignalGo.Server.ServiceManager
             var waitedMethodsForResponse = client.ServerBase.WaitedMethodsForResponse[client];
             waitedMethodsForResponse.TryAdd(guid, new KeyValue<AutoResetEvent, MethodCallbackInfo>(new AutoResetEvent(false), null));
             client.ServerBase.CallClientMethod(client, callInfo);
-            var seted = waitedMethodsForResponse[guid].Key.WaitOne(client.ServerBase.ProviderSetting.ReceiveDataTimeout);
+            var seted = waitedMethodsForResponse[guid].Key.WaitOne(client.ServerBase.ProviderSetting.ServerServiceSetting.ReceiveDataTimeout);
             if (!seted)
             {
                 client.ServerBase.CheckClient(client);
                 waitedMethodsForResponse.Remove(guid);
                 var ex = new TimeoutException();
-                MethodsCallHandler.EndClientMethodCallAction?.Invoke(client,callInfo.Guid, callInfo.ServiceName, callInfo.MethodName, callInfo.Parameters.Cast<object>().ToArray(), null, ex);
+                MethodsCallHandler.EndClientMethodCallAction?.Invoke(client, callInfo.Guid, callInfo.ServiceName, callInfo.MethodName, callInfo.Parameters.Cast<object>().ToArray(), null, ex);
                 throw ex;
             }
             if (waitedMethodsForResponse[guid].Value.IsException)
@@ -206,6 +208,26 @@ namespace SignalGo.Server.ServiceManager
             return result;
         }
 
+        public static Stream GetTcpStream(this TcpClient tcpClient, ServerBase serverBase)
+        {
+            if (serverBase.HttpProtocolSetting.IsHttps)
+            {
+#if (!NETSTANDARD && !NETCOREAPP)
+                return SslTcpManager.GetStream(tcpClient, serverBase.HttpProtocolSetting.X509Certificate);
+#else
+                throw new NotSupportedException();
+#endif
+            }
+            else
+            {
+                return tcpClient.GetStream();
+            }
+        }
+
+        public static void Send(this Stream stream, byte[] bytes)
+        {
+            stream.Write(bytes, 0, bytes.Length);
+        }
     }
 
 }

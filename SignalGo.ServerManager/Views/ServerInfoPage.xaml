@@ -51,7 +51,7 @@
 				<Button Command="{Binding DeleteCommand}" Grid.Row="1" Grid.Column="2" VerticalAlignment="Bottom" Content="Delete" Width="100" Height="30" Margin="10,0,0,0"/>
 			</Grid>
 		</TabItem>
-		<TabItem Header="Log">
+		<TabItem Header="Window" Loaded="TabItem_Loaded">
 			<Grid Margin="10">
 				<Grid.RowDefinitions>
 					<RowDefinition Height="auto"/>

@@ -2,6 +2,8 @@
 using MvvmGo.ViewModels;
 using SignalGo.Server.ServiceManager;
 using SignalGo.ServerManager.Models;
+using SignalGo.ServerManager.Views;
+using SignalGo.Shared.Log;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -57,58 +59,62 @@ namespace SignalGo.ServerManager.ViewModels
         {
             if (ServerInfo.Status == ServerInfoStatus.Started)
             {
-                try
+                while (true)
                 {
-                    ServerInfo.CurrentServerBase.Dispose();
-                    ServerInfo.CurrentServerBase = null;
-                    ServerInfo.Status = ServerInfoStatus.Stopped;
-                }
-                catch (Exception ex)
-                {
-                    ServerInfo.Logs.Add(new TextLogInfo() { Text = ex.ToString(), IsDone = true });
-                }
-                finally
-                {
-                    GC.Collect();
-                    GC.WaitForFullGCComplete();
-                    GC.Collect();
+                    try
+                    {
+                        ServerInfo.CurrentServerBase.Dispose();
+                        ServerInfo.CurrentServerBase = null;
+                        ServerInfo.Status = ServerInfoStatus.Stopped;
+                        break;
+                    }
+                    catch (Exception ex)
+                    {
+                        AutoLogger.Default.LogError(ex, "Stop Server");
+                    }
+                    finally
+                    {
+                        GC.Collect();
+                        GC.WaitForFullGCComplete();
+                        GC.Collect();
+                    }
                 }
             }
         }
 
         private void Start()
         {
-            if (ServerInfo.Status == ServerInfoStatus.Stopped)
+            StartServer(ServerInfo);
+        }
+
+        public static void StartServer(ServerInfo serverInfo)
+        {
+            if (serverInfo.Status == ServerInfoStatus.Stopped)
             {
                 try
                 {
-                    ServerInfo.Status = ServerInfoStatus.Started;
-                    ServerInfo.CurrentServerBase = new Helpers.ServerInfoBase();
-                    //LogSystem logSystem = new LogSystem(ServerInfo.Logs);
-
-                    var logger = ServerInfo.CurrentServerBase.Start(ServerInfo.Name, ServerInfo.AssemblyPath);
-                    LogSystem logSystem = new LogSystem();
-
-                    logger.TextAddedAction = logSystem.Add;
-                    //LogSystem logSystem = new LogSystem();
-                    //AssemblyLoader.ConsoleWriterAction = logSystem.Add;
+                    serverInfo.Status = ServerInfoStatus.Started;
+                    serverInfo.CurrentServerBase = new ServerProcessInfoBase();
+                    serverInfo.CurrentServerBase.Start("App_" + serverInfo.Name, serverInfo.AssemblyPath);
+                    ServerInfoPage.SendToMainHostForHidden(serverInfo.CurrentServerBase.BaseProcess);
+                    serverInfo.ProcessStarted?.Invoke();
                 }
                 catch (Exception ex)
                 {
-                    ServerInfo.Logs.Add(new TextLogInfo() { Text = ex.ToString(), IsDone = true });
-                    if (ServerInfo.CurrentServerBase != null)
+                    AutoLogger.Default.LogError(ex, "StartServer");
+                    if (serverInfo.CurrentServerBase != null)
                     {
-                        ServerInfo.CurrentServerBase.Dispose();
-                        ServerInfo.CurrentServerBase = null;
+                        serverInfo.CurrentServerBase.Dispose();
+                        serverInfo.CurrentServerBase = null;
                     }
-                    ServerInfo.Status = ServerInfoStatus.Stopped;
+                    serverInfo.Status = ServerInfoStatus.Stopped;
                 }
             }
         }
 
         private void ClearLog()
         {
-            ServerInfo.Logs.Clear();
+            // ServerInfo.Logs.Clear();
         }
 
         private void Copy(TextLogInfo textLogInfo)
@@ -117,32 +123,4 @@ namespace SignalGo.ServerManager.ViewModels
         }
 
     }
-
-    public class LogSystem : MarshalByRefObject
-    {
-        public void Add(string serverName, string value)
-        {
-            MainWindow.This.Dispatcher.Invoke(() =>
-            {
-                var serverInfo = MainWindowViewModel.This.Servers.FirstOrDefault(x => x.Name == serverName);
-                if (serverInfo == null)
-                    return;
-                var _logs = serverInfo.Logs;
-                TextLogInfo textLogInfo;
-                if (_logs.Count == 0 || _logs.Last().IsDone)
-                {
-                    textLogInfo = new TextLogInfo();
-                    _logs.Add(textLogInfo);
-                }
-                else
-                    textLogInfo = _logs.Last();
-                textLogInfo.Text += value;
-                if (value == "\n")
-                    textLogInfo.IsDone = true;
-            });
-        }
-
-    }
-
-
 }
