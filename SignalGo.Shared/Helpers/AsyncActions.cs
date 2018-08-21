@@ -105,5 +105,33 @@ namespace SignalGo.Shared
                 }
             }
         }
+
+        public static Thread StartNew(Action action, Action<Exception> onException = null)
+        {
+            Thread thread = new Thread(() =>
+            {
+                try
+                {
+                    action();
+                }
+                catch (Exception ex)
+                {
+                    try
+                    {
+                        onException?.Invoke(ex);
+                        AutoLogger.LogError(ex, "AsyncActions Run");
+                        OnActionException?.Invoke(ex);
+                    }
+                    catch (Exception ex2)
+                    {
+                        AutoLogger.LogError(ex2, "AsyncActions Run 2");
+
+                    }
+                }
+            });
+            thread.IsBackground = true;
+            thread.Start();
+            return thread;
+        }
     }
 }
