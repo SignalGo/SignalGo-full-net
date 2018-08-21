@@ -1,13 +1,13 @@
 ﻿#if (!NET35)
+using SignalGo.Client;
+using SignalGo.Client.ClientManager;
+using SignalGo.Shared.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Dynamic;
-using SignalGo.Client;
 using System.Linq;
-using System.Text;
 using System.Reflection;
-using SignalGo.Shared.Helpers;
-using SignalGo.Client.ClientManager;
+using System.Text;
 
 namespace SignalGo.Client
 {
@@ -33,7 +33,7 @@ namespace SignalGo.Client
 
         public override bool TryInvokeMember(InvokeMemberBinder binder, object[] args, out object result)
         {
-            var type = ReturnTypes[binder.Name];
+            Type type = ReturnTypes[binder.Name];
             if (type == typeof(void))
             {
                 this.SendDataNoParam(binder.Name, ServiceName, binder.MethodToParameters(x => ClientSerializationHelper.SerializeObject(x), args).ToArray());
@@ -41,7 +41,7 @@ namespace SignalGo.Client
             }
             else
             {
-                var data = this.SendDataNoParam(binder.Name, ServiceName, binder.MethodToParameters(x => ClientSerializationHelper.SerializeObject(x), args).ToArray()).ToString();
+                string data = this.SendDataNoParam(binder.Name, ServiceName, binder.MethodToParameters(x => ClientSerializationHelper.SerializeObject(x), args).ToArray()).ToString();
                 result = Newtonsoft.Json.JsonConvert.DeserializeObject(data, type);
             }
             return true;
@@ -53,8 +53,8 @@ namespace SignalGo.Client
         /// <param name="type"></param>
         public void InitializeInterface(Type type)
         {
-            var items = type.GetListOfMethods();
-            foreach (var item in items)
+            IEnumerable<MethodInfo> items = type.GetListOfMethods();
+            foreach (MethodInfo item in items)
             {
                 ReturnTypes.Add(item.Name, item.ReturnType);
             }

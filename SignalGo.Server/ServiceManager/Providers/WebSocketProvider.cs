@@ -1,6 +1,5 @@
 ﻿using SignalGo.Server.Helpers;
 using SignalGo.Server.Models;
-using SignalGo.Shared.IO;
 using SignalGo.Shared.Managers;
 using SignalGo.Shared.Models;
 using System;
@@ -20,26 +19,26 @@ namespace SignalGo.Server.ServiceManager.Providers
             try
             {
                 Console.WriteLine($"WebSocket Client Connected: {client.IPAddress}");
-                var stream = client.ClientStream;
+                System.IO.Stream stream = client.ClientStream;
                 while (client.TcpClient.Connected)
                 {
-                    var oneByteOfDataType = client.StreamHelper.ReadOneByte(stream, CompressMode.None, serverBase.ProviderSetting.MaximumReceiveDataBlock);
+                    byte oneByteOfDataType = client.StreamHelper.ReadOneByte(stream, CompressMode.None, serverBase.ProviderSetting.MaximumReceiveDataBlock);
                     //type of data
-                    var dataType = (DataType)oneByteOfDataType;
+                    DataType dataType = (DataType)oneByteOfDataType;
                     if (dataType == DataType.PingPong)
                     {
                         client.StreamHelper.WriteToStream(client.ClientStream, new byte[] { 5 });
                         continue;
                     }
                     //compress mode of data
-                    var compressMode = (CompressMode)client.StreamHelper.ReadOneByte(stream, CompressMode.None, serverBase.ProviderSetting.MaximumReceiveDataBlock);
+                    CompressMode compressMode = (CompressMode)client.StreamHelper.ReadOneByte(stream, CompressMode.None, serverBase.ProviderSetting.MaximumReceiveDataBlock);
                     //a server service method called from client
                     if (dataType == DataType.CallMethod)
                     {
                         string json = "";
                         do
                         {
-                            var bytes = client.StreamHelper.ReadBlockToEnd(stream, compressMode, serverBase.ProviderSetting.MaximumReceiveDataBlock);
+                            byte[] bytes = client.StreamHelper.ReadBlockToEnd(stream, compressMode, serverBase.ProviderSetting.MaximumReceiveDataBlock);
                             //if (ClientsSettings.ContainsKey(client))
                             //    bytes = DecryptBytes(bytes, client);
                             json += Encoding.UTF8.GetString(bytes);
@@ -53,7 +52,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                         if (callInfo.PartNumber != 0)
                         {
                             SegmentManager segmentManager = new SegmentManager();
-                            var result = segmentManager.GenerateAndMixSegments(callInfo);
+                            ISegment result = segmentManager.GenerateAndMixSegments(callInfo);
                             if (result != null)
                                 callInfo = (MethodCallInfo)result;
                             else
@@ -61,7 +60,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                         }
 
 #if (NET35 || NET40)
-                        var callbackResult = CallMethod(callInfo, client, json, serverBase).Result;
+                        MethodCallbackInfo callbackResult = CallMethod(callInfo, client, json, serverBase).Result;
                         SendCallbackData(callbackResult, client, serverBase);
 #else
                         var callbackResult = await CallMethod(callInfo, client, json, serverBase);
@@ -72,17 +71,17 @@ namespace SignalGo.Server.ServiceManager.Providers
                     //reponse of client method that server called to client
                     else if (dataType == DataType.ResponseCallMethod)
                     {
-                        var bytes = client.StreamHelper.ReadBlockToEnd(stream, compressMode, serverBase.ProviderSetting.MaximumReceiveDataBlock);
+                        byte[] bytes = client.StreamHelper.ReadBlockToEnd(stream, compressMode, serverBase.ProviderSetting.MaximumReceiveDataBlock);
                         //if (ClientsSettings.ContainsKey(client))
                         //    bytes = DecryptBytes(bytes, client);
-                        var json = Encoding.UTF8.GetString(bytes);
+                        string json = Encoding.UTF8.GetString(bytes);
                         MethodCallbackInfo callback = ServerSerializationHelper.Deserialize<MethodCallbackInfo>(json, serverBase);
                         if (callback == null)
                             serverBase.AutoLogger.LogText($"{client.IPAddress} {client.ClientId} callback is null:" + json);
                         if (callback.PartNumber != 0)
                         {
                             SegmentManager segmentManager = new SegmentManager();
-                            var result = segmentManager.GenerateAndMixSegments(callback);
+                            ISegment result = segmentManager.GenerateAndMixSegments(callback);
                             if (result != null)
                                 callback = (MethodCallbackInfo)result;
                             else
@@ -101,21 +100,21 @@ namespace SignalGo.Server.ServiceManager.Providers
                     }
                     else if (dataType == DataType.GetServiceDetails)
                     {
-                        var bytes = client.StreamHelper.ReadBlockToEnd(stream, compressMode, serverBase.ProviderSetting.MaximumReceiveDataBlock);
+                        byte[] bytes = client.StreamHelper.ReadBlockToEnd(stream, compressMode, serverBase.ProviderSetting.MaximumReceiveDataBlock);
                         //if (ClientsSettings.ContainsKey(client))
                         //    bytes = DecryptBytes(bytes, client);
-                        var json = Encoding.UTF8.GetString(bytes);
-                        var hostUrl = ServerSerializationHelper.Deserialize<string>(json, serverBase);
+                        string json = Encoding.UTF8.GetString(bytes);
+                        string hostUrl = ServerSerializationHelper.Deserialize<string>(json, serverBase);
                         ServerServicesManager serverServicesManager = new ServerServicesManager();
                         serverServicesManager.SendServiceDetail(client, hostUrl, serverBase);
                     }
                     else if (dataType == DataType.GetMethodParameterDetails)
                     {
-                        var bytes = client.StreamHelper.ReadBlockToEnd(stream, compressMode, serverBase.ProviderSetting.MaximumReceiveDataBlock);
+                        byte[] bytes = client.StreamHelper.ReadBlockToEnd(stream, compressMode, serverBase.ProviderSetting.MaximumReceiveDataBlock);
                         //if (ClientsSettings.ContainsKey(client))
                         //    bytes = DecryptBytes(bytes, client);
-                        var json = Encoding.UTF8.GetString(bytes);
-                        var detail = ServerSerializationHelper.Deserialize<MethodParameterDetails>(json, serverBase);
+                        string json = Encoding.UTF8.GetString(bytes);
+                        MethodParameterDetails detail = ServerSerializationHelper.Deserialize<MethodParameterDetails>(json, serverBase);
                         ServerServicesManager serverServicesManager = new ServerServicesManager();
                         serverServicesManager.SendMethodParameterDetail(client, detail, serverBase);
                     }
@@ -160,22 +159,22 @@ namespace SignalGo.Server.ServiceManager.Providers
         /// <param name="callback"></param>
         /// <param name="client"></param>
         /// <param name="serverBase"></param>
-        new static void SendCallbackData(MethodCallbackInfo callback, ClientInfo client, ServerBase serverBase)
+        private static new void SendCallbackData(MethodCallbackInfo callback, ClientInfo client, ServerBase serverBase)
         {
             try
             {
                 string json = ServerSerializationHelper.SerializeObject(callback, serverBase);
                 if (json.Length > 30000)
                 {
-                    var listOfParts = GeneratePartsOfData(json);
+                    List<string> listOfParts = GeneratePartsOfData(json);
                     int i = 1;
-                    foreach (var item in listOfParts)
+                    foreach (string item in listOfParts)
                     {
-                        var cb = callback.Clone();
+                        MethodCallbackInfo cb = callback.Clone();
                         cb.PartNumber = i == listOfParts.Count ? (short)-1 : (short)i;
                         cb.Data = item;
                         json = (int)DataType.ResponseCallMethod + "," + (int)CompressMode.None + "/" + ServerSerializationHelper.SerializeObject(cb, serverBase);
-                        var result = Encoding.UTF8.GetBytes(json);
+                        byte[] result = Encoding.UTF8.GetBytes(json);
                         //if (ClientsSettings.ContainsKey(client))
                         //    result = EncryptBytes(result, client);
                         client.StreamHelper.WriteToStream(client.ClientStream, result);
@@ -185,7 +184,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 else
                 {
                     json = (int)DataType.ResponseCallMethod + "," + (int)CompressMode.None + "/" + json;
-                    var result = Encoding.UTF8.GetBytes(json);
+                    byte[] result = Encoding.UTF8.GetBytes(json);
                     //if (ClientsSettings.ContainsKey(client))
                     //    result = EncryptBytes(result, client);
                     client.StreamHelper.WriteToStream(client.ClientStream, result);
@@ -203,8 +202,7 @@ namespace SignalGo.Server.ServiceManager.Providers
             }
         }
 
-
-        static List<string> GeneratePartsOfData(string data)
+        private static List<string> GeneratePartsOfData(string data)
         {
             int partCount = (int)Math.Ceiling((double)data.Length / 30000);
             List<string> partData = new List<string>();

@@ -47,8 +47,8 @@ namespace SignalGo.Server.ServiceManager.Providers
             MethodCallbackInfo callback = null;
             try
             {
-                var bytes = client.StreamHelper.ReadBlockToEnd(client.ClientStream, CompressMode.None, serverBase.ProviderSetting.MaximumReceiveStreamHeaderBlock);
-                var json = Encoding.UTF8.GetString(bytes);
+                byte[] bytes = client.StreamHelper.ReadBlockToEnd(client.ClientStream, CompressMode.None, serverBase.ProviderSetting.MaximumReceiveStreamHeaderBlock);
+                string json = Encoding.UTF8.GetString(bytes);
                 MethodCallInfo callInfo = ServerSerializationHelper.Deserialize<MethodCallInfo>(json, serverBase);
                 //MethodsCallHandler.BeginStreamCallAction?.Invoke(client, guid, serviceName, methodName, values);
                 callback = CallMethod(callInfo.ServiceName, callInfo.Guid, callInfo.MethodName, callInfo.Parameters, client, null, serverBase, null, null, out IStreamInfo streamInfo, out List<HttpKeyAttribute> httpKeyAttributes, out Type serviceType, out MethodInfo method, out object service, out FileActionResult fileActionResult);
@@ -66,7 +66,7 @@ namespace SignalGo.Server.ServiceManager.Providers
             {
                 //MethodsCallHandler.EndStreamCallAction?.Invoke(client, guid, serviceName, methodName, values, jsonResult, exception);
             }
-            SendCallbackData(callback, client,serverBase);
+            SendCallbackData(callback, client, serverBase);
         }
     }
 }

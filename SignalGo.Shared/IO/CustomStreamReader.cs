@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 #if (!PORTABLE)
 using System.Net.Sockets;
 #endif
@@ -14,7 +12,7 @@ namespace SignalGo.Shared.IO
     public class CustomStreamReader : Stream
     {
 #if (!PORTABLE)
-        NetworkStream CurrentStream { get; set; }
+        private NetworkStream CurrentStream { get; set; }
 
         public CustomStreamReader(NetworkStream currentStream)
         {
@@ -30,15 +28,50 @@ namespace SignalGo.Shared.IO
 #endif
         public int LastByteRead { get; set; } = -5;
 
-        public override bool CanRead => CurrentStream.CanRead;
+        public override bool CanRead
+        {
+            get
+            {
+                return CurrentStream.CanRead;
+            }
+        }
 
-        public override bool CanSeek => CurrentStream.CanSeek;
+        public override bool CanSeek
+        {
+            get
+            {
+                return CurrentStream.CanSeek;
+            }
+        }
 
-        public override bool CanWrite => CurrentStream.CanWrite;
+        public override bool CanWrite
+        {
+            get
+            {
+                return CurrentStream.CanWrite;
+            }
+        }
 
-        public override long Length => CurrentStream.Length;
+        public override long Length
+        {
+            get
+            {
+                return CurrentStream.Length;
+            }
+        }
 
-        public override long Position { get => CurrentStream.Position; set => CurrentStream.Position = value; }
+        public override long Position
+        {
+            get
+            {
+                return CurrentStream.Position;
+            }
+
+            set
+            {
+                CurrentStream.Position = value;
+            }
+        }
 
         public override void Flush()
         {
@@ -92,7 +125,7 @@ namespace SignalGo.Shared.IO
                 byte data = await SignalGoStreamBase.CurrentBase.ReadOneByteAsync(CurrentStream);
 #endif
                 LastByteRead = data;
-                result.Add((byte)data);
+                result.Add(data);
                 if (data == 13)
                 {
 #if (!PORTABLE)
@@ -106,7 +139,7 @@ namespace SignalGo.Shared.IO
 #endif
                     LastByteRead = data;
 
-                    result.Add((byte)data);
+                    result.Add(data);
                     if (data == 10)
                         break;
                 }
@@ -117,7 +150,7 @@ namespace SignalGo.Shared.IO
             return Line;
         }
 #if (!PORTABLE)
-        bool CheckDataAvalable(bool isFirstCall)
+        private bool CheckDataAvalable(bool isFirstCall)
         {
             if (isFirstCall || CurrentStream.DataAvailable)
                 return true;

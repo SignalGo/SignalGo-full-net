@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-namespace SignalGo
+﻿namespace SignalGo
 {
     /// <summary>
     /// methods call and callback type

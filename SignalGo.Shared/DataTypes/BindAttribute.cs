@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace SignalGo.Shared.DataTypes
+﻿namespace SignalGo.Shared.DataTypes
 {
     public class BindAttribute : CustomDataExchangerAttribute
     {
@@ -13,10 +7,10 @@ namespace SignalGo.Shared.DataTypes
             base.LimitationMode = LimitExchangeType.Both;
         }
 
-        string _Exclude;
-        string _Include;
-        string[] _Excludes;
-        string[] _Includes;
+        private string _Exclude;
+        private string _Include;
+        private string[] _Excludes;
+        private string[] _Includes;
 
         public string Exclude
         {

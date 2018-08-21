@@ -3,7 +3,6 @@ using SignalGo.Shared.Models;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 
 namespace SignalGo.Shared.Managers
@@ -12,7 +11,7 @@ namespace SignalGo.Shared.Managers
     {
         internal ConcurrentDictionary<string, List<ISegment>> Segments { get; set; } = new ConcurrentDictionary<string, List<ISegment>>();
 
-        void AddToSegment(string guid, ISegment segment)
+        private void AddToSegment(string guid, ISegment segment)
         {
             if (Segments.ContainsKey(guid))
             {
@@ -34,7 +33,7 @@ namespace SignalGo.Shared.Managers
                 throw new Exception("segment is null!");
             if (segment is MethodCallInfo)
             {
-                var callInfo = (MethodCallInfo)segment;
+                MethodCallInfo callInfo = (MethodCallInfo)segment;
                 AddToSegment(callInfo.Guid, callInfo);
                 if (segment.PartNumber == -1)
                 {
@@ -51,7 +50,7 @@ namespace SignalGo.Shared.Managers
             }
             else if (segment is MethodCallbackInfo)
             {
-                var callbackInfo = (MethodCallbackInfo)segment;
+                MethodCallbackInfo callbackInfo = (MethodCallbackInfo)segment;
                 AddToSegment(callbackInfo.Guid, callbackInfo);
                 if (segment.PartNumber == -1)
                 {

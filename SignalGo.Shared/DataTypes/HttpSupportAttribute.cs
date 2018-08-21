@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace SignalGo.Shared.DataTypes
 {
@@ -50,7 +47,7 @@ namespace SignalGo.Shared.DataTypes
         /// is field of expire
         /// </summary>
         public bool IsExpireField { get; set; }
-        
+
 
         public HttpKeyAttribute()
         {

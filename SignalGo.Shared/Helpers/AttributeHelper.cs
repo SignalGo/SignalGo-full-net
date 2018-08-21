@@ -1,12 +1,9 @@
 ﻿using SignalGo.Shared.Helpers;
-using SignalGo.Shared.Models;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 
 namespace System
 {
@@ -94,7 +91,7 @@ namespace System
         public static ConcurrentDictionary<object, object[]> InheritCachedCustomAttributes = new ConcurrentDictionary<object, object[]>();
         public static ConcurrentDictionary<object, object[]> CachedCustomAttributes = new ConcurrentDictionary<object, object[]>();
 
-        static object[] TryAddCach(object type, bool inherit)
+        private static object[] TryAddCach(object type, bool inherit)
         {
 
             if (inherit)
@@ -104,7 +101,7 @@ namespace System
                 if (type is Type resultType)
                 {
                     List<object> items = new List<object>();
-                    var baseType = resultType;
+                    Type baseType = resultType;
                     do
                     {
 #if (NETSTANDARD || NETCOREAPP || PORTABLE)
@@ -117,7 +114,7 @@ namespace System
                     }
                     while (baseType != null);
 
-                    foreach (var interfaceType in resultType.GetListOfInterfaces())
+                    foreach (Type interfaceType in resultType.GetListOfInterfaces())
                     {
 #if (NETSTANDARD || NETCOREAPP || PORTABLE)
                         items.AddRange(interfaceType.GetTypeInfo().GetCustomAttributes().Cast<object>());
@@ -185,7 +182,7 @@ namespace System
 #if (NETSTANDARD || NETCOREAPP || PORTABLE)
             var typeInfo = type.GetTypeInfo();
 #else
-            var typeInfo = type;
+            Type typeInfo = type;
 #endif
             //if (ContainsCachKey(type, inherit))
             //    return GetCachValues(type, inherit).Where(x => x.GetType() == attributeType).ToArray();
@@ -260,11 +257,11 @@ namespace System
 #if (NETSTANDARD || NETCOREAPP || PORTABLE)
             var typeInfo = type.GetTypeInfo();
 #else
-            var typeInfo = type;
+            Type typeInfo = type;
 #endif
             if (CachedTypesOfAttribute.ContainsKey(type))
                 return CachedTypesOfAttribute[type];
-            foreach (var attrib in typeInfo.GetCustomAttributes(false))
+            foreach (object attrib in typeInfo.GetCustomAttributes(false))
             {
                 if (attrib.GetType() == typeof(T) && canAdd((T)attrib))
                 {
@@ -274,14 +271,14 @@ namespace System
                 }
             }
 
-            foreach (var interfaceType in type.GetListOfInterfaces())
+            foreach (Type interfaceType in type.GetListOfInterfaces())
             {
 #if (NETSTANDARD || NETCOREAPP || PORTABLE)
                 var interfaceTypeInfo = interfaceType.GetTypeInfo();
 #else
-                var interfaceTypeInfo = interfaceType;
+                Type interfaceTypeInfo = interfaceType;
 #endif
-                foreach (var attrib in interfaceTypeInfo.GetCustomAttributes(false))
+                foreach (object attrib in interfaceTypeInfo.GetCustomAttributes(false))
                 {
                     if (attrib.GetType() == typeof(T) && canAdd((T)attrib))
                     {
@@ -300,7 +297,7 @@ namespace System
         /// <summary>Applies a function to every element of the list.</summary>
         private static void Apply<T>(this IEnumerable<T> enumerable, Action<T> function)
         {
-            foreach (var item in enumerable)
+            foreach (T item in enumerable)
             {
                 function.Invoke(item);
             }

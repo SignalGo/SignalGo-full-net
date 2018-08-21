@@ -1,14 +1,10 @@
 ﻿using Newtonsoft.Json;
 using SignalGo.Client.ClientManager;
 using SignalGo.Shared;
-using SignalGo.Shared.Helpers;
-using SignalGo.Shared.IO;
 using SignalGo.Shared.Models;
 using SignalGo.Shared.Security;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Net;
 using System.Text;
 using System.Threading;
 
@@ -81,8 +77,9 @@ namespace SignalGo.Client
                 OnConnectionChanged?.Invoke(ConnectionStatus.Connected);
         }
 
-        volatile bool _oneTimeConnectedAsyncCalledWithAutoReconnect = false;
-        AutoResetEvent HoldThreadResetEvent { get; set; } = new AutoResetEvent(false);
+        private bool _oneTimeConnectedAsyncCalledWithAutoReconnect = false;
+
+        private AutoResetEvent HoldThreadResetEvent { get; set; } = new AutoResetEvent(false);
         /// <summary>
         /// connect to server is background Thread
         /// </summary>
@@ -110,7 +107,7 @@ namespace SignalGo.Client
             });
         }
 
-        object _connectAsyncAutoReconnectLock = new object();
+        private readonly object _connectAsyncAutoReconnectLock = new object();
         /// <summary>
         /// connect to server is background Thread
         /// </summary>
@@ -148,31 +145,31 @@ namespace SignalGo.Client
             if (securitySettings.SecurityMode == SecurityMode.None)
             {
                 securitySettings.Data = null;
-                var result = ConnectorExtensions.SendData<SecuritySettingsInfo>(this, new Shared.Models.MethodCallInfo() { Guid = Guid.NewGuid().ToString(), ServiceName = "/SetSettings", Data = JsonConvert.SerializeObject(securitySettings) });
+                SecuritySettingsInfo result = ConnectorExtensions.SendData<SecuritySettingsInfo>(this, new Shared.Models.MethodCallInfo() { Guid = Guid.NewGuid().ToString(), ServiceName = "/SetSettings", Data = JsonConvert.SerializeObject(securitySettings) });
 
             }
             else if (securitySettings.SecurityMode == SecurityMode.RSA_AESSecurity)
             {
 #if (!PORTABLE)
-                var keys = RSASecurity.GenerateRandomKey();
+                RSAKey keys = RSASecurity.GenerateRandomKey();
                 securitySettings.Data = new RSAAESEncryptionData() { RSAEncryptionKey = keys.PublicKey };
-                var result = ConnectorExtensions.SendData<SecuritySettingsInfo>(this, new Shared.Models.MethodCallInfo() { Guid = Guid.NewGuid().ToString(), ServiceName = "/SetSettings", Data = JsonConvert.SerializeObject(securitySettings) });
+                SecuritySettingsInfo result = ConnectorExtensions.SendData<SecuritySettingsInfo>(this, new Shared.Models.MethodCallInfo() { Guid = Guid.NewGuid().ToString(), ServiceName = "/SetSettings", Data = JsonConvert.SerializeObject(securitySettings) });
                 SecuritySettings = new SecuritySettingsInfo() { Data = new RSAAESEncryptionData() { Key = RSASecurity.Decrypt(result.Data.Key, RSASecurity.StringToKey(keys.PrivateKey)), IV = RSASecurity.Decrypt(result.Data.IV, RSASecurity.StringToKey(keys.PrivateKey)) }, SecurityMode = securitySettings.SecurityMode };
 #endif
             }
         }
 
-        void SendFirstLineData()
+        private void SendFirstLineData()
         {
-            var firstBytes = Encoding.UTF8.GetBytes($"SignalGo/4.0 {_address}:{_port}" + System.Environment.NewLine);
+            byte[] firstBytes = Encoding.UTF8.GetBytes($"SignalGo/4.0 {_address}:{_port}" + System.Environment.NewLine);
             _client.GetStream().Write(firstBytes, 0, firstBytes.Length);
         }
 
-        void GetClientIdIfNeed()
+        private void GetClientIdIfNeed()
         {
             if (ProviderSetting.AutoDetectRegisterServices)
             {
-                var data = new byte[]
+                byte[] data = new byte[]
                 {
                     (byte)DataType.GetClientId,
                     (byte)CompressMode.None
@@ -180,7 +177,7 @@ namespace SignalGo.Client
 #if (PORTABLE)
                 var stream = _client.WriteStream;
 #else
-                var stream = _client.GetStream();
+                System.Net.Sockets.NetworkStream stream = _client.GetStream();
 #endif
                 StreamHelper.WriteToStream(stream, data.ToArray());
             }

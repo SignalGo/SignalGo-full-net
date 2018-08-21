@@ -1,6 +1,4 @@
-﻿using Newtonsoft.Json;
-using SignalGo;
-using SignalGo.Shared.DataTypes;
+﻿using SignalGo.Shared.DataTypes;
 using SignalGo.Shared.Helpers;
 using SignalGo.Shared.IO;
 using SignalGo.Shared.Models;
@@ -60,7 +58,7 @@ namespace SignalGo.Client.ClientManager
 
         }
 
-        bool _IsConnected = false;
+        private bool _IsConnected = false;
         /// <summary>
         /// if provider is connected
         /// </summary>
@@ -112,7 +110,7 @@ namespace SignalGo.Client.ClientManager
 
         internal string _address = "";
         internal int _port = 0;
-        object _connectLock = new object();
+        private readonly object _connectLock = new object();
         /// <summary>
         /// connect to server
         /// </summary>
@@ -146,9 +144,9 @@ namespace SignalGo.Client.ClientManager
 #else
                 _client = new TcpClient();
                 _client.NoDelay = true;
-                var result = _client.BeginConnect(address, port, null, null);
+                IAsyncResult result = _client.BeginConnect(address, port, null, null);
 
-                var success = result.AsyncWaitHandle.WaitOne(TimeSpan.FromSeconds(5));
+                bool success = result.AsyncWaitHandle.WaitOne(TimeSpan.FromSeconds(5));
 
                 if (!success)
                 {
@@ -172,10 +170,10 @@ namespace SignalGo.Client.ClientManager
         {
             if (IsDisposed)
                 throw new ObjectDisposedException("Connector");
-            var type = typeof(T);
-            var name = type.GetServerServiceName();
-            var objectInstance = Activator.CreateInstance(type);
-            var duplex = objectInstance as OperationCalls;
+            Type type = typeof(T);
+            string name = type.GetServerServiceName(true);
+            object objectInstance = Activator.CreateInstance(type);
+            OperationCalls duplex = objectInstance as OperationCalls;
             if (duplex != null)
                 duplex.Connector = this;
             Services.TryAdd(name, objectInstance);
@@ -196,7 +194,7 @@ namespace SignalGo.Client.ClientManager
                 MethodName = "/RegisterService",
                 Guid = Guid.NewGuid().ToString()
             };
-            var callback = this.SendData<MethodCallbackInfo>(callInfo);
+            MethodCallbackInfo callback = this.SendData<MethodCallbackInfo>(callInfo);
         }
         /// <summary>
         /// get default value from type
@@ -206,7 +204,7 @@ namespace SignalGo.Client.ClientManager
         internal object GetDefault(Type t)
         {
 #if (!PORTABLE)
-            return this.GetType().GetMethod("GetDefaultGeneric").MakeGenericMethod(t).Invoke(this, null);
+            return GetType().GetMethod("GetDefaultGeneric").MakeGenericMethod(t).Invoke(this, null);
 #else
             return this.GetType().FindMethod("GetDefaultGeneric").MakeGenericMethod(t).Invoke(this, null);
 #endif
@@ -216,7 +214,7 @@ namespace SignalGo.Client.ClientManager
         {
             if (!IsPriorityEnabled)
                 return;
-            foreach (var item in PriorityActionsAfterConnected)
+            foreach (Delegate item in PriorityActionsAfterConnected)
             {
                 if (!IsPriorityEnabled)
                     break;
@@ -224,7 +222,7 @@ namespace SignalGo.Client.ClientManager
                     ((Action)item)();
                 else if (item is Func<PriorityAction>)
                 {
-                    var priorityAction = PriorityAction.TryAgain;
+                    PriorityAction priorityAction = PriorityAction.TryAgain;
                     do
                     {
 #if (PORTABLE)
@@ -281,8 +279,8 @@ namespace SignalGo.Client.ClientManager
         {
             if (IsDisposed)
                 throw new ObjectDisposedException("Connector");
-            var type = typeof(T);
-            var name = type.GetServerServiceName();
+            Type type = typeof(T);
+            string name = type.GetServerServiceName(true);
 
             MethodCallInfo callInfo = new MethodCallInfo()
             {
@@ -290,16 +288,16 @@ namespace SignalGo.Client.ClientManager
                 MethodName = "/RegisterService",
                 Guid = Guid.NewGuid().ToString()
             };
-            var callback = this.SendData<MethodCallbackInfo>(callInfo);
+            MethodCallbackInfo callback = this.SendData<MethodCallbackInfo>(callInfo);
 
-            var t = CSCodeInjection.GenerateInterfaceType(type, typeof(OperationCalls), new List<Type>() { typeof(ServiceContractAttribute), this.GetType() }, false);
+            Type t = CSCodeInjection.GenerateInterfaceType(type, typeof(OperationCalls), new List<Type>() { typeof(ServiceContractAttribute), GetType() }, false);
 
-            var objectInstance = Activator.CreateInstance(t);
+            object objectInstance = Activator.CreateInstance(t);
             dynamic dobj = objectInstance;
             dobj.InvokedClientMethodAction = CSCodeInjection.InvokedClientMethodAction;
             dobj.InvokedClientMethodFunction = CSCodeInjection.InvokedClientMethodFunction;
 
-            var duplex = objectInstance as OperationCalls;
+            OperationCalls duplex = objectInstance as OperationCalls;
             duplex.Connector = this;
             Services.TryAdd(name, objectInstance);
             return (T)objectInstance;
@@ -314,9 +312,9 @@ namespace SignalGo.Client.ClientManager
         {
             if (IsDisposed)
                 throw new ObjectDisposedException("Connector");
-            var type = typeof(T);
+            Type type = typeof(T);
 
-            var name = type.GetServerServiceName();
+            string name = type.GetServerServiceName(true);
 
             if (!ProviderSetting.AutoDetectRegisterServices)
             {
@@ -326,10 +324,10 @@ namespace SignalGo.Client.ClientManager
                     MethodName = "/RegisterService",
                     Guid = Guid.NewGuid().ToString()
                 };
-                var callback = this.SendData<MethodCallbackInfo>(callInfo);
+                MethodCallbackInfo callback = this.SendData<MethodCallbackInfo>(callInfo);
             }
 
-            var objectInstance = InterfaceWrapper.Wrap<T>((serviceName, method, args) =>
+            T objectInstance = InterfaceWrapper.Wrap<T>((serviceName, method, args) =>
             {
                 //this is async action
                 if (method.ReturnType == typeof(Task))
@@ -354,9 +352,9 @@ namespace SignalGo.Client.ClientManager
                         methodName = methodName.Substring(0, methodName.Length - 5);
 #if (!PORTABLE)
                     // ConnectorExtension.SendDataAsync<object>()
-                    var findMethod = typeof(ConnectorExtensions).FindMethod("SendDataTask", BindingFlags.Static | BindingFlags.NonPublic);
-                    var methodType = method.ReturnType.GetListOfGenericArguments().FirstOrDefault();
-                    var madeMethod = findMethod.MakeGenericMethod(methodType);
+                    MethodInfo findMethod = typeof(ConnectorExtensions).FindMethod("SendDataTask", BindingFlags.Static | BindingFlags.NonPublic);
+                    Type methodType = method.ReturnType.GetListOfGenericArguments().FirstOrDefault();
+                    MethodInfo madeMethod = findMethod.MakeGenericMethod(methodType);
                     return madeMethod.Invoke(this, new object[] { this, serviceName, methodName, method, args });
 
 #else
@@ -390,22 +388,22 @@ namespace SignalGo.Client.ClientManager
                     }
                     else
                     {
-                        var getServiceMethod = type.FindMethod(method.Name);
-                        var customDataExchanger = getServiceMethod.GetCustomAttributes(typeof(CustomDataExchangerAttribute), true).Cast<CustomDataExchangerAttribute>().Where(x => x.GetExchangerByUserCustomization(this)).ToList();
-                        var data = ConnectorExtensions.SendData(this, serviceName, method.Name, method.MethodToParameters(x => ClientSerializationHelper.SerializeObject(x), args).ToArray());
+                        MethodInfo getServiceMethod = type.FindMethod(method.Name);
+                        List<CustomDataExchangerAttribute> customDataExchanger = getServiceMethod.GetCustomAttributes(typeof(CustomDataExchangerAttribute), true).Cast<CustomDataExchangerAttribute>().Where(x => x.GetExchangerByUserCustomization(this)).ToList();
+                        string data = ConnectorExtensions.SendData(this, serviceName, method.Name, method.MethodToParameters(x => ClientSerializationHelper.SerializeObject(x), args).ToArray());
                         if (data == null)
                             return null;
-                        var result = ClientSerializationHelper.DeserializeObject(data.ToString(), method.ReturnType, customDataExchanger: customDataExchanger.ToArray());
+                        object result = ClientSerializationHelper.DeserializeObject(data.ToString(), method.ReturnType, customDataExchanger: customDataExchanger.ToArray());
                         return result;
                     };
                 }
             });
 
             Services.TryAdd(name, objectInstance);
-            return (T)objectInstance;
+            return objectInstance;
         }
 
-        ConcurrentDictionary<string, object> InstancesOfRegisterStreamService = new ConcurrentDictionary<string, object>();
+        private ConcurrentDictionary<string, object> InstancesOfRegisterStreamService = new ConcurrentDictionary<string, object>();
         /// <summary>
         /// register service and method to server for file or stream download and upload
         /// </summary>
@@ -415,8 +413,8 @@ namespace SignalGo.Client.ClientManager
         {
             if (IsDisposed)
                 throw new ObjectDisposedException("Connector");
-            var type = typeof(T);
-            var serviceType = type.GetServerServiceAttribute();
+            Type type = typeof(T);
+            ServiceContractAttribute serviceType = type.GetServerServiceAttribute();
             if (serviceType.ServiceType != ServiceType.StreamService)
                 throw new Exception("your service is not a stream service");
             if (string.IsNullOrEmpty(serverAddress))
@@ -432,13 +430,13 @@ namespace SignalGo.Client.ClientManager
                 return (T)instance;
             }
 
-            var name = type.GetServerServiceName();
+            string name = type.GetServerServiceName(true);
 
-            var objectInstance = InterfaceWrapper.Wrap<T>((serviceName, method, args) =>
+            T objectInstance = InterfaceWrapper.Wrap<T>((serviceName, method, args) =>
             {
                 if (method.ReturnType == typeof(Task))
                 {
-                    var task = Task.Factory.StartNew(() =>
+                    Task task = Task.Factory.StartNew(() =>
                     {
                         UploadStream(name, serverAddress, port, serviceName, method, args, false);
                     });
@@ -449,9 +447,9 @@ namespace SignalGo.Client.ClientManager
                 {
 #if (!PORTABLE)
                     // ConnectorExtension.SendDataAsync<object>()
-                    var findMethod = typeof(ConnectorBase).FindMethod("UploadStreamAsync", BindingFlags.Instance | BindingFlags.NonPublic);
-                    var methodType = method.ReturnType.GetListOfGenericArguments().FirstOrDefault();
-                    var madeMethod = findMethod.MakeGenericMethod(methodType);
+                    MethodInfo findMethod = typeof(ConnectorBase).FindMethod("UploadStreamAsync", BindingFlags.Instance | BindingFlags.NonPublic);
+                    Type methodType = method.ReturnType.GetListOfGenericArguments().FirstOrDefault();
+                    MethodInfo madeMethod = findMethod.MakeGenericMethod(methodType);
                     return madeMethod.Invoke(this, new object[] { name, serverAddress, port, serviceName, method, args });
 
 #else
@@ -462,7 +460,7 @@ namespace SignalGo.Client.ClientManager
                     return UploadStream(name, serverAddress, port, serviceName, method, args, false);
             });
             InstancesOfRegisterStreamService.TryAdd(callKey, objectInstance);
-            return (T)objectInstance;
+            return objectInstance;
         }
 
         private Task<T> UploadStreamAsync<T>(string name, string serverAddress, int? port, string serviceName, MethodInfo method, object[] args)
@@ -491,21 +489,21 @@ namespace SignalGo.Client.ClientManager
             if (!isSuccess)
                 throw new TimeoutException();
 #else
-            var _newClient = new TcpClient(serverAddress, port.Value);
+            TcpClient _newClient = new TcpClient(serverAddress, port.Value);
             _newClient.NoDelay = true;
 #endif
 #if (PORTABLE)
             var stream = _newClient.WriteStream;
             var readStream = _newClient.ReadStream;
 #else
-            var stream = _newClient.GetStream();
-            var readStream = stream;
+            NetworkStream stream = _newClient.GetStream();
+            NetworkStream readStream = stream;
 #endif
 
             //var json = JsonConvert.SerializeObject(Data);
             //var jsonBytes = Encoding.UTF8.GetBytes(json);
-            var header = "SignalGo-Stream/4.0\r\n";
-            var bytes = Encoding.UTF8.GetBytes(header);
+            string header = "SignalGo-Stream/4.0\r\n";
+            byte[] bytes = Encoding.UTF8.GetBytes(header);
             stream.Write(bytes, 0, bytes.Length);
             bool isUpload = false;
             if (method.GetParameters().Any(x => x.ParameterType == typeof(StreamInfo) || (x.ParameterType.GetIsGenericType() && x.ParameterType.GetGenericTypeDefinition() == typeof(StreamInfo<>))))
@@ -518,10 +516,10 @@ namespace SignalGo.Client.ClientManager
 
             MethodCallInfo callInfo = new MethodCallInfo();
             callInfo.ServiceName = name;
-            BaseStreamInfo iStream = null;
-            foreach (var item in args)
+            IStreamInfo iStream = null;
+            foreach (object item in args)
             {
-                if (item is BaseStreamInfo value)
+                if (item is IStreamInfo value)
                 {
                     iStream = value;
                     iStream.ClientId = ClientId;
@@ -533,9 +531,9 @@ namespace SignalGo.Client.ClientManager
                 methodName = methodName.Substring(0, methodName.Length - 5);
             callInfo.MethodName = methodName;
 
-            var json = ClientSerializationHelper.SerializeObject(callInfo);
+            string json = ClientSerializationHelper.SerializeObject(callInfo);
 
-            var jsonBytes = Encoding.UTF8.GetBytes(json);
+            byte[] jsonBytes = Encoding.UTF8.GetBytes(json);
             StreamHelper.WriteBlockToStream(stream, jsonBytes);
             CompressMode compressMode = CompressMode.None;
             if (isUpload)
@@ -548,7 +546,7 @@ namespace SignalGo.Client.ClientManager
                     firstData = iStream.ReadFirstData(readStream, ProviderSetting.MaximumReceiveStreamHeaderBlock);
                     if (firstData.Key == DataType.FlushStream)
                     {
-                        var data = StreamHelper.ReadBlockToEnd(readStream, firstData.Value, ProviderSetting.MaximumReceiveStreamHeaderBlock);
+                        byte[] data = StreamHelper.ReadBlockToEnd(readStream, firstData.Value, ProviderSetting.MaximumReceiveStreamHeaderBlock);
                         return BitConverter.ToInt32(data, 0);
                     }
                     return -1;
@@ -566,7 +564,7 @@ namespace SignalGo.Client.ClientManager
                         if (position + blockOfRead > length)
                             blockOfRead = (int)(length - position);
                         bytes = new byte[blockOfRead];
-                        var readCount = iStream.Stream.Read(bytes, 0, bytes.Length);
+                        int readCount = iStream.Stream.Read(bytes, 0, bytes.Length);
                         position += readCount;
                         stream.Write(bytes, 0, readCount);
                     }
@@ -578,7 +576,7 @@ namespace SignalGo.Client.ClientManager
                         firstData = iStream.ReadFirstData(readStream, ProviderSetting.MaximumReceiveStreamHeaderBlock);
                         if (firstData.Key == DataType.FlushStream)
                         {
-                            var data = StreamHelper.ReadBlockToEnd(readStream, firstData.Value, ProviderSetting.MaximumReceiveStreamHeaderBlock);
+                            byte[] data = StreamHelper.ReadBlockToEnd(readStream, firstData.Value, ProviderSetting.MaximumReceiveStreamHeaderBlock);
                         }
                         else
                             break;
@@ -587,16 +585,16 @@ namespace SignalGo.Client.ClientManager
             }
             else
             {
-                var dataTypeByte = StreamHelper.ReadOneByte(readStream, compressMode, ProviderSetting.MaximumReceiveStreamHeaderBlock);
-                var compressModeByte = StreamHelper.ReadOneByte(readStream, compressMode, ProviderSetting.MaximumReceiveStreamHeaderBlock);
+                byte dataTypeByte = StreamHelper.ReadOneByte(readStream, compressMode, ProviderSetting.MaximumReceiveStreamHeaderBlock);
+                byte compressModeByte = StreamHelper.ReadOneByte(readStream, compressMode, ProviderSetting.MaximumReceiveStreamHeaderBlock);
             }
-            var callBackBytes = StreamHelper.ReadBlockToEnd(readStream, compressMode, ProviderSetting.MaximumReceiveStreamHeaderBlock);
-            var callbackInfo = ClientSerializationHelper.DeserializeObject<MethodCallbackInfo>(Encoding.UTF8.GetString(callBackBytes, 0, callBackBytes.Length));
-            var methodType = method.ReturnType;
+            byte[] callBackBytes = StreamHelper.ReadBlockToEnd(readStream, compressMode, ProviderSetting.MaximumReceiveStreamHeaderBlock);
+            MethodCallbackInfo callbackInfo = ClientSerializationHelper.DeserializeObject<MethodCallbackInfo>(Encoding.UTF8.GetString(callBackBytes, 0, callBackBytes.Length));
+            Type methodType = method.ReturnType;
             if (isAsync)
                 methodType = method.ReturnType.GetListOfGenericArguments().FirstOrDefault();
 
-            var result = ClientSerializationHelper.DeserializeObject(callbackInfo.Data, methodType);
+            object result = ClientSerializationHelper.DeserializeObject(callbackInfo.Data, methodType);
             if (!isUpload)
             {
                 result.GetType().GetPropertyInfo("Stream").SetValue(result, stream, null);
@@ -637,15 +635,15 @@ namespace SignalGo.Client.ClientManager
             if (!isSuccess)
                 throw new TimeoutException();
 #else
-            var _newClient = new TcpClient(serverAddress, port);
+            TcpClient _newClient = new TcpClient(serverAddress, port);
             _newClient.NoDelay = true;
 #endif
 #if (PORTABLE)
             var stream = _newClient.WriteStream;
             var readStream = _newClient.ReadStream;
 #else
-            var stream = _newClient.GetStream();
-            var readStream = stream;
+            NetworkStream stream = _newClient.GetStream();
+            NetworkStream readStream = stream;
 #endif
             MethodCallInfo callInfo = new MethodCallInfo
             {
@@ -657,20 +655,20 @@ namespace SignalGo.Client.ClientManager
             if (methodName.EndsWith("Async"))
                 methodName = methodName.Substring(0, methodName.Length - 5);
 
-            var json = ClientSerializationHelper.SerializeObject(callInfo);
-            var jsonBytes = Encoding.UTF8.GetBytes(json);
+            string json = ClientSerializationHelper.SerializeObject(callInfo);
+            byte[] jsonBytes = Encoding.UTF8.GetBytes(json);
 
-            var line = "SignalGo-OneWay/4.0" + Environment.NewLine;
-            var lineBytes = Encoding.UTF8.GetBytes(line);
-            var streamHelper = new SignalGoStreamBase();
+            string line = "SignalGo-OneWay/4.0" + Environment.NewLine;
+            byte[] lineBytes = Encoding.UTF8.GetBytes(line);
+            SignalGoStreamBase streamHelper = new SignalGoStreamBase();
             streamHelper.WriteToStream(stream, lineBytes);
             streamHelper.WriteBlockToStream(stream, jsonBytes);
 
-            var dataType = (DataType)stream.ReadByte();
-            var compressMode = (CompressMode)stream.ReadByte();
-            var readData = streamHelper.ReadBlockToEnd(stream, compressMode, uint.MaxValue);
+            DataType dataType = (DataType)stream.ReadByte();
+            CompressMode compressMode = (CompressMode)stream.ReadByte();
+            byte[] readData = streamHelper.ReadBlockToEnd(stream, compressMode, uint.MaxValue);
             json = Encoding.UTF8.GetString(readData, 0, readData.Length);
-            var callBack = ClientSerializationHelper.DeserializeObject<MethodCallbackInfo>(json);
+            MethodCallbackInfo callBack = ClientSerializationHelper.DeserializeObject<MethodCallbackInfo>(json);
             if (callBack.IsException)
                 throw new Exception(callBack.Data);
             return ClientSerializationHelper.DeserializeObject<T>(callBack.Data);
@@ -700,24 +698,24 @@ namespace SignalGo.Client.ClientManager
         {
             if (IsDisposed)
                 throw new ObjectDisposedException("Connector");
-            var type = typeof(T);
-            var name = type.GetServerServiceName();
+            Type type = typeof(T);
+            string name = type.GetServerServiceName(true);
             MethodCallInfo callInfo = new MethodCallInfo()
             {
                 ServiceName = name,
                 MethodName = "/RegisterService",
                 Guid = Guid.NewGuid().ToString()
             };
-            var callback = this.SendData<MethodCallbackInfo>(callInfo);
+            MethodCallbackInfo callback = this.SendData<MethodCallbackInfo>(callInfo);
 
-            var obj = new DynamicServiceObject()
+            DynamicServiceObject obj = new DynamicServiceObject()
             {
                 Connector = this,
                 ServiceName = name
             };
             obj.InitializeInterface(type);
             Services.TryAdd(name, obj);
-            return (T)ImpromptuInterface.Impromptu.ActLike<T>(obj);
+            return ImpromptuInterface.Impromptu.ActLike<T>(obj);
         }
 #endif
 #if (!NET35)
@@ -731,17 +729,17 @@ namespace SignalGo.Client.ClientManager
         {
             if (IsDisposed)
                 throw new ObjectDisposedException("Connector");
-            var type = typeof(T);
-            var name = type.GetServerServiceName();
+            Type type = typeof(T);
+            string name = type.GetServerServiceName(true);
             MethodCallInfo callInfo = new MethodCallInfo()
             {
                 ServiceName = name,
                 MethodName = "/RegisterService",
                 Guid = Guid.NewGuid().ToString()
             };
-            var callback = this.SendData<MethodCallbackInfo>(callInfo);
+            MethodCallbackInfo callback = this.SendData<MethodCallbackInfo>(callInfo);
 
-            var obj = new DynamicServiceObject()
+            DynamicServiceObject obj = new DynamicServiceObject()
             {
                 Connector = this,
                 ServiceName = name
@@ -767,9 +765,9 @@ namespace SignalGo.Client.ClientManager
                 MethodName = "/RegisterService",
                 Guid = Guid.NewGuid().ToString()
             };
-            var callback = this.SendData<MethodCallbackInfo>(callInfo);
+            MethodCallbackInfo callback = this.SendData<MethodCallbackInfo>(callInfo);
 
-            var obj = new DynamicServiceObjectWitoutInterface()
+            DynamicServiceObjectWitoutInterface obj = new DynamicServiceObjectWitoutInterface()
             {
                 Connector = this,
                 ServiceName = serviceName
@@ -787,10 +785,10 @@ namespace SignalGo.Client.ClientManager
         {
             if (IsDisposed)
                 throw new ObjectDisposedException("Connector");
-            var type = typeof(T);
-            var name = type.GetClientServiceName();
+            Type type = typeof(T);
+            string name = type.GetClientServiceName(true);
 
-            var objectInstance = Activator.CreateInstance(type);
+            object objectInstance = Activator.CreateInstance(type);
             //var duplex = objectInstance as ClientDuplex;
             //duplex.Connector = this;
 
@@ -821,29 +819,29 @@ namespace SignalGo.Client.ClientManager
 #if (PORTABLE)
                     var stream = _client.ReadStream;
 #else
-                    var stream = _client.GetStream();
+                    NetworkStream stream = _client.GetStream();
 #endif
                     while (true)
                     {
                         //first byte is DataType
-                        var dataTypeByte = stream.ReadByte();
-                        var dataType = (DataType)dataTypeByte;
+                        int dataTypeByte = stream.ReadByte();
+                        DataType dataType = (DataType)dataTypeByte;
                         if (dataType == DataType.PingPong)
                         {
                             PingAndWaitForPong.Set();
                             continue;
                         }
                         //secound byte is compress mode
-                        var compressModeByte = stream.ReadByte();
-                        var compresssMode = (CompressMode)compressModeByte;
+                        int compressModeByte = stream.ReadByte();
+                        CompressMode compresssMode = (CompressMode)compressModeByte;
 
                         // server is called client method
                         if (dataType == DataType.CallMethod)
                         {
-                            var bytes = StreamHelper.ReadBlockToEnd(stream, compresssMode, ProviderSetting.MaximumReceiveDataBlock);
+                            byte[] bytes = StreamHelper.ReadBlockToEnd(stream, compresssMode, ProviderSetting.MaximumReceiveDataBlock);
                             if (SecuritySettings != null)
                                 bytes = DecryptBytes(bytes);
-                            var json = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
+                            string json = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
                             MethodCallInfo callInfo = ClientSerializationHelper.DeserializeObject<MethodCallInfo>(json);
                             if (callInfo.Type == MethodType.User)
                                 CallMethod(callInfo);
@@ -858,13 +856,13 @@ namespace SignalGo.Client.ClientManager
                         //after client called server method, server response to client
                         else if (dataType == DataType.ResponseCallMethod)
                         {
-                            var bytes = StreamHelper.ReadBlockToEnd(stream, compresssMode, ProviderSetting.MaximumReceiveDataBlock);
+                            byte[] bytes = StreamHelper.ReadBlockToEnd(stream, compresssMode, ProviderSetting.MaximumReceiveDataBlock);
                             if (SecuritySettings != null)
                                 bytes = DecryptBytes(bytes);
-                            var json = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
+                            string json = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
                             MethodCallbackInfo callback = ClientSerializationHelper.DeserializeObject<MethodCallbackInfo>(json);
 
-                            var geted = ConnectorExtensions.WaitedMethodsForResponse.TryGetValue(callback.Guid, out KeyValue<AutoResetEvent, MethodCallbackInfo> keyValue);
+                            bool geted = ConnectorExtensions.WaitedMethodsForResponse.TryGetValue(callback.Guid, out KeyValue<AutoResetEvent, MethodCallbackInfo> keyValue);
                             if (geted)
                             {
                                 keyValue.Value = callback;
@@ -873,10 +871,10 @@ namespace SignalGo.Client.ClientManager
                         }
                         else if (dataType == DataType.GetServiceDetails)
                         {
-                            var bytes = StreamHelper.ReadBlockToEnd(stream, compresssMode, ProviderSetting.MaximumReceiveDataBlock);
+                            byte[] bytes = StreamHelper.ReadBlockToEnd(stream, compresssMode, ProviderSetting.MaximumReceiveDataBlock);
                             if (SecuritySettings != null)
                                 bytes = DecryptBytes(bytes);
-                            var json = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
+                            string json = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
                             getServiceDetialResult = ClientSerializationHelper.DeserializeObject<ProviderDetailsInfo>(json);
                             if (getServiceDetialResult == null)
                                 getServiceDetialExceptionResult = ClientSerializationHelper.DeserializeObject<Exception>(json);
@@ -885,17 +883,17 @@ namespace SignalGo.Client.ClientManager
                         }
                         else if (dataType == DataType.GetMethodParameterDetails)
                         {
-                            var bytes = StreamHelper.ReadBlockToEnd(stream, compresssMode, ProviderSetting.MaximumReceiveDataBlock);
+                            byte[] bytes = StreamHelper.ReadBlockToEnd(stream, compresssMode, ProviderSetting.MaximumReceiveDataBlock);
                             if (SecuritySettings != null)
                                 bytes = DecryptBytes(bytes);
-                            var json = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
+                            string json = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
                             getmethodParameterDetailsResult = json;
                             getServiceDetailEvent.Set();
                             getServiceDetailEvent.Reset();
                         }
                         else if (dataType == DataType.GetClientId)
                         {
-                            var bytes = StreamHelper.ReadBlockToEnd(stream, compresssMode, ProviderSetting.MaximumReceiveDataBlock);
+                            byte[] bytes = StreamHelper.ReadBlockToEnd(stream, compresssMode, ProviderSetting.MaximumReceiveDataBlock);
                             if (SecuritySettings != null)
                                 bytes = DecryptBytes(bytes);
                             ClientId = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
@@ -917,7 +915,7 @@ namespace SignalGo.Client.ClientManager
             });
         }
 
-        ManualResetEvent PingAndWaitForPong = new ManualResetEvent(true);
+        private ManualResetEvent PingAndWaitForPong = new ManualResetEvent(true);
         public bool SendPingAndWaitToReceive()
         {
             try
@@ -926,7 +924,7 @@ namespace SignalGo.Client.ClientManager
 #if (PORTABLE)
                 var stream = _client.WriteStream;
 #else
-                var stream = _client.GetStream();
+                NetworkStream stream = _client.GetStream();
 #endif
                 StreamHelper.WriteToStream(stream, new byte[] { (byte)DataType.PingPong });
                 return PingAndWaitForPong.WaitOne(new TimeSpan(0, 0, 3));
@@ -980,15 +978,15 @@ namespace SignalGo.Client.ClientManager
 #if (PORTABLE)
                 var stream = _client.WriteStream;
 #else
-                var stream = _client.GetStream();
+                NetworkStream stream = _client.GetStream();
 #endif
-                var json = ClientSerializationHelper.SerializeObject(data);
+                string json = ClientSerializationHelper.SerializeObject(data);
                 List<byte> bytes = new List<byte>
                     {
                         (byte)DataType.CallMethod,
                         (byte)CompressMode.None
                     };
-                var jsonBytes = Encoding.UTF8.GetBytes(json);
+                byte[] jsonBytes = Encoding.UTF8.GetBytes(json);
                 if (SecuritySettings != null)
                     jsonBytes = EncryptBytes(jsonBytes);
                 byte[] dataLen = BitConverter.GetBytes(jsonBytes.Length);
@@ -1028,9 +1026,9 @@ namespace SignalGo.Client.ClientManager
             try
             {
                 OnCalledMethodAction?.Invoke(callInfo);
-                var service = Callbacks[callInfo.ServiceName].Value;
+                object service = Callbacks[callInfo.ServiceName].Value;
                 //#if (PORTABLE)
-                var method = service.GetType().FindMethod(callInfo.MethodName);
+                MethodInfo method = service.GetType().FindMethod(callInfo.MethodName);
                 //#else
                 //                var method = service.GetType().GetMethod(callInfo.MethodName, RuntimeTypeHelper.GetMethodTypes(service.GetType(), callInfo).ToArray());
                 //#endif
@@ -1038,7 +1036,7 @@ namespace SignalGo.Client.ClientManager
                     throw new Exception($"Method {callInfo.MethodName} from service {callInfo.ServiceName} not found! serviceType: {service.GetType().FullName}");
                 List<object> parameters = new List<object>();
                 int index = 0;
-                foreach (var item in method.GetParameters())
+                foreach (System.Reflection.ParameterInfo item in method.GetParameters())
                 {
                     parameters.Add(ClientSerializationHelper.DeserializeObject(callInfo.Parameters[index].Value, item.ParameterType));
                     index++;
@@ -1065,7 +1063,7 @@ namespace SignalGo.Client.ClientManager
                         task.Wait();
                         data = task.GetType().GetProperty("Result").GetValue(task,null);
 #else
-                        var task = ((Task)method.Invoke(service, parameters.ToArray()));
+                        Task task = ((Task)method.Invoke(service, parameters.ToArray()));
                         await task;
                         data = task.GetType().GetProperty("Result").GetValue(task, null);
 #endif
@@ -1120,15 +1118,14 @@ namespace SignalGo.Client.ClientManager
 #if (PORTABLE)
             var stream = _client.WriteStream;
 #else
-            var stream = _client.GetStream();
+            NetworkStream stream = _client.GetStream();
 #endif
             StreamHelper.WriteToStream(stream, data.ToArray());
         }
 
-
-        ManualResetEvent getServiceDetailEvent = new ManualResetEvent(false);
-        ProviderDetailsInfo getServiceDetialResult = null;
-        Exception getServiceDetialExceptionResult = null;
+        private ManualResetEvent getServiceDetailEvent = new ManualResetEvent(false);
+        private ProviderDetailsInfo getServiceDetialResult = null;
+        private Exception getServiceDetialExceptionResult = null;
 
         public ProviderDetailsInfo GetListOfServicesWithDetials(string hostUrl)
         {
@@ -1151,7 +1148,7 @@ namespace SignalGo.Client.ClientManager
 #if (PORTABLE)
                 var stream = _client.WriteStream;
 #else
-                var stream = _client.GetStream();
+                NetworkStream stream = _client.GetStream();
 #endif
                 StreamHelper.WriteToStream(stream, data.ToArray());
             });
@@ -1161,7 +1158,7 @@ namespace SignalGo.Client.ClientManager
             return getServiceDetialResult;
         }
 
-        string getmethodParameterDetailsResult = "";
+        private string getmethodParameterDetailsResult = "";
         public string GetMethodParameterDetial(MethodParameterDetails methodParameterDetails)
         {
             if (IsDisposed)
@@ -1185,7 +1182,7 @@ namespace SignalGo.Client.ClientManager
 #if (PORTABLE)
                 var stream = _client.WriteStream;
 #else
-                var stream = _client.GetStream();
+                NetworkStream stream = _client.GetStream();
 #endif
                 StreamHelper.WriteToStream(stream, data.ToArray());
             });
@@ -1212,8 +1209,8 @@ namespace SignalGo.Client.ClientManager
             PriorityActionsAfterConnected.Add(function);
         }
 
-        object _autoReconnectLock = new object();
-        bool _ManulyDisconnected = false;
+        private readonly object _autoReconnectLock = new object();
+        private bool _ManulyDisconnected = false;
         public void Disconnect()
         {
             if (_ManulyDisconnected)
@@ -1228,7 +1225,7 @@ namespace SignalGo.Client.ClientManager
 #else
                 _client.Close();
 #endif
-            foreach (var item in ConnectorExtensions.WaitedMethodsForResponse)
+            foreach (KeyValuePair<string, KeyValue<AutoResetEvent, MethodCallbackInfo>> item in ConnectorExtensions.WaitedMethodsForResponse)
             {
                 item.Value.Key.Set();
             }

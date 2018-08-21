@@ -1,16 +1,12 @@
 ﻿using Newtonsoft.Json;
 using SignalGo.Shared.IO;
-using SignalGo.Shared.Log;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net;
 #if (!PORTABLE)
 using System.Net.Sockets;
 #endif
 using System.Reflection;
-using System.Text;
 
 namespace SignalGo.Shared.Models
 {
@@ -39,6 +35,7 @@ namespace SignalGo.Shared.Models
         /// get position of flush stream
         /// </summary>
         Func<long> GetPositionFlush { get; set; }
+        KeyValue<DataType, CompressMode> ReadFirstData(Stream stream, uint maximumReceiveStreamHeaderBlock);
     }
 
     public class BaseStreamInfo : IStreamInfo
@@ -68,7 +65,7 @@ namespace SignalGo.Shared.Models
         /// </summary>
         public string ClientId { get; set; }
 
-        Stream _Stream;
+        private Stream _Stream;
         /// <summary>
         /// stream for read and write
         /// </summary>
@@ -105,9 +102,9 @@ namespace SignalGo.Shared.Models
 #if (NETSTANDARD)
                     var property = typeof(NetworkStream).GetTypeInfo().GetProperty("Socket", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Static);
 #else
-                    var property = typeof(NetworkStream).GetProperty("Socket", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Static);
+                    PropertyInfo property = typeof(NetworkStream).GetProperty("Socket", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Static);
 #endif
-                    var socket = (Socket)property.GetValue(((NetworkStream)Stream), null);
+                    Socket socket = (Socket)property.GetValue(((NetworkStream)Stream), null);
 #if (NET35)
                     socket.Close();
 #else
@@ -125,8 +122,8 @@ namespace SignalGo.Shared.Models
 
         public KeyValue<DataType, CompressMode> ReadFirstData(Stream stream, uint maximumReceiveStreamHeaderBlock)
         {
-            var responseType = (DataType)SignalGoStreamBase.CurrentBase.ReadOneByte(stream, CompressMode.None, maximumReceiveStreamHeaderBlock);
-            var compressMode = (CompressMode)SignalGoStreamBase.CurrentBase.ReadOneByte(stream, CompressMode.None, maximumReceiveStreamHeaderBlock);
+            DataType responseType = (DataType)SignalGoStreamBase.CurrentBase.ReadOneByte(stream, CompressMode.None, maximumReceiveStreamHeaderBlock);
+            CompressMode compressMode = (CompressMode)SignalGoStreamBase.CurrentBase.ReadOneByte(stream, CompressMode.None, maximumReceiveStreamHeaderBlock);
             return new KeyValue<DataType, CompressMode>(responseType, compressMode);
         }
 
@@ -155,91 +152,8 @@ namespace SignalGo.Shared.Models
         public T Data { get; set; }
     }
 
-    public class StreamInfo : IStreamInfo
+    public class StreamInfo : BaseStreamInfo
     {
-        public Dictionary<string, object> Headers { get; set; } = new Dictionary<string, object>();
-        [JsonIgnore()]
-        public Stream Stream { get; set; }
-        /// <summary>
-        /// wrtie manually to stream
-        /// </summary>
-        [JsonIgnore()]
-        public Action<Stream> WriteManually { get; set; }
-        /// <summary>
-        /// length of stream
-        /// </summary>
-        public long Length { get; set; }
 
-        public string ClientId { get; set; }
-
-        public Stream FlushStream
-        {
-            get
-            {
-                throw new NotImplementedException();
-            }
-
-            set
-            {
-                throw new NotImplementedException();
-            }
-        }
-
-        public Func<long> GetPositionFlush
-        {
-            get
-            {
-                throw new NotImplementedException();
-            }
-
-            set
-            {
-                throw new NotImplementedException();
-            }
-        }
-
-        public Action<int> SetPositionFlush
-        {
-            get
-            {
-                throw new NotImplementedException();
-            }
-
-            set
-            {
-                throw new NotImplementedException();
-            }
-        }
-
-        /// <summary>
-        /// dispose the stream
-        /// </summary>
-        public void Dispose()
-        {
-#if (!PORTABLE)
-            if (Stream is NetworkStream)
-            {
-                try
-                {
-#if (NETSTANDARD)
-                    var property = typeof(NetworkStream).GetTypeInfo().GetProperty("Socket", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Static);
-#else
-                    var property = typeof(NetworkStream).GetProperty("Socket", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Static);
-#endif
-                    var socket = (Socket)property.GetValue(((NetworkStream)Stream), null);
-#if (NET35)
-                    socket.Close();
-#else
-                    socket.Dispose();
-#endif
-                }
-                catch
-                {
-                    //AutoLogger.LogError(ex, "StreamInfo Dispose");
-                }
-            }
-#endif
-            Stream.Dispose();
-        }
     }
 }

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text;
 
@@ -7,7 +6,7 @@ namespace SignalGo.Shared.Http
 {
     public class WebHeaderCollection
     {
-        ConcurrentDictionary<string, KeyValuePair<string, string>> Items { get; set; } = new ConcurrentDictionary<string, KeyValuePair<string, string>>();
+        private ConcurrentDictionary<string, KeyValuePair<string, string>> Items { get; set; } = new ConcurrentDictionary<string, KeyValuePair<string, string>>();
         //
         // Summary:
         //     Gets or sets the specified response header.
@@ -77,7 +76,7 @@ namespace SignalGo.Shared.Http
         public override string ToString()
         {
             StringBuilder builder = new StringBuilder();
-            foreach (var item in Items)
+            foreach (KeyValuePair<string, KeyValuePair<string, string>> item in Items)
             {
                 builder.AppendLine(item.Value.Key + ": " + item.Value.Value);
             }

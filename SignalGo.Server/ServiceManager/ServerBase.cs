@@ -1,33 +1,16 @@
-﻿using SignalGo.Server.DataTypes;
-using SignalGo.Server.Helpers;
-using SignalGo.Server.IO;
-using SignalGo.Server.Models;
+﻿using SignalGo.Server.Models;
 using SignalGo.Server.ServiceManager.Versions;
-using SignalGo.Server.Settings;
 using SignalGo.Shared;
 using SignalGo.Shared.Converters;
 using SignalGo.Shared.DataTypes;
-using SignalGo.Shared.Events;
 using SignalGo.Shared.Helpers;
-using SignalGo.Shared.Http;
-using SignalGo.Shared.IO;
 using SignalGo.Shared.Log;
-using SignalGo.Shared.Managers;
 using SignalGo.Shared.Models;
-using SignalGo.Shared.Security;
 using System;
-using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Net;
-using System.Net.Sockets;
 using System.Reflection;
-using System.Security.Cryptography;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace SignalGo.Server.ServiceManager
 {
@@ -143,10 +126,10 @@ namespace SignalGo.Server.ServiceManager
         /// <param name="serviceType"></param>
         public void RegisterServerService(Type serviceType)
         {
-            var services = serviceType.GetServiceContractAttributes();
-            foreach (var service in services)
+            ServiceContractAttribute[] services = serviceType.GetServiceContractAttributes();
+            foreach (ServiceContractAttribute service in services)
             {
-                var name = service.GetServiceName().ToLower();
+                string name = service.GetServiceName(false).ToLower();
                 if (!RegisteredServiceTypes.ContainsKey(name))
                     RegisteredServiceTypes.TryAdd(name, serviceType);
             }
@@ -159,10 +142,10 @@ namespace SignalGo.Server.ServiceManager
 
         public void RegisterClientService(Type serviceType)
         {
-            var service = serviceType.GetClientServiceAttribute();
+            ServiceContractAttribute service = serviceType.GetClientServiceAttribute();
             if (service != null)
             {
-                var name = service.GetServiceName().ToLower();
+                string name = service.GetServiceName(false).ToLower();
                 if (!RegisteredServiceTypes.ContainsKey(name))
                     RegisteredServiceTypes.TryAdd(name, serviceType);
             }
@@ -170,6 +153,11 @@ namespace SignalGo.Server.ServiceManager
             {
                 throw new NotSupportedException("your service is not type of ServerService or HttpService or StreamService");
             }
+        }
+
+        public void AddAssemblyToSkipServiceReferences(Assembly assembly)
+        {
+            ModellingReferencesAssemblies.Add(assembly);
         }
 
         internal void DisposeClient(ClientInfo client, string reason)
@@ -194,7 +182,7 @@ namespace SignalGo.Server.ServiceManager
                 }
                 //ClientRemove(client);
 
-                foreach (var item in TaskOfClientInfoes.Where(x => x.Value == client.ClientId))
+                foreach (KeyValuePair<int, string> item in TaskOfClientInfoes.Where(x => x.Value == client.ClientId))
                 {
                     DataExchanger.Clear(item.Key);
                     TaskOfClientInfoes.Remove(item.Key);
@@ -244,7 +232,7 @@ namespace SignalGo.Server.ServiceManager
 
         public void Stop()
         {
-            foreach (var item in Clients.ToList())
+            foreach (KeyValuePair<string, ClientInfo> item in Clients.ToList())
             {
                 DisposeClient(item.Value, "server stopped");
             }

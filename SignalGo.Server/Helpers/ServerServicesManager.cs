@@ -5,7 +5,6 @@ using SignalGo.Server.ServiceManager;
 using SignalGo.Shared.Converters;
 using SignalGo.Shared.DataTypes;
 using SignalGo.Shared.Helpers;
-using SignalGo.Shared.IO;
 using SignalGo.Shared.Models;
 using System;
 using System.Collections.Generic;
@@ -23,7 +22,7 @@ namespace SignalGo.Server.Helpers
         /// </summary>
         /// <param name="client"></param>
         /// <param name="hostUrl">host url that client connected</param>
-        List<Type> skippedTypes = new List<Type>();
+        private List<Type> skippedTypes = new List<Type>();
         internal void SendServiceDetail(ClientInfo client, string hostUrl, ServerBase serverBase)
         {
 #if (NET35 || NET40)
@@ -35,18 +34,18 @@ namespace SignalGo.Server.Helpers
                 try
                 {
 
-                    var url = new Uri(hostUrl);
+                    Uri url = new Uri(hostUrl);
                     hostUrl = url.Host + ":" + url.Port;
-                    using (var xmlCommentLoader = new XmlCommentLoader())
+                    using (XmlCommentLoader xmlCommentLoader = new XmlCommentLoader())
                     {
                         List<Type> modelTypes = new List<Type>();
                         int id = 1;
                         ProviderDetailsInfo result = new ProviderDetailsInfo() { Id = id };
-                        foreach (var service in serverBase.RegisteredServiceTypes.Where(x => x.Value.IsServerService()))
+                        foreach (KeyValuePair<string, Type> service in serverBase.RegisteredServiceTypes.Where(x => x.Value.IsServerService()))
                         {
 
                             id++;
-                            var serviceDetail = new ServiceDetailsInfo()
+                            ServiceDetailsInfo serviceDetail = new ServiceDetailsInfo()
                             {
                                 ServiceName = service.Key,
                                 FullNameSpace = service.Value.FullName,
@@ -57,7 +56,7 @@ namespace SignalGo.Server.Helpers
                             List<Type> types = new List<Type>();
                             if (service.Value.GetCustomAttributes<ServiceContractAttribute>(false).Length > 0)
                                 types.Add(service.Value);
-                            foreach (var item in CSCodeInjection.GetListOfTypes(service.Value))
+                            foreach (Type item in CSCodeInjection.GetListOfTypes(service.Value))
                             {
                                 if (item.GetCustomAttributes<ServiceContractAttribute>(false).Length > 0 && !types.Contains(item))
                                 {
@@ -66,16 +65,16 @@ namespace SignalGo.Server.Helpers
                                 }
                             }
 
-                            foreach (var serviceType in types)
+                            foreach (Type serviceType in types)
                             {
                                 if (serviceType == typeof(object))
                                     continue;
-                                var methods = serviceType.GetMethods().Where(x => !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_"))) && x.DeclaringType != typeof(object)).ToList();
+                                List<MethodInfo> methods = serviceType.GetMethods().Where(x => !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_"))) && x.DeclaringType != typeof(object)).ToList();
                                 if (methods.Count == 0)
                                     continue;
-                                var comment = xmlCommentLoader.GetComment(serviceType);
+                                CommentOfClassInfo comment = xmlCommentLoader.GetComment(serviceType);
                                 id++;
-                                var interfaceInfo = new ServiceDetailsInterface()
+                                ServiceDetailsInterface interfaceInfo = new ServiceDetailsInterface()
                                 {
                                     NameSpace = serviceType.Name,
                                     FullNameSpace = serviceType.FullName,
@@ -84,32 +83,32 @@ namespace SignalGo.Server.Helpers
                                 };
                                 serviceDetail.Services.Add(interfaceInfo);
                                 List<ServiceDetailsMethod> serviceMethods = new List<ServiceDetailsMethod>();
-                                foreach (var method in methods)
+                                foreach (MethodInfo method in methods)
                                 {
-                                    var pType = SerializeHelper.GetTypeCodeOfObject(method.ReturnType);
+                                    SerializeObjectType pType = SerializeHelper.GetTypeCodeOfObject(method.ReturnType);
                                     if (pType == SerializeObjectType.Enum)
                                     {
                                         AddEnumAndNewModels(ref id, method.ReturnType, result, SerializeObjectType.Enum, xmlCommentLoader);
                                     }
-                                    var methodComment = comment == null ? null : (from x in comment.Methods where x.Name == method.Name && x.Parameters.Count == method.GetParameters().Length select x).FirstOrDefault();
+                                    CommentOfMethodInfo methodComment = comment == null ? null : (from x in comment.Methods where x.Name == method.Name && x.Parameters.Count == method.GetParameters().Length select x).FirstOrDefault();
                                     string exceptions = "";
                                     if (methodComment?.Exceptions != null && methodComment?.Exceptions.Count > 0)
                                     {
-                                        foreach (var ex in methodComment.Exceptions)
+                                        foreach (CommentOfExceptionInfo ex in methodComment.Exceptions)
                                         {
                                             try
                                             {
                                                 if (ex.RefrenceType.LastIndexOf('.') != -1)
                                                 {
-                                                    var baseNameOfEnum = ex.RefrenceType.Substring(0, ex.RefrenceType.LastIndexOf('.'));
-                                                    var type = GetEnumType(baseNameOfEnum);
+                                                    string baseNameOfEnum = ex.RefrenceType.Substring(0, ex.RefrenceType.LastIndexOf('.'));
+                                                    Type type = GetEnumType(baseNameOfEnum);
 #if (NETSTANDARD1_6 || NETCOREAPP1_1)
                                                                 if (type != null && type.GetTypeInfo().IsEnum)
 #else
                                                     if (type != null && type.IsEnum)
 #endif
                                                     {
-                                                        var value = Enum.Parse(type, ex.RefrenceType.Substring(ex.RefrenceType.LastIndexOf('.') + 1, ex.RefrenceType.Length - ex.RefrenceType.LastIndexOf('.') - 1));
+                                                        object value = Enum.Parse(type, ex.RefrenceType.Substring(ex.RefrenceType.LastIndexOf('.') + 1, ex.RefrenceType.Length - ex.RefrenceType.LastIndexOf('.') - 1));
                                                         int exNumber = (int)value;
                                                         exceptions += ex.RefrenceType + $" ({exNumber}) : " + ex.Comment + Environment.NewLine;
                                                         continue;
@@ -138,7 +137,7 @@ namespace SignalGo.Server.Helpers
                                         Id = id
                                     };
                                     RuntimeTypeHelper.GetListOfUsedTypes(method.ReturnType, ref modelTypes);
-                                    foreach (var paramInfo in method.GetParameters())
+                                    foreach (System.Reflection.ParameterInfo paramInfo in method.GetParameters())
                                     {
                                         pType = SerializeHelper.GetTypeCodeOfObject(paramInfo.ParameterType);
                                         if (pType == SerializeObjectType.Enum)
@@ -172,10 +171,10 @@ namespace SignalGo.Server.Helpers
 
 
 
-                        foreach (var service in serverBase.RegisteredServiceTypes.Where(x => x.Value.IsClientService()))
+                        foreach (KeyValuePair<string, Type> service in serverBase.RegisteredServiceTypes.Where(x => x.Value.IsClientService()))
                         {
                             id++;
-                            var serviceDetail = new CallbackServiceDetailsInfo()
+                            CallbackServiceDetailsInfo serviceDetail = new CallbackServiceDetailsInfo()
                             {
                                 ServiceName = service.Key,
                                 FullNameSpace = service.Value.FullName,
@@ -187,7 +186,7 @@ namespace SignalGo.Server.Helpers
                             List<Type> types = new List<Type>();
                             if (service.Value.GetCustomAttributes<ServiceContractAttribute>(false).Length > 0)
                                 types.Add(service.Value);
-                            foreach (var item in CSCodeInjection.GetListOfTypes(service.Value))
+                            foreach (Type item in CSCodeInjection.GetListOfTypes(service.Value))
                             {
                                 if (item.GetCustomAttributes<ServiceContractAttribute>(false).Length > 0 && !types.Contains(item))
                                 {
@@ -196,37 +195,37 @@ namespace SignalGo.Server.Helpers
                                 }
                             }
 
-                            var methods = service.Value.GetMethods().Where(x => !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_"))) && x.DeclaringType != typeof(object)).ToList();
+                            List<MethodInfo> methods = service.Value.GetMethods().Where(x => !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_"))) && x.DeclaringType != typeof(object)).ToList();
                             if (methods.Count == 0)
                                 continue;
-                            var comment = xmlCommentLoader.GetComment(service.Value);
+                            CommentOfClassInfo comment = xmlCommentLoader.GetComment(service.Value);
                             List<ServiceDetailsMethod> serviceMethods = new List<ServiceDetailsMethod>();
-                            foreach (var method in methods)
+                            foreach (MethodInfo method in methods)
                             {
-                                var pType = SerializeHelper.GetTypeCodeOfObject(method.ReturnType);
+                                SerializeObjectType pType = SerializeHelper.GetTypeCodeOfObject(method.ReturnType);
                                 if (pType == SerializeObjectType.Enum)
                                 {
                                     AddEnumAndNewModels(ref id, method.ReturnType, result, SerializeObjectType.Enum, xmlCommentLoader);
                                 }
-                                var methodComment = comment == null ? null : (from x in comment.Methods where x.Name == method.Name && x.Parameters.Count == method.GetParameters().Length select x).FirstOrDefault();
+                                CommentOfMethodInfo methodComment = comment == null ? null : (from x in comment.Methods where x.Name == method.Name && x.Parameters.Count == method.GetParameters().Length select x).FirstOrDefault();
                                 string exceptions = "";
                                 if (methodComment?.Exceptions != null && methodComment?.Exceptions.Count > 0)
                                 {
-                                    foreach (var ex in methodComment.Exceptions)
+                                    foreach (CommentOfExceptionInfo ex in methodComment.Exceptions)
                                     {
                                         try
                                         {
                                             if (ex.RefrenceType.LastIndexOf('.') != -1)
                                             {
-                                                var baseNameOfEnum = ex.RefrenceType.Substring(0, ex.RefrenceType.LastIndexOf('.'));
-                                                var type = GetEnumType(baseNameOfEnum);
+                                                string baseNameOfEnum = ex.RefrenceType.Substring(0, ex.RefrenceType.LastIndexOf('.'));
+                                                Type type = GetEnumType(baseNameOfEnum);
 #if (NETSTANDARD1_6 || NETCOREAPP1_1)
                                                             if (type != null && type.GetTypeInfo().IsEnum)
 #else
                                                 if (type != null && type.IsEnum)
 #endif
                                                 {
-                                                    var value = Enum.Parse(type, ex.RefrenceType.Substring(ex.RefrenceType.LastIndexOf('.') + 1, ex.RefrenceType.Length - ex.RefrenceType.LastIndexOf('.') - 1));
+                                                    object value = Enum.Parse(type, ex.RefrenceType.Substring(ex.RefrenceType.LastIndexOf('.') + 1, ex.RefrenceType.Length - ex.RefrenceType.LastIndexOf('.') - 1));
                                                     int exNumber = (int)value;
                                                     exceptions += ex.RefrenceType + $" ({exNumber}) : " + ex.Comment + Environment.NewLine;
                                                     continue;
@@ -255,7 +254,7 @@ namespace SignalGo.Server.Helpers
                                     Id = id
                                 };
                                 RuntimeTypeHelper.GetListOfUsedTypes(method.ReturnType, ref modelTypes);
-                                foreach (var paramInfo in method.GetParameters())
+                                foreach (System.Reflection.ParameterInfo paramInfo in method.GetParameters())
                                 {
                                     pType = SerializeHelper.GetTypeCodeOfObject(paramInfo.ParameterType);
                                     if (pType == SerializeObjectType.Enum)
@@ -286,10 +285,10 @@ namespace SignalGo.Server.Helpers
 
 
 
-                        foreach (var httpServiceType in serverBase.RegisteredServiceTypes.Where(x => x.Value.IsHttpService()))
+                        foreach (KeyValuePair<string, Type> httpServiceType in serverBase.RegisteredServiceTypes.Where(x => x.Value.IsHttpService()))
                         {
                             id++;
-                            var controller = new HttpControllerDetailsInfo()
+                            HttpControllerDetailsInfo controller = new HttpControllerDetailsInfo()
                             {
                                 Id = id,
                                 Url = httpServiceType.Value.GetCustomAttributes<ServiceContractAttribute>(true)[0].Name,
@@ -297,37 +296,37 @@ namespace SignalGo.Server.Helpers
                             id++;
                             result.WebApiDetailsInfo.Id = id;
                             result.WebApiDetailsInfo.HttpControllers.Add(controller);
-                            var methods = httpServiceType.Value.GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance).Where(x => !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_"))) && x.DeclaringType != typeof(object)).ToList();
+                            List<MethodInfo> methods = httpServiceType.Value.GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance).Where(x => !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_"))) && x.DeclaringType != typeof(object)).ToList();
                             if (methods.Count == 0)
                                 continue;
-                            var comment = xmlCommentLoader.GetComment(httpServiceType.Value);
+                            CommentOfClassInfo comment = xmlCommentLoader.GetComment(httpServiceType.Value);
                             List<ServiceDetailsMethod> serviceMethods = new List<ServiceDetailsMethod>();
-                            foreach (var method in methods)
+                            foreach (MethodInfo method in methods)
                             {
-                                var pType = SerializeHelper.GetTypeCodeOfObject(method.ReturnType);
+                                SerializeObjectType pType = SerializeHelper.GetTypeCodeOfObject(method.ReturnType);
                                 if (pType == SerializeObjectType.Enum)
                                 {
                                     AddEnumAndNewModels(ref id, method.ReturnType, result, SerializeObjectType.Enum, xmlCommentLoader);
                                 }
-                                var methodComment = comment == null ? null : (from x in comment.Methods where x.Name == method.Name && x.Parameters.Count == method.GetParameters().Length select x).FirstOrDefault();
+                                CommentOfMethodInfo methodComment = comment == null ? null : (from x in comment.Methods where x.Name == method.Name && x.Parameters.Count == method.GetParameters().Length select x).FirstOrDefault();
                                 string exceptions = "";
                                 if (methodComment?.Exceptions != null && methodComment?.Exceptions.Count > 0)
                                 {
-                                    foreach (var ex in methodComment.Exceptions)
+                                    foreach (CommentOfExceptionInfo ex in methodComment.Exceptions)
                                     {
                                         try
                                         {
                                             if (ex.RefrenceType.LastIndexOf('.') != -1)
                                             {
-                                                var baseNameOfEnum = ex.RefrenceType.Substring(0, ex.RefrenceType.LastIndexOf('.'));
-                                                var type = GetEnumType(baseNameOfEnum);
+                                                string baseNameOfEnum = ex.RefrenceType.Substring(0, ex.RefrenceType.LastIndexOf('.'));
+                                                Type type = GetEnumType(baseNameOfEnum);
 #if (NETSTANDARD1_6 || NETCOREAPP1_1)
                                                             if (type != null && type.GetTypeInfo().IsEnum)
 #else
                                                 if (type != null && type.IsEnum)
 #endif
                                                 {
-                                                    var value = Enum.Parse(type, ex.RefrenceType.Substring(ex.RefrenceType.LastIndexOf('.') + 1, ex.RefrenceType.Length - ex.RefrenceType.LastIndexOf('.') - 1));
+                                                    object value = Enum.Parse(type, ex.RefrenceType.Substring(ex.RefrenceType.LastIndexOf('.') + 1, ex.RefrenceType.Length - ex.RefrenceType.LastIndexOf('.') - 1));
                                                     int exNumber = (int)value;
                                                     exceptions += ex.RefrenceType + $" ({exNumber}) : " + ex.Comment + Environment.NewLine;
                                                     continue;
@@ -359,7 +358,7 @@ namespace SignalGo.Server.Helpers
 
                                 RuntimeTypeHelper.GetListOfUsedTypes(method.ReturnType, ref modelTypes);
                                 string testExampleParams = "";
-                                foreach (var paramInfo in method.GetParameters())
+                                foreach (System.Reflection.ParameterInfo paramInfo in method.GetParameters())
                                 {
                                     pType = SerializeHelper.GetTypeCodeOfObject(paramInfo.ParameterType);
                                     if (pType == SerializeObjectType.Enum)
@@ -394,11 +393,11 @@ namespace SignalGo.Server.Helpers
                             controller.Methods = serviceMethods;
                         }
 
-                        foreach (var type in modelTypes)
+                        foreach (Type type in modelTypes)
                         {
                             try
                             {
-                                var pType = SerializeHelper.GetTypeCodeOfObject(type);
+                                SerializeObjectType pType = SerializeHelper.GetTypeCodeOfObject(type);
                                 AddEnumAndNewModels(ref id, type, result, pType, xmlCommentLoader);
                                 //                                var mode = SerializeHelper.GetTypeCodeOfObject(type);
                                 //                                if (mode == SerializeObjectType.Object)
@@ -452,13 +451,13 @@ namespace SignalGo.Server.Helpers
                             }
                         }
 
-                        var json = ServerSerializationHelper.SerializeObject(result, serverBase);
+                        string json = ServerSerializationHelper.SerializeObject(result, serverBase);
                         List<byte> bytes = new List<byte>
                         {
                                         (byte)DataType.GetServiceDetails,
                                         (byte)CompressMode.None
                         };
-                        var jsonBytes = Encoding.UTF8.GetBytes(json);
+                        byte[] jsonBytes = Encoding.UTF8.GetBytes(json);
                         //if (ClientsSettings.ContainsKey(client))
                         //    jsonBytes = EncryptBytes(jsonBytes, client);
                         byte[] dataLen = BitConverter.GetBytes(jsonBytes.Length);
@@ -469,13 +468,13 @@ namespace SignalGo.Server.Helpers
                 }
                 catch (Exception ex)
                 {
-                    var json = ServerSerializationHelper.SerializeObject(new Exception(ex.ToString()), serverBase);
+                    string json = ServerSerializationHelper.SerializeObject(new Exception(ex.ToString()), serverBase);
                     List<byte> bytes = new List<byte>
                     {
                                     (byte)DataType.GetServiceDetails,
                                     (byte)CompressMode.None
                     };
-                    var jsonBytes = Encoding.UTF8.GetBytes(json);
+                    byte[] jsonBytes = Encoding.UTF8.GetBytes(json);
                     //if (ClientsSettings.ContainsKey(client))
                     //    jsonBytes = EncryptBytes(jsonBytes, client);
                     byte[] dataLen = BitConverter.GetBytes(jsonBytes.Length);
@@ -531,12 +530,12 @@ namespace SignalGo.Server.Helpers
                             return;
                         }
 
-                        var instance = Activator.CreateInstance(type);
+                        object instance = Activator.CreateInstance(type);
                         string jsonResult = JsonConvert.SerializeObject(instance, Formatting.Indented, new JsonSerializerSettings() { NullValueHandling = NullValueHandling.Include });
-                        var refactorResult = (JObject)JsonConvert.DeserializeObject(jsonResult);
-                        foreach (var item in refactorResult.Properties())
+                        JObject refactorResult = (JObject)JsonConvert.DeserializeObject(jsonResult);
+                        foreach (JProperty item in refactorResult.Properties())
                         {
-                            var find = type.GetProperties().FirstOrDefault(x => x.Name == item.Name);
+                            PropertyInfo find = type.GetProperties().FirstOrDefault(x => x.Name == item.Name);
                             refactorResult[item.Name] = find.PropertyType.GetFriendlyName();
                         }
                         jsonResult = JsonConvert.SerializeObject(refactorResult, Formatting.Indented, new JsonSerializerSettings() { NullValueHandling = NullValueHandling.Include });
@@ -546,7 +545,7 @@ namespace SignalGo.Server.Helpers
                             skippedTypes.Add(type);
                             return;
                         }
-                        var comment = xmlCommentLoader.GetComment(type);
+                        CommentOfClassInfo comment = xmlCommentLoader.GetComment(type);
                         id++;
                         result.ProjectDomainDetailsInfo.Id = id;
                         id++;
@@ -566,32 +565,32 @@ namespace SignalGo.Server.Helpers
                     }
                 }
 
-                foreach (var item in type.GetListOfGenericArguments())
+                foreach (Type item in type.GetListOfGenericArguments())
                 {
-                    var pType = SerializeHelper.GetTypeCodeOfObject(item);
+                    SerializeObjectType pType = SerializeHelper.GetTypeCodeOfObject(item);
                     AddEnumAndNewModels(ref id, item, result, pType, xmlCommentLoader);
                 }
 
-                foreach (var item in type.GetListOfInterfaces())
+                foreach (Type item in type.GetListOfInterfaces())
                 {
-                    var pType = SerializeHelper.GetTypeCodeOfObject(item);
+                    SerializeObjectType pType = SerializeHelper.GetTypeCodeOfObject(item);
                     AddEnumAndNewModels(ref id, item, result, pType, xmlCommentLoader);
                 }
 
-                foreach (var item in type.GetListOfNestedTypes())
+                foreach (Type item in type.GetListOfNestedTypes())
                 {
-                    var pType = SerializeHelper.GetTypeCodeOfObject(item);
+                    SerializeObjectType pType = SerializeHelper.GetTypeCodeOfObject(item);
                     AddEnumAndNewModels(ref id, item, result, pType, xmlCommentLoader);
                 }
 
-                foreach (var item in type.GetListOfBaseTypes())
+                foreach (Type item in type.GetListOfBaseTypes())
                 {
-                    var pType = SerializeHelper.GetTypeCodeOfObject(item);
+                    SerializeObjectType pType = SerializeHelper.GetTypeCodeOfObject(item);
                     AddEnumAndNewModels(ref id, item, result, pType, xmlCommentLoader);
                 }
-                foreach (var property in type.GetProperties())
+                foreach (PropertyInfo property in type.GetProperties())
                 {
-                    var pType = SerializeHelper.GetTypeCodeOfObject(property.PropertyType);
+                    SerializeObjectType pType = SerializeHelper.GetTypeCodeOfObject(property.PropertyType);
                     AddEnumAndNewModels(ref id, property.PropertyType, result, pType, xmlCommentLoader);
 
                 }
@@ -615,13 +614,13 @@ namespace SignalGo.Server.Helpers
                         throw new Exception($"{client.IPAddress} {client.ClientId} serviceType {detail.ServiceName} not found");
 
                     string json = "method or parameter not found";
-                    foreach (var method in serviceType.GetMethods())
+                    foreach (MethodInfo method in serviceType.GetMethods())
                     {
                         if (method.IsSpecialName && (method.Name.StartsWith("set_") || method.Name.StartsWith("get_")))
                             continue;
                         if (method.Name == detail.MethodName && detail.ParametersCount == method.GetParameters().Length)
                         {
-                            var parameterType = method.GetParameters()[detail.ParameterIndex].ParameterType;
+                            Type parameterType = method.GetParameters()[detail.ParameterIndex].ParameterType;
                             if (detail.IsFull)
                                 json = TypeToJsonString(parameterType);
                             else
@@ -634,7 +633,7 @@ namespace SignalGo.Server.Helpers
                         (byte)DataType.GetMethodParameterDetails,
                         (byte)CompressMode.None
                     };
-                    var jsonBytes = Encoding.UTF8.GetBytes(json);
+                    byte[] jsonBytes = Encoding.UTF8.GetBytes(json);
                     //if (ClientsSettings.ContainsKey(client))
                     //    jsonBytes = EncryptBytes(jsonBytes, client);
                     byte[] dataLen = BitConverter.GetBytes(jsonBytes.Length);
@@ -654,10 +653,10 @@ namespace SignalGo.Server.Helpers
 #if (NETSTANDARD)
             foreach (var assembly in SignalGo.Shared.Helpers.AppDomain.CurrentDomain.GetAssemblies())
 #else
-            foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+            foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
 #endif
             {
-                var type = assembly.GetType(enumName);
+                Type type = assembly.GetType(enumName);
                 if (type == null)
                     continue;
 #if (NETSTANDARD1_6 || NETCOREAPP1_1)
@@ -671,7 +670,7 @@ namespace SignalGo.Server.Helpers
             return null;
         }
 
-        string TypeToJsonString(Type type)
+        private string TypeToJsonString(Type type)
         {
             List<Type> createdInstance = new List<Type>();
             return ServerSerializationHelper.SerializeObject(CreateInstances(type, createdInstance), null, NullValueHandling.Include);
@@ -682,7 +681,7 @@ namespace SignalGo.Server.Helpers
                 items.Add(newType);
 
                 object result = null;
-                var typeCode = SerializeHelper.GetTypeCodeOfObject(newType);
+                SerializeObjectType typeCode = SerializeHelper.GetTypeCodeOfObject(newType);
                 if (typeCode == SerializeObjectType.Object)
                 {
 #if (NETSTANDARD1_6 || NETCOREAPP1_1)
@@ -694,7 +693,7 @@ namespace SignalGo.Server.Helpers
                         try
                         {
                             result = Activator.CreateInstance(newType);
-                            foreach (var item in newType.GetProperties())
+                            foreach (PropertyInfo item in newType.GetProperties())
                             {
                                 item.SetValue(result, CreateInstances(item.PropertyType, items), null);
                             }
@@ -710,8 +709,8 @@ namespace SignalGo.Server.Helpers
                     {
                         try
                         {
-                            var gType = newType.GetListOfGenericArguments().FirstOrDefault();
-                            var listType = typeof(List<>).MakeGenericType(gType);
+                            Type gType = newType.GetListOfGenericArguments().FirstOrDefault();
+                            Type listType = typeof(List<>).MakeGenericType(gType);
                             result = Activator.CreateInstance(listType);
                         }
                         catch
@@ -733,13 +732,13 @@ namespace SignalGo.Server.Helpers
                     if (newType.GetGenericTypeDefinition() == typeof(List<>) || newType.GetGenericTypeDefinition() == typeof(ICollection<>)
                         || newType.GetGenericTypeDefinition() == typeof(IList<>))
                     {
-                        var gType = newType.GetListOfGenericArguments().FirstOrDefault();
+                        Type gType = newType.GetListOfGenericArguments().FirstOrDefault();
                         if (gType != null)
                         {
                             try
                             {
-                                var gResult = Activator.CreateInstance(gType);
-                                foreach (var item in gType.GetProperties())
+                                object gResult = Activator.CreateInstance(gType);
+                                foreach (PropertyInfo item in gType.GetProperties())
                                 {
                                     item.SetValue(gResult, CreateInstances(item.PropertyType, items), null);
                                 }
@@ -760,7 +759,7 @@ namespace SignalGo.Server.Helpers
 
         }
 
-        string SimpleTypeToJsonString(Type type)
+        private string SimpleTypeToJsonString(Type type)
         {
             object instance = null;
 

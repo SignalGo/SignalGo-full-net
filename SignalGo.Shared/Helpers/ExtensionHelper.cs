@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Text;
 
 namespace System
 {
@@ -19,7 +16,7 @@ namespace System
             result.AppendLine(ex.Message);
             if (!string.IsNullOrEmpty(ex.StackTrace))
                 result.AppendLine(ex.StackTrace);
-            var inner = InitInnerExceptions(ex.InnerException);
+            string inner = InitInnerExceptions(ex.InnerException);
             if (!string.IsNullOrEmpty(inner))
             {
                 result.AppendLine("Start Inners");
@@ -30,7 +27,7 @@ namespace System
             return result.ToString();
         }
 
-        static string InitInnerExceptions(Exception ex)
+        private static string InitInnerExceptions(Exception ex)
         {
             if (ex == null)
                 return null;

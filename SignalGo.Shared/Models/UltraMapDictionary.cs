@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections;
 
 namespace SignalGo.Shared.Models
 {
@@ -14,7 +9,7 @@ namespace SignalGo.Shared.Models
 #else
         private Hashtable Items { get; set; } = new Hashtable();
 #endif
-        object lockTable = new object();
+        private readonly object lockTable = new object();
 
         public int Count
         {
@@ -34,7 +29,7 @@ namespace SignalGo.Shared.Models
 
         public bool TryGetValue<T>(object key, out T value)
         {
-            lock(lockTable)
+            lock (lockTable)
             {
                 if (Items.ContainsKey(key))
                 {

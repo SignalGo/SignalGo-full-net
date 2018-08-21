@@ -1,10 +1,8 @@
 ﻿using Newtonsoft.Json;
 using SignalGo.Client.ClientManager;
-using SignalGo.Shared.IO;
 using SignalGo.Shared.Models;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 #if (!PORTABLE)
 using System.Net.Sockets;
 #endif
@@ -20,7 +18,7 @@ namespace SignalGo.Client
             if (IsDisposed || !_client.ReadStream.CanRead)
                 return null;
 #else
-              if (IsDisposed || !_client.Connected)
+            if (IsDisposed || !_client.Connected)
                 return null;
 #endif
             //connect to tcp
@@ -33,7 +31,7 @@ namespace SignalGo.Client
             downloadFileSocket.ConnectAsync(_address, _port).Wait();
 
 #else
-            var downloadFileSocket = new TcpClient(_address, _port);
+            TcpClient downloadFileSocket = new TcpClient(_address, _port);
 #endif
 
 #if (PORTABLE)
@@ -42,8 +40,8 @@ namespace SignalGo.Client
             var readStream = downloadFileSocket.ReadStream;
             downloadFileSocket.WriteStream.Write(firstBytes, 0, firstBytes.Length);
 #else
-            var wrtiteStream = downloadFileSocket.GetStream();
-            var readStream = downloadFileSocket.GetStream();
+            NetworkStream wrtiteStream = downloadFileSocket.GetStream();
+            NetworkStream readStream = downloadFileSocket.GetStream();
             downloadFileSocket.Client.Send(Encoding.UTF8.GetBytes("SignalGo/1.0"));
 #endif
             //get OK SignalGo/1.0
@@ -51,9 +49,9 @@ namespace SignalGo.Client
             int k = readStream.ReadByte();
 
             //register client
-            var json = JsonConvert.SerializeObject(new List<string>() { "/DownloadFile" });
+            string json = JsonConvert.SerializeObject(new List<string>() { "/DownloadFile" });
             List<byte> bytes = new List<byte>();
-            var jsonBytes = Encoding.UTF8.GetBytes(json);
+            byte[] jsonBytes = Encoding.UTF8.GetBytes(json);
             byte[] dataLen = BitConverter.GetBytes(jsonBytes.Length);
             bytes.AddRange(dataLen);
             bytes.AddRange(jsonBytes);
@@ -78,17 +76,17 @@ namespace SignalGo.Client
             //int k = socketStream.ReadByte();
 
             //get DataType
-            var dataType = (DataType)readStream.ReadByte();
+            DataType dataType = (DataType)readStream.ReadByte();
             //secound byte is compress mode
-            var compresssMode = (CompressMode)readStream.ReadByte();
+            CompressMode compresssMode = (CompressMode)readStream.ReadByte();
 
             // server is called client method
             if (dataType == DataType.ResponseCallMethod)
             {
-                var bytesArray = StreamHelper.ReadBlockToEnd(readStream, compresssMode, ProviderSetting.MaximumReceiveDataBlock);
+                byte[] bytesArray = StreamHelper.ReadBlockToEnd(readStream, compresssMode, ProviderSetting.MaximumReceiveDataBlock);
                 json = Encoding.UTF8.GetString(bytesArray, 0, bytesArray.Length);
                 MethodCallInfo callInfo = JsonConvert.DeserializeObject<MethodCallInfo>(json);
-                var data = JsonConvert.DeserializeObject<StreamInfo>(callInfo.Data.ToString());
+                StreamInfo data = JsonConvert.DeserializeObject<StreamInfo>(callInfo.Data.ToString());
                 data.Stream = readStream;
                 return data;
             }
@@ -101,7 +99,7 @@ namespace SignalGo.Client
             if (IsDisposed || !_client.ReadStream.CanRead)
                 return ;
 #else
-              if (IsDisposed || !_client.Connected)
+            if (IsDisposed || !_client.Connected)
                 return;
 #endif
             //connect to tcp
@@ -112,7 +110,7 @@ namespace SignalGo.Client
 #elif (PORTABLE)
             var downloadFileSocket = new Sockets.Plugin.TcpSocketClient();
 #else
-            var downloadFileSocket = new TcpClient(_address, _port);
+            TcpClient downloadFileSocket = new TcpClient(_address, _port);
 #endif
 #if (PORTABLE)
             streamInfo.Stream = downloadFileSocket.WriteStream;
@@ -127,9 +125,9 @@ namespace SignalGo.Client
             int k = streamInfo.Stream.ReadByte();
 
             //register client
-            var json = JsonConvert.SerializeObject(new List<string>() { "/UploadFile" });
+            string json = JsonConvert.SerializeObject(new List<string>() { "/UploadFile" });
             List<byte> bytes = new List<byte>();
-            var jsonBytes = Encoding.UTF8.GetBytes(json);
+            byte[] jsonBytes = Encoding.UTF8.GetBytes(json);
             byte[] dataLen = BitConverter.GetBytes(jsonBytes.Length);
             bytes.AddRange(dataLen);
             bytes.AddRange(jsonBytes);

@@ -1,8 +1,4 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-using Newtonsoft.Json.Serialization;
-using SignalGo.Shared.DataTypes;
-using SignalGo.Shared.Helpers;
+﻿using SignalGo.Shared.DataTypes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -44,7 +40,7 @@ namespace SignalGo.Server.ServiceManager
         public void Start(string url, List<Assembly> assemblies)
         {
             Start(url);
-            var assembly = Assembly.GetEntryAssembly();
+            Assembly assembly = Assembly.GetEntryAssembly();
             if (assemblies == null)
                 assemblies = new List<Assembly>() { assembly };
             AutoRegisterServices(assemblies);
@@ -53,9 +49,9 @@ namespace SignalGo.Server.ServiceManager
 
         internal IEnumerable<Type> GetAllTypes(List<Assembly> assemblies)
         {
-            foreach (var asm in assemblies)
+            foreach (Assembly asm in assemblies)
             {
-                foreach (var type in asm.GetTypes())
+                foreach (Type type in asm.GetTypes())
                 {
                     yield return type;
                 }
@@ -79,12 +75,12 @@ namespace SignalGo.Server.ServiceManager
             //List<Type> StreamServices = new List<Type>();
             List<Type> AllTypes = GetAllTypes(assemblies).ToList();
 
-            foreach (var type in AllTypes)
+            foreach (Type type in AllTypes)
             {
-                var attributes = type.GetCustomAttributes<ServiceContractAttribute>();
+                ServiceContractAttribute[] attributes = type.GetCustomAttributes<ServiceContractAttribute>();
                 if (attributes.Length > 0)
                 {
-                    foreach (var att in attributes)
+                    foreach (ServiceContractAttribute att in attributes)
                     {
                         if (att.ServiceType == ServiceType.ServerService)
                         {

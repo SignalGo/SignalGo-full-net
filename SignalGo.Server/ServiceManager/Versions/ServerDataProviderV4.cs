@@ -1,20 +1,17 @@
 ﻿using SignalGo.Server.Models;
 using SignalGo.Server.ServiceManager.Providers;
-using SignalGo.Shared.Http;
 using SignalGo.Shared.IO;
 using System;
-using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace SignalGo.Server.ServiceManager.Versions
 {
     public class ServerDataProviderV4 : IServerDataProvider
     {
-        TcpListener _server;
-        ServerBase _serverBase;
+        private TcpListener _server;
+        private ServerBase _serverBase;
 #if (NET35 || NET40)
         public void Start(ServerBase serverBase, int port)
 #else
@@ -44,7 +41,7 @@ namespace SignalGo.Server.ServiceManager.Versions
                     try
                     {
 #if (NET35 || NET40)
-                        var client = _server.AcceptTcpClient();
+                        TcpClient client = _server.AcceptTcpClient();
 #else
                         var client = await _server.AcceptTcpClientAsync();
 #endif
@@ -88,7 +85,7 @@ namespace SignalGo.Server.ServiceManager.Versions
                 {
                     OperationContext.CurrentTaskServer = _serverBase;
 #if (NET35 || NET40)
-                    var stream = ReadFirstLineOfClient(tcpClient);
+                    CustomStreamReader stream = ReadFirstLineOfClient(tcpClient);
 #else
                     var stream = await ReadFirstLineOfClient(tcpClient);
 #endif
@@ -118,10 +115,10 @@ namespace SignalGo.Server.ServiceManager.Versions
         public async Task<CustomStreamReader> ReadFirstLineOfClient(TcpClient tcpClient)
 #endif
         {
-            var reader = new CustomStreamReader(tcpClient.GetStream());
+            CustomStreamReader reader = new CustomStreamReader(tcpClient.GetStream());
 
 #if (NET35 || NET40)
-            var data = reader.ReadLine();
+            string data = reader.ReadLine();
 #else
             var data =await reader.ReadLine();
 #endif

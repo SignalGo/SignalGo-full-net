@@ -1,11 +1,8 @@
 ﻿using SignalGo.Shared.Helpers;
-using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SignalGo.Shared.Models
 {
@@ -60,7 +57,7 @@ namespace SignalGo.Shared.Models
 
         public void Add(T1 key, T2 value)
         {
-            lock(this)
+            lock (this)
             {
                 if (!_keyValue.TryGetValue(key, out ConcurrentHash<T2> result))
                     _keyValue.TryAdd(key, new ConcurrentHash<T2>() { value });
@@ -128,9 +125,9 @@ namespace SignalGo.Shared.Models
             {
                 if (_keyValue.TryRemove(key, out ConcurrentHash<T2> values))
                 {
-                    foreach (var item in values)
+                    foreach (T2 item in values)
                     {
-                        var remove2 = _valueKey.TryRemove(item, out ConcurrentHash<T1> keys);
+                        bool remove2 = _valueKey.TryRemove(item, out ConcurrentHash<T1> keys);
                     }
                 }
             }
@@ -142,12 +139,12 @@ namespace SignalGo.Shared.Models
             {
                 if (_valueKey.TryRemove(value, out ConcurrentHash<T1> keys))
                 {
-                    foreach (var item in keys)
+                    foreach (T1 item in keys)
                     {
-                        var remove2 = _keyValue.TryRemove(item, out ConcurrentHash<T2> values);
+                        bool remove2 = _keyValue.TryRemove(item, out ConcurrentHash<T2> values);
                     }
                 }
-                
+
             }
         }
 

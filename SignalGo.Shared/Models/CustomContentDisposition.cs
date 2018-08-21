@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace SignalGo.Shared.Models
 {
@@ -14,13 +12,13 @@ namespace SignalGo.Shared.Models
             string value = content;
             if (content.ToLower().Contains("content-disposition:"))
             {
-                var ctypeLen = content.ToLower().Contains("content-disposition: ") ? "content-disposition: ".Length : "content-disposition:".Length;
+                int ctypeLen = content.ToLower().Contains("content-disposition: ") ? "content-disposition: ".Length : "content-disposition:".Length;
                 value = content.Substring(ctypeLen, content.Length - ctypeLen);
             }
 
-            foreach (var block in value.Split(new string[] { ";" }, StringSplitOptions.RemoveEmptyEntries))
+            foreach (string block in value.Split(new string[] { ";" }, StringSplitOptions.RemoveEmptyEntries))
             {
-                var keyValue = block.Split(new string[] { "=" }, StringSplitOptions.RemoveEmptyEntries);
+                string[] keyValue = block.Split(new string[] { "=" }, StringSplitOptions.RemoveEmptyEntries);
                 if (keyValue.Length > 0)
                 {
                     keyValue[0] = keyValue[0].Trim();

@@ -1,19 +1,12 @@
-﻿using Newtonsoft.Json;
-using SignalGo.Server.Helpers;
+﻿using SignalGo.Server.Helpers;
 using SignalGo.Server.Models;
-using SignalGo.Shared;
-using SignalGo.Shared.DataTypes;
-using SignalGo.Shared.Events;
-using SignalGo.Shared.Helpers;
 using SignalGo.Shared.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net.Sockets;
 using System.Reflection;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace SignalGo.Server.ServiceManager

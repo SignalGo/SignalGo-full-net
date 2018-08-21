@@ -1,9 +1,8 @@
-﻿using System;
+﻿using SignalGo.Shared.Helpers;
+using System;
 using System.Collections.Generic;
-using System.Reflection;
-using System.Text;
 using System.Linq;
-using SignalGo.Shared.Helpers;
+using System.Reflection;
 
 namespace SignalGo.Shared.DataTypes
 {
@@ -129,20 +128,20 @@ namespace SignalGo.Shared.DataTypes
         public static List<string> GetProperties(Type[] types)
         {
             List<string> result = new List<string>();
-            foreach (var serviceType in types)
+            foreach (Type serviceType in types)
             {
-                foreach (var item in serviceType.GetListOfInterfaces())
+                foreach (Type item in serviceType.GetListOfInterfaces())
                 {
                     result.AddRange(item.GetListOfProperties().Select(x => x.Name));
                 }
 
-                var parent = serviceType.GetBaseType();
+                Type parent = serviceType.GetBaseType();
 
                 while (parent != null)
                 {
                     result.AddRange(parent.GetListOfProperties().Select(x => x.Name));
 
-                    foreach (var item in parent.GetListOfInterfaces())
+                    foreach (Type item in parent.GetListOfInterfaces())
                     {
                         result.AddRange(item.GetListOfProperties().Select(x => x.Name));
                     }

@@ -1,9 +1,7 @@
-﻿using SignalGo.Shared.Models;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 
 namespace SignalGo.Shared.Helpers
 {
@@ -18,20 +16,20 @@ namespace SignalGo.Shared.Helpers
         /// <param name="serviceType"></param>
         /// <param name="callInfo"></param>
         /// <returns></returns>
-        public static List<Type> GetMethodTypes(Type serviceType, string methodName,string[] parameters)
+        public static List<Type> GetMethodTypes(Type serviceType, string methodName, string[] parameters)
         {
             List<Type> methodParameterTypes = new List<Type>();
 #if (NETSTANDARD)
             var methods = serviceType.GetTypeInfo().GetMethods();
 #else
-            var methods = serviceType.GetListOfMethods();
+            IEnumerable<MethodInfo> methods = serviceType.GetListOfMethods();
 #endif
             //int sLen = streamType == null ? 0 : 1;
-            foreach (var item in methods)
+            foreach (MethodInfo item in methods)
             {
                 if (item.Name == methodName)
                 {
-                    var plength = item.GetParameters().Length;
+                    int plength = item.GetParameters().Length;
                     if (plength != parameters.Length)
                         continue;
                     //foreach (var p in parameters)
@@ -57,20 +55,20 @@ namespace SignalGo.Shared.Helpers
                 return;
             if (type.GetIsGenericType())
             {
-                foreach (var item in type.GetListOfGenericArguments())
+                foreach (Type item in type.GetListOfGenericArguments())
                 {
                     GetListOfUsedTypes(item, ref findedTypes);
                 }
             }
             else
             {
-                foreach (var item in type.GetListOfProperties())
+                foreach (PropertyInfo item in type.GetListOfProperties())
                 {
                     GetListOfUsedTypes(item.PropertyType, ref findedTypes);
                 }
             }
 
-            foreach (var item in type.GetListOfProperties())
+            foreach (PropertyInfo item in type.GetListOfProperties())
             {
                 GetListOfUsedTypes(item.PropertyType, ref findedTypes);
             }

@@ -2,13 +2,11 @@
 using SignalGo.Server.ServiceManager;
 using SignalGo.Shared.DataTypes;
 using SignalGo.Shared.Helpers;
-using SignalGo.Shared.Log;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -35,10 +33,10 @@ namespace SignalGo.Server.Models
         {
             get
             {
-                var currentServer = CurrentTaskServer;
+                ServerBase currentServer = CurrentTaskServer;
                 if (Task.CurrentId != null && currentServer != null && currentServer.TaskOfClientInfoes.ContainsKey(Task.CurrentId.GetValueOrDefault()))
                 {
-                    var clientId = currentServer.TaskOfClientInfoes[Task.CurrentId.GetValueOrDefault()];
+                    string clientId = currentServer.TaskOfClientInfoes[Task.CurrentId.GetValueOrDefault()];
                     currentServer.Clients.TryGetValue(clientId, out ClientInfo clientInfo);
                     return new OperationContext() { Client = clientInfo, ClientId = clientId, ServerBase = currentServer };
                 }
@@ -95,7 +93,7 @@ namespace SignalGo.Server.Models
         /// <returns></returns>
         public T GetService<T>() where T : class
         {
-            var attribute = typeof(T).GetCustomAttributes<ServiceContractAttribute>(true).Where(x => x.ServiceType == ServiceType.ServerService).FirstOrDefault();
+            ServiceContractAttribute attribute = typeof(T).GetCustomAttributes<ServiceContractAttribute>(true).Where(x => x.ServiceType == ServiceType.ServerService).FirstOrDefault();
             ServerBase.SingleInstanceServices.TryGetValue(attribute.Name, out object result);
             return (T)result;
         }
@@ -127,7 +125,7 @@ namespace SignalGo.Server.Models
         internal static ConcurrentDictionary<string, HashSet<object>> CustomClientSavedSettings { get; set; } = new ConcurrentDictionary<string, HashSet<object>>();
         internal static object GetCurrentSetting(Type type)
         {
-            var context = OperationContext.Current;
+            OperationContext context = OperationContext.Current;
             if (context == null)
                 throw new Exception("SynchronizationContext is null or empty! Do not call this property inside of another thread that do not have any synchronizationContext or you can call SynchronizationContext.SetSynchronizationContext(new SynchronizationContext()); and ServerBase.AllDispatchers must contine this");
 
@@ -146,8 +144,8 @@ namespace SignalGo.Server.Models
                 else if (sessionPeroperty.Info.PropertyType != typeof(string))
                     throw new Exception("type of your HttpKeyAttribute must be as string because this will used for headers of http calls and you must made it custom");
 
-                var httpClient = context.Client as HttpClientInfo;
-                var setting = GetSetting(context.Client, type);
+                HttpClientInfo httpClient = context.Client as HttpClientInfo;
+                object setting = GetSetting(context.Client, type);
                 if (setting == null && (httpClient.RequestHeaders == null || string.IsNullOrEmpty(httpClient.RequestHeaders[sessionPeroperty.Attribute.RequestHeaderName])))
                     return null;
 
@@ -158,7 +156,7 @@ namespace SignalGo.Server.Models
                     key = GetKeyFromSetting(type, setting);
                 if (CustomClientSavedSettings.TryGetValue(key, out HashSet<object> result))
                 {
-                    var obj = result.FirstOrDefault(x => x.GetType() == type);
+                    object obj = result.FirstOrDefault(x => x.GetType() == type);
                     if (obj == null)
                         return null;
                     if (expirePeroperty != null && obj != null && expirePeroperty.Attribute.CheckIsExpired(obj.GetType().GetProperty(expirePeroperty.Info.Name).GetValue(obj, null)))
@@ -199,7 +197,7 @@ namespace SignalGo.Server.Models
             return null;
         }
 
-        static string ExtractValue(string data, string keyName, string valueSeparateChar, string keyValueSeparateChar)
+        private static string ExtractValue(string data, string keyName, string valueSeparateChar, string keyValueSeparateChar)
         {
             if (string.IsNullOrEmpty(data) || string.IsNullOrEmpty(keyName) || (string.IsNullOrEmpty(valueSeparateChar) && string.IsNullOrEmpty(keyValueSeparateChar)))
                 return data;
@@ -213,9 +211,9 @@ namespace SignalGo.Server.Models
             }
             else
             {
-                foreach (var keyValue in data.Split(new string[] { valueSeparateChar }, StringSplitOptions.RemoveEmptyEntries))
+                foreach (string keyValue in data.Split(new string[] { valueSeparateChar }, StringSplitOptions.RemoveEmptyEntries))
                 {
-                    var separate = keyValue.Split(new string[] { keyValueSeparateChar }, StringSplitOptions.RemoveEmptyEntries);
+                    string[] separate = keyValue.Split(new string[] { keyValueSeparateChar }, StringSplitOptions.RemoveEmptyEntries);
                     if (string.IsNullOrEmpty(separate.FirstOrDefault()))
                         continue;
                     if (separate.FirstOrDefault().ToLower().Trim() == keyName.ToLower())
@@ -261,13 +259,13 @@ namespace SignalGo.Server.Models
             }
             set
             {
-                var context = OperationContext.Current;
+                OperationContext context = OperationContext.Current;
                 if (context == null)
                     throw new Exception("SynchronizationContext is null or empty! Do not call this property inside of another thread that do not have any synchronizationContext or you can call SynchronizationContext.SetSynchronizationContext(new SynchronizationContext()); and ServerBase.AllDispatchers must contine this");
 
                 if (context.Client is HttpClientInfo)
                 {
-                    var key = GetKeyFromSetting(typeof(T), value);
+                    string key = GetKeyFromSetting(typeof(T), value);
                     SetCustomClientSetting(key, value);
                     //SetSetting(value, context);
                 }
@@ -283,7 +281,7 @@ namespace SignalGo.Server.Models
         /// <returns></returns>
         public static IEnumerable<T> GetSettings()
         {
-            var context = OperationContext.Current;
+            OperationContext context = OperationContext.Current;
             if (SynchronizationContext.Current == null)
                 throw new Exception("SynchronizationContext is null or empty! Do not call this property inside of another thread that do not have any synchronizationContext or you can call SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());");
             if (SavedSettings.TryGetValue(context.Client, out HashSet<object> result))
@@ -315,13 +313,13 @@ namespace SignalGo.Server.Models
 
         public static IEnumerable<T> GetSettings(string clientId)
         {
-            var clientInfo = OperationContext.Current.GetClientInfoByClientId(clientId);
+            ClientInfo clientInfo = OperationContext.Current.GetClientInfoByClientId(clientId);
             return GetSettings(clientInfo);
         }
 
         public static T GetSetting(string clientId)
         {
-            var clientInfo = OperationContext.Current.GetClientInfoByClientId(clientId);
+            ClientInfo clientInfo = OperationContext.Current.GetClientInfoByClientId(clientId);
             return GetSetting(clientInfo);
         }
 
@@ -377,7 +375,7 @@ namespace SignalGo.Server.Models
 
         public static IEnumerable<T2> GetSettings<T2>(IEnumerable<ClientInfo> clients, Func<T2, bool> func)
         {
-            foreach (var item in clients)
+            foreach (ClientInfo item in clients)
             {
                 if (SavedSettings.TryGetValue(item, out HashSet<object> result))
                 {
@@ -389,11 +387,11 @@ namespace SignalGo.Server.Models
 
         public static IEnumerable<T> GetSettings(IEnumerable<ClientInfo> clients, Func<T, bool> func)
         {
-            foreach (var item in clients)
+            foreach (ClientInfo item in clients)
             {
                 if (SavedSettings.TryGetValue(item, out HashSet<object> result))
                 {
-                    var find = result.Where(x => x.GetType() == typeof(T) && func((T)x)).Select(x => (T)x).FirstOrDefault();
+                    T find = result.Where(x => x.GetType() == typeof(T) && func((T)x)).Select(x => (T)x).FirstOrDefault();
                     if (find != null)
                         yield return find;
                 }
@@ -406,7 +404,7 @@ namespace SignalGo.Server.Models
         /// <returns></returns>
         public static IEnumerable<object> GetAllSettings()
         {
-            var context = OperationContext.Current;
+            OperationContext context = OperationContext.Current;
             if (SynchronizationContext.Current == null)
                 throw new Exception("SynchronizationContext is null or empty! Do not call this property inside of another thread that do not have any synchronizationContext or you can call SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());");
             if (SavedSettings.TryGetValue(context.Client, out HashSet<object> result))
@@ -441,28 +439,28 @@ namespace SignalGo.Server.Models
         {
             if (typeof(T).GetIsInterface())
             {
-                var objectInstance = InterfaceWrapper.Wrap<T>((serviceName, method, args) =>
+                T objectInstance = InterfaceWrapper.Wrap<T>((serviceName, method, args) =>
                 {
                     //this is async action
                     if (method.ReturnType == typeof(Task))
                     {
                         string methodName = method.Name;
-                        var task = ServerExtensions.SendDataWithCallClientServiceMethod(serverBase, client, null, serviceName, method.Name, method.MethodToParameters(x => ServerSerializationHelper.SerializeObject(x, serverBase), args).ToArray());
+                        Task task = ServerExtensions.SendDataWithCallClientServiceMethod(serverBase, client, null, serviceName, method.Name, method.MethodToParameters(x => ServerSerializationHelper.SerializeObject(x, serverBase), args).ToArray());
                         return task;
                     }
                     //this is async function
                     else if (method.ReturnType.GetBaseType() == typeof(Task))
                     {
                         string methodName = method.Name;
-                        var task = ServerExtensions.SendDataWithCallClientServiceMethod(serverBase, client, method.ReturnType.GetGenericArguments()[0], serviceName, method.Name, method.MethodToParameters(x => ServerSerializationHelper.SerializeObject(x, serverBase), args).ToArray());
+                        Task task = ServerExtensions.SendDataWithCallClientServiceMethod(serverBase, client, method.ReturnType.GetGenericArguments()[0], serviceName, method.Name, method.MethodToParameters(x => ServerSerializationHelper.SerializeObject(x, serverBase), args).ToArray());
                         return task;
                     }
                     else
                     {
                         string methodName = method.Name;
-                        var task = ServerExtensions.SendDataWithCallClientServiceMethod(serverBase, client, method.ReturnType, serviceName, method.Name, method.MethodToParameters(x => ServerSerializationHelper.SerializeObject(x, serverBase), args).ToArray());
+                        Task task = ServerExtensions.SendDataWithCallClientServiceMethod(serverBase, client, method.ReturnType, serviceName, method.Name, method.MethodToParameters(x => ServerSerializationHelper.SerializeObject(x, serverBase), args).ToArray());
                         task.Wait();
-                        return task.GetType().GetProperty("Result").GetValue(task,null);
+                        return task.GetType().GetProperty("Result").GetValue(task, null);
                     }
                 });
 
@@ -470,7 +468,7 @@ namespace SignalGo.Server.Models
             }
             else
             {
-                var instance = Activator.CreateInstance(typeof(T));
+                object instance = Activator.CreateInstance(typeof(T));
                 return (T)instance;
             }
         }
@@ -494,11 +492,11 @@ namespace SignalGo.Server.Models
         /// <returns>list of service context</returns>
         public static IEnumerable<ClientContext<T>> GetAllClientContextServicesButMe<T>(this OperationContext context) where T : class
         {
-            foreach (var item in context.ServerBase.Clients)
+            foreach (KeyValuePair<string, ClientInfo> item in context.ServerBase.Clients)
             {
                 if (item.Value == context.Client)
                     continue;
-                var find = GenerateClientServiceInstance<T>(context.ServerBase, item.Value);
+                T find = GenerateClientServiceInstance<T>(context.ServerBase, item.Value);
                 yield return new ClientContext<T>(find, item.Value);
             }
         }
@@ -690,9 +688,9 @@ namespace SignalGo.Server.Models
         /// <returns>list of service context</returns>
         public static IEnumerable<ClientContext<T>> GetAllClientClientContextServices<T>(this ServerBase serverBase) where T : class
         {
-            foreach (var item in serverBase.Clients)
+            foreach (KeyValuePair<string, ClientInfo> item in serverBase.Clients)
             {
-                var find = GenerateClientServiceInstance<T>(serverBase, item.Value);
+                T find = GenerateClientServiceInstance<T>(serverBase, item.Value);
                 yield return new ClientContext<T>(find, item.Value);
             }
         }
@@ -710,7 +708,7 @@ namespace SignalGo.Server.Models
             serverBase.Clients.TryGetValue(clientId, out ClientInfo clientInfo);
             if (clientInfo == null)
                 return null;
-            var find = GenerateClientServiceInstance<T>(serverBase, clientInfo);
+            T find = GenerateClientServiceInstance<T>(serverBase, clientInfo);
             return new ClientContext<T>(find, clientInfo);
         }
 
@@ -723,9 +721,9 @@ namespace SignalGo.Server.Models
         /// <returns>list of service context</returns>
         public static ClientContext<T> GetClientContextService<T>(this ServerBase serverBase, ClientInfo client) where T : class
         {
-            var serviceName = typeof(T).GetClientServiceName();
+            string serviceName = typeof(T).GetClientServiceName(true);
             serverBase.RegisteredServiceTypes.TryGetValue(serviceName, out Type serviceType);
-            var find = GenerateClientServiceInstance<T>(serverBase, client);
+            T find = GenerateClientServiceInstance<T>(serverBase, client);
             return new ClientContext<T>(find, client);
         }
 
@@ -738,7 +736,7 @@ namespace SignalGo.Server.Models
         /// <returns>list of service context</returns>
         public static T GetClientService<T>(this ServerBase serverBase, string clientId) where T : class
         {
-            var client = GetClientContextService<T>(serverBase, clientId);
+            ClientContext<T> client = GetClientContextService<T>(serverBase, clientId);
             if (client != null)
                 return client.Service;
             return default(T);
@@ -753,7 +751,7 @@ namespace SignalGo.Server.Models
         /// <returns>list of service context</returns>
         public static T GetClientService<T>(this ServerBase serverBase, ClientInfo client) where T : class
         {
-            var result = GetClientContextService<T>(serverBase, client);
+            ClientContext<T> result = GetClientContextService<T>(serverBase, client);
             if (result != null)
                 return result.Service;
             return default(T);
@@ -768,9 +766,9 @@ namespace SignalGo.Server.Models
         /// <returns>list of service context</returns>
         public static IEnumerable<ClientContext<T>> GetListOfClientContextServices<T>(this ServerBase serverBase, IEnumerable<ClientInfo> clients) where T : class
         {
-            foreach (var item in clients)
+            foreach (ClientInfo item in clients)
             {
-                var find = GenerateClientServiceInstance<T>(serverBase, item);
+                T find = GenerateClientServiceInstance<T>(serverBase, item);
                 yield return new ClientContext<T>(find, item);
             }
         }
@@ -784,12 +782,12 @@ namespace SignalGo.Server.Models
         /// <returns>list of service context</returns>
         public static IEnumerable<ClientContext<T>> GetListOfClientContextServices<T>(this ServerBase serverBase, IEnumerable<string> clientIds) where T : class
         {
-            foreach (var clientId in clientIds)
+            foreach (string clientId in clientIds)
             {
                 serverBase.Clients.TryGetValue(clientId, out ClientInfo clientInfo);
                 if (clientInfo == null)
                     continue;
-                var find = GenerateClientServiceInstance<T>(serverBase, clientInfo);
+                T find = GenerateClientServiceInstance<T>(serverBase, clientInfo);
                 yield return new ClientContext<T>(find, clientInfo);
             }
         }
@@ -803,11 +801,11 @@ namespace SignalGo.Server.Models
         /// <returns>list of service context</returns>
         public static IEnumerable<ClientContext<T>> GetListOfExcludeClientContextServices<T>(this ServerBase serverBase, IEnumerable<string> clientIds) where T : class
         {
-            foreach (var client in serverBase.Clients)
+            foreach (KeyValuePair<string, ClientInfo> client in serverBase.Clients)
             {
                 if (clientIds.Contains(client.Key))
                     continue;
-                var find = GenerateClientServiceInstance<T>(serverBase, client.Value);
+                T find = GenerateClientServiceInstance<T>(serverBase, client.Value);
                 yield return new ClientContext<T>(find, client.Value);
             }
         }

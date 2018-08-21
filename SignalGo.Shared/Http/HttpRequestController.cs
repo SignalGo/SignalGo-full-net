@@ -1,8 +1,4 @@
 ﻿using SignalGo.Shared.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace SignalGo.Shared.Http
 {
@@ -54,7 +50,7 @@ namespace SignalGo.Shared.Http
             return new ActionResult(data);
         }
 
-        HttpPostedFileInfo _currentFile = null;
+        private HttpPostedFileInfo _currentFile = null;
         public void SetFirstFile(HttpPostedFileInfo fileInfo)
         {
             _currentFile = fileInfo;

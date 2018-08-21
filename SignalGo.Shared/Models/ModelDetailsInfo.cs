@@ -1,7 +1,4 @@
 ﻿using SignalGo.Shared.Helpers;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace SignalGo.Shared.Models
 {

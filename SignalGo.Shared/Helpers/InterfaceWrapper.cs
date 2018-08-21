@@ -5,8 +5,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SignalGo.Shared.Helpers
 {
@@ -44,13 +42,13 @@ namespace SignalGo.Shared.Helpers
             return (TService)Wrap(typeof(TService), CallMethodAction);
         }
 
-        static List<Type> GetFullTypes(Type type)
+        private static List<Type> GetFullTypes(Type type)
         {
             List<Type> result = new List<Type>();
-            var baseTypes = type.GetListOfBaseTypes();
-            var interfaces = type.GetListOfInterfaces();
+            IEnumerable<Type> baseTypes = type.GetListOfBaseTypes();
+            IEnumerable<Type> interfaces = type.GetListOfInterfaces();
             result.AddRange(baseTypes);
-            foreach (var item in interfaces)
+            foreach (Type item in interfaces)
             {
                 if (!result.Contains(item))
                     result.Add(item);
@@ -68,7 +66,7 @@ namespace SignalGo.Shared.Helpers
             String ns = serviceInterfaceType.Namespace;
             if (!String.IsNullOrEmpty(ns))
                 ns += ".";
-            var attrib = serviceInterfaceType.GetCustomAttributes<ServiceContractAttribute>(true).Where(x => x.ServiceType == ServiceType.ServerService || x.ServiceType == ServiceType.ClientService || x.ServiceType == ServiceType.StreamService).FirstOrDefault();
+            ServiceContractAttribute attrib = serviceInterfaceType.GetCustomAttributes<ServiceContractAttribute>(true).Where(x => x.ServiceType == ServiceType.ServerService || x.ServiceType == ServiceType.ClientService || x.ServiceType == ServiceType.StreamService).FirstOrDefault();
 
 #if (NET35)
             var assembly = AppDomain.CurrentDomain.DefineDynamicAssembly(assemblyName,
@@ -77,15 +75,15 @@ namespace SignalGo.Shared.Helpers
             var assembly = AppDomain.CurrentDomain.DefineDynamicAssembly(assemblyName,
                         AssemblyBuilderAccess.RunAndCollect);
 #else
-            var assembly = AssemblyBuilder.DefineDynamicAssembly(assemblyName,
+            AssemblyBuilder assembly = AssemblyBuilder.DefineDynamicAssembly(assemblyName,
                         AssemblyBuilderAccess.RunAndCollect);
 #endif
 #if (NETSTANDARD || NETCOREAPP || PORTABLE)
             var module = assembly.DefineDynamicModule(moduleName);
 #else
-            var module = assembly.DefineDynamicModule(moduleName, false);
+            ModuleBuilder module = assembly.DefineDynamicModule(moduleName, false);
 #endif
-            var type = module.DefineType(String.Format("{0}InterfaceWrapper_{1}", ns, serviceInterfaceType.Name),
+            TypeBuilder type = module.DefineType(String.Format("{0}InterfaceWrapper_{1}", ns, serviceInterfaceType.Name),
                 TypeAttributes.Class |
                 TypeAttributes.AnsiClass |
                 TypeAttributes.Sealed |
@@ -103,7 +101,7 @@ namespace SignalGo.Shared.Helpers
                 typeof(DebuggerBrowsableAttribute).GetTypeInfo().DeclaredConstructors.FirstOrDefault(),
                 new Object[] { DebuggerBrowsableState.Never });
 #else
-            var cab = new CustomAttributeBuilder(
+            CustomAttributeBuilder cab = new CustomAttributeBuilder(
                 typeof(DebuggerBrowsableAttribute).GetConstructor(new Type[] { typeof(DebuggerBrowsableState) }),
                 new Object[] { DebuggerBrowsableState.Never });
 #endif
@@ -115,42 +113,42 @@ namespace SignalGo.Shared.Helpers
             fields[0].SetCustomAttribute(cab);
 
             // Define a simple constructor that takes all our services as arguments
-            var ctor = type.DefineConstructor(MethodAttributes.Public,
+            ConstructorBuilder ctor = type.DefineConstructor(MethodAttributes.Public,
                 CallingConventions.HasThis,
                 new Type[] { CallMethodAction.GetType() });//Sequences.Repeat(serviceInterfaceType, services.Length)
-            var generator = ctor.GetILGenerator();
+            ILGenerator generator = ctor.GetILGenerator();
 
             generator.Emit(OpCodes.Ldarg_0);
             generator.Emit(OpCodes.Ldarg_1);
             generator.Emit(OpCodes.Stfld, fields[0]);
             generator.Emit(OpCodes.Ret);
-            foreach (var serviceType in GetFullTypes(serviceInterfaceType))
+            foreach (Type serviceType in GetFullTypes(serviceInterfaceType))
             {
                 // Implement all the methods of the interface
-                foreach (var method in serviceType.GetListOfMethods())
+                foreach (MethodInfo method in serviceType.GetListOfMethods())
                 {
                     //generator.Emit(OpCodes.Pop);
-                    var args = method.GetParameters();
-                    var methodImpl = type.DefineMethod(method.Name,
+                    ParameterInfo[] args = method.GetParameters();
+                    MethodBuilder methodImpl = type.DefineMethod(method.Name,
                         MethodAttributes.Public | MethodAttributes.Virtual,
                         method.ReturnType, (from arg in args select arg.ParameterType).ToArray());
                     for (int i = 0; i < args.Length; i++)
                     {
-                        var parameterBuilder = methodImpl.DefineParameter(i + 1, ParameterAttributes.None, args[i].Name);
+                        ParameterBuilder parameterBuilder = methodImpl.DefineParameter(i + 1, ParameterAttributes.None, args[i].Name);
 
                     }
                     // Generate code to simply call down into each service object
                     // Any return values are discarded, except the last one, which is returned
                     generator = methodImpl.GetILGenerator();
 
-                    var invoke = CallMethodAction.GetType().FindMethod("Invoke");
+                    MethodInfo invoke = CallMethodAction.GetType().FindMethod("Invoke");
                     generator.Emit(OpCodes.Ldarg_0);//stack [this]
                     generator.Emit(OpCodes.Ldfld, fields[0]);//stack
                     if (attrib == null)
                         throw new Exception("attrib not found");
                     //add name of service
                     generator.Emit(OpCodes.Ldstr, attrib.Name);
-                    var getCurgntMethod = typeof(MethodBase).FindMethod("GetCurrentMethod");
+                    MethodInfo getCurgntMethod = typeof(MethodBase).FindMethod("GetCurrentMethod");
                     if (getCurgntMethod == null)
                         throw new Exception("GetCurrentMethod not found");
                     //add current method info
@@ -203,7 +201,7 @@ namespace SignalGo.Shared.Helpers
             var newType = type.CreateTypeInfo();
             return Activator.CreateInstance(newType.AsType(), CallMethodAction);
 #else
-            var newType = type.CreateType();
+            Type newType = type.CreateType();
             return Activator.CreateInstance(newType, CallMethodAction);
 #endif
 

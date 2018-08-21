@@ -65,7 +65,7 @@
 //                stream.Write(data, 0, data.Length);
 //            }
 //        }
-        
+
 //        public static void WriteBlockToStream(System.IO.Stream stream, byte[] data)
 //        {
 //            var size = BitConverter.GetBytes(data.Length);

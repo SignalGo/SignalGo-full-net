@@ -1,37 +1,72 @@
 ﻿using SignalGo.Shared.IO;
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net.Sockets;
 using System.Text;
 
 namespace SignalGo.Server.IO
 {
     internal class StreamGo : Stream
     {
-        Stream CurrentStream { get; set; }
+        private Stream CurrentStream { get; set; }
 
         public StreamGo(Stream currentStream)
         {
             CurrentStream = currentStream;
         }
 
-        long _Length;
-        uint BoundarySize { get; set; }
+        private long _Length;
 
-        long _Position;
-        bool IsReadFinishedBytes { get; set; } = false;
+        private uint BoundarySize { get; set; }
 
-        public override bool CanRead => CurrentStream.CanRead;
+        private long _Position;
 
-        public override bool CanSeek => CurrentStream.CanSeek;
+        private bool IsReadFinishedBytes { get; set; } = false;
 
-        public override bool CanWrite => CurrentStream.CanWrite;
+        public override bool CanRead
+        {
+            get
+            {
+                return CurrentStream.CanRead;
+            }
+        }
 
-        public override long Length => _Length;
+        public override bool CanSeek
+        {
+            get
+            {
+                return CurrentStream.CanSeek;
+            }
+        }
 
-        public override long Position { get => _Position; set => _Position = value; }
+        public override bool CanWrite
+        {
+            get
+            {
+                return CurrentStream.CanWrite;
+            }
+        }
+
+        public override long Length
+        {
+            get
+            {
+                return _Length;
+            }
+        }
+
+        public override long Position
+        {
+            get
+            {
+                return _Position;
+            }
+
+            set
+            {
+                _Position = value;
+            }
+        }
 
         public override void Flush()
         {
@@ -57,13 +92,13 @@ namespace SignalGo.Server.IO
                 IsReadFinishedBytes = true;
                 //Console.WriteLine("length:" + Length + "pos:" + Position);
                 //Console.WriteLine("need take:" + (Length - Position + BoundarySize));
-                var endBuffer = SignalGoStreamBase.CurrentBase.ReadBlockSize(CurrentStream, (ulong)(Length - Position + BoundarySize));
+                byte[] endBuffer = SignalGoStreamBase.CurrentBase.ReadBlockSize(CurrentStream, (ulong)(Length - Position + BoundarySize));
                 //Console.WriteLine("sizeTake:" + endBuffer.Length);
                 if (endBuffer.Length == 0)
                     return 0;
-                var needRead = (int)BoundarySize;
+                int needRead = (int)BoundarySize;
                 //Console.WriteLine(endBuffer.Length + "&" + (endBuffer.Length - needRead) + " & " + needRead);
-                var text = Encoding.UTF8.GetString(endBuffer.ToList().GetRange(endBuffer.Length - needRead, needRead).ToArray());
+                string text = Encoding.UTF8.GetString(endBuffer.ToList().GetRange(endBuffer.Length - needRead, needRead).ToArray());
                 int lineLen = 0;
                 if (!text.StartsWith("\r\n"))
                 {
@@ -71,7 +106,7 @@ namespace SignalGo.Server.IO
                     _Length -= 2;
                 }
                 //Console.WriteLine("ok&" + (endBuffer.Length - needRead - lineLen));
-                var newBuffer = endBuffer.ToList().GetRange(0, endBuffer.Length - needRead - lineLen);
+                List<byte> newBuffer = endBuffer.ToList().GetRange(0, endBuffer.Length - needRead - lineLen);
                 if (newBuffer.Count == 0)
                     return -1;
                 for (int i = 0; i < newBuffer.Count; i++)
@@ -89,14 +124,14 @@ namespace SignalGo.Server.IO
                     return -1;
                 }
             }
-            var readCount = CurrentStream.Read(buffer, offset, count);
+            int readCount = CurrentStream.Read(buffer, offset, count);
             Position += readCount;
             if (Position == Length)
                 FinishRead();
             return readCount;
         }
 
-        void FinishRead()
+        private void FinishRead()
         {
             if (!IsReadFinishedBytes)
             {

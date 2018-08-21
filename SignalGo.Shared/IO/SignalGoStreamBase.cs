@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace SignalGo.Shared.IO
@@ -35,7 +34,7 @@ namespace SignalGo.Shared.IO
         public virtual byte[] ReadBlockToEnd(Stream stream, CompressMode compress, uint maximum)
         {
             //first 4 bytes are size of block
-            var dataLenByte = ReadBlockSize(stream, 4);
+            byte[] dataLenByte = ReadBlockSize(stream, 4);
             //convert bytes to int
             int dataLength = BitConverter.ToInt32(dataLenByte, 0);
             if (dataLength > maximum)
@@ -43,7 +42,7 @@ namespace SignalGo.Shared.IO
             //else
             //    AutoLogger.LogText("size: " + dataLength);
             //read a block
-            var dataBytes = ReadBlockSize(stream, (ulong)dataLength);
+            byte[] dataBytes = ReadBlockSize(stream, (ulong)dataLength);
             return dataBytes;
         }
 
@@ -60,7 +59,7 @@ namespace SignalGo.Shared.IO
                     countToRead = count - lengthReaded;
                 }
                 byte[] readBytes = new byte[countToRead];
-                var readCount = stream.Read(readBytes, 0, (int)countToRead);
+                int readCount = stream.Read(readBytes, 0, (int)countToRead);
                 if (readCount <= 0)
                     throw new Exception("read zero buffer! client disconnected: " + readCount);
                 lengthReaded += (ulong)readCount;
@@ -71,7 +70,7 @@ namespace SignalGo.Shared.IO
 
         public virtual void WriteBlockToStream(Stream stream, byte[] data)
         {
-            var size = BitConverter.GetBytes(data.Length);
+            byte[] size = BitConverter.GetBytes(data.Length);
             stream.Write(size, 0, size.Length);
             stream.Write(data, 0, data.Length);
         }
@@ -86,7 +85,7 @@ namespace SignalGo.Shared.IO
         /// <returns></returns>
         public virtual byte ReadOneByte(Stream stream, CompressMode compress, uint maximum)
         {
-            var data = stream.ReadByte();
+            int data = stream.ReadByte();
             if (data < 0)
                 throw new Exception($"read one byte is correct or disconnected client! {data}");
             return (byte)data;
@@ -101,7 +100,7 @@ namespace SignalGo.Shared.IO
             var data = stream.ReadByte();
 #else
             byte[] bytes = new byte[1];
-            var data = await stream.ReadAsync(bytes, 0, bytes.Length);
+            int data = await stream.ReadAsync(bytes, 0, bytes.Length);
 #endif
             if (data <= 0)
                 throw new Exception($"read one byte is correct or disconnected client! {data}");

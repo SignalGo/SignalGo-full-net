@@ -1,12 +1,9 @@
-﻿using SignalGo.Shared.IO;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace SignalGo.Shared.Helpers
 {
@@ -19,7 +16,7 @@ namespace SignalGo.Shared.Helpers
             byte oneByte = 0;
             AsyncActions.Run(() =>
             {
-                var data = stream.ReadByte();
+                int data = stream.ReadByte();
                 if (data >= 0)
                 {
                     oneByte = (byte)data;
@@ -31,8 +28,8 @@ namespace SignalGo.Shared.Helpers
                 return oneByte;
             throw new TimeoutException();
         }
-        
-       
+
+
 
         public static byte[] ReadBlockSizeDataAvalable(NetworkStream stream, ulong count)
         {
@@ -58,7 +55,7 @@ namespace SignalGo.Shared.Helpers
                     countToRead = count - lengthReaded;
                 }
                 byte[] readBytes = new byte[countToRead];
-                var readCount = stream.Read(readBytes, 0, (int)countToRead);
+                int readCount = stream.Read(readBytes, 0, (int)countToRead);
                 if (readCount <= 0)
                     throw new Exception("read zero buffer! client disconnected: " + readCount);
                 lengthReaded += (ulong)readCount;
@@ -66,6 +63,6 @@ namespace SignalGo.Shared.Helpers
             }
             return bytes.ToArray();
         }
-        
+
     }
 }

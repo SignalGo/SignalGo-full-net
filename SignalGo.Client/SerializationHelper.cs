@@ -1,12 +1,8 @@
 ﻿using Newtonsoft.Json;
 using SignalGo.Shared.Converters;
 using SignalGo.Shared.DataTypes;
-using SignalGo.Shared.Helpers;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SignalGo.Client
 {
@@ -17,7 +13,7 @@ namespace SignalGo.Client
             if (obj == null)
                 return "";
             //if (serverBase != null && serverBase.InternalSetting.IsEnabledDataExchanger)
-                return JsonConvert.SerializeObject(obj, Formatting.None, new JsonSerializerSettings() { ReferenceLoopHandling = ReferenceLoopHandling.Ignore, Converters = new List<JsonConverter>() { new DataExchangeConverter(LimitExchangeType.OutgoingCall, customDataExchanger)  }, Formatting = Formatting.None, NullValueHandling = nullValueHandling });
+            return JsonConvert.SerializeObject(obj, Formatting.None, new JsonSerializerSettings() { ReferenceLoopHandling = ReferenceLoopHandling.Ignore, Converters = new List<JsonConverter>() { new DataExchangeConverter(LimitExchangeType.OutgoingCall, customDataExchanger) }, Formatting = Formatting.None, NullValueHandling = nullValueHandling });
             //return JsonConvert.SerializeObject(obj, new JsonSerializerSettings() { Formatting = Formatting.None, NullValueHandling = nullValueHandling, ReferenceLoopHandling = ReferenceLoopHandling.Ignore });
         }
 

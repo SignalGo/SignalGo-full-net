@@ -2,9 +2,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
-using System.Text;
 
 namespace SignalGo.Shared.Helpers
 {
@@ -157,7 +155,7 @@ namespace SignalGo.Shared.Helpers
         {
             if (value == null)
                 return null;
-            var targetPropertyType = GetTypeCodeOfObject(toType);
+            SerializeObjectType targetPropertyType = GetTypeCodeOfObject(toType);
             if (targetPropertyType == SerializeObjectType.Boolean)
             {
                 return Convert.ToBoolean(value);
@@ -240,7 +238,7 @@ namespace SignalGo.Shared.Helpers
             {
                 if (value == null)
                 {
-                    var values = Enum.GetValues(toType);
+                    Array values = Enum.GetValues(toType);
                     if (values.Length > 0)
                         return Enum.GetValues(toType).GetValue(0);
                     else

@@ -4,10 +4,8 @@ using SignalGo.Shared.Helpers;
 using SignalGo.Shared.Models;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -33,7 +31,7 @@ namespace SignalGo.Client.ClientManager
             CSCodeInjection.InvokedClientMethodFunction = (client, method, parameters) =>
             {
                 //Console.WriteLine($"CSCodeInjection.InvokedClientMethodFunction {method.Name}");
-                var data = SendData((OperationCalls)client, method.Name, "", parameters);
+                object data = SendData((OperationCalls)client, method.Name, "", parameters);
                 if (data == null)
                     return null;
                 return data is StreamInfo ? data : ClientSerializationHelper.DeserializeObject(data.ToString(), method.ReturnType);
@@ -55,7 +53,7 @@ namespace SignalGo.Client.ClientManager
         /// <returns></returns>
         internal static T SendData<T>(this OperationCalls client, string callerName, params Shared.Models.ParameterInfo[] args)
         {
-            var data = SendData(client, callerName, "", args);
+            object data = SendData(client, callerName, "", args);
             if (data == null || data.ToString() == "")
                 return default(T);
             return ClientSerializationHelper.DeserializeObject<T>(data.ToString());
@@ -69,7 +67,7 @@ namespace SignalGo.Client.ClientManager
         /// <returns></returns>
         internal static T SendData<T>(this ConnectorBase connector, MethodCallInfo callInfo)
         {
-            var data = SendData(connector, callInfo);
+            string data = SendData(connector, callInfo);
             if (string.IsNullOrEmpty(data))
                 return default(T);
             return ClientSerializationHelper.DeserializeObject<T>(data.ToString());
@@ -110,7 +108,7 @@ namespace SignalGo.Client.ClientManager
         {
             string serviceName = "";
             if (string.IsNullOrEmpty(attibName))
-                serviceName = client.GetType().GetServerServiceName();
+                serviceName = client.GetType().GetServerServiceName(false);
             else
                 serviceName = attibName;
 
@@ -132,7 +130,7 @@ namespace SignalGo.Client.ClientManager
             //{
             //    callInfo.Parameters.Add(new Shared.Models.ParameterInfo() { Value = ClientSerializationHelper.SerializeObject(item), Name = item?.GetType().FullName });
             //}
-            var guid = Guid.NewGuid().ToString();
+            string guid = Guid.NewGuid().ToString();
             callInfo.Guid = guid;
             return SendData(connector, callInfo);
         }
@@ -146,22 +144,22 @@ namespace SignalGo.Client.ClientManager
             //{
             //    callInfo.Parameters.Add(new Shared.Models.ParameterInfo() { Value = ClientSerializationHelper.SerializeObject(item), Name = item?.GetType().FullName });
             //}
-            var guid = Guid.NewGuid().ToString();
+            string guid = Guid.NewGuid().ToString();
             callInfo.Guid = guid;
             return SendDataAsync<T>(connector, method, callInfo, args);
         }
 
-        static string SendData(this ConnectorBase connector, MethodCallInfo callInfo)
+        private static string SendData(this ConnectorBase connector, MethodCallInfo callInfo)
         {
             //TryAgain:
             bool isIgnorePriority = false;
             try
             {
-                var valueData = new KeyValue<AutoResetEvent, MethodCallbackInfo>(new AutoResetEvent(false), null);
-                var added = WaitedMethodsForResponse.TryAdd(callInfo.Guid, valueData);
-                var service = connector.Services.ContainsKey(callInfo.ServiceName) ? connector.Services[callInfo.ServiceName] : null;
+                KeyValue<AutoResetEvent, MethodCallbackInfo> valueData = new KeyValue<AutoResetEvent, MethodCallbackInfo>(new AutoResetEvent(false), null);
+                bool added = WaitedMethodsForResponse.TryAdd(callInfo.Guid, valueData);
+                object service = connector.Services.ContainsKey(callInfo.ServiceName) ? connector.Services[callInfo.ServiceName] : null;
                 //#if (PORTABLE)
-                var method = service?.GetType().FindMethod(callInfo.MethodName);
+                MethodInfo method = service?.GetType().FindMethod(callInfo.MethodName);
                 //#else
                 //                var method = service?.GetType().FindMethod(callInfo.MethodName, RuntimeTypeHelper.GetMethodTypes(service.GetType(), callInfo).ToArray());
                 //#endif
@@ -170,7 +168,7 @@ namespace SignalGo.Client.ClientManager
                 connector.SendData(callInfo);
 
 
-                var seted = WaitedMethodsForResponse[callInfo.Guid].Key.WaitOne(connector.ProviderSetting.ServerServiceSetting.SendDataTimeout);
+                bool seted = WaitedMethodsForResponse[callInfo.Guid].Key.WaitOne(connector.ProviderSetting.ServerServiceSetting.SendDataTimeout);
                 if (!seted)
                 {
                     if (connector.IsDisposed)
@@ -182,7 +180,7 @@ namespace SignalGo.Client.ClientManager
                     throw new TimeoutException();
                 }
 
-                var result = valueData.Value;
+                MethodCallbackInfo result = valueData.Value;
                 if (result != null && !result.IsException && callInfo.MethodName == "/RegisterService")
                 {
                     connector.ClientId = ClientSerializationHelper.DeserializeObject<string>(result.Data);
@@ -232,7 +230,7 @@ namespace SignalGo.Client.ClientManager
 
         }
 
-        static Task<T> SendDataAsync<T>(this ConnectorBase connector, MethodInfo method, MethodCallInfo callInfo, object[] args)
+        private static Task<T> SendDataAsync<T>(this ConnectorBase connector, MethodInfo method, MethodCallInfo callInfo, object[] args)
         {
 #if (NET40 || NET35)
             return Task<T>.Factory.StartNew(() =>
@@ -241,8 +239,8 @@ namespace SignalGo.Client.ClientManager
 #endif
             {
                 callInfo.Parameters = method.MethodToParameters(x => ClientSerializationHelper.SerializeObject(x), args).ToArray();
-                var result = SendData(connector, callInfo);
-                var deserialeResult = ClientSerializationHelper.DeserializeObject(result, typeof(T));
+                string result = SendData(connector, callInfo);
+                object deserialeResult = ClientSerializationHelper.DeserializeObject(result, typeof(T));
                 return (T)deserialeResult;
             });
         }
@@ -257,23 +255,23 @@ namespace SignalGo.Client.ClientManager
             callInfo.Parameters = requestInfo.Parameters.Select(x => new Shared.Models.ParameterInfo() { Value = x.Value.ToString(), Name = x.Name }).ToArray();
 
 
-            var guid = Guid.NewGuid().ToString();
+            string guid = Guid.NewGuid().ToString();
             callInfo.Guid = guid;
-            var added = WaitedMethodsForResponse.TryAdd(callInfo.Guid, new KeyValue<AutoResetEvent, MethodCallbackInfo>(new AutoResetEvent(false), null));
+            bool added = WaitedMethodsForResponse.TryAdd(callInfo.Guid, new KeyValue<AutoResetEvent, MethodCallbackInfo>(new AutoResetEvent(false), null));
             //var service = connector.Services.ContainsKey(callInfo.ServiceName) ? connector.Services[callInfo.ServiceName] : null;
             //var method = service == null ? null : service.GetType().GetMethod(callInfo.MethodName, RuntimeTypeHelper.GetMethodTypes(service.GetType(), callInfo).ToArray());
             json = ClientSerializationHelper.SerializeObject(callInfo);
             connector.SendData(callInfo);
 
 
-            var seted = WaitedMethodsForResponse[callInfo.Guid].Key.WaitOne(connector.ProviderSetting.ServerServiceSetting.SendDataTimeout);
+            bool seted = WaitedMethodsForResponse[callInfo.Guid].Key.WaitOne(connector.ProviderSetting.ServerServiceSetting.SendDataTimeout);
             if (!seted)
             {
                 if (connector.ProviderSetting.DisconnectClientWhenTimeout)
                     connector.Disconnect();
                 throw new TimeoutException();
             }
-            var result = WaitedMethodsForResponse[callInfo.Guid].Value;
+            MethodCallbackInfo result = WaitedMethodsForResponse[callInfo.Guid].Value;
             if (callInfo.MethodName == "/RegisterService")
             {
                 connector.ClientId = ClientSerializationHelper.DeserializeObject<string>(result.Data);

@@ -1,11 +1,7 @@
 ﻿using SignalGo.Server.Models;
-using SignalGo.Shared.Http;
-using SignalGo.Shared.Models;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
-using System.Text;
 
 namespace SignalGo.Server.DataTypes
 {

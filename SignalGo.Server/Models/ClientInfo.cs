@@ -1,13 +1,8 @@
-﻿using SignalGo.Server.ServiceManager;
-using SignalGo.Shared.Http;
+﻿using SignalGo.Shared.Http;
 using SignalGo.Shared.IO;
 using SignalGo.Shared.Models;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net.Sockets;
-using System.Text;
-using System.Threading;
 
 namespace SignalGo.Server.Models
 {
@@ -67,7 +62,7 @@ namespace SignalGo.Server.Models
         /// </summary>
         public WebHeaderCollection ResponseHeaders { get; set; } = new WebHeaderCollection();
 
-        HttpPostedFileInfo _currentFile = null;
+        private HttpPostedFileInfo _currentFile = null;
         public void SetFirstFile(HttpPostedFileInfo fileInfo)
         {
             _currentFile = fileInfo;

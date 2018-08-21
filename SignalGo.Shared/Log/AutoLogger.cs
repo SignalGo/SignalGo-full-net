@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace SignalGo.Shared.Log
 {
@@ -31,7 +28,7 @@ namespace SignalGo.Shared.Log
         /// </summary>
         public string FileName { get; set; }
 
-        string SavePath
+        private string SavePath
         {
             get
             {
@@ -75,7 +72,7 @@ namespace SignalGo.Shared.Log
         }
 #if (!PORTABLE)
 
-        void GetOneStackTraceText(StackTrace stackTrace, StringBuilder builder)
+        private void GetOneStackTraceText(StackTrace stackTrace, StringBuilder builder)
         {
             builder.AppendLine("<------------------------------StackTrace One Begin------------------------------>");
 
@@ -84,7 +81,7 @@ namespace SignalGo.Shared.Log
             // write call stack method names
             foreach (StackFrame stackFrame in stackFrames)
             {
-                var method = stackFrame.GetMethod();
+                System.Reflection.MethodBase method = stackFrame.GetMethod();
 
                 builder.AppendLine("<---Method Begin--->");
                 builder.AppendLine("File Name: " + stackFrame.GetFileName());
@@ -95,10 +92,10 @@ namespace SignalGo.Shared.Log
 
                 builder.AppendLine("Name: " + method.Name);
                 builder.AppendLine("Class: " + method.DeclaringType.Name);
-                var param = method.GetParameters();
+                System.Reflection.ParameterInfo[] param = method.GetParameters();
                 builder.AppendLine("Params Count: " + param.Length);
                 int i = 1;
-                foreach (var p in param)
+                foreach (System.Reflection.ParameterInfo p in param)
                 {
                     builder.AppendLine("Param " + i + ":" + p.ParameterType.Name);
                     i++;
@@ -108,7 +105,7 @@ namespace SignalGo.Shared.Log
             builder.AppendLine("<------------------------------StackTrace One End------------------------------>");
         }
 #endif
-        readonly object _lockOBJ = new object();
+        private readonly object _lockOBJ = new object();
         /// <summary>
         /// log text message
         /// </summary>
@@ -145,7 +142,7 @@ namespace SignalGo.Shared.Log
                 {
                     lock (_lockOBJ)
                     {
-                        using (var stream = new FileStream(fileName, FileMode.OpenOrCreate, FileAccess.ReadWrite))
+                        using (FileStream stream = new FileStream(fileName, FileMode.OpenOrCreate, FileAccess.ReadWrite))
                         {
                             stream.Seek(0, SeekOrigin.End);
                             byte[] bytes = Encoding.UTF8.GetBytes(System.Environment.NewLine + str.ToString());

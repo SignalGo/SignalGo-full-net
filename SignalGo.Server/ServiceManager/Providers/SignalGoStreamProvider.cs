@@ -2,7 +2,6 @@
 using SignalGo.Server.Models;
 using SignalGo.Shared;
 using SignalGo.Shared.DataTypes;
-using SignalGo.Shared.Helpers;
 using SignalGo.Shared.Http;
 using SignalGo.Shared.Models;
 using System;
@@ -28,8 +27,8 @@ namespace SignalGo.Server.ServiceManager.Providers
                 {
                     serverBase.TaskOfClientInfoes.TryAdd(taskId, client.ClientId);
                     Console.WriteLine($"Stream Client Connected: {client.IPAddress}");
-                    var stream = client.ClientStream;
-                    var firstByte = client.StreamHelper.ReadOneByte(stream, CompressMode.None, 1);
+                    Stream stream = client.ClientStream;
+                    byte firstByte = client.StreamHelper.ReadOneByte(stream, CompressMode.None, 1);
                     if (firstByte == 0)
                     {
                         DownloadStreamFromClient(client, serverBase);
@@ -58,14 +57,14 @@ namespace SignalGo.Server.ServiceManager.Providers
         /// </summary>
         /// <param name="stream">client stream</param>
         /// <param name="client">client</param>
-        static void DownloadStreamFromClient(ClientInfo client, ServerBase serverBase)
+        private static void DownloadStreamFromClient(ClientInfo client, ServerBase serverBase)
         {
             MethodCallbackInfo callback = null;
             string guid = Guid.NewGuid().ToString();
             try
             {
-                var bytes = client.StreamHelper.ReadBlockToEnd(client.ClientStream, CompressMode.None, serverBase.ProviderSetting.MaximumReceiveStreamHeaderBlock);
-                var json = Encoding.UTF8.GetString(bytes);
+                byte[] bytes = client.StreamHelper.ReadBlockToEnd(client.ClientStream, CompressMode.None, serverBase.ProviderSetting.MaximumReceiveStreamHeaderBlock);
+                string json = Encoding.UTF8.GetString(bytes);
                 MethodCallInfo callInfo = ServerSerializationHelper.Deserialize<MethodCallInfo>(json, serverBase);
 
                 callback = CallMethod(callInfo.ServiceName, callInfo.Guid, callInfo.MethodName,
@@ -96,17 +95,17 @@ namespace SignalGo.Server.ServiceManager.Providers
         /// </summary>
         /// <param name="stream">client stream</param>
         /// <param name="client">client</param>
-        static void UploadStreamToClient(ClientInfo client, ServerBase serverBase)
+        private static void UploadStreamToClient(ClientInfo client, ServerBase serverBase)
         {
             MethodCallbackInfo callback = null;
             IStreamInfo streamInfo = null;
             Stream userStream = null;
-            var stream = client.ClientStream;
+            Stream stream = client.ClientStream;
             bool isCallbackSended = false;
             try
             {
-                var bytes = client.StreamHelper.ReadBlockToEnd(client.ClientStream, CompressMode.None, serverBase.ProviderSetting.MaximumReceiveStreamHeaderBlock);
-                var json = Encoding.UTF8.GetString(bytes);
+                byte[] bytes = client.StreamHelper.ReadBlockToEnd(client.ClientStream, CompressMode.None, serverBase.ProviderSetting.MaximumReceiveStreamHeaderBlock);
+                string json = Encoding.UTF8.GetString(bytes);
                 MethodCallInfo callInfo = ServerSerializationHelper.Deserialize<MethodCallInfo>(json, serverBase);
                 callback = CallMethod(callInfo.ServiceName, callInfo.Guid, callInfo.MethodName,
                     callInfo.Parameters, client, null, serverBase, null, null,
@@ -120,7 +119,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 while (writeLen < len)
                 {
                     bytes = new byte[1024 * 100];
-                    var readCount = userStream.Read(bytes, 0, bytes.Length);
+                    int readCount = userStream.Read(bytes, 0, bytes.Length);
                     stream.Write(bytes, 0, readCount);
                     writeLen += readCount;
                 }

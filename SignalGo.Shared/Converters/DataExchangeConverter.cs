@@ -1,5 +1,4 @@
 ﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
 using SignalGo.Shared.DataTypes;
 using SignalGo.Shared.Helpers;
@@ -11,8 +10,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace SignalGo.Shared.Converters
@@ -139,7 +136,7 @@ namespace SignalGo.Shared.Converters
 
         public static List<CustomDataExchangerAttribute> GetContextAttributes()
         {
-            if (Task.CurrentId!= null && ListOfContextsDataExchangers.ContainsKey(Task.CurrentId.GetValueOrDefault()) && ListOfContextsDataExchangers[Task.CurrentId.GetValueOrDefault()].Count > 0)
+            if (Task.CurrentId != null && ListOfContextsDataExchangers.ContainsKey(Task.CurrentId.GetValueOrDefault()) && ListOfContextsDataExchangers[Task.CurrentId.GetValueOrDefault()].Count > 0)
             {
                 return ListOfContextsDataExchangers[Task.CurrentId.GetValueOrDefault()].ToList();
             }
@@ -177,7 +174,7 @@ namespace SignalGo.Shared.Converters
         //    GetMappings(context).TryGetByFirst(reference, out value);
         //    return value;
         //}
-        BidirectionalDictionary<string, object> mappings = new BidirectionalDictionary<string, object>();
+        private BidirectionalDictionary<string, object> mappings = new BidirectionalDictionary<string, object>();
         public string GetReference(object context, object value)
         {
 
@@ -214,7 +211,7 @@ namespace SignalGo.Shared.Converters
     {
         public AutoLogger AutoLogger { get; set; } = new AutoLogger() { FileName = "DataExchanger Logs.log" };
 
-        Type BaseType { get; set; }
+        private Type BaseType { get; set; }
 
         public CustomICollectionCreationConverter()
         {
@@ -261,8 +258,8 @@ namespace SignalGo.Shared.Converters
                 {
                     try
                     {
-                        var json = JToken.Load(reader);
-                        var instance = json.ToObject(serializehandling.ParameterType);
+                        JToken json = JToken.Load(reader);
+                        object instance = json.ToObject(serializehandling.ParameterType);
                         value = serializehandling.Delegate.DynamicInvoke(instance);
                     }
                     catch (Exception ex)
@@ -282,7 +279,7 @@ namespace SignalGo.Shared.Converters
         /// <returns>The created object.</returns>
         public object Create(Type objectType)
         {
-            var generic = objectType.GetListOfGenericArguments().FirstOrDefault();
+            Type generic = objectType.GetListOfGenericArguments().FirstOrDefault();
             return Activator.CreateInstance(typeof(List<>).MakeGenericType(generic));
         }
 
@@ -378,15 +375,14 @@ namespace SignalGo.Shared.Converters
             return true;
         }
 
-        List<object> SerializedObjects = new List<object>();
-        Dictionary<int, object> SerializedReferencedObjects = new Dictionary<int, object>();
+        private List<object> SerializedObjects = new List<object>();
+        private Dictionary<int, object> SerializedReferencedObjects = new Dictionary<int, object>();
 
-
-        bool CanIgnoreCustomDataExchanger(Type type, object instance)
+        private bool CanIgnoreCustomDataExchanger(Type type, object instance)
         {
             if (DataExchanger.ExistContext())
             {
-                var items = DataExchanger.GetContextAttributes();
+                List<CustomDataExchangerAttribute> items = DataExchanger.GetContextAttributes();
                 if (instance != null)
                 {
                     if (items.Any(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.Ignore && x.Properties == null))
@@ -413,11 +409,11 @@ namespace SignalGo.Shared.Converters
             return false;
         }
 
-        CustomDataExchangerAttribute GetCustomDataExchanger(Type type, object instance)
+        private CustomDataExchangerAttribute GetCustomDataExchanger(Type type, object instance)
         {
             if (DataExchanger.ExistContext())
             {
-                var items = DataExchanger.GetContextAttributes();
+                List<CustomDataExchangerAttribute> items = DataExchanger.GetContextAttributes();
                 if (instance != null)
                 {
                     if (items.Any(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.Ignore))
@@ -439,11 +435,11 @@ namespace SignalGo.Shared.Converters
             return implementICollection;
         }
 
-        bool CanIgnoreCustomDataExchanger(Type type, PropertyInfo property, object instance)
+        private bool CanIgnoreCustomDataExchanger(Type type, PropertyInfo property, object instance)
         {
             if (DataExchanger.ExistContext())
             {
-                var items = DataExchanger.GetContextAttributes();
+                List<CustomDataExchangerAttribute> items = DataExchanger.GetContextAttributes();
                 if (instance != null)
                 {
                     if (items.Any(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.Ignore && x.Properties == null))
@@ -452,15 +448,15 @@ namespace SignalGo.Shared.Converters
                         return false;
                     else if (items.Any(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.Ignore && x.Properties != null))
                     {
-                        var find = items.FirstOrDefault(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.Ignore && x.Properties != null);
+                        CustomDataExchangerAttribute find = items.FirstOrDefault(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.Ignore && x.Properties != null);
                         if (find.Properties.Contains(property.Name))
                             return true;
                         else
                             return false;
                     }
-                    else if (items.Any(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.TakeOnly && x.Properties != null ))
+                    else if (items.Any(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.TakeOnly && x.Properties != null))
                     {
-                        var find = items.FirstOrDefault(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.TakeOnly && x.Properties != null);
+                        CustomDataExchangerAttribute find = items.FirstOrDefault(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.TakeOnly && x.Properties != null);
                         if (find.Properties.Contains(property.Name))
                             return false;
                         else
@@ -474,7 +470,7 @@ namespace SignalGo.Shared.Converters
                     return false;
                 else if (items.Any(x => x.Type == type && x.ExchangeType == CustomDataExchangerType.Ignore && x.Properties != null))
                 {
-                    var find = items.FirstOrDefault(x => x.Type == type && x.ExchangeType == CustomDataExchangerType.Ignore && x.Properties != null);
+                    CustomDataExchangerAttribute find = items.FirstOrDefault(x => x.Type == type && x.ExchangeType == CustomDataExchangerType.Ignore && x.Properties != null);
                     if (find.Properties.Contains(property.Name))
                         return true;
                     else
@@ -482,7 +478,7 @@ namespace SignalGo.Shared.Converters
                 }
                 else if (items.Any(x => x.Type == type && x.ExchangeType == CustomDataExchangerType.TakeOnly && x.Properties != null))
                 {
-                    var find = items.FirstOrDefault(x => x.Type == type && x.ExchangeType == CustomDataExchangerType.TakeOnly && x.Properties != null);
+                    CustomDataExchangerAttribute find = items.FirstOrDefault(x => x.Type == type && x.ExchangeType == CustomDataExchangerType.TakeOnly && x.Properties != null);
                     if (find.Properties.Contains(property.Name))
                         return false;
                     else
@@ -495,7 +491,7 @@ namespace SignalGo.Shared.Converters
                 implementICollection = property.GetCustomAttributes<CustomDataExchangerAttribute>(true).Where(x => x.GetLimitationMode(IsClient) == Mode || x.GetLimitationMode(IsClient) == LimitExchangeType.Both);
             if (type != null)
             {
-                var newItems = implementICollection.ToList();
+                List<CustomDataExchangerAttribute> newItems = implementICollection.ToList();
                 newItems.AddRange(type.GetCustomAttributes<CustomDataExchangerAttribute>(true).Where(x => x.GetLimitationMode(IsClient) == Mode || x.GetLimitationMode(IsClient) == LimitExchangeType.Both));
                 implementICollection = newItems;
             }
@@ -516,11 +512,11 @@ namespace SignalGo.Shared.Converters
             return false;
         }
 
-        bool CanIgnoreCustomDataExchanger(Type type, FieldInfo fieldInfo, object instance)
+        private bool CanIgnoreCustomDataExchanger(Type type, FieldInfo fieldInfo, object instance)
         {
             if (DataExchanger.ExistContext())
             {
-                var items = DataExchanger.GetContextAttributes();
+                List<CustomDataExchangerAttribute> items = DataExchanger.GetContextAttributes();
                 if (instance != null)
                 {
                     if (items.Any(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.Ignore && x.Properties == null))
@@ -529,7 +525,7 @@ namespace SignalGo.Shared.Converters
                         return false;
                     else if (items.Any(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.Ignore && x.Properties != null))
                     {
-                        var find = items.FirstOrDefault(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.Ignore && x.Properties != null);
+                        CustomDataExchangerAttribute find = items.FirstOrDefault(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.Ignore && x.Properties != null);
                         if (find.Properties.Contains(fieldInfo.Name))
                             return true;
                         else
@@ -537,7 +533,7 @@ namespace SignalGo.Shared.Converters
                     }
                     else if (items.Any(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.TakeOnly && x.Properties != null))
                     {
-                        var find = items.FirstOrDefault(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.TakeOnly && x.Properties != null);
+                        CustomDataExchangerAttribute find = items.FirstOrDefault(x => x.Instance == instance && x.ExchangeType == CustomDataExchangerType.TakeOnly && x.Properties != null);
                         if (find.Properties.Contains(fieldInfo.Name))
                             return false;
                         else
@@ -551,7 +547,7 @@ namespace SignalGo.Shared.Converters
                     return false;
                 else if (items.Any(x => x.Type == type && x.ExchangeType == CustomDataExchangerType.Ignore && x.Properties != null))
                 {
-                    var find = items.FirstOrDefault(x => x.Type == type && x.ExchangeType == CustomDataExchangerType.Ignore && x.Properties != null);
+                    CustomDataExchangerAttribute find = items.FirstOrDefault(x => x.Type == type && x.ExchangeType == CustomDataExchangerType.Ignore && x.Properties != null);
                     if (find.Properties.Contains(fieldInfo.Name))
                         return true;
                     else
@@ -559,7 +555,7 @@ namespace SignalGo.Shared.Converters
                 }
                 else if (items.Any(x => x.Type == type && x.ExchangeType == CustomDataExchangerType.TakeOnly && x.Properties != null))
                 {
-                    var find = items.FirstOrDefault(x => x.Type == type && x.ExchangeType == CustomDataExchangerType.TakeOnly && x.Properties != null);
+                    CustomDataExchangerAttribute find = items.FirstOrDefault(x => x.Type == type && x.ExchangeType == CustomDataExchangerType.TakeOnly && x.Properties != null);
                     if (find.Properties.Contains(fieldInfo.Name))
                         return false;
                     else
@@ -573,7 +569,7 @@ namespace SignalGo.Shared.Converters
                 implementICollection = fieldInfo.GetCustomAttributes<CustomDataExchangerAttribute>(true).Where(x => x.GetLimitationMode(IsClient) == Mode || x.GetLimitationMode(IsClient) == LimitExchangeType.Both);
             if (type != null)
             {
-                var newItems = implementICollection.ToList();
+                List<CustomDataExchangerAttribute> newItems = implementICollection.ToList();
                 newItems.AddRange(type.GetCustomAttributes<CustomDataExchangerAttribute>(true).Where(x => x.GetLimitationMode(IsClient) == Mode || x.GetLimitationMode(IsClient) == LimitExchangeType.Both));
                 implementICollection = newItems;
             }
@@ -610,7 +606,7 @@ namespace SignalGo.Shared.Converters
             }
             if (reader.TokenType == JsonToken.StartObject)
             {
-                var instance = ReadNewObject(reader, objectType, existingValue, serializer, false);
+                object instance = ReadNewObject(reader, objectType, existingValue, serializer, false);
                 while (reader.Read())
                 {
 
@@ -619,7 +615,7 @@ namespace SignalGo.Shared.Converters
             }
             else if (reader.TokenType == JsonToken.StartArray)
             {
-                var instance = ReadNewArray(null, reader, objectType, existingValue, serializer, false);
+                object instance = ReadNewArray(null, reader, objectType, existingValue, serializer, false);
                 while (reader.Read())
                 {
 
@@ -636,7 +632,7 @@ namespace SignalGo.Shared.Converters
         {
             try
             {
-                var defaultGeneratorType =
+                Type defaultGeneratorType =
       typeof(DefaultGenerator<>).MakeGenericType(t);
 #if (NETSTANDARD || NETCOREAPP || PORTABLE)
                 MethodInfo method = defaultGeneratorType.GetTypeInfo().GetDeclaredMethod("GetDefault");
@@ -656,9 +652,9 @@ namespace SignalGo.Shared.Converters
             }
         }
 
-        object CreateInstance(Type type, bool isIgnore)
+        private object CreateInstance(Type type, bool isIgnore)
         {
-            var canIgnore = isIgnore ? true : CanIgnoreCustomDataExchanger(type, null);
+            bool canIgnore = isIgnore ? true : CanIgnoreCustomDataExchanger(type, null);
             if (canIgnore)
                 return null;
             if (type.IsArray)
@@ -667,17 +663,17 @@ namespace SignalGo.Shared.Converters
             {
                 if (type.GetIsGenericType() && type.GetGenericTypeDefinition() == typeof(ICollection<>))
                 {
-                    var generic = type.GetListOfGenericArguments().FirstOrDefault();
+                    Type generic = type.GetListOfGenericArguments().FirstOrDefault();
                     return Activator.CreateInstance(typeof(List<>).MakeGenericType(generic));
                 }
                 try
                 {
-                    var ctors = type.GetListOfConstructors();
+                    ConstructorInfo[] ctors = type.GetListOfConstructors();
                     if (ctors.Any(x => x.GetParameters().Length == 0))
                         return Activator.CreateInstance(type);
                     else
                     {
-                        var parameters = ctors[0].GetParameters();
+                        System.Reflection.ParameterInfo[] parameters = ctors[0].GetParameters();
                         object[] args = new object[parameters.Length];
                         for (int i = 0; i < parameters.Length; i++)
                         {
@@ -694,9 +690,9 @@ namespace SignalGo.Shared.Converters
             }
         }
 
-        object ReadNewObject(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer, bool isIgnore)
+        private object ReadNewObject(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer, bool isIgnore)
         {
-            var canIgnore = isIgnore ? true : CanIgnoreCustomDataExchanger(objectType, existingValue);
+            bool canIgnore = isIgnore ? true : CanIgnoreCustomDataExchanger(objectType, existingValue);
             object instance = null;
             while (reader.Read())
             {
@@ -706,16 +702,16 @@ namespace SignalGo.Shared.Converters
                     if (propertyName == refProperty)
                     {
                         reader.Read();
-                        var value = reader.Value.ToString();
+                        string value = reader.Value.ToString();
                         reader.Read();
-                        var parseValue = int.Parse(value);
+                        int parseValue = int.Parse(value);
                         if (!SerializedReferencedObjects.ContainsKey(parseValue) || canIgnore)
                             return null;
                         return SerializedReferencedObjects[parseValue];
                     }
                     else if (propertyName == valuesProperty)
                     {
-                        var value = ReadNewArray(instance, reader, objectType, reader.Value, serializer, canIgnore);
+                        object value = ReadNewArray(instance, reader, objectType, reader.Value, serializer, canIgnore);
                         instance = value;
                         continue;
                     }
@@ -725,7 +721,7 @@ namespace SignalGo.Shared.Converters
                 }
                 else if (reader.TokenType == JsonToken.StartArray)
                 {
-                    var value = ReadNewArray(null, reader, objectType, reader.Value, serializer, canIgnore);
+                    object value = ReadNewArray(null, reader, objectType, reader.Value, serializer, canIgnore);
                 }
                 else if (reader.TokenType == JsonToken.EndObject)
                     break;
@@ -740,7 +736,7 @@ namespace SignalGo.Shared.Converters
             return instance;
         }
 
-        static void ResizeArray(ref System.Array array, int newSize)
+        private static void ResizeArray(ref System.Array array, int newSize)
         {
             Type elementType = array.GetType().GetElementType();
             Array newArray = Array.CreateInstance(elementType, newSize);
@@ -748,13 +744,13 @@ namespace SignalGo.Shared.Converters
             array = newArray;
         }
 
-        object ReadNewArray(object instance, JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer, bool isIgnore)
+        private object ReadNewArray(object instance, JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer, bool isIgnore)
         {
-            var canIgnore = isIgnore ? true : CanIgnoreCustomDataExchanger(objectType, instance);
+            bool canIgnore = isIgnore ? true : CanIgnoreCustomDataExchanger(objectType, instance);
 
             if (instance == null)
                 instance = CreateInstance(objectType, false);
-            var addMethod = instance.GetType().FindMethod("Add");
+            MethodInfo addMethod = instance.GetType().FindMethod("Add");
             Array array = null;
             Type elementType = null;
             if (objectType.IsArray)
@@ -786,7 +782,7 @@ namespace SignalGo.Shared.Converters
                 {
                     if (array != null)
                     {
-                        var obj = ReadNewObject(reader, elementType, existingValue, serializer, canIgnore);
+                        object obj = ReadNewObject(reader, elementType, existingValue, serializer, canIgnore);
                         if (obj != null && !canIgnore)
                         {
                             ResizeArray(ref array, array.Length + 1);
@@ -801,7 +797,7 @@ namespace SignalGo.Shared.Converters
                         }
                         else
                         {
-                            var obj = ReadNewObject(reader, elementType, existingValue, serializer, canIgnore);
+                            object obj = ReadNewObject(reader, elementType, existingValue, serializer, canIgnore);
                             if (!canIgnore)
                                 addMethod.Invoke(instance, new object[] { obj });
                         }
@@ -818,7 +814,7 @@ namespace SignalGo.Shared.Converters
                     {
                         if (array != null)
                         {
-                            var value = SerializeHelper.ConvertType(elementType, reader.Value);
+                            object value = SerializeHelper.ConvertType(elementType, reader.Value);
                             ResizeArray(ref array, array.Length + 1);
                             array.SetValue(value, array.Length - 1);
                         }
@@ -830,7 +826,7 @@ namespace SignalGo.Shared.Converters
                             }
                             else
                             {
-                                var value = SerializeHelper.ConvertType(elementType, reader.Value);
+                                object value = SerializeHelper.ConvertType(elementType, reader.Value);
                                 addMethod.Invoke(instance, new object[] { value });
                             }
                         }
@@ -843,8 +839,7 @@ namespace SignalGo.Shared.Converters
             return instance;
         }
 
-
-        void ReadFreeObject(JsonReader reader)
+        private void ReadFreeObject(JsonReader reader)
         {
             while (reader.Read())
             {
@@ -865,7 +860,7 @@ namespace SignalGo.Shared.Converters
             }
         }
 
-        void ReadFreeProperty(JsonReader reader)
+        private void ReadFreeProperty(JsonReader reader)
         {
             if (reader.Read())
             {
@@ -884,7 +879,7 @@ namespace SignalGo.Shared.Converters
             }
         }
 
-        void ReadFreeArray(JsonReader reader)
+        private void ReadFreeArray(JsonReader reader)
         {
             //read value of property
             while (reader.Read())
@@ -897,7 +892,7 @@ namespace SignalGo.Shared.Converters
                 {
                     ReadFreeObject(reader);
                 }
-                else  if (reader.TokenType == JsonToken.StartArray)
+                else if (reader.TokenType == JsonToken.StartArray)
                 {
                     ReadFreeArray(reader);
                 }
@@ -937,7 +932,7 @@ namespace SignalGo.Shared.Converters
             {
                 if (type.GetIsGenericType())
                 {
-                    var genType = type.GetGenericTypeDefinition();
+                    Type genType = type.GetGenericTypeDefinition();
                     if (genType == typeof(Tuple<>)
                         || genType == typeof(Tuple<,>)
                         || genType == typeof(Tuple<,,>)
@@ -960,12 +955,12 @@ namespace SignalGo.Shared.Converters
 #endif
         }
 
-        void ReadNewProperty(object instance, JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer, bool isIgnore)
+        private void ReadNewProperty(object instance, JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer, bool isIgnore)
         {
             //bool isDictionary= typeof(IDictionary).GetIsAssignableFrom(type);
             //value of property
             string propertyName = (string)reader.Value;
-            var canIgnore = isIgnore ? true : CanIgnoreCustomDataExchanger(objectType, instance);
+            bool canIgnore = isIgnore ? true : CanIgnoreCustomDataExchanger(objectType, instance);
 
             if (reader.Read())
             {
@@ -985,21 +980,21 @@ namespace SignalGo.Shared.Converters
                 }
                 else if (reader.TokenType == JsonToken.StartArray)
                 {
-                    var property = objectType.GetPropertyInfo(propertyName);
+                    PropertyInfo property = objectType.GetPropertyInfo(propertyName);
                     if (property != null)
                     {
                         canIgnore = canIgnore ? true : CanIgnoreCustomDataExchanger(objectType, property, instance);
-                        var array = ReadNewArray(null, reader, property.PropertyType, existingValue, serializer, canIgnore);
+                        object array = ReadNewArray(null, reader, property.PropertyType, existingValue, serializer, canIgnore);
                         if (!canIgnore)
                             property.SetValue(instance, array, null);
                     }
                     else
                     {
-                        var field = objectType.GetFieldInfo(propertyName);
+                        FieldInfo field = objectType.GetFieldInfo(propertyName);
                         if (field != null)
                         {
                             canIgnore = canIgnore ? true : CanIgnoreCustomDataExchanger(objectType, field, instance);
-                            var array = ReadNewArray(null, reader, field.FieldType, existingValue, serializer, canIgnore);
+                            object array = ReadNewArray(null, reader, field.FieldType, existingValue, serializer, canIgnore);
                             if (!canIgnore)
                                 field.SetValue(instance, array);
                         }
@@ -1014,19 +1009,19 @@ namespace SignalGo.Shared.Converters
                 {
                     if (IsTupleType(objectType))
                     {
-                        var field = objectType.GetFieldInfo("m_" + propertyName);
+                        FieldInfo field = objectType.GetFieldInfo("m_" + propertyName);
                         if (field != null)
                         {
                             canIgnore = canIgnore ? true : CanIgnoreCustomDataExchanger(objectType, field, instance);
                             if (reader.TokenType == JsonToken.StartObject)
                             {
-                                var value = ReadNewObject(reader, field.FieldType, reader.Value, serializer, canIgnore);
+                                object value = ReadNewObject(reader, field.FieldType, reader.Value, serializer, canIgnore);
                                 if (!canIgnore)
                                     field.SetValue(instance, value);
                             }
                             else if (!canIgnore)
                             {
-                                var value = SerializeHelper.ConvertType(field.FieldType, reader.Value);
+                                object value = SerializeHelper.ConvertType(field.FieldType, reader.Value);
                                 field.SetValue(instance, value);
                             }
                         }
@@ -1037,13 +1032,13 @@ namespace SignalGo.Shared.Converters
                     }
                     else
                     {
-                        var property = objectType.GetPropertyInfo(propertyName);
+                        PropertyInfo property = objectType.GetPropertyInfo(propertyName);
                         if (property != null)
                         {
                             canIgnore = canIgnore ? true : CanIgnoreCustomDataExchanger(objectType, property, instance);
                             if (reader.TokenType == JsonToken.StartObject)
                             {
-                                var value = ReadNewObject(reader, property.PropertyType, reader.Value, serializer, canIgnore);
+                                object value = ReadNewObject(reader, property.PropertyType, reader.Value, serializer, canIgnore);
                                 if (!canIgnore)
                                 {
                                     if (property.CanWrite)
@@ -1058,7 +1053,7 @@ namespace SignalGo.Shared.Converters
                                 {
                                     if (!canIgnore)
                                     {
-                                        var value = SerializeHelper.ConvertType(property.PropertyType, reader.Value);
+                                        object value = SerializeHelper.ConvertType(property.PropertyType, reader.Value);
                                         if (property.CanWrite)
                                             property.SetValue(instance, value, null);
                                         else
@@ -1074,19 +1069,19 @@ namespace SignalGo.Shared.Converters
                         }
                         else
                         {
-                            var field = objectType.GetFieldInfo(propertyName);
+                            FieldInfo field = objectType.GetFieldInfo(propertyName);
                             if (field != null)
                             {
                                 canIgnore = canIgnore ? true : CanIgnoreCustomDataExchanger(objectType, field, instance);
                                 if (reader.TokenType == JsonToken.StartObject)
                                 {
-                                    var value = ReadNewObject(reader, field.FieldType, reader.Value, serializer, canIgnore);
+                                    object value = ReadNewObject(reader, field.FieldType, reader.Value, serializer, canIgnore);
                                     if (!canIgnore)
                                         field.SetValue(instance, value);
                                 }
                                 else if (!canIgnore)
                                 {
-                                    var value = SerializeHelper.ConvertType(field.FieldType, reader.Value);
+                                    object value = SerializeHelper.ConvertType(field.FieldType, reader.Value);
                                     field.SetValue(instance, value);
                                 }
                             }
@@ -1119,17 +1114,17 @@ namespace SignalGo.Shared.Converters
         /// generate properties of object for deserialze
         /// </summary>
         /// <param name="instance"></param>
-        void GenerateProperties(object instance)
+        private void GenerateProperties(object instance)
         {
             if (instance == null)
                 return;
-            var type = instance.GetType();
+            Type type = instance.GetType();
             //MergeExchangeTypes(type, Mode);
             if (SerializeHelper.GetTypeCodeOfObject(instance.GetType()) != SerializeObjectType.Object)
             {
                 return;
             }
-            foreach (var property in type.GetListOfProperties())
+            foreach (PropertyInfo property in type.GetListOfProperties())
             {
                 if (property.CanRead)
                 {
@@ -1147,7 +1142,7 @@ namespace SignalGo.Shared.Converters
                     //{
                     //    isIgnored = true;
                     //}
-                    var isIgnored = CanIgnoreCustomDataExchanger(type, property, instance);
+                    bool isIgnored = CanIgnoreCustomDataExchanger(type, property, instance);
 
                     //if (!isIgnored)
                     //{
@@ -1180,7 +1175,7 @@ namespace SignalGo.Shared.Converters
                         bool isPropertyDictionary = typeof(IDictionary).GetIsAssignableFrom(property.PropertyType);
                         if (isPropertyDictionary)
                         {
-                            var value = property.GetValue(instance, null);
+                            object value = property.GetValue(instance, null);
                             if (value != null)
                                 foreach (DictionaryEntry item in (IDictionary)value)
                                 {
@@ -1190,7 +1185,7 @@ namespace SignalGo.Shared.Converters
                         }
                         else if (isPropertyArray)
                         {
-                            var value = property.GetValue(instance, null);
+                            object value = property.GetValue(instance, null);
                             if (value != null)
                             {
                                 foreach (object item in (IEnumerable)value)
@@ -1204,17 +1199,17 @@ namespace SignalGo.Shared.Converters
             }
         }
 
-        bool HasJsonIgnore(Type type)
+        private bool HasJsonIgnore(Type type)
         {
             return type != null && type.GetCustomAttributes<JsonIgnoreAttribute>(true).Any();
         }
 
-        bool HasJsonIgnore(PropertyInfo property)
+        private bool HasJsonIgnore(PropertyInfo property)
         {
             return property != null && AttributeHelper.GetCustomAttributes<JsonIgnoreAttribute>(property, true).Any();
         }
 
-        bool HasJsonIgnore(FieldInfo field)
+        private bool HasJsonIgnore(FieldInfo field)
         {
             return field != null && AttributeHelper.GetCustomAttributes<JsonIgnoreAttribute>(field, true).Any();
         }
@@ -1230,7 +1225,7 @@ namespace SignalGo.Shared.Converters
             //{
             if (!SerializedObjects.Contains(value))
                 SerializedObjects.Add(value);
-            var type = value.GetType();
+            Type type = value.GetType();
             if (HasJsonIgnore(type) || type.FullName.StartsWith("System.Reflection."))
                 return;
             if (SerializeHelper.GetTypeCodeOfObject(type) != SerializeObjectType.Object)
@@ -1371,7 +1366,7 @@ namespace SignalGo.Shared.Converters
             return reference;
         }
 
-        void GenerateDictionary(object value, JsonWriter writer, JsonSerializer serializer)
+        private void GenerateDictionary(object value, JsonWriter writer, JsonSerializer serializer)
         {
             List<DictionaryEntry> items = new List<DictionaryEntry>();
             List<DictionaryEntry> existObjects = new List<DictionaryEntry>();
@@ -1379,7 +1374,7 @@ namespace SignalGo.Shared.Converters
             {
                 if (item.Value == null)
                     continue;
-                var itemJsonType = SerializeHelper.GetTypeCodeOfObject(item.Value.GetType());
+                SerializeObjectType itemJsonType = SerializeHelper.GetTypeCodeOfObject(item.Value.GetType());
                 if (itemJsonType == SerializeObjectType.Object)
                 {
                     if (existObjects.Contains(item))
@@ -1403,7 +1398,7 @@ namespace SignalGo.Shared.Converters
 
                 }
             }
-            foreach (var item in items)
+            foreach (DictionaryEntry item in items)
             {
                 if (!SerializedObjects.Contains(item.Value))
                     SerializedObjects.Add(item.Value);
@@ -1423,16 +1418,16 @@ namespace SignalGo.Shared.Converters
             }
         }
 
-        void GenerateArray(object value, JsonWriter writer, JsonSerializer serializer)
+        private void GenerateArray(object value, JsonWriter writer, JsonSerializer serializer)
         {
             List<object> objects = new List<object>();
             List<object> existObjects = new List<object>();
-            foreach (var item in (IEnumerable)value)
+            foreach (object item in (IEnumerable)value)
             {
                 if (item == null)
                     continue;
-                var itemType = item.GetType();
-                var itemJsonType = SerializeHelper.GetTypeCodeOfObject(item.GetType());
+                Type itemType = item.GetType();
+                SerializeObjectType itemJsonType = SerializeHelper.GetTypeCodeOfObject(item.GetType());
                 if (itemJsonType == SerializeObjectType.Object)
                 {
                     if (existObjects.Contains(item))
@@ -1461,7 +1456,7 @@ namespace SignalGo.Shared.Converters
                         serializer.Serialize(writer, item);
                 }
             }
-            foreach (var item in objects)
+            foreach (object item in objects)
             {
                 if (!SerializedObjects.Contains(item))
                     SerializedObjects.Add(item);
@@ -1487,15 +1482,15 @@ namespace SignalGo.Shared.Converters
         /// <param name="instance"></param>
         /// <param name="writer"></param>
         /// <param name="serializer"></param>
-        void WriteData(Type baseType, object instance, JsonWriter writer, JsonSerializer serializer)
+        private void WriteData(Type baseType, object instance, JsonWriter writer, JsonSerializer serializer)
         {
             try
             {
-                var implementICollection = GetCustomDataExchanger(baseType, instance);
+                CustomDataExchangerAttribute implementICollection = GetCustomDataExchanger(baseType, instance);
                 if (CanIgnoreCustomDataExchanger(baseType, instance))
                     return;
 
-                foreach (var property in baseType.GetListOfProperties())
+                foreach (PropertyInfo property in baseType.GetListOfProperties())
                 {
                     if (property.Name == "RoleInfoes")
                     {
@@ -1511,7 +1506,7 @@ namespace SignalGo.Shared.Converters
 
                     GenerateValue(property, null);
                 }
-                foreach (var field in baseType.GetListOfFields())
+                foreach (FieldInfo field in baseType.GetListOfFields())
                 {
                     if (implementICollection != null)
                     {
@@ -1628,7 +1623,7 @@ namespace SignalGo.Shared.Converters
                             {
                                 try
                                 {
-                                    var itemJsonType = SerializeHelper.GetTypeCodeOfObject(propValue.GetType());
+                                    SerializeObjectType itemJsonType = SerializeHelper.GetTypeCodeOfObject(propValue.GetType());
                                     if (itemJsonType == SerializeObjectType.Object)
                                     {
                                         if (SerializedObjects.Contains(propValue))
@@ -1676,7 +1671,7 @@ namespace SignalGo.Shared.Converters
                                         value = serializeHandler.DynamicInvoke(value);
                                     if (value == null)
                                         return;
-                                    var itemJsonType = SerializeHelper.GetTypeCodeOfObject(value.GetType());
+                                    SerializeObjectType itemJsonType = SerializeHelper.GetTypeCodeOfObject(value.GetType());
                                     if (itemJsonType == SerializeObjectType.Object)
                                     {
                                         if (SerializedObjects.Contains(value))
@@ -1704,7 +1699,7 @@ namespace SignalGo.Shared.Converters
                                         value = serializeHandler.DynamicInvoke(value);
                                     if (value == null)
                                         return;
-                                    var itemJsonType = SerializeHelper.GetTypeCodeOfObject(value.GetType());
+                                    SerializeObjectType itemJsonType = SerializeHelper.GetTypeCodeOfObject(value.GetType());
                                     if (itemJsonType == SerializeObjectType.Object)
                                     {
                                         if (SerializedObjects.Contains(value))

@@ -2,8 +2,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 
 namespace SignalGo.Shared
@@ -34,7 +32,7 @@ namespace SignalGo.Shared
     {
         public static AutoLogger AutoLogger { get; set; } = new AutoLogger() { FileName = "AsyncActions Logs.log" };
 #if (!PORTABLE)
-        static SynchronizationContext UIThread { get; set; }
+        private static SynchronizationContext UIThread { get; set; }
         /// <summary>
         /// initialize ui thread
         /// </summary>

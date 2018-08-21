@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.IO;
 
 namespace SignalGo.Shared.IO
 {
@@ -18,7 +13,7 @@ namespace SignalGo.Shared.IO
 
         public override void WriteToStream(Stream stream, byte[] data)
         {
-            var encode = EncodeMessageToSend(data);
+            byte[] encode = EncodeMessageToSend(data);
             stream.Write(encode, 0, encode.Length);
         }
 
@@ -30,7 +25,7 @@ namespace SignalGo.Shared.IO
             int indexStartRawData = -1;
             int length = bytesRaw.Length;
 
-            frame[0] = (byte)129;
+            frame[0] = 129;
             if (length <= 125)
             {
                 frame[1] = (byte)length;
@@ -38,14 +33,14 @@ namespace SignalGo.Shared.IO
             }
             else if (length >= 126 && length <= 65535)
             {
-                frame[1] = (byte)126;
+                frame[1] = 126;
                 frame[2] = (byte)((length >> 8) & 255);
                 frame[3] = (byte)(length & 255);
                 indexStartRawData = 4;
             }
             else
             {
-                frame[1] = (byte)127;
+                frame[1] = 127;
                 frame[2] = (byte)((length >> 56) & 255);
                 frame[3] = (byte)((length >> 48) & 255);
                 frame[4] = (byte)((length >> 40) & 255);

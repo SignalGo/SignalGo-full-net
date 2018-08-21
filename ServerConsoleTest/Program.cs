@@ -1,12 +1,7 @@
-﻿using SignalGo.Client;
-using SignalGo.Server.Models;
+﻿using SignalGo.Server.Models;
 using SignalGo.Server.ServiceManager;
 using SignalGo.Shared.DataTypes;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace ServerConsoleTest
@@ -50,7 +45,7 @@ namespace ServerConsoleTest
 
         public int HelloWorld2(string userName, string password)
         {
-            var setting = OperationContext<UserInfo>.CurrentSetting;
+            UserInfo setting = OperationContext<UserInfo>.CurrentSetting;
             //var callback = OperationContext.Current.GetClientService<ITestClientService>();
             //callback.CallMe("hello client");
             return 45;
@@ -82,9 +77,9 @@ namespace ServerConsoleTest
         public DateTime ExpireDateTime { get; set; }
     }
 
-    class Program
+    internal class Program
     {
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
             try
             {

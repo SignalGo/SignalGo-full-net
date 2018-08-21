@@ -3,9 +3,6 @@ using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
 using SignalGo.Shared.Log;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace SignalGo.Shared.Helpers
 {
@@ -39,7 +36,7 @@ namespace SignalGo.Shared.Helpers
                     writer.WriteValue(default(DateTime).ToLocalTime());
                 else
                 {
-                    var dt = ((DateTime)value).ToLocalTime();
+                    DateTime dt = ((DateTime)value).ToLocalTime();
                     writer.WriteValue(dt);
                 }
             }
@@ -65,7 +62,7 @@ namespace SignalGo.Shared.Helpers
         {
             JsonConvert.DefaultSettings = () =>
             {
-                var setting = new JsonSerializerSettings
+                JsonSerializerSettings setting = new JsonSerializerSettings
                 {
                     MissingMemberHandling = MissingMemberHandling.Ignore,
                     Error = new EventHandler<ErrorEventArgs>(HandleDeserializationError),

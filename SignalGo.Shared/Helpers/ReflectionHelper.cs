@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SignalGo.Shared.Helpers
 {
@@ -15,7 +13,7 @@ namespace SignalGo.Shared.Helpers
 
         public static IEnumerable<Shared.Models.ParameterInfo> MethodToParameters(this MethodInfo methodInfo, Func<object, string> serialize, params object[] args)
         {
-            var methodParams = methodInfo.GetParameters();
+            ParameterInfo[] methodParams = methodInfo.GetParameters();
 
             for (int i = 0; i < args.Length; i++)
             {
@@ -24,9 +22,9 @@ namespace SignalGo.Shared.Helpers
         }
 
 #if (!NET35)
-        public static IEnumerable<Shared.Models.ParameterInfo> MethodToParameters(this System.Dynamic.InvokeMemberBinder methodInfo,Func<object,string> serialize, params object[] args)
+        public static IEnumerable<Shared.Models.ParameterInfo> MethodToParameters(this System.Dynamic.InvokeMemberBinder methodInfo, Func<object, string> serialize, params object[] args)
         {
-            var methodParams = methodInfo.CallInfo.ArgumentNames;
+            System.Collections.ObjectModel.ReadOnlyCollection<string> methodParams = methodInfo.CallInfo.ArgumentNames;
 
             for (int i = 0; i < args.Length; i++)
             {
@@ -47,9 +45,9 @@ namespace SignalGo.Shared.Helpers
             result.Add(assembly);
 
 
-            foreach (var reference in assembly.GetReferencedAssemblies())
+            foreach (AssemblyName reference in assembly.GetReferencedAssemblies())
             {
-                var loaded = Assembly.Load(reference);
+                Assembly loaded = Assembly.Load(reference);
                 result.Add(loaded);
             }
             return result;
@@ -443,12 +441,12 @@ namespace SignalGo.Shared.Helpers
 
         public static List<MethodInfo> GetListOfMethodsWithAllOfBases(this Type type)
         {
-            var methods = new List<MethodInfo>();
-            foreach (var item in type.GetListOfInterfaces())
+            List<MethodInfo> methods = new List<MethodInfo>();
+            foreach (Type item in type.GetListOfInterfaces())
             {
                 methods.AddRange(item.GetListOfMethods());
             }
-            foreach (var item in type.GetListOfBaseTypes())
+            foreach (Type item in type.GetListOfBaseTypes())
             {
                 methods.AddRange(item.GetListOfMethods());
             }

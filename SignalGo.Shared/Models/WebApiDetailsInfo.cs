@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 
 namespace SignalGo.Shared.Models
 {
@@ -21,7 +19,7 @@ namespace SignalGo.Shared.Models
         public bool IsSelected { get; set; }
         public WebApiDetailsInfo Clone()
         {
-            return new WebApiDetailsInfo() { Id = Id, HttpControllers= new List<HttpControllerDetailsInfo>(), IsSelected = IsSelected, IsExpanded = IsExpanded };
+            return new WebApiDetailsInfo() { Id = Id, HttpControllers = new List<HttpControllerDetailsInfo>(), IsSelected = IsSelected, IsExpanded = IsExpanded };
         }
     }
 }

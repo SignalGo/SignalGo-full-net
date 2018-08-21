@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace SignalGo.Shared.Helpers
 {
@@ -14,7 +13,7 @@ namespace SignalGo.Shared.Helpers
     {
         #region Fields
 
-        private IList<T> _internalList;
+        private readonly IList<T> _internalList;
 
         private readonly object lockObject = new object();
 
@@ -59,7 +58,13 @@ namespace SignalGo.Shared.Helpers
             }
         }
 
-        public bool IsReadOnly => false;
+        public bool IsReadOnly
+        {
+            get
+            {
+                return false;
+            }
+        }
 
         public void Add(T item)
         {
@@ -83,7 +88,7 @@ namespace SignalGo.Shared.Helpers
 
         public T[] ToArray()
         {
-           return LockInternalListAndQuery(l => l.ToArray());
+            return LockInternalListAndQuery(l => l.ToArray());
         }
 
         public IEnumerator<T> GetEnumerator()

@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-namespace SignalGo.Shared.Models
+﻿namespace SignalGo.Shared.Models
 {
     /// <summary>
     /// signal go call method type
@@ -57,8 +52,8 @@ namespace SignalGo.Shared.Models
 
         public MethodCallInfo Clone()
         {
-            var mci= (MethodCallInfo)MemberwiseClone();
-            mci.Parameters = this.Parameters;
+            MethodCallInfo mci = (MethodCallInfo)MemberwiseClone();
+            mci.Parameters = Parameters;
             return mci;
         }
     }
