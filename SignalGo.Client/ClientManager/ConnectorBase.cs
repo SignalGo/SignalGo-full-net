@@ -590,6 +590,8 @@ namespace SignalGo.Client.ClientManager
             }
             byte[] callBackBytes = StreamHelper.ReadBlockToEnd(readStream, compressMode, ProviderSetting.MaximumReceiveStreamHeaderBlock);
             MethodCallbackInfo callbackInfo = ClientSerializationHelper.DeserializeObject<MethodCallbackInfo>(Encoding.UTF8.GetString(callBackBytes, 0, callBackBytes.Length));
+            if (callbackInfo.IsException)
+                throw new Exception(callbackInfo.Data);
             Type methodType = method.ReturnType;
             if (isAsync)
                 methodType = method.ReturnType.GetListOfGenericArguments().FirstOrDefault();

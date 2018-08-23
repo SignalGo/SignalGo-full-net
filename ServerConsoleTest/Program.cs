@@ -2,6 +2,7 @@
 using SignalGo.Server.ServiceManager;
 using SignalGo.Shared.DataTypes;
 using System;
+using System.Net.Sockets;
 using System.Threading.Tasks;
 
 namespace ServerConsoleTest
@@ -111,5 +112,14 @@ namespace ServerConsoleTest
 
             Console.ReadLine();
         }
+
+        //public static void PiplineTest()
+        //{
+        //    TcpListener tcpListener = new TcpListener(new System.Net.IPAddress(new byte[] { 127, 0, 0, 1 }), 4545);
+
+        //    tcpListener.Start();
+
+        //    var socket = tcpListener.AcceptSocket();
+        //}
     }
 }

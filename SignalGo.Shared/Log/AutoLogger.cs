@@ -53,7 +53,9 @@ namespace SignalGo.Shared.Log
             try
             {
 #if (NETSTANDARD1_6)
-                DirectoryLocation = Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location);
+                System.Reflection.Assembly asm = System.Reflection.Assembly.GetEntryAssembly();
+                if (asm != null)
+                    DirectoryLocation = Path.GetDirectoryName(asm.Location);
 #else
                 if (!string.IsNullOrEmpty(AppDomain.CurrentDomain.BaseDirectory))
                     DirectoryLocation = Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory + Path.DirectorySeparatorChar);
@@ -127,7 +129,7 @@ namespace SignalGo.Shared.Log
                     str.AppendLine("<StackTrace>");
                     StringBuilder builder = new StringBuilder();
 #if (NETSTANDARD || NETCOREAPP)
-                                                                GetOneStackTraceText(new StackTrace(new Exception(text), true), builder);
+                    GetOneStackTraceText(new StackTrace(new Exception(text), true), builder);
 #else
                     GetOneStackTraceText(new StackTrace(true), builder);
 #endif
