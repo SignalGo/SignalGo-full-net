@@ -181,22 +181,6 @@ namespace SignalGo.Client.ClientManager
         }
 
         /// <summary>
-        /// register service by name
-        /// </summary>
-        /// <param name="name"></param>
-        public void RegisterServerService(string name)
-        {
-            if (IsDisposed)
-                throw new ObjectDisposedException("Connector");
-            MethodCallInfo callInfo = new MethodCallInfo()
-            {
-                ServiceName = name,
-                MethodName = "/RegisterService",
-                Guid = Guid.NewGuid().ToString()
-            };
-            MethodCallbackInfo callback = this.SendData<MethodCallbackInfo>(callInfo);
-        }
-        /// <summary>
         /// get default value from type
         /// </summary>
         /// <param name="t"></param>

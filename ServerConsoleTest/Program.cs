@@ -32,7 +32,6 @@ namespace ServerConsoleTest
     public interface ITestManager
     {
         bool HelloWorld(string userName, string password);
-        int HelloWorld2(string userName, string password);
         string Test();
     }
 
@@ -42,14 +41,6 @@ namespace ServerConsoleTest
         {
             OperationContext<UserInfo>.CurrentSetting = new UserInfo() { Name = userName };
             return true;
-        }
-
-        public int HelloWorld2(string userName, string password)
-        {
-            UserInfo setting = OperationContext<UserInfo>.CurrentSetting;
-            //var callback = OperationContext.Current.GetClientService<ITestClientService>();
-            //callback.CallMe("hello client");
-            return 45;
         }
 
         public string Test()
