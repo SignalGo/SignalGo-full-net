@@ -25,10 +25,10 @@ namespace SignalGo.Server.ServiceManager.Providers
                 int taskId = Task.CurrentId.GetValueOrDefault();
                 try
                 {
-                    serverBase.TaskOfClientInfoes.TryAdd(taskId, client.ClientId);
+                    serverBase.AddTask(taskId, client.ClientId);
                     Console.WriteLine($"Stream Client Connected: {client.IPAddress}");
                     Stream stream = client.ClientStream;
-                    byte firstByte = client.StreamHelper.ReadOneByte(stream, CompressMode.None, 1);
+                    byte firstByte = client.StreamHelper.ReadOneByte(stream);
                     if (firstByte == 0)
                     {
                         DownloadStreamFromClient(client, serverBase);
@@ -47,7 +47,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 }
                 finally
                 {
-                    serverBase.TaskOfClientInfoes.Remove(taskId);
+                    serverBase.RemoveTask(taskId);
                 }
             });
         }

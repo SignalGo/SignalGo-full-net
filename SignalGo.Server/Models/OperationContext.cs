@@ -34,9 +34,8 @@ namespace SignalGo.Server.Models
             get
             {
                 ServerBase currentServer = CurrentTaskServer;
-                if (Task.CurrentId != null && currentServer != null && currentServer.TaskOfClientInfoes.ContainsKey(Task.CurrentId.GetValueOrDefault()))
+                if (Task.CurrentId != null && currentServer != null && currentServer.TaskOfClientInfoes.TryGetValue(Task.CurrentId.GetValueOrDefault(),out string clientId))
                 {
-                    string clientId = currentServer.TaskOfClientInfoes[Task.CurrentId.GetValueOrDefault()];
                     currentServer.Clients.TryGetValue(clientId, out ClientInfo clientInfo);
                     return new OperationContext() { Client = clientInfo, ClientId = clientId, ServerBase = currentServer };
                 }

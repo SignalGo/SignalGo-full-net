@@ -12,8 +12,9 @@ namespace SignalGo.Shared.IO
         {
             CurrentBase = new SignalGoStreamBase();
         }
-
-        public static SignalGoStreamBase CurrentBase { get; set; }
+        
+         
+        public static ISignalGoStream CurrentBase { get; set; }
 
         public virtual void WriteToStream(System.IO.Stream stream, byte[] data)
         {
@@ -46,7 +47,7 @@ namespace SignalGo.Shared.IO
             return dataBytes;
         }
 
-        public byte[] ReadBlockSize(Stream stream, ulong count)
+        public virtual byte[] ReadBlockSize(Stream stream, ulong count)
         {
             List<byte> bytes = new List<byte>();
             ulong lengthReaded = 0;
@@ -83,7 +84,7 @@ namespace SignalGo.Shared.IO
         /// <param name="maximum">maximum read</param>
         /// <param name="isWebSocket">if reading socket is websocket</param>
         /// <returns></returns>
-        public virtual byte ReadOneByte(Stream stream, CompressMode compress, uint maximum)
+        public virtual byte ReadOneByte(Stream stream)
         {
             int data = stream.ReadByte();
             if (data < 0)

@@ -9,7 +9,7 @@ namespace SignalGo.Shared.IO
             CurrentWebSocket = new SignalGoStreamWebSocket();
         }
 
-        public static SignalGoStreamWebSocket CurrentWebSocket { get; set; }
+        public static ISignalGoStream CurrentWebSocket { get; set; }
 
         public override void WriteToStream(Stream stream, byte[] data)
         {

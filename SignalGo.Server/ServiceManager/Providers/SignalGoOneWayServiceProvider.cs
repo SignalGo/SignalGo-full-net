@@ -25,7 +25,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 int taskId = Task.CurrentId.GetValueOrDefault();
                 try
                 {
-                    serverBase.TaskOfClientInfoes.TryAdd(taskId, client.ClientId);
+                    serverBase.AddTask(taskId, client.ClientId);
                     Console.WriteLine($"OneWay Client Connected: {client.IPAddress}");
                     RunMethod(serverBase, client);
                     serverBase.DisposeClient(client, "OneWay StartToReadingClientData finished");
@@ -37,7 +37,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 }
                 finally
                 {
-                    serverBase.TaskOfClientInfoes.Remove(taskId);
+                    serverBase.RemoveTask(taskId);
                 }
             });
         }

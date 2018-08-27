@@ -3,7 +3,6 @@ using SignalGo.Server.DataTypes;
 using SignalGo.Server.Helpers;
 using SignalGo.Server.IO;
 using SignalGo.Server.Models;
-using SignalGo.Shared;
 using SignalGo.Shared.DataTypes;
 using SignalGo.Shared.Helpers;
 using SignalGo.Shared.Http;
@@ -588,7 +587,7 @@ namespace SignalGo.Server.ServiceManager.Providers
         {
             try
             {
-                serverBase.TaskOfClientInfoes.TryAdd(Task.CurrentId.GetValueOrDefault(), client.ClientId);
+                serverBase.AddTask(Task.CurrentId.GetValueOrDefault(), client.ClientId);
 
                 client.RequestHeaders = headers;
                 if (values != null)
@@ -650,7 +649,7 @@ namespace SignalGo.Server.ServiceManager.Providers
             }
             finally
             {
-                serverBase.TaskOfClientInfoes.Remove(Task.CurrentId.GetValueOrDefault());
+                serverBase.RemoveTask(Task.CurrentId.GetValueOrDefault());
             }
         }
 

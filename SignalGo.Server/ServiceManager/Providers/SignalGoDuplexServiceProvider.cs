@@ -23,7 +23,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 System.IO.Stream stream = client.ClientStream;
                 while (client.TcpClient.Connected)
                 {
-                    byte oneByteOfDataType = client.StreamHelper.ReadOneByte(stream, CompressMode.None, serverBase.ProviderSetting.MaximumReceiveDataBlock);
+                    byte oneByteOfDataType = client.StreamHelper.ReadOneByte(stream);
                     //type of data
                     DataType dataType = (DataType)oneByteOfDataType;
                     if (dataType == DataType.PingPong)
@@ -32,7 +32,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                         continue;
                     }
                     //compress mode of data
-                    CompressMode compressMode = (CompressMode)client.StreamHelper.ReadOneByte(stream, CompressMode.None, serverBase.ProviderSetting.MaximumReceiveDataBlock);
+                    CompressMode compressMode = (CompressMode)client.StreamHelper.ReadOneByte(stream);
                     //a server service method called from client
                     if (dataType == DataType.CallMethod)
                     {

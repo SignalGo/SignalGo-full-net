@@ -120,7 +120,7 @@ namespace SignalGo.Shared.IO
                 isFirst = false;
 #endif
 #if (NET35 || NET40)
-                byte data = SignalGoStreamBase.CurrentBase.ReadOneByte(CurrentStream, CompressMode.None, 0);
+                byte data = SignalGoStreamBase.CurrentBase.ReadOneByte(CurrentStream);
 #else
                 byte data = await SignalGoStreamBase.CurrentBase.ReadOneByteAsync(CurrentStream);
 #endif
@@ -133,7 +133,7 @@ namespace SignalGo.Shared.IO
                         break;
 #endif
 #if (NET35 || NET40)
-                    data = SignalGoStreamBase.CurrentBase.ReadOneByte(CurrentStream, CompressMode.None, 0);
+                    data = SignalGoStreamBase.CurrentBase.ReadOneByte(CurrentStream);
 #else
                     data = await SignalGoStreamBase.CurrentBase.ReadOneByteAsync(CurrentStream);
 #endif

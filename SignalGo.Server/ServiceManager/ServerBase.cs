@@ -180,13 +180,14 @@ namespace SignalGo.Server.ServiceManager
                 {
                     AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} CloseCllient");
                 }
-                //ClientRemove(client);
-
-                foreach (KeyValuePair<int, string> item in TaskOfClientInfoes.Where(x => x.Value == client.ClientId))
+                foreach (var service in MultipleInstanceServices)
                 {
-                    DataExchanger.Clear(item.Key);
-                    TaskOfClientInfoes.Remove(item.Key);
+                    foreach (var clientInfo in service.Value.Where(x=>x.Key == client.ClientId))
+                    {
+                        service.Value.Remove(clientInfo.Key);
+                    }
                 }
+                //ClientRemove(client);
 
                 OperationContextBase.SavedSettings.Remove(client);
 
@@ -200,6 +201,20 @@ namespace SignalGo.Server.ServiceManager
                 AutoLogger.LogError(ex, "DisposeClientError");
             }
         }
+
+        internal void RemoveTask(int TaskId)
+        {
+            DataExchanger.Clear(TaskId);
+            TaskOfClientInfoes.Remove(TaskId);
+            OperationContext.CurrentTaskServerTasks.Remove(TaskId);
+        }
+        internal void AddTask(int TaskId, string clientId)
+        {
+            DataExchanger.Clear(TaskId);
+            TaskOfClientInfoes.TryAdd(TaskId, clientId);
+            OperationContext.CurrentTaskServerTasks.TryAdd(TaskId, this);
+        }
+
         /// <summary>
         /// This closes the client passing its clientInfo
         /// </summary>

@@ -83,7 +83,6 @@ namespace SignalGo.Server.ServiceManager.Versions
             {
                 try
                 {
-                    OperationContext.CurrentTaskServer = _serverBase;
 #if (NET35 || NET40)
                     CustomStreamReader stream = ReadFirstLineOfClient(tcpClient);
 #else

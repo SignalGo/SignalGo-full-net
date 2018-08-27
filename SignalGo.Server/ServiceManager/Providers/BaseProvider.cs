@@ -1,7 +1,6 @@
 ﻿using SignalGo.Server.DataTypes;
 using SignalGo.Server.Helpers;
 using SignalGo.Server.Models;
-using SignalGo.Shared;
 using SignalGo.Shared.Converters;
 using SignalGo.Shared.DataTypes;
 using SignalGo.Shared.Events;
@@ -31,14 +30,14 @@ namespace SignalGo.Server.ServiceManager.Providers
             return Task.Run(() =>
 #endif
             {
-                serverBase.TaskOfClientInfoes.TryAdd(Task.CurrentId.GetValueOrDefault(), client.ClientId);
+                serverBase.AddTask(Task.CurrentId.GetValueOrDefault(), client.ClientId);
                 try
                 {
                     return CallMethod(callInfo.ServiceName, callInfo.Guid, callInfo.MethodName, callInfo.Parameters.ToArray(), client, json, serverBase, null, null, out IStreamInfo streamInfo, out List<HttpKeyAttribute> httpKeyAttributes, out Type serviceType, out MethodInfo method, out object serviceInsatnce, out FileActionResult fileActionResult);
                 }
                 finally
                 {
-                    serverBase.TaskOfClientInfoes.Remove(Task.CurrentId.GetValueOrDefault());
+                    serverBase.RemoveTask(Task.CurrentId.GetValueOrDefault());
                 }
                 //SendCallbackData(callback, client, serverBase);
             });

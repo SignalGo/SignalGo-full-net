@@ -122,8 +122,8 @@ namespace SignalGo.Shared.Models
 
         public KeyValue<DataType, CompressMode> ReadFirstData(Stream stream, uint maximumReceiveStreamHeaderBlock)
         {
-            DataType responseType = (DataType)SignalGoStreamBase.CurrentBase.ReadOneByte(stream, CompressMode.None, maximumReceiveStreamHeaderBlock);
-            CompressMode compressMode = (CompressMode)SignalGoStreamBase.CurrentBase.ReadOneByte(stream, CompressMode.None, maximumReceiveStreamHeaderBlock);
+            DataType responseType = (DataType)SignalGoStreamBase.CurrentBase.ReadOneByte(stream);
+            CompressMode compressMode = (CompressMode)SignalGoStreamBase.CurrentBase.ReadOneByte(stream);
             return new KeyValue<DataType, CompressMode>(responseType, compressMode);
         }
 

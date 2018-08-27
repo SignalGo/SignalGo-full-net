@@ -131,7 +131,9 @@ namespace SignalGo.Client.ClientManager
                 _ManulyDisconnected = false;
                 _address = address;
                 _port = port;
-#if (NETSTANDARD1_6 || NETCOREAPP1_1)
+#if (NET45)
+                _client = new TcpClient(address, port);
+#elif (NETSTANDARD)
                 _client = new TcpClient();
                 bool isSuccess = _client.ConnectAsync(address, port).Wait(new TimeSpan(0, 0, 5));
                 if (!isSuccess)
@@ -569,8 +571,8 @@ namespace SignalGo.Client.ClientManager
             }
             else
             {
-                byte dataTypeByte = StreamHelper.ReadOneByte(readStream, compressMode, ProviderSetting.MaximumReceiveStreamHeaderBlock);
-                byte compressModeByte = StreamHelper.ReadOneByte(readStream, compressMode, ProviderSetting.MaximumReceiveStreamHeaderBlock);
+                byte dataTypeByte = StreamHelper.ReadOneByte(readStream);
+                byte compressModeByte = StreamHelper.ReadOneByte(readStream);
             }
             byte[] callBackBytes = StreamHelper.ReadBlockToEnd(readStream, compressMode, ProviderSetting.MaximumReceiveStreamHeaderBlock);
             MethodCallbackInfo callbackInfo = ClientSerializationHelper.DeserializeObject<MethodCallbackInfo>(Encoding.UTF8.GetString(callBackBytes, 0, callBackBytes.Length));
@@ -957,7 +959,7 @@ namespace SignalGo.Client.ClientManager
             });
         }
 
-        internal void SendDataSync(MethodCallInfo data)
+        internal void SendDataSync(MethodCallInfo callback)
         {
             try
             {
@@ -966,7 +968,7 @@ namespace SignalGo.Client.ClientManager
 #else
                 NetworkStream stream = _client.GetStream();
 #endif
-                string json = ClientSerializationHelper.SerializeObject(data);
+                string json = ClientSerializationHelper.SerializeObject(callback);
                 List<byte> bytes = new List<byte>
                     {
                         (byte)DataType.CallMethod,
@@ -984,7 +986,15 @@ namespace SignalGo.Client.ClientManager
             }
             catch (Exception ex)
             {
-                AutoLogger.LogError(ex, "ConnectorBase SendData");
+                if (ConnectorExtensions.WaitedMethodsForResponse.TryGetValue(callback.Guid, out KeyValue<AutoResetEvent, MethodCallbackInfo> keyValue))
+                {
+                    if (keyValue.Value == null)
+                        keyValue.Value = new MethodCallbackInfo();
+                    keyValue.Value.IsException = true;
+                    keyValue.Value.Data = ex.Message;
+                    keyValue.Key.Set();
+                }
+                //AutoLogger.LogError(ex, "ConnectorBase SendData");
             }
         }
 
