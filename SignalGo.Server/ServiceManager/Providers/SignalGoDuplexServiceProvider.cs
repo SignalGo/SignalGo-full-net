@@ -1,6 +1,7 @@
 ﻿using SignalGo.Server.Helpers;
 using SignalGo.Server.Models;
 using SignalGo.Shared.Helpers;
+using SignalGo.Shared.IO;
 using SignalGo.Shared.Managers;
 using SignalGo.Shared.Models;
 using System;
@@ -20,8 +21,8 @@ namespace SignalGo.Server.ServiceManager.Providers
             try
             {
                 Console.WriteLine($"Duplex Client Connected: {client.IPAddress}");
-                System.IO.Stream stream = client.ClientStream;
-                while (client.TcpClient.Connected)
+                PipeNetworkStream stream = client.ClientStream;
+                while (true)
                 {
                     byte oneByteOfDataType = client.StreamHelper.ReadOneByte(stream);
                     //type of data

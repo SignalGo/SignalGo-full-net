@@ -37,7 +37,7 @@ namespace SignalGo.Server.Models
         /// <summary>
         /// stream of client to read and write
         /// </summary>
-        public System.IO.Stream ClientStream { get; set; }
+        public PipeNetworkStream ClientStream { get; set; }
         /// <summary>
         /// client Stream
         /// </summary>

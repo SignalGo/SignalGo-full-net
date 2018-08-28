@@ -8,12 +8,13 @@ namespace SignalGo.Server.IO
 {
     internal class StreamGo : Stream
     {
-        private Stream CurrentStream { get; set; }
+        private PipeNetworkStream CurrentStream { get; set; }
 
-        public StreamGo(Stream currentStream)
+        public StreamGo(PipeNetworkStream currentStream)
         {
             CurrentStream = currentStream;
         }
+
 
         private long _Length;
 
@@ -22,30 +23,6 @@ namespace SignalGo.Server.IO
         private long _Position;
 
         private bool IsReadFinishedBytes { get; set; } = false;
-
-        public override bool CanRead
-        {
-            get
-            {
-                return CurrentStream.CanRead;
-            }
-        }
-
-        public override bool CanSeek
-        {
-            get
-            {
-                return CurrentStream.CanSeek;
-            }
-        }
-
-        public override bool CanWrite
-        {
-            get
-            {
-                return CurrentStream.CanWrite;
-            }
-        }
 
         public override long Length
         {
@@ -68,10 +45,30 @@ namespace SignalGo.Server.IO
             }
         }
 
-        public override void Flush()
+        public override bool CanRead
         {
-            CurrentStream.Flush();
+            get
+            {
+                throw new System.NotImplementedException();
+            }
         }
+
+        public override bool CanSeek
+        {
+            get
+            {
+                throw new System.NotImplementedException();
+            }
+        }
+
+        public override bool CanWrite
+        {
+            get
+            {
+                throw new System.NotImplementedException();
+            }
+        }
+
 
         /// <summary>
         /// set lenth of stream
@@ -124,7 +121,7 @@ namespace SignalGo.Server.IO
                     return -1;
                 }
             }
-            int readCount = CurrentStream.Read(buffer, offset, count);
+            buffer = CurrentStream.Read(count, out int readCount);
             Position += readCount;
             if (Position == Length)
                 FinishRead();
@@ -140,19 +137,29 @@ namespace SignalGo.Server.IO
             IsReadFinishedBytes = true;
         }
 
+        public void Write(byte[] buffer)
+        {
+            CurrentStream.Write(buffer);
+        }
+
+        public override void Flush()
+        {
+            throw new System.NotImplementedException();
+        }
+
         public override long Seek(long offset, SeekOrigin origin)
         {
-            return CurrentStream.Seek(offset, origin);
+            throw new System.NotImplementedException();
         }
 
         public override void SetLength(long value)
         {
-            CurrentStream.SetLength(value);
+            throw new System.NotImplementedException();
         }
 
         public override void Write(byte[] buffer, int offset, int count)
         {
-            CurrentStream.Write(buffer, offset, count);
+            CurrentStream.Write(buffer);
         }
     }
 }

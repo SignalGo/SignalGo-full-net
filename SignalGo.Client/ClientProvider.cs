@@ -174,12 +174,8 @@ namespace SignalGo.Client
                     (byte)DataType.GetClientId,
                     (byte)CompressMode.None
                 };
-#if (PORTABLE)
-                var stream = _client.WriteStream;
-#else
-                System.Net.Sockets.NetworkStream stream = _client.GetStream();
-#endif
-                StreamHelper.WriteToStream(stream, data.ToArray());
+                
+                StreamHelper.WriteToStream(_clientStream, data.ToArray());
             }
         }
     }

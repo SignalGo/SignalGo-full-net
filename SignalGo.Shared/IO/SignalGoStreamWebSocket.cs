@@ -1,6 +1,4 @@
-﻿using System.IO;
-
-namespace SignalGo.Shared.IO
+﻿namespace SignalGo.Shared.IO
 {
     public class SignalGoStreamWebSocket : SignalGoStreamBase
     {
@@ -10,13 +8,19 @@ namespace SignalGo.Shared.IO
         }
 
         public static ISignalGoStream CurrentWebSocket { get; set; }
-
-        public override void WriteToStream(Stream stream, byte[] data)
+#if (NET35 || NET40)
+        public override void WriteToStream(PipeNetworkStream stream, byte[] data)
         {
             byte[] encode = EncodeMessageToSend(data);
-            stream.Write(encode, 0, encode.Length);
+            stream.Write(encode);
         }
-
+#else
+        public override async void WriteToStream(PipeNetworkStream stream, byte[] data)
+        {
+            byte[] encode = EncodeMessageToSend(data);
+            await stream.WriteAsync(encode);
+        }
+#endif
         public override byte[] EncodeMessageToSend(byte[] bytesRaw)
         {
             byte[] response;

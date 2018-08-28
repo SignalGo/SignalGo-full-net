@@ -83,12 +83,8 @@ namespace SignalGo.Server.ServiceManager.Versions
             {
                 try
                 {
-#if (NET35 || NET40)
-                    CustomStreamReader stream = ReadFirstLineOfClient(tcpClient);
-#else
-                    var stream = await ReadFirstLineOfClient(tcpClient);
-#endif
-                    ExchangeClient(stream, stream.Line, stream.LastBytesReaded, tcpClient);
+                    PipeNetworkStream stream = new PipeNetworkStream(new NormalStream(tcpClient.GetTcpStream(_serverBase)));
+                    ExchangeClient(stream, tcpClient);
                 }
                 catch (Exception)
                 {
@@ -103,33 +99,12 @@ namespace SignalGo.Server.ServiceManager.Versions
         }
 
         /// <summary>
-        /// read first line of client data
-        /// </summary>
-        /// <param name="tcpClient"></param>
-        /// <param name="result"></param>
-        /// <returns></returns>
-#if (NET35 || NET40)
-        public CustomStreamReader ReadFirstLineOfClient(TcpClient tcpClient)
-#else
-        public async Task<CustomStreamReader> ReadFirstLineOfClient(TcpClient tcpClient)
-#endif
-        {
-            CustomStreamReader reader = new CustomStreamReader(tcpClient.GetStream());
-
-#if (NET35 || NET40)
-            string data = reader.ReadLine();
-#else
-            var data =await reader.ReadLine();
-#endif
-            return reader;
-        }
-        /// <summary>
         /// create client information
         /// </summary>
         /// <param name="isHttp"></param>
         /// <param name="tcpClient"></param>
         /// <returns></returns>
-        public ClientInfo CreateClientInfo(bool isHttp, TcpClient tcpClient)
+        internal ClientInfo CreateClientInfo(bool isHttp, TcpClient tcpClient, PipeNetworkStream stream)
         {
             ClientInfo client = null;
             if (isHttp)
@@ -141,7 +116,7 @@ namespace SignalGo.Server.ServiceManager.Versions
             client.IPAddress = ((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address.ToString().Replace("::ffff:", "");
             client.ClientId = Guid.NewGuid().ToString() + "-" + Guid.NewGuid().ToString();
             _serverBase.Clients.TryAdd(client.ClientId, client);
-            client.ClientStream = tcpClient.GetTcpStream(_serverBase);
+            client.ClientStream = stream;
             return client;
         }
 
@@ -151,27 +126,30 @@ namespace SignalGo.Server.ServiceManager.Versions
         /// <param name="firstLineString"></param>
         /// <param name="firstLineBytes"></param>
         /// <param name="tcpClient"></param>
-        public void ExchangeClient(CustomStreamReader reader, string firstLineString, byte[] firstLineBytes, TcpClient tcpClient)
+        public void ExchangeClient(PipeNetworkStream reader, TcpClient tcpClient)
         {
             //File.WriteAllBytes("I:\\signalgotext.txt", reader.LastBytesReaded);
             ClientInfo client = null;
             try
             {
+                string firstLineString = reader.ReadLine();
+                byte[] firstLineBytes = reader.FirstLineBytes;
+
                 if (firstLineString.Contains("SignalGo-Stream/4.0"))
                 {
-                    client = CreateClientInfo(false, tcpClient);
+                    client = CreateClientInfo(false, tcpClient, reader);
                     client.StreamHelper = SignalGoStreamBase.CurrentBase;
                     SignalGoStreamProvider.StartToReadingClientData(client, _serverBase);
                 }
                 else if (firstLineString.Contains("SignalGo-OneWay/4.0"))
                 {
-                    client = CreateClientInfo(false, tcpClient);
+                    client = CreateClientInfo(false, tcpClient, reader);
                     client.StreamHelper = SignalGoStreamBase.CurrentBase;
                     OneWayServiceProvider.StartToReadingClientData(client, _serverBase);
                 }
                 else if (firstLineString.Contains("SignalGo/4.0"))
                 {
-                    client = CreateClientInfo(false, tcpClient);
+                    client = CreateClientInfo(false, tcpClient, reader);
                     //"SignalGo/1.0";
                     client.StreamHelper = SignalGoStreamBase.CurrentBase;
 

@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using SignalGo.Shared.IO;
+using System.IO;
 
 namespace SignalGo.Shared.Http
 {

@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using SignalGo.Client.ClientManager;
+using SignalGo.Shared.IO;
 using SignalGo.Shared.Models;
 using System;
 using System.Collections.Generic;
@@ -34,19 +35,12 @@ namespace SignalGo.Client
             TcpClient downloadFileSocket = new TcpClient(_address, _port);
 #endif
 
-#if (PORTABLE)
-            var firstBytes = Encoding.UTF8.GetBytes("SignalGo/1.0");
-            var wrtiteStream = downloadFileSocket.WriteStream;
-            var readStream = downloadFileSocket.ReadStream;
-            downloadFileSocket.WriteStream.Write(firstBytes, 0, firstBytes.Length);
-#else
-            NetworkStream wrtiteStream = downloadFileSocket.GetStream();
-            NetworkStream readStream = downloadFileSocket.GetStream();
+            var stream = new PipeNetworkStream(new NormalStream(downloadFileSocket.GetStream()));
             downloadFileSocket.Client.Send(Encoding.UTF8.GetBytes("SignalGo/1.0"));
-#endif
+
             //get OK SignalGo/1.0
-            int o = readStream.ReadByte();
-            int k = readStream.ReadByte();
+            int o = stream.ReadOneByte();
+            int k = stream.ReadOneByte();
 
             //register client
             string json = JsonConvert.SerializeObject(new List<string>() { "/DownloadFile" });
@@ -55,7 +49,7 @@ namespace SignalGo.Client
             byte[] dataLen = BitConverter.GetBytes(jsonBytes.Length);
             bytes.AddRange(dataLen);
             bytes.AddRange(jsonBytes);
-            StreamHelper.WriteToStream(wrtiteStream, bytes.ToArray());
+            StreamHelper.WriteToStream(stream, bytes.ToArray());
 
             ///send method data
             json = JsonConvert.SerializeObject(Data);
@@ -69,25 +63,25 @@ namespace SignalGo.Client
             if (bytes.Count > ProviderSetting.MaximumSendDataBlock)
                 throw new Exception("SendData data length is upper than MaximumSendDataBlock");
 
-            StreamHelper.WriteToStream(wrtiteStream, bytes.ToArray());
+            StreamHelper.WriteToStream(stream, bytes.ToArray());
 
             //get OK SignalGo/1.0
             //int o = socketStream.ReadByte();
             //int k = socketStream.ReadByte();
 
             //get DataType
-            DataType dataType = (DataType)readStream.ReadByte();
+            DataType dataType = (DataType)stream.ReadOneByte();
             //secound byte is compress mode
-            CompressMode compresssMode = (CompressMode)readStream.ReadByte();
+            CompressMode compresssMode = (CompressMode)stream.ReadOneByte();
 
             // server is called client method
             if (dataType == DataType.ResponseCallMethod)
             {
-                byte[] bytesArray = StreamHelper.ReadBlockToEnd(readStream, compresssMode, ProviderSetting.MaximumReceiveDataBlock);
+                byte[] bytesArray = StreamHelper.ReadBlockToEnd(stream, compresssMode, ProviderSetting.MaximumReceiveDataBlock);
                 json = Encoding.UTF8.GetString(bytesArray, 0, bytesArray.Length);
                 MethodCallInfo callInfo = JsonConvert.DeserializeObject<MethodCallInfo>(json);
                 StreamInfo data = JsonConvert.DeserializeObject<StreamInfo>(callInfo.Data.ToString());
-                data.Stream = readStream;
+                data.Stream = stream;
                 return data;
             }
             return null;
@@ -112,17 +106,12 @@ namespace SignalGo.Client
 #else
             TcpClient downloadFileSocket = new TcpClient(_address, _port);
 #endif
-#if (PORTABLE)
-            streamInfo.Stream = downloadFileSocket.WriteStream;
-            var firstBytes = Encoding.UTF8.GetBytes("SignalGo/1.0");
-            downloadFileSocket.WriteStream.Write(firstBytes, 0, firstBytes.Length);
-#else
-            streamInfo.Stream = downloadFileSocket.GetStream();
+            var stream = new PipeNetworkStream(new NormalStream(downloadFileSocket.GetStream()));
+            streamInfo.Stream = stream;
             downloadFileSocket.Client.Send(Encoding.UTF8.GetBytes("SignalGo/1.0"));
-#endif
             //get OK SignalGo/1.0
-            int o = streamInfo.Stream.ReadByte();
-            int k = streamInfo.Stream.ReadByte();
+            int o = stream.ReadOneByte();
+            int k = stream.ReadOneByte();
 
             //register client
             string json = JsonConvert.SerializeObject(new List<string>() { "/UploadFile" });
@@ -132,7 +121,7 @@ namespace SignalGo.Client
             bytes.AddRange(dataLen);
             bytes.AddRange(jsonBytes);
 
-            StreamHelper.WriteToStream(downloadFileSocket.GetStream(), bytes.ToArray());
+            StreamHelper.WriteToStream(stream, bytes.ToArray());
             ///send method data
             json = JsonConvert.SerializeObject(Data);
             bytes = new List<byte>();
@@ -145,7 +134,7 @@ namespace SignalGo.Client
             if (bytes.Count > ProviderSetting.MaximumSendDataBlock)
                 throw new Exception("SendData data length is upper than MaximumSendDataBlock");
 
-            StreamHelper.WriteToStream(downloadFileSocket.GetStream(), bytes.ToArray());
+            StreamHelper.WriteToStream(stream, bytes.ToArray());
         }
     }
 }

@@ -93,11 +93,8 @@ namespace SignalGo.Client.ClientManager
         /// <summary>
         /// client tcp
         /// </summary>
-#if (PORTABLE)
-        internal Sockets.Plugin.TcpSocketClient _client;
-#else
         internal TcpClient _client;
-#endif
+        internal PipeNetworkStream _clientStream;
         /// <summary>
         /// registred callbacks
         /// </summary>
@@ -158,6 +155,7 @@ namespace SignalGo.Client.ClientManager
                 // we have connected
                 _client.EndConnect(result);
 #endif
+                _clientStream = new PipeNetworkStream(new NormalStream(_client.GetStream()));
             }
         }
 
@@ -478,27 +476,20 @@ namespace SignalGo.Client.ClientManager
             TcpClient _newClient = new TcpClient(serverAddress, port.Value);
             _newClient.NoDelay = true;
 #endif
-#if (PORTABLE)
-            var stream = _newClient.WriteStream;
-            var readStream = _newClient.ReadStream;
-#else
-            NetworkStream stream = _newClient.GetStream();
-            NetworkStream readStream = stream;
-#endif
-
+            PipeNetworkStream stream = new PipeNetworkStream(new NormalStream(_newClient.GetStream()));
             //var json = JsonConvert.SerializeObject(Data);
             //var jsonBytes = Encoding.UTF8.GetBytes(json);
             string header = "SignalGo-Stream/4.0\r\n";
             byte[] bytes = Encoding.UTF8.GetBytes(header);
-            stream.Write(bytes, 0, bytes.Length);
+            stream.Write(bytes);
             bool isUpload = false;
             if (method.GetParameters().Any(x => x.ParameterType == typeof(StreamInfo) || (x.ParameterType.GetIsGenericType() && x.ParameterType.GetGenericTypeDefinition() == typeof(StreamInfo<>))))
             {
                 isUpload = true;
-                stream.Write(new byte[] { 0 }, 0, 1);
+                stream.Write(new byte[] { 0 });
             }
             else
-                stream.Write(new byte[] { 1 }, 0, 1);
+                stream.Write(new byte[] { 1 });
 
             MethodCallInfo callInfo = new MethodCallInfo();
             callInfo.ServiceName = name;
@@ -529,10 +520,10 @@ namespace SignalGo.Client.ClientManager
                 {
                     if (firstData != null && firstData.Key != DataType.FlushStream)
                         return -1;
-                    firstData = iStream.ReadFirstData(readStream, ProviderSetting.MaximumReceiveStreamHeaderBlock);
+                    firstData = iStream.ReadFirstData(stream, ProviderSetting.MaximumReceiveStreamHeaderBlock);
                     if (firstData.Key == DataType.FlushStream)
                     {
-                        byte[] data = StreamHelper.ReadBlockToEnd(readStream, firstData.Value, ProviderSetting.MaximumReceiveStreamHeaderBlock);
+                        byte[] data = StreamHelper.ReadBlockToEnd(stream, firstData.Value, ProviderSetting.MaximumReceiveStreamHeaderBlock);
                         return BitConverter.ToInt32(data, 0);
                     }
                     return -1;
@@ -549,20 +540,19 @@ namespace SignalGo.Client.ClientManager
 
                         if (position + blockOfRead > length)
                             blockOfRead = (int)(length - position);
-                        bytes = new byte[blockOfRead];
-                        int readCount = iStream.Stream.Read(bytes, 0, bytes.Length);
+                        bytes = iStream.Stream.Read(blockOfRead, out int readCount);
                         position += readCount;
-                        stream.Write(bytes, 0, readCount);
+                        stream.Write(bytes.Take(readCount).ToArray());
                     }
                 }
                 if (firstData == null || firstData.Key == DataType.FlushStream)
                 {
                     while (true)
                     {
-                        firstData = iStream.ReadFirstData(readStream, ProviderSetting.MaximumReceiveStreamHeaderBlock);
+                        firstData = iStream.ReadFirstData(stream, ProviderSetting.MaximumReceiveStreamHeaderBlock);
                         if (firstData.Key == DataType.FlushStream)
                         {
-                            byte[] data = StreamHelper.ReadBlockToEnd(readStream, firstData.Value, ProviderSetting.MaximumReceiveStreamHeaderBlock);
+                            byte[] data = StreamHelper.ReadBlockToEnd(stream, firstData.Value, ProviderSetting.MaximumReceiveStreamHeaderBlock);
                         }
                         else
                             break;
@@ -571,10 +561,10 @@ namespace SignalGo.Client.ClientManager
             }
             else
             {
-                byte dataTypeByte = StreamHelper.ReadOneByte(readStream);
-                byte compressModeByte = StreamHelper.ReadOneByte(readStream);
+                byte dataTypeByte = StreamHelper.ReadOneByte(stream);
+                byte compressModeByte = StreamHelper.ReadOneByte(stream);
             }
-            byte[] callBackBytes = StreamHelper.ReadBlockToEnd(readStream, compressMode, ProviderSetting.MaximumReceiveStreamHeaderBlock);
+            byte[] callBackBytes = StreamHelper.ReadBlockToEnd(stream, compressMode, ProviderSetting.MaximumReceiveStreamHeaderBlock);
             MethodCallbackInfo callbackInfo = ClientSerializationHelper.DeserializeObject<MethodCallbackInfo>(Encoding.UTF8.GetString(callBackBytes, 0, callBackBytes.Length));
             if (callbackInfo.IsException)
                 throw new Exception(callbackInfo.Data);
@@ -626,13 +616,7 @@ namespace SignalGo.Client.ClientManager
             TcpClient _newClient = new TcpClient(serverAddress, port);
             _newClient.NoDelay = true;
 #endif
-#if (PORTABLE)
-            var stream = _newClient.WriteStream;
-            var readStream = _newClient.ReadStream;
-#else
-            NetworkStream stream = _newClient.GetStream();
-            NetworkStream readStream = stream;
-#endif
+            PipeNetworkStream stream = new PipeNetworkStream(new NormalStream(_newClient.GetStream()));
             MethodCallInfo callInfo = new MethodCallInfo
             {
                 ServiceName = serviceName,
@@ -652,8 +636,8 @@ namespace SignalGo.Client.ClientManager
             streamHelper.WriteToStream(stream, lineBytes);
             streamHelper.WriteBlockToStream(stream, jsonBytes);
 
-            DataType dataType = (DataType)stream.ReadByte();
-            CompressMode compressMode = (CompressMode)stream.ReadByte();
+            DataType dataType = (DataType)stream.ReadOneByte();
+            CompressMode compressMode = (CompressMode)stream.ReadOneByte();
             byte[] readData = streamHelper.ReadBlockToEnd(stream, compressMode, uint.MaxValue);
             json = Encoding.UTF8.GetString(readData, 0, readData.Length);
             MethodCallbackInfo callBack = ClientSerializationHelper.DeserializeObject<MethodCallbackInfo>(json);
@@ -804,15 +788,11 @@ namespace SignalGo.Client.ClientManager
             {
                 try
                 {
-#if (PORTABLE)
-                    var stream = _client.ReadStream;
-#else
-                    NetworkStream stream = _client.GetStream();
-#endif
+
                     while (true)
                     {
                         //first byte is DataType
-                        int dataTypeByte = stream.ReadByte();
+                        int dataTypeByte = _clientStream.ReadOneByte();
                         DataType dataType = (DataType)dataTypeByte;
                         if (dataType == DataType.PingPong)
                         {
@@ -820,13 +800,13 @@ namespace SignalGo.Client.ClientManager
                             continue;
                         }
                         //secound byte is compress mode
-                        int compressModeByte = stream.ReadByte();
+                        int compressModeByte = _clientStream.ReadOneByte();
                         CompressMode compresssMode = (CompressMode)compressModeByte;
 
                         // server is called client method
                         if (dataType == DataType.CallMethod)
                         {
-                            byte[] bytes = StreamHelper.ReadBlockToEnd(stream, compresssMode, ProviderSetting.MaximumReceiveDataBlock);
+                            byte[] bytes = StreamHelper.ReadBlockToEnd(_clientStream, compresssMode, ProviderSetting.MaximumReceiveDataBlock);
                             if (SecuritySettings != null)
                                 bytes = DecryptBytes(bytes);
                             string json = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
@@ -844,7 +824,7 @@ namespace SignalGo.Client.ClientManager
                         //after client called server method, server response to client
                         else if (dataType == DataType.ResponseCallMethod)
                         {
-                            byte[] bytes = StreamHelper.ReadBlockToEnd(stream, compresssMode, ProviderSetting.MaximumReceiveDataBlock);
+                            byte[] bytes = StreamHelper.ReadBlockToEnd(_clientStream, compresssMode, ProviderSetting.MaximumReceiveDataBlock);
                             if (SecuritySettings != null)
                                 bytes = DecryptBytes(bytes);
                             string json = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
@@ -859,7 +839,7 @@ namespace SignalGo.Client.ClientManager
                         }
                         else if (dataType == DataType.GetServiceDetails)
                         {
-                            byte[] bytes = StreamHelper.ReadBlockToEnd(stream, compresssMode, ProviderSetting.MaximumReceiveDataBlock);
+                            byte[] bytes = StreamHelper.ReadBlockToEnd(_clientStream, compresssMode, ProviderSetting.MaximumReceiveDataBlock);
                             if (SecuritySettings != null)
                                 bytes = DecryptBytes(bytes);
                             string json = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
@@ -871,7 +851,7 @@ namespace SignalGo.Client.ClientManager
                         }
                         else if (dataType == DataType.GetMethodParameterDetails)
                         {
-                            byte[] bytes = StreamHelper.ReadBlockToEnd(stream, compresssMode, ProviderSetting.MaximumReceiveDataBlock);
+                            byte[] bytes = StreamHelper.ReadBlockToEnd(_clientStream, compresssMode, ProviderSetting.MaximumReceiveDataBlock);
                             if (SecuritySettings != null)
                                 bytes = DecryptBytes(bytes);
                             string json = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
@@ -881,7 +861,7 @@ namespace SignalGo.Client.ClientManager
                         }
                         else if (dataType == DataType.GetClientId)
                         {
-                            byte[] bytes = StreamHelper.ReadBlockToEnd(stream, compresssMode, ProviderSetting.MaximumReceiveDataBlock);
+                            byte[] bytes = StreamHelper.ReadBlockToEnd(_clientStream, compresssMode, ProviderSetting.MaximumReceiveDataBlock);
                             if (SecuritySettings != null)
                                 bytes = DecryptBytes(bytes);
                             ClientId = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
@@ -914,7 +894,7 @@ namespace SignalGo.Client.ClientManager
 #else
                 NetworkStream stream = _client.GetStream();
 #endif
-                StreamHelper.WriteToStream(stream, new byte[] { (byte)DataType.PingPong });
+                StreamHelper.WriteToStream(_clientStream, new byte[] { (byte)DataType.PingPong });
                 return PingAndWaitForPong.WaitOne(new TimeSpan(0, 0, 3));
             }
             catch (Exception ex)
@@ -982,7 +962,7 @@ namespace SignalGo.Client.ClientManager
                 bytes.AddRange(jsonBytes);
                 if (bytes.Count > ProviderSetting.MaximumSendDataBlock)
                     throw new Exception("SendData data length is upper than MaximumSendDataBlock");
-                StreamHelper.WriteToStream(stream, bytes.ToArray());
+                StreamHelper.WriteToStream(_clientStream, bytes.ToArray());
             }
             catch (Exception ex)
             {
@@ -1116,7 +1096,7 @@ namespace SignalGo.Client.ClientManager
 #else
             NetworkStream stream = _client.GetStream();
 #endif
-            StreamHelper.WriteToStream(stream, data.ToArray());
+            StreamHelper.WriteToStream(_clientStream, data.ToArray());
         }
 
         private ManualResetEvent getServiceDetailEvent = new ManualResetEvent(false);
@@ -1146,7 +1126,7 @@ namespace SignalGo.Client.ClientManager
 #else
                 NetworkStream stream = _client.GetStream();
 #endif
-                StreamHelper.WriteToStream(stream, data.ToArray());
+                StreamHelper.WriteToStream(_clientStream, data.ToArray());
             });
             getServiceDetailEvent.WaitOne();
             if (getServiceDetialExceptionResult != null)
@@ -1180,7 +1160,7 @@ namespace SignalGo.Client.ClientManager
 #else
                 NetworkStream stream = _client.GetStream();
 #endif
-                StreamHelper.WriteToStream(stream, data.ToArray());
+                StreamHelper.WriteToStream(_clientStream, data.ToArray());
             });
             getServiceDetailEvent.WaitOne();
             return getmethodParameterDetailsResult;

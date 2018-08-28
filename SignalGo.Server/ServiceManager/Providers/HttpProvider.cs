@@ -27,9 +27,9 @@ namespace SignalGo.Server.ServiceManager.Providers
     public class HttpProvider : BaseProvider
     {
 #if (NET35 || NET40)
-        public static void StartToReadingClientData(TcpClient tcpClient, ServerBase serverBase, CustomStreamReader reader, string headerResponse)
+        public static void StartToReadingClientData(TcpClient tcpClient, ServerBase serverBase, PipeNetworkStream reader, string headerResponse)
 #else
-        public static async void StartToReadingClientData(TcpClient tcpClient, ServerBase serverBase, CustomStreamReader reader, string headerResponse)
+        public static async void StartToReadingClientData(TcpClient tcpClient, ServerBase serverBase, PipeNetworkStream reader, string headerResponse)
 #endif
         {
             Console.WriteLine($"Http Client Connected: {((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address.ToString().Replace("::ffff:", "")}");
@@ -41,7 +41,7 @@ namespace SignalGo.Server.ServiceManager.Providers
 #if (NET35 || NET40)
                     string line = reader.ReadLine();
 #else
-                    var line = await reader.ReadLine();
+                    string line = reader.ReadLine();
 #endif
                     headerResponse += line;
                     if (line == "\r\n")
@@ -49,7 +49,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 }
                 if (headerResponse.Contains("Sec-WebSocket-Key"))
                 {
-                    client = serverBase.ServerDataProvider.CreateClientInfo(false, tcpClient);
+                    client = serverBase.ServerDataProvider.CreateClientInfo(false, tcpClient, reader);
                     client.StreamHelper = SignalGoStreamWebSocket.CurrentWebSocket;
                     string key = headerResponse.Replace("ey:", "`").Split('`')[1].Replace("\r", "").Split('\n')[0].Trim();
                     string acceptKey = AcceptKey(ref key);
@@ -61,7 +61,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                      + "Connection: Upgrade" + newLine
                      + "Sec-WebSocket-Accept: " + acceptKey + newLine + newLine;
                     byte[] bytes = System.Text.Encoding.UTF8.GetBytes(response);
-                    client.ClientStream.Write(bytes, 0, bytes.Length);
+                    client.ClientStream.Write(bytes);
                     WebSocketProvider.StartToReadingClientData(client, serverBase);
                 }
                 else
@@ -75,7 +75,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                         try
                         {
                             //serverBase.TaskOfClientInfoes
-                            client = serverBase.ServerDataProvider.CreateClientInfo(true, tcpClient);
+                            client = serverBase.ServerDataProvider.CreateClientInfo(true, tcpClient, reader);
                             client.StreamHelper = SignalGoStreamBase.CurrentBase;
 
                             string[] lines = null;
@@ -148,7 +148,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                                         + settingHeaders
                                         + "Connection: Close" + newLine;
                                     byte[] bytesResult = System.Text.Encoding.UTF8.GetBytes(response + message);
-                                    client.ClientStream.Write(bytesResult, 0, bytesResult.Length);
+                                    client.ClientStream.Write(bytesResult);
                                     serverBase.DisposeClient(client, "AddClient finish post call");
                                 }
                                 else if (serverBase.RegisteredServiceTypes.ContainsKey("") && (string.IsNullOrEmpty(address) || address == "/"))
@@ -161,7 +161,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                                 {
                                     response = "HTTP/1.1 200 OK" + newLine + "Content-Type: text/html" + newLine + "Connection: Close" + newLine;
                                     byte[] bytes = System.Text.Encoding.ASCII.GetBytes(response + newLine + "SignalGo Server OK" + newLine);
-                                    client.ClientStream.Write(bytes, 0, bytes.Length);
+                                    client.ClientStream.Write(bytes);
                                     serverBase.DisposeClient(client, "AddClient http ok signalGo");
                                 }
                             }
@@ -263,7 +263,7 @@ namespace SignalGo.Server.ServiceManager.Providers
         /// <param name="client"></param>
         private static void SendSignalGoServiceReference(HttpClientInfo client, ServerBase serverBase)
         {
-            Stream stream = client.ClientStream;
+            PipeNetworkStream stream = client.ClientStream;
             StringBuilder headers = new StringBuilder();
 
             Shared.Models.ServiceReference.NamespaceReferenceInfo referenceData = new ServiceReferenceHelper().GetServiceReferenceCSharpCode(client.RequestHeaders["servicenamespace"], serverBase);
@@ -273,12 +273,12 @@ namespace SignalGo.Server.ServiceManager.Providers
             headers.AppendLine("Content-Type: SignalGoServiceType");
             headers.AppendLine();
             byte[] headBytes = Encoding.ASCII.GetBytes(headers.ToString());
-            stream.Write(headBytes, 0, headBytes.Length);
+            stream.Write(headBytes);
 
-            stream.Write(reault, 0, reault.Length);
+            stream.Write(reault);
 
-            byte[] bytes = new byte[1024 * 1024];
-            int readCount = stream.Read(bytes, 0, bytes.Length);
+            byte[] bytes = stream.Read(1024, out int readCount);
+
             serverBase.DisposeClient(client, "SendSignalGoServiceReference finished");
         }
 
@@ -333,12 +333,12 @@ namespace SignalGo.Server.ServiceManager.Providers
                     {
                         try
                         {
-                            byte[] buffer = new byte[len - content.Length];
-#if (NET35 || NET40)
-                            int readCount = client.ClientStream.Read(buffer, 0, len - content.Length);
-#else
-                            var readCount = client.ClientStream.ReadAsync(buffer, 0, len - content.Length).GetAwaiter().GetResult();
-#endif
+                            byte[] buffer = client.ClientStream.Read(len - content.Length, out int readCount);
+                            //#if (NET35 || NET40)
+                            //                            int readCount = client.ClientStream.Read(buffer, 0, len - content.Length);
+                            //#else
+                            //buffer = 
+                            //#endif
                             if (readCount == 0)
                                 throw new Exception("zero byte readed socket disconnected!");
                             resultBytes.AddRange(buffer.ToList().GetRange(0, readCount));
@@ -570,7 +570,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     "Content-Length: " + (message.Length - 2) + newLine
                     + "Connection: Close" + newLine;
                 byte[] bytes = System.Text.Encoding.UTF8.GetBytes(response + message);
-                client.ClientStream.Write(bytes, 0, bytes.Length);
+                client.ClientStream.Write(bytes);
             }
             catch (SocketException)
             {
@@ -927,16 +927,14 @@ namespace SignalGo.Server.ServiceManager.Providers
             }
         }
 
-        private static int GetHttpFileFileHeader(Stream stream, ref string boundary, int maxLen, out string response)
+        private static int GetHttpFileFileHeader(PipeNetworkStream stream, ref string boundary, int maxLen, out string response)
         {
             List<byte> bytes = new List<byte>();
             byte findNextlvl = 0;
             while (true)
             {
-                int singleByte = stream.ReadByte();
-                if (singleByte < 0)
-                    break;
-                bytes.Add((byte)singleByte);
+                byte singleByte = stream.ReadOneByte();
+                bytes.Add(singleByte);
                 if (bytes.Count >= maxLen)
                 {
                     string data = Encoding.UTF8.GetString(bytes.ToArray());
@@ -1101,7 +1099,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     catch { }
                     //response += len + newLine;
                     byte[] bytes = System.Text.Encoding.ASCII.GetBytes(response);
-                    client.ClientStream.Write(bytes, 0, bytes.Length);
+                    client.ClientStream.Write(bytes);
                     List<byte> allb = new List<byte>();
                     //if (file.FileStream.CanSeek)
                     //    file.FileStream.Seek(0, System.IO.SeekOrigin.Begin);
@@ -1112,7 +1110,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                         if (readCount == 0)
                             break;
                         bytes = data.ToList().GetRange(0, readCount).ToArray();
-                        client.ClientStream.Write(bytes, 0, bytes.Length);
+                        client.ClientStream.Write(bytes);
                     }
                     file.FileStream.Dispose();
                 }
@@ -1156,11 +1154,11 @@ namespace SignalGo.Server.ServiceManager.Providers
                     response += controller.ResponseHeaders.ToString();
 
                     byte[] bytes = System.Text.Encoding.UTF8.GetBytes(response);
-                    client.ClientStream.Write(bytes, 0, bytes.Length);
+                    client.ClientStream.Write(bytes);
 
                     //response += "Content-Type: text/html" + newLine + "Connection: Close" + newLine;
-                    client.ClientStream.Write(dataBytes, 0, dataBytes.Length);
-                    client.ClientStream.Flush();
+                    client.ClientStream.Write(dataBytes);
+                    //client.ClientStream.Flush();
                     System.Threading.Thread.Sleep(100);
                 }
             }

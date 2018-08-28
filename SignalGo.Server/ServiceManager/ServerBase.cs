@@ -170,19 +170,22 @@ namespace SignalGo.Server.ServiceManager
                 Clients.Remove(client.ClientId);
                 try
                 {
+                    if (client.TcpClient != null)
+                    {
 #if (NETSTANDARD1_6 || NETCOREAPP1_1)
-                    client.TcpClient.Dispose();
+                        client.TcpClient.Dispose();
 #else
-                    client.TcpClient.Close();
+                        client.TcpClient.Close();
 #endif
+                    }
                 }
                 catch (Exception ex)
                 {
                     AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} CloseCllient");
                 }
-                foreach (var service in MultipleInstanceServices)
+                foreach (KeyValuePair<string, ConcurrentDictionary<string, object>> service in MultipleInstanceServices)
                 {
-                    foreach (var clientInfo in service.Value.Where(x=>x.Key == client.ClientId))
+                    foreach (KeyValuePair<string, object> clientInfo in service.Value.Where(x => x.Key == client.ClientId))
                     {
                         service.Value.Remove(clientInfo.Key);
                     }

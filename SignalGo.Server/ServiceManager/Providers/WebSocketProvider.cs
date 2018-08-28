@@ -19,8 +19,8 @@ namespace SignalGo.Server.ServiceManager.Providers
             try
             {
                 Console.WriteLine($"WebSocket Client Connected: {client.IPAddress}");
-                System.IO.Stream stream = client.ClientStream;
-                while (client.TcpClient.Connected)
+                var stream = client.ClientStream;
+                while (true)
                 {
                     byte oneByteOfDataType = client.StreamHelper.ReadOneByte(stream);
                     //type of data
@@ -193,8 +193,8 @@ namespace SignalGo.Server.ServiceManager.Providers
             catch (Exception ex)
             {
                 serverBase.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase SendCallbackData");
-                if (!client.TcpClient.Connected)
-                    serverBase.DisposeClient(client, "SendCallbackData exception");
+                //if (!client.TcpClient.Connected)
+                //    serverBase.DisposeClient(client, "SendCallbackData exception");
             }
             finally
             {

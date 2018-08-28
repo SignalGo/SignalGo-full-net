@@ -562,8 +562,8 @@ namespace SignalGo.Server.ServiceManager.Providers
             catch (Exception ex)
             {
                 serverBase.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase SendCallbackData");
-                if (!client.TcpClient.Connected)
-                    serverBase.DisposeClient(client, "SendCallbackData exception");
+                //if (!client.TcpClient.Connected)
+                //    serverBase.DisposeClient(client, "SendCallbackData exception");
             }
             finally
             {

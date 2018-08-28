@@ -1,12 +1,13 @@
 ﻿using SignalGo.Server.Helpers;
 using SignalGo.Server.Models;
-using SignalGo.Shared;
 using SignalGo.Shared.DataTypes;
 using SignalGo.Shared.Http;
+using SignalGo.Shared.IO;
 using SignalGo.Shared.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -27,7 +28,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 {
                     serverBase.AddTask(taskId, client.ClientId);
                     Console.WriteLine($"Stream Client Connected: {client.IPAddress}");
-                    Stream stream = client.ClientStream;
+                    PipeNetworkStream stream = client.ClientStream;
                     byte firstByte = client.StreamHelper.ReadOneByte(stream);
                     if (firstByte == 0)
                     {
@@ -99,8 +100,8 @@ namespace SignalGo.Server.ServiceManager.Providers
         {
             MethodCallbackInfo callback = null;
             IStreamInfo streamInfo = null;
-            Stream userStream = null;
-            Stream stream = client.ClientStream;
+            PipeNetworkStream userStream = null;
+            PipeNetworkStream stream = client.ClientStream;
             bool isCallbackSended = false;
             try
             {
@@ -118,9 +119,8 @@ namespace SignalGo.Server.ServiceManager.Providers
                 long writeLen = 0;
                 while (writeLen < len)
                 {
-                    bytes = new byte[1024 * 100];
-                    int readCount = userStream.Read(bytes, 0, bytes.Length);
-                    stream.Write(bytes, 0, readCount);
+                    bytes = userStream.Read(1024 * 100, out int readCount);
+                    stream.Write(bytes.Take(readCount).ToArray());
                     writeLen += readCount;
                 }
                 userStream.Dispose();
