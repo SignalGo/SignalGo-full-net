@@ -42,7 +42,7 @@ namespace ServerConsoleTest
     {
         public bool HelloWorld(string userName, string password)
         {
-            OperationContext<UserInfo>.CurrentSetting = new UserInfo() { Name = userName };
+            //OperationContext<UserInfo>.CurrentSetting = new UserInfo() { Name = userName };
             return true;
         }
 
@@ -101,12 +101,12 @@ namespace ServerConsoleTest
                 //});
                 //thread2.Start();
 
-                ClientProvider clientProvider2 = new ClientProvider();
-                clientProvider2.Connect("http://localhost:3284/TestServices/SignalGo");
-                var service2 = clientProvider2.RegisterServerServiceInterfaceWrapper<ITestManager>();
-                clientProvider2.RegisterClientService<ClientService>();
-                var result3 = service2.HelloWorld("reza123", "passee");
-                var result4 = service2.Test();
+                //ClientProvider clientProvider2 = new ClientProvider();
+                //clientProvider2.Connect("http://localhost:3284/TestServices/SignalGo");
+                //var service2 = clientProvider2.RegisterServerServiceInterfaceWrapper<ITestManager>();
+                //clientProvider2.RegisterClientService<ClientService>();
+                //var result3 = service2.HelloWorld("reza123", "passee");
+                //var result4 = service2.Test();
                 //result2 = service.Test();
                 Console.WriteLine("seerver started");
             }

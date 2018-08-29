@@ -104,7 +104,7 @@ namespace SignalGo.Server.ServiceManager.Versions
         /// <param name="isHttp"></param>
         /// <param name="tcpClient"></param>
         /// <returns></returns>
-        internal ClientInfo CreateClientInfo(bool isHttp, TcpClient tcpClient, PipeNetworkStream stream)
+        public ClientInfo CreateClientInfo(bool isHttp, TcpClient tcpClient, PipeNetworkStream stream)
         {
             ClientInfo client = null;
             if (isHttp)

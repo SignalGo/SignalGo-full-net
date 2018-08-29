@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace SignalGo.Shared.IO
 {
@@ -11,18 +12,18 @@ namespace SignalGo.Shared.IO
             CurrentBase = new SignalGoStreamBase();
         }
 
-
+        
         public static ISignalGoStream CurrentBase { get; set; }
 
-#if (NET35 || NET40)
         public virtual void WriteToStream(PipeNetworkStream stream, byte[] data)
         {
             stream.Write(data);
         }
-#else
-        public virtual async void WriteToStream(PipeNetworkStream stream, byte[] data)
+
+#if (!NET35 && !NET40)
+        public virtual Task WriteToStreamAsync(PipeNetworkStream stream, byte[] data)
         {
-            await stream.WriteAsync(data);
+            return stream.WriteAsync(data);
         }
 #endif
 
@@ -79,11 +80,11 @@ namespace SignalGo.Shared.IO
             stream.Write(data);
         }
 #else
-        public virtual async void WriteBlockToStream(PipeNetworkStream stream, byte[] data)
+        public virtual void WriteBlockToStream(PipeNetworkStream stream, byte[] data)
         {
             byte[] size = BitConverter.GetBytes(data.Length);
-            await stream.WriteAsync(size);
-            await stream.WriteAsync(data);
+            stream.Write(size);
+            stream.Write(data);
         }
 #endif
         /// <summary>

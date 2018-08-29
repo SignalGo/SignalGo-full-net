@@ -5,6 +5,9 @@ namespace SignalGo.Shared.IO
 {
     public interface ISignalGoStream
     {
+#if (!NET35 && !NET40)
+        Task WriteToStreamAsync(PipeNetworkStream stream, byte[] data);
+#endif
         void WriteToStream(PipeNetworkStream stream, byte[] data);
         byte[] EncodeMessageToSend(byte[] bytesRaw);
         byte[] ReadBlockToEnd(PipeNetworkStream stream, CompressMode compress, uint maximum);
