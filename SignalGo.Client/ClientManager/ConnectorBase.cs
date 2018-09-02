@@ -630,7 +630,7 @@ namespace SignalGo.Client.ClientManager
             string json = ClientSerializationHelper.SerializeObject(callInfo);
             byte[] jsonBytes = Encoding.UTF8.GetBytes(json);
 
-            string line = "SignalGo-OneWay/4.0" + Environment.NewLine;
+            string line = "SignalGo-OneWay/4.0" + "\r\n";
             byte[] lineBytes = Encoding.UTF8.GetBytes(line);
             SignalGoStreamBase streamHelper = new SignalGoStreamBase();
             streamHelper.WriteToStream(stream, lineBytes);

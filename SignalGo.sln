@@ -21,6 +21,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SignalGo.Client", "SignalGo
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SignalGo.ServerManager", "SignalGo.ServerManager\SignalGo.ServerManager.csproj", "{1380D040-51EB-4E03-BA87-78020071FB7A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SignalGo.Server.Owin", "SignalGo.Server.Owin\SignalGo.Server.Owin.csproj", "{D2EDF2E0-8691-40A0-A0EF-1895B72C3DE7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -47,6 +49,10 @@ Global
 		{1380D040-51EB-4E03-BA87-78020071FB7A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1380D040-51EB-4E03-BA87-78020071FB7A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1380D040-51EB-4E03-BA87-78020071FB7A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D2EDF2E0-8691-40A0-A0EF-1895B72C3DE7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D2EDF2E0-8691-40A0-A0EF-1895B72C3DE7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D2EDF2E0-8691-40A0-A0EF-1895B72C3DE7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D2EDF2E0-8691-40A0-A0EF-1895B72C3DE7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -57,6 +63,7 @@ Global
 		{683005B2-DF1F-46FA-BAB1-B779E34362A1} = {A22888F1-4263-4605-A06D-8A2AAD8A148F}
 		{DA4F99A9-69E4-48F1-8850-5298F7762AB9} = {EFF12755-71DE-414C-8F37-A760158FD6C0}
 		{1380D040-51EB-4E03-BA87-78020071FB7A} = {9287AE81-1DFE-42EA-9E8A-D673C98F57FF}
+		{D2EDF2E0-8691-40A0-A0EF-1895B72C3DE7} = {9287AE81-1DFE-42EA-9E8A-D673C98F57FF}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {BA45D984-D832-4852-8459-2B21C09E673C}

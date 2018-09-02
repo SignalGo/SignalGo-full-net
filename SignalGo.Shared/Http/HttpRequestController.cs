@@ -1,4 +1,5 @@
 ﻿using SignalGo.Shared.Models;
+using System.Collections.Generic;
 
 namespace SignalGo.Shared.Http
 {
@@ -35,8 +36,8 @@ namespace SignalGo.Shared.Http
         }
 
         public System.Net.HttpStatusCode Status { get; set; } = System.Net.HttpStatusCode.OK;
-        public WebHeaderCollection RequestHeaders { get; set; }
-        public WebHeaderCollection ResponseHeaders { get; set; } = new WebHeaderCollection();
+        public IDictionary<string, string[]> RequestHeaders { get; set; }
+        public IDictionary<string, string[]> ResponseHeaders { get; set; } = new WebHeaderCollection();
 
         public string IPAddress { get; set; }
 

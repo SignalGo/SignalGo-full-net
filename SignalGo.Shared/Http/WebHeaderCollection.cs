@@ -1,12 +1,15 @@
-﻿using System.Collections.Concurrent;
+﻿using System;
+using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace SignalGo.Shared.Http
 {
-    public class WebHeaderCollection
+    public class WebHeaderCollection : IDictionary<string, string[]>, ICollection<KeyValuePair<string, string[]>>, IEnumerable<KeyValuePair<string, string[]>>, IEnumerable
     {
-        private ConcurrentDictionary<string, KeyValuePair<string, string>> Items { get; set; } = new ConcurrentDictionary<string, KeyValuePair<string, string>>();
+        private ConcurrentDictionary<string, string[]> Items { get; set; } = new ConcurrentDictionary<string, string[]>();
         //
         // Summary:
         //     Gets or sets the specified response header.
@@ -17,17 +20,35 @@ namespace SignalGo.Shared.Http
         //
         // Returns:
         //     The specified response header.
-        public string this[string name]
+        public string this[string key]
         {
             get
             {
-                name = name.ToLower();
-                Items.TryGetValue(name, out KeyValuePair<string, string> value);
-                return value.Value;
+                key = key.ToLower();
+                Items.TryGetValue(key, out string[] values);
+                return values.FirstOrDefault();
             }
             set
             {
-                Items.AddOrUpdate(name.ToLower(), new KeyValuePair<string, string>(name, value), (x, old) => new KeyValuePair<string, string>(name, value));
+                key = key.ToLower();
+                Add(key, new string[] { value });
+
+            }
+        }
+
+
+        string[] IDictionary<string, string[]>.this[string key]
+        {
+            get
+            {
+                key = key.ToLower();
+                Items.TryGetValue(key, out string[] values);
+                return values;
+            }
+
+            set
+            {
+                Add(key, value);
             }
         }
         //
@@ -43,6 +64,31 @@ namespace SignalGo.Shared.Http
                 return Items.Count;
             }
         }
+
+        public ICollection<string> Keys
+        {
+            get
+            {
+                return Items.Keys;
+            }
+        }
+
+        public ICollection<string[]> Values
+        {
+            get
+            {
+                return Items.Values;
+            }
+        }
+
+        public bool IsReadOnly
+        {
+            get
+            {
+                return false;
+            }
+        }
+
 
         //
         // Summary:
@@ -68,20 +114,90 @@ namespace SignalGo.Shared.Http
             return Items.ContainsKey(header.ToLower());
         }
 
-        public void Add(string header, string value)
+        public void Add(string key, string value)
         {
-            Items.AddOrUpdate(header.ToLower(), new KeyValuePair<string, string>(header, value), (x, old) => new KeyValuePair<string, string>(header, value));
+            Add(key, value.Split(','));
+            //Items.AddOrUpdate(header.ToLower(), new KeyValuePair<string, string>(header, value), (x, old) => new KeyValuePair<string, string>(header, value));
         }
 
         public override string ToString()
         {
             StringBuilder builder = new StringBuilder();
-            foreach (KeyValuePair<string, KeyValuePair<string, string>> item in Items)
+            foreach (KeyValuePair<string, string[]> item in Items)
             {
-                builder.AppendLine(item.Value.Key + ": " + item.Value.Value);
+                builder.AppendLine(item.Key + ": " + string.Join(",", item.Value));
             }
             builder.AppendLine();
             return builder.ToString();
+        }
+
+        public bool ContainsKey(string key)
+        {
+            return Items.ContainsKey(key.ToLower());
+        }
+
+        public void Add(string key, string[] value)
+        {
+            key = key.ToLower();
+            if (Items.TryGetValue(key, out string[] values))
+            {
+                Items[key] = value;
+                //Array.Resize(ref values, values.Length + value.Length);
+                //int count = value.Length;
+                //for (int i = 0; i < count; i++)
+                //{
+                //    values[values.Length - value.Length + i] = value[i];
+                //}
+            }
+            else
+            {
+                Items.TryAdd(key, value);
+            }
+        }
+
+        bool IDictionary<string, string[]>.Remove(string key)
+        {
+            return Items.Remove(key.ToLower());
+        }
+
+        public bool TryGetValue(string key, out string[] value)
+        {
+            return Items.TryGetValue(key, out value);
+        }
+
+        public void Add(KeyValuePair<string, string[]> item)
+        {
+            Add(item.Key, item.Value);
+        }
+
+        public void Clear()
+        {
+            Items.Clear();
+        }
+
+        public bool Contains(KeyValuePair<string, string[]> item)
+        {
+            return Items.Contains(item);
+        }
+
+        public void CopyTo(KeyValuePair<string, string[]>[] array, int arrayIndex)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public bool Remove(KeyValuePair<string, string[]> item)
+        {
+            return Items.Remove(item.Key.ToLower());
+        }
+
+        public IEnumerator<KeyValuePair<string, string[]>> GetEnumerator()
+        {
+            return Items.GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return Items.GetEnumerator();
         }
     }
 }

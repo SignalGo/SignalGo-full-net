@@ -30,7 +30,7 @@ namespace SignalGo.Server.ServiceManager
         /// <summary>
         /// server data provider communication between client and server
         /// </summary>
-        internal IServerDataProvider ServerDataProvider { get; set; } = new ServerDataProviderV4();
+        public IServerDataProvider ServerDataProvider { get; private set; } = new ServerDataProviderV4();
         /// <summary>
         /// log errors and warnings
         /// </summary>
@@ -77,7 +77,7 @@ namespace SignalGo.Server.ServiceManager
         /// list of clients
         /// key is clientId and value is client information
         /// </summary>
-        internal ConcurrentDictionary<string, ClientInfo> Clients { get; set; } = new ConcurrentDictionary<string, ClientInfo>();
+        public ConcurrentDictionary<string, ClientInfo> Clients { get; set; } = new ConcurrentDictionary<string, ClientInfo>();
         /// <summary>
         /// single instance services
         /// key is service name and value is instance of service

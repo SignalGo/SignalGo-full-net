@@ -145,12 +145,12 @@ namespace SignalGo.Server.Models
 
                 HttpClientInfo httpClient = context.Client as HttpClientInfo;
                 object setting = GetSetting(context.Client, type);
-                if (setting == null && (httpClient.RequestHeaders == null || string.IsNullOrEmpty(httpClient.RequestHeaders[sessionPeroperty.Attribute.RequestHeaderName])))
+                if (setting == null && (httpClient.RequestHeaders == null || string.IsNullOrEmpty(httpClient.GetRequestHeaderValue(sessionPeroperty.Attribute.RequestHeaderName))))
                     return null;
 
                 string key = "";
                 if (setting == null)
-                    key = ExtractValue(httpClient.RequestHeaders[sessionPeroperty.Attribute.RequestHeaderName], sessionPeroperty.Attribute.KeyName, sessionPeroperty.Attribute.HeaderValueSeparate, sessionPeroperty.Attribute.HeaderKeyValueSeparate);
+                    key = ExtractValue(httpClient.GetRequestHeaderValue(sessionPeroperty.Attribute.RequestHeaderName), sessionPeroperty.Attribute.KeyName, sessionPeroperty.Attribute.HeaderValueSeparate, sessionPeroperty.Attribute.HeaderKeyValueSeparate);
                 else
                     key = GetKeyFromSetting(type, setting);
                 if (CustomClientSavedSettings.TryGetValue(key, out HashSet<object> result))

@@ -28,7 +28,7 @@ namespace SignalGo.Shared.IO
 
         public void Write(byte[] buffer, int offset, int count)
         {
-            _streamWriter.Read(buffer, offset, count);
+            _streamWriter.Write(buffer, offset, count);
         }
 
 

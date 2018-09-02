@@ -161,7 +161,7 @@ namespace SignalGo.Client
 
         private void SendFirstLineData()
         {
-            byte[] firstBytes = Encoding.UTF8.GetBytes($"SignalGo/4.0 {_address}:{_port}" + System.Environment.NewLine);
+            byte[] firstBytes = Encoding.UTF8.GetBytes($"SignalGo/4.0 {_address}:{_port}" + "\r\n");
             _client.GetStream().Write(firstBytes, 0, firstBytes.Length);
         }
 
@@ -174,7 +174,7 @@ namespace SignalGo.Client
                     (byte)DataType.GetClientId,
                     (byte)CompressMode.None
                 };
-                
+
                 StreamHelper.WriteToStream(_clientStream, data.ToArray());
             }
         }

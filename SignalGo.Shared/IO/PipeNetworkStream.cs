@@ -193,6 +193,11 @@ namespace SignalGo.Shared.IO
             return new PipeNetworkStream(new NormalStream(stream));
         }
 
+        public static implicit operator Stream(PipeNetworkStream pipeNetworkStream)
+        {
+            return new PipeNormalStream(pipeNetworkStream);
+        }
+
         public void Dispose()
         {
             Stream.Dispose();

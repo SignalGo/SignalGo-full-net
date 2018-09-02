@@ -1,7 +1,5 @@
-﻿using SignalGo.Server.DataTypes;
-using SignalGo.Server.Models;
+﻿using SignalGo.Server.Models;
 using SignalGo.Shared.DataTypes;
-using SignalGo.Shared.Http;
 using SignalGo.Shared.IO;
 using System;
 using System.Collections.Generic;
@@ -21,80 +19,101 @@ namespace SignalGo.Server.ServiceManager.Providers
     public class HttpProvider : BaseHttpProvider
     {
 #if (NET35 || NET40)
-        public static void StartToReadingClientData(TcpClient tcpClient, ServerBase serverBase, PipeNetworkStream reader, string headerResponse)
+        public static Task AddHttpClient(HttpClientInfo client, ServerBase serverBase, string address, string methodName, IDictionary<string, string[]> requestHeaders, IDictionary<string, string[]> responseHeaders)
 #else
-        public static async void StartToReadingClientData(TcpClient tcpClient, ServerBase serverBase, PipeNetworkStream reader, string headerResponse)
+        public static Task AddHttpClient(HttpClientInfo client, ServerBase serverBase, string address, string methodName, IDictionary<string, string[]> requestHeaders, IDictionary<string, string[]> responseHeaders)
+#endif
+        {
+#if (NET35 || NET40)
+            return Task.Factory.StartNew(() =>
+#else
+            return Task.Run(() =>
+#endif
+            {
+                try
+                {
+                    if (requestHeaders != null)
+                        client.RequestHeaders = requestHeaders;
+                    if (responseHeaders != null)
+                        client.ResponseHeaders = responseHeaders;
+                    HandleHttpRequest(methodName, address, serverBase, client);
+                }
+                catch (Exception ex)
+                {
+                    serverBase.DisposeClient(client, "HttpProvider StartToReadingClientData exception 2");
+                }
+            });
+        }
+
+#if (NET35 || NET40)
+        public static void StartToReadingClientData(TcpClient tcpClient, ServerBase serverBase, PipeNetworkStream reader, string requestHeaders)
+#else
+        public static async void StartToReadingClientData(TcpClient tcpClient, ServerBase serverBase, PipeNetworkStream reader, string requestHeaders)
 #endif
         {
             Console.WriteLine($"Http Client Connected: {((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address.ToString().Replace("::ffff:", "")}");
-            ClientInfo client = null;
+            HttpClientInfo client = null;
             try
             {
                 while (true)
                 {
-#if (NET35 || NET40)
                     string line = reader.ReadLine();
-#else
-                    string line = reader.ReadLine();
-#endif
-                    headerResponse += line;
+                    requestHeaders += line;
                     if (line == "\r\n")
                         break;
                 }
-#if (NET35 || NET40)
-                Task.Factory.StartNew(() =>
-#else
-                await Task.Run(() =>
-#endif
+
+                if (requestHeaders.Contains("Sec-WebSocket-Key"))
                 {
-                    if (headerResponse.Contains("Sec-WebSocket-Key"))
+                    throw new NotSupportedException();
+                    client = (HttpClientInfo)serverBase.ServerDataProvider.CreateClientInfo(false, tcpClient, reader);
+                    client.StreamHelper = SignalGoStreamWebSocket.CurrentWebSocket;
+                    string key = requestHeaders.Replace("ey:", "`").Split('`')[1].Replace("\r", "").Split('\n')[0].Trim();
+                    string acceptKey = AcceptKey(ref key);
+                    string newLine = "\r\n";
+
+                    //var response = "HTTP/1.1 101 Switching Protocols" + newLine
+                    string response = "HTTP/1.0 101 Switching Protocols" + newLine
+                     + "Upgrade: websocket" + newLine
+                     + "Connection: Upgrade" + newLine
+                     + "Sec-WebSocket-Accept: " + acceptKey + newLine + newLine;
+                    byte[] bytes = System.Text.Encoding.UTF8.GetBytes(response);
+                    client.ClientStream.Write(bytes);
+                    WebSocketProvider.StartToReadingClientData(client, serverBase);
+                }
+                else
+                {
+                    try
                     {
-                        client = serverBase.ServerDataProvider.CreateClientInfo(false, tcpClient, reader);
-                        client.StreamHelper = SignalGoStreamWebSocket.CurrentWebSocket;
-                        string key = headerResponse.Replace("ey:", "`").Split('`')[1].Replace("\r", "").Split('\n')[0].Trim();
-                        string acceptKey = AcceptKey(ref key);
-                        string newLine = "\r\n";
+                        //serverBase.TaskOfClientInfoes
+                        client = (HttpClientInfo)serverBase.ServerDataProvider.CreateClientInfo(true, tcpClient, reader);
+                        client.StreamHelper = SignalGoStreamBase.CurrentBase;
 
-                        //var response = "HTTP/1.1 101 Switching Protocols" + newLine
-                        string response = "HTTP/1.0 101 Switching Protocols" + newLine
-                         + "Upgrade: websocket" + newLine
-                         + "Connection: Upgrade" + newLine
-                         + "Sec-WebSocket-Accept: " + acceptKey + newLine + newLine;
-                        byte[] bytes = System.Text.Encoding.UTF8.GetBytes(response);
-                        client.ClientStream.Write(bytes);
-                        WebSocketProvider.StartToReadingClientData(client, serverBase);
+                        string[] lines = null;
+                        if (requestHeaders.Contains("\r\n\r\n"))
+                            lines = requestHeaders.Substring(0, requestHeaders.IndexOf("\r\n\r\n")).Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                        else
+                            lines = requestHeaders.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                        if (lines.Length > 0)
+                        {
+
+                            string methodName = GetHttpMethodName(lines[0]);
+                            string address = GetHttpAddress(lines[0]);
+#if (NET35 || NET40)
+                            AddHttpClient(client, serverBase, address, methodName, GetHttpHeaders(lines.Skip(1).ToArray()), null);
+#else
+                            await AddHttpClient(client, serverBase, address, methodName, GetHttpHeaders(lines.Skip(1).ToArray()), null);
+#endif
+                        }
+                        else
+                            serverBase.DisposeClient(client, "HttpProvider StartToReadingClientData no line detected");
+
                     }
-                    else
+                    catch
                     {
-
-                        try
-                        {
-                            //serverBase.TaskOfClientInfoes
-                            client = serverBase.ServerDataProvider.CreateClientInfo(true, tcpClient, reader);
-                            client.StreamHelper = SignalGoStreamBase.CurrentBase;
-
-                            string[] lines = null;
-                            if (headerResponse.Contains("\r\n\r\n"))
-                                lines = headerResponse.Substring(0, headerResponse.IndexOf("\r\n\r\n")).Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-                            else
-                                lines = headerResponse.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-                            if (lines.Length > 0)
-                            {
-                                string methodName = GetHttpMethodName(lines[0]);
-                                string address = GetHttpAddress(lines[0]);
-                                Shared.Http.WebHeaderCollection headers = GetHttpHeaders(lines.Skip(1).ToArray());
-                                HandleHttpRequest(methodName, address, serverBase, client, headers);
-                            }
-                            else
-                                serverBase.DisposeClient(client, "HttpProvider StartToReadingClientData no line detected");
-
-                        }
-                        catch
-                        {
-                            serverBase.DisposeClient(client, "HttpProvider StartToReadingClientData exception");
-                        }
+                        serverBase.DisposeClient(client, "HttpProvider StartToReadingClientData exception");
                     }
-                });
+                }
             }
             catch// (Exception ex)
             {

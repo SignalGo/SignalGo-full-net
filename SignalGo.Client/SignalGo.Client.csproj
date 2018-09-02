@@ -136,7 +136,7 @@
     <PackageReference Include="System.Diagnostics.StackTrace" Version="4.3.0" />
     <PackageReference Include="System.Xml.XmlSerializer" Version="4.3.0" />
     <PackageReference Include="System.Threading.Thread" Version="4.3.0" />
-    <PackageReference Include="System.Reflection.TypeExtensions" Version="4.5.0" />
+    <PackageReference Include="System.Reflection.TypeExtensions" Version="4.5.1" />
     <PackageReference Include="System.Net.NameResolution" Version="4.3.0" />
     <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
   </ItemGroup>
@@ -145,7 +145,7 @@
     <PackageReference Include="System.Diagnostics.StackTrace" Version="4.3.0" />
     <PackageReference Include="System.Xml.XmlSerializer" Version="4.3.0" />
     <PackageReference Include="System.Threading.Thread" Version="4.3.0" />
-    <PackageReference Include="System.Reflection.TypeExtensions" Version="4.5.0" />
+    <PackageReference Include="System.Reflection.TypeExtensions" Version="4.5.1" />
     <PackageReference Include="System.Net.NameResolution" Version="4.3.0" />
     <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
     <!--<PackageReference Include="NETStandard.Library" Version="2.0.3" />-->
@@ -156,7 +156,7 @@
     <PackageReference Include="System.Diagnostics.StackTrace" Version="4.3.0" />
     <PackageReference Include="System.Xml.XmlSerializer" Version="4.3.0" />
     <PackageReference Include="System.Threading.Thread" Version="4.3.0" />
-    <PackageReference Include="System.Reflection.TypeExtensions" Version="4.5.0" />
+    <PackageReference Include="System.Reflection.TypeExtensions" Version="4.5.1" />
     <PackageReference Include="System.Net.NameResolution" Version="4.3.0" />
     <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
   </ItemGroup>

@@ -1,4 +1,5 @@
 ﻿using SignalGo.Shared.Http;
+using System.Collections.Generic;
 
 namespace SignalGo.Shared.Models
 {
@@ -12,11 +13,11 @@ namespace SignalGo.Shared.Models
         /// <summary>
         /// headers of request that client sended
         /// </summary>
-        WebHeaderCollection RequestHeaders { get; set; }
+        IDictionary<string, string[]> RequestHeaders { get; set; }
         /// <summary>
         /// reponse headers to client
         /// </summary>
-        WebHeaderCollection ResponseHeaders { get; set; }
+        IDictionary<string, string[]> ResponseHeaders { get; set; }
         /// <summary>
         /// ip address of client
         /// </summary>

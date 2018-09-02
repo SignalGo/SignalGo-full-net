@@ -152,6 +152,8 @@ namespace SignalGo.Server.ServiceManager.Versions
                     client = CreateClientInfo(false, tcpClient, reader);
                     //"SignalGo/1.0";
                     client.StreamHelper = SignalGoStreamBase.CurrentBase;
+                    tcpClient.ReceiveTimeout = (int)_serverBase.ProviderSetting.ServerServiceSetting.ReceiveDataTimeout.TotalMilliseconds;
+                    tcpClient.SendTimeout = (int)_serverBase.ProviderSetting.ServerServiceSetting.SendDataTimeout.TotalMilliseconds;
 
                     SignalGoDuplexServiceProvider.StartToReadingClientData(client, _serverBase);
                 }
