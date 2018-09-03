@@ -760,8 +760,7 @@ namespace SignalGo.Server.ServiceManager.Providers
             responseHeaders.Add("Content-Type", "SignalGoServiceType");
             SendResponseHeadersToClient(HttpStatusCode.OK, responseHeaders, client);
             SendResponseDataToClient(result, client);
-            byte[] bytes = stream.Read(1024, out int readCount);
-
+            System.Threading.Thread.Sleep(100);
             serverBase.DisposeClient(client, "SendSignalGoServiceReference finished");
         }
 
@@ -923,7 +922,7 @@ namespace SignalGo.Server.ServiceManager.Providers
 
         internal static void SendResponseDataToClient(string dataResult, ClientInfo client)
         {
-            byte[] dataBytes = Encoding.ASCII.GetBytes(dataResult);
+            byte[] dataBytes = Encoding.UTF8.GetBytes(dataResult);
 
             client.StreamHelper.WriteToStream(client.ClientStream, dataBytes);
         }

@@ -34,6 +34,7 @@ namespace SignalGo.Shared.IO
             Stream.Write(data, 0, data.Length);
         }
 
+        private bool IsWaitToRead { get; set; } = false;
 #if (NET35 || NET40)
         private void ReadBuffer()
 #else
@@ -42,6 +43,9 @@ namespace SignalGo.Shared.IO
         {
             try
             {
+                if (IsWaitToRead)
+                    return;
+                IsWaitToRead = true;
                 byte[] buffer = new byte[BufferToRead];
 #if (NET35 || NET40)
                 int readCount = Stream.Read(buffer, 0, buffer.Length);
@@ -51,6 +55,7 @@ namespace SignalGo.Shared.IO
                 if (readCount == 0)
                 {
                     IsClosed = true;
+                    IsWaitToRead = false;
                     BlockBuffers.Add(new BufferSegment() { Buffer = null, Position = 0 });
                     return;
                     //throw new Exception("read zero buffer! client disconnected: " + readCount);
@@ -59,11 +64,13 @@ namespace SignalGo.Shared.IO
                 {
                     Array.Resize(ref buffer, readCount);
                 }
+                IsWaitToRead = false;
                 BlockBuffers.Add(new BufferSegment() { Buffer = buffer, Position = 0 });
             }
             catch
             {
                 IsClosed = true;
+                IsWaitToRead = false;
                 BlockBuffers.Add(new BufferSegment() { Buffer = null, Position = 0 });
             }
         }
@@ -177,6 +184,8 @@ namespace SignalGo.Shared.IO
         public byte[] FirstLineBytes { get; set; }
         public string ReadLine()
         {
+            if (IsClosed)
+                throw new Exception("read zero buffer! client disconnected");
             ReadBuffer();
             FirstLineBytes = Read(new byte[] { 13, 10 });
             return Encoding.ASCII.GetString(FirstLineBytes);

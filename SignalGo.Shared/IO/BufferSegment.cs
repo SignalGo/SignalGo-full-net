@@ -54,7 +54,7 @@ namespace SignalGo.Shared.IO
                 Position++;
             }
             int endPosition = Position;
-            return Buffer.Skip(startPosition).Take(endPosition).ToArray();
+            return Buffer.Skip(startPosition).Take(endPosition - startPosition).ToArray();
         }
     }
 }

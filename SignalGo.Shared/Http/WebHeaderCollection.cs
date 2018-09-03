@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -125,7 +124,10 @@ namespace SignalGo.Shared.Http
             StringBuilder builder = new StringBuilder();
             foreach (KeyValuePair<string, string[]> item in Items)
             {
-                builder.AppendLine(item.Key + ": " + string.Join(",", item.Value));
+                if (item.Value == null)
+                    builder.AppendLine(item.Key + ": ");
+                else
+                    builder.AppendLine(item.Key + ": " + string.Join(",", item.Value));
             }
             builder.AppendLine();
             return builder.ToString();
