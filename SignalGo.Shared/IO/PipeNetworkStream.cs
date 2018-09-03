@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -137,6 +138,8 @@ namespace SignalGo.Shared.IO
                 }
                 else
                 {
+                    if (bytes.Count > 0 && bytes.Last() == exitBytes.First())
+                        exitBytes = new byte[] { exitBytes.Last() };
                     bytes.AddRange(result.Read(exitBytes, out bool isFound));
                     if (result.IsFinished)
                         QueueBuffers.TryDequeue(out result);

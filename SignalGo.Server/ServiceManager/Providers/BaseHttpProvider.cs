@@ -81,6 +81,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 string message = newLine + $"Success" + newLine;
                 responseHeaders.Add("Content-Type", "text/html; charset=utf-8");
                 responseHeaders.Add("Connection", "Close");
+                responseHeaders.Add("Content-Length", (System.Text.Encoding.UTF8.GetByteCount(message)).ToString().Split(','));
 
                 SendResponseHeadersToClient(HttpStatusCode.OK, responseHeaders, client);
                 SendResponseDataToClient(message, client);
