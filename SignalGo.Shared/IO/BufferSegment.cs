@@ -21,6 +21,11 @@ namespace SignalGo.Shared.IO
             return result;
         }
 
+        public byte WhatIsFirstByte()
+        {
+            return Buffer[Position];
+        }
+
         public byte[] ReadBufferSegment(int count, out int readCount)
         {
             if (count > Buffer.Length)

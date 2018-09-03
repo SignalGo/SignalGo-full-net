@@ -138,7 +138,7 @@ namespace SignalGo.Shared.IO
                 }
                 else
                 {
-                    if (bytes.Count > 0 && bytes.Last() == exitBytes.First())
+                    if (bytes.Count > 0 && bytes.Last() == exitBytes.First() && result.WhatIsFirstByte() == exitBytes.Last())
                         exitBytes = new byte[] { exitBytes.Last() };
                     bytes.AddRange(result.Read(exitBytes, out bool isFound));
                     if (result.IsFinished)
