@@ -356,7 +356,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 {
                     data = newLine + result.Data + newLine;
 
-                    SendInternalErrorMessage(data, serverBase, client, newLine, (result.IsAccessDenied ? HttpStatusCode.Forbidden : HttpStatusCode.InternalServerError));
+                    SendInternalErrorMessage(data, serverBase, client, newLine, (result.IsAccessDenied ? serverBase.ProviderSetting.HttpSetting.DefaultAccessDenidHttpStatusCode : HttpStatusCode.InternalServerError));
                     serverBase.AutoLogger.LogText(data);
                     return;
                 }
@@ -392,7 +392,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 else if (result.Data == null)
                 {
                     data = newLine + $"result from method invoke {methodName}, is null " + address + newLine;
-                    SendInternalErrorMessage(data, serverBase, client, newLine, HttpStatusCode.OK);
+                    SendInternalErrorMessage(data, serverBase, client, newLine, HttpStatusCode.InternalServerError);
                     serverBase.AutoLogger.LogText("RunHttpGETRequest : " + data);
                 }
                 else

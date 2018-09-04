@@ -1,6 +1,7 @@
 ﻿using SignalGo.Shared.DataTypes;
 using System;
 using System.Collections.Generic;
+using System.Net;
 
 namespace SignalGo.Shared.Models
 {
@@ -35,6 +36,10 @@ namespace SignalGo.Shared.Models
         /// X509Certificate
         /// </summary>
         public System.Security.Cryptography.X509Certificates.X509Certificate X509Certificate { get; set; }
+        /// <summary>
+        /// what status code you want to client see when access denied
+        /// </summary>
+        public HttpStatusCode DefaultAccessDenidHttpStatusCode { get; set; } = HttpStatusCode.Forbidden;
     }
 
     /// <summary>
@@ -114,5 +119,6 @@ namespace SignalGo.Shared.Models
         /// http attributes
         /// </summary>
         public List<HttpKeyAttribute> HttpKeyResponses { get; set; }
+
     }
 }
