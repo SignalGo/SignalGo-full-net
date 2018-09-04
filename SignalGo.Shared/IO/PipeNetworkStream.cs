@@ -44,7 +44,7 @@ namespace SignalGo.Shared.IO
         {
             try
             {
-                if (IsWaitToRead)
+                if (IsWaitToRead || IsClosed)
                     return;
                 IsWaitToRead = true;
                 byte[] buffer = new byte[BufferToRead];
@@ -78,7 +78,7 @@ namespace SignalGo.Shared.IO
 
         public byte[] Read(int count, out int readCount)
         {
-            if (IsClosed)
+            if (IsClosed && QueueBuffers.IsEmpty)
                 throw new Exception("read zero buffer! client disconnected");
             BufferSegment result = null;
             if (QueueBuffers.IsEmpty)
@@ -111,7 +111,7 @@ namespace SignalGo.Shared.IO
 
         public byte[] Read(byte[] exitBytes)
         {
-            if (IsClosed)
+            if (IsClosed && QueueBuffers.IsEmpty)
                 throw new Exception("read zero buffer! client disconnected");
             List<byte> bytes = new List<byte>();
             while (true)
@@ -152,7 +152,7 @@ namespace SignalGo.Shared.IO
 
         public byte ReadOneByte()
         {
-            if (IsClosed)
+            if (IsClosed && QueueBuffers.IsEmpty)
                 throw new Exception("read zero buffer! client disconnected");
             ReadBuffer();
             BufferSegment result = null;
@@ -187,7 +187,7 @@ namespace SignalGo.Shared.IO
         public byte[] FirstLineBytes { get; set; }
         public string ReadLine()
         {
-            if (IsClosed)
+            if (IsClosed && QueueBuffers.IsEmpty)
                 throw new Exception("read zero buffer! client disconnected");
             ReadBuffer();
             FirstLineBytes = Read(new byte[] { 13, 10 });

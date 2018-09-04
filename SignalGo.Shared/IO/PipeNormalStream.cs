@@ -1,15 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SignalGo.Shared.IO
 {
     public class PipeNormalStream : Stream
     {
-        PipeNetworkStream _pipeNetworkStream;
+        private PipeNetworkStream _pipeNetworkStream;
         public PipeNormalStream(PipeNetworkStream pipeNetworkStream)
         {
             _pipeNetworkStream = pipeNetworkStream;
@@ -67,7 +64,8 @@ namespace SignalGo.Shared.IO
 
         public override int Read(byte[] buffer, int offset, int count)
         {
-            buffer = _pipeNetworkStream.Read(count, out int readCount);
+            byte[] result = _pipeNetworkStream.Read(count, out int readCount);
+            Array.Copy(result, buffer, result.Length);
             return readCount;
         }
 

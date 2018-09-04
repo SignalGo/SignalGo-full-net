@@ -441,7 +441,17 @@ namespace SignalGo.Client.ClientManager
 #endif
                 }
                 else
-                    return UploadStream(name, serverAddress, port, serviceName, method, args, false);
+                {
+                    Task<object> task = Task.Factory.StartNew(() =>
+                    {
+                        return UploadStream(name, serverAddress, port, serviceName, method, args, false);
+                    });
+#if (NET35 || NET40)
+                    return task.Result;
+#else
+                    return task.GetAwaiter().GetResult();
+#endif
+                }
             });
             InstancesOfRegisterStreamService.TryAdd(callKey, objectInstance);
             return objectInstance;
