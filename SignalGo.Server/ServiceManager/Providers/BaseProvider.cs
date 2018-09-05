@@ -122,6 +122,8 @@ namespace SignalGo.Server.ServiceManager.Providers
                         {
                             List<CustomDataExchangerAttribute> parameterDataExchanger = customDataExchanger.ToList();
                             parameterDataExchanger.AddRange(GetMethodParameterBinds(index, allMethods.ToArray()).Where(x => x.GetExchangerByUserCustomization(client)));
+                            if (SerializeHelper.GetTypeCodeOfObject(prms[index].ParameterType) != SerializeObjectType.Object && !item.Value.StartsWith("\""))
+                                item.Value = "\"" + item.Value + "\"";
                             object resultJson = ServerSerializationHelper.Deserialize(item.Value, prms[index].ParameterType, serverBase, customDataExchanger: parameterDataExchanger.ToArray(), client: client);
 
                             if (resultJson == null)

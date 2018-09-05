@@ -1,4 +1,5 @@
 ﻿using SignalGo.Shared.IO;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -121,7 +122,8 @@ namespace SignalGo.Server.IO
                     return -1;
                 }
             }
-            buffer = CurrentStream.Read(count, out int readCount);
+            byte[] readedBuffer = CurrentStream.Read(count, out int readCount);
+            Array.Copy(readedBuffer, buffer, readCount);
             Position += readCount;
             if (Position == Length)
                 FinishRead();
