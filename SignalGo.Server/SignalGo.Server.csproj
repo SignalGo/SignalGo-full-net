@@ -117,7 +117,7 @@
     <PackageReference Include="System.Threading.Thread" Version="4.3.0" />
     <PackageReference Include="System.Reflection.TypeExtensions" Version="4.5.1" />
     <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
-    <PackageReference Include="NETStandard.Library" Version="2.0.3" />
+    <!--<PackageReference Include="NETStandard.Library" Version="2.0.3" />-->
     <!--<PackageReference Include="NETStandard.Library" Version="2.0.0" />-->
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp1.0'">
