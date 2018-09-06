@@ -52,7 +52,7 @@ namespace SignalGo.Server.ServiceManager.Providers
 #endif
         {
             Console.WriteLine($"Http Client Connected: {((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address.ToString().Replace("::ffff:", "")}");
-            HttpClientInfo client = null;
+            ClientInfo client = null;
             try
             {
                 while (true)
@@ -65,8 +65,7 @@ namespace SignalGo.Server.ServiceManager.Providers
 
                 if (requestHeaders.Contains("Sec-WebSocket-Key"))
                 {
-                    throw new NotSupportedException();
-                    client = (HttpClientInfo)serverBase.ServerDataProvider.CreateClientInfo(false, tcpClient, reader);
+                    client = serverBase.ServerDataProvider.CreateClientInfo(false, tcpClient, reader);
                     client.StreamHelper = SignalGoStreamWebSocket.CurrentWebSocket;
                     string key = requestHeaders.Replace("ey:", "`").Split('`')[1].Replace("\r", "").Split('\n')[0].Trim();
                     string acceptKey = AcceptKey(ref key);
@@ -100,9 +99,9 @@ namespace SignalGo.Server.ServiceManager.Providers
                             string methodName = GetHttpMethodName(lines[0]);
                             string address = GetHttpAddress(lines[0]);
 #if (NET35 || NET40)
-                            AddHttpClient(client, serverBase, address, methodName, GetHttpHeaders(lines.Skip(1).ToArray()), null);
+                            AddHttpClient((HttpClientInfo)client, serverBase, address, methodName, GetHttpHeaders(lines.Skip(1).ToArray()), null);
 #else
-                            await AddHttpClient(client, serverBase, address, methodName, GetHttpHeaders(lines.Skip(1).ToArray()), null);
+                            await AddHttpClient((HttpClientInfo)client, serverBase, address, methodName, GetHttpHeaders(lines.Skip(1).ToArray()), null);
 #endif
                         }
                         else
@@ -115,7 +114,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     }
                 }
             }
-            catch// (Exception ex)
+            catch (Exception ex)
             {
                 //if (client != null)
                 //serverBase.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase HttpProvider StartToReadingClientData");

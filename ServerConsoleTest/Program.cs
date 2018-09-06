@@ -33,22 +33,28 @@ namespace ServerConsoleTest
     [ServiceContract("HealthFamilyService", ServiceType.ServerService)]
     public interface ITestManager
     {
-        bool HelloWorld(string userName, string password);
+        string HelloWorld(string userName);
         Task<bool> HelloWorldAsync(string userName, string password);
         string Test();
+        int Sum(int x, int y);
     }
 
     public partial class TestService : ITestManager
     {
-        public bool HelloWorld(string userName, string password)
+        public string HelloWorld(string name)
         {
             //OperationContext<UserInfo>.CurrentSetting = new UserInfo() { Name = userName };
-            return true;
+            return $"Hello {name}";
         }
 
         public Task<bool> HelloWorldAsync(string userName, string password)
         {
             throw new NotImplementedException();
+        }
+
+        public int Sum(int x, int y)
+        {
+            return x + y;
         }
 
         public string Test()
@@ -90,7 +96,7 @@ namespace ServerConsoleTest
                 ServerProvider serverProvider = new ServerProvider();
                 serverProvider.RegisterServerService(typeof(TestService));
                 serverProvider.RegisterClientService(typeof(ITestClientService));
-                serverProvider.Start("http://localhost:3284/TestServices/SignalGo");
+                serverProvider.Start("http://localhost:9752/SignalGoTestService");
                 //Thread.Sleep(2000);
                 //Thread thread2 = new Thread(() =>
                 //{
