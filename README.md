@@ -1,6 +1,6 @@
 # Wiki and Nuget
 [![NuGet](https://img.shields.io/badge/github-full%20wiki-brightgreen.svg)](https://github.com/SignalGo/SignalGo-full-net/wiki)
-[![NuGet](https://img.shields.io/badge/nuget-server.net%20v3.8.0-blue.svg)](https://www.nuget.org/packages/SignalGo.Net.Server/)  [![NuGet](https://img.shields.io/badge/nuget-client.net%20v3.8.0-blue.svg)](https://www.nuget.org/packages/SignalGo.Net.Client/)  [![NuGet](https://img.shields.io/badge/nuget-javascript%20v3.7.0-blue.svg)](https://www.nuget.org/packages/SignalGo.JavaScript.Client/)
+[![NuGet](https://img.shields.io/badge/nuget-server.net%20v4.1.0-blue.svg)](https://www.nuget.org/packages/SignalGo.Net.Server/)  [![NuGet](https://img.shields.io/badge/nuget-client.net%20v4.1.0-blue.svg)](https://www.nuget.org/packages/SignalGo.Net.Client/)  [![NuGet](https://img.shields.io/badge/nuget-javascript%20v4.1.0-blue.svg)](https://www.nuget.org/packages/SignalGo.JavaScript.Client/)
 
 # Signal Go
 
@@ -39,6 +39,8 @@ SignalGo is a library for Cross-Platform developers that makes it incredibly sim
 
 15.Add service reference with visual studio for client side [![NuGet](https://img.shields.io/badge/github-wiki-brightgreen.svg)](https://github.com/SignalGo/SignalGo-full-net/wiki/Add-Service-Reference---Auto-generate-all-services-and-models-in-client-side)
 
+16.Support Owin to host on IIS
+
 and other fetures...
 
 ## Simple Usage:
@@ -49,12 +51,7 @@ for example we have an interface that is our sevice level methods.
 
 ```csharp
     [SignalGo.Shared.DataTypes.ServiceContract("TestServerModel", ServiceType.ServerService, InstanceType = SignalGo.Shared.DataTypes.InstanceType.SingleInstance)]
-    public interface ITestServerModel
-    {
-        Tuple<string> HelloWorld(string yourName);
-    }
-
-    public class TestServerModel : ITestServerModel
+    public class TestServerModel
     {
         public Tuple<string> HelloWorld(string yourName)
         {
