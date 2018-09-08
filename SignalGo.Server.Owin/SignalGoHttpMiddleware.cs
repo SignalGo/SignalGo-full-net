@@ -38,7 +38,6 @@ namespace SignalGo.Server.Owin
             if (isWebSocketd)
             {
                 owinClientInfo.StreamHelper = SignalGoStreamBase.CurrentBase;
-                //owinClientInfo.StreamHelper = SignalGoStreamWebSocket.CurrentWebSocket;
                 Action<IDictionary<string, object>, Func<IDictionary<string, object>, Task>> accept = context.Get<Action<IDictionary<string, object>, Func<IDictionary<string, object>, Task>>>("websocket.Accept");
                 if (accept == null)
                 {
@@ -49,8 +48,6 @@ namespace SignalGo.Server.Owin
                 }
                 WebsocketClient websocketClient = new WebsocketClient() { ClientInfo = owinClientInfo, CurrentServerBase = CurrentServerBase };
                 accept(null, websocketClient.RunWebSocket);
-                //context.Response.StatusCode = (int)HttpStatusCode.SwitchingProtocols;
-                //HttpProvider.AddWebSocketHttpClient(owinClientInfo, CurrentServerBase, context.Request.Uri.PathAndQuery, context.Request.Method, owinClientInfo.RequestHeaders, owinClientInfo.ResponseHeaders);
                 return Task.FromResult<object>(null);
 
             }
