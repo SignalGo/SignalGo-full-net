@@ -3,6 +3,7 @@ using SignalGo.Server.ServiceManager;
 using SignalGo.Server.ServiceManager.Providers;
 using SignalGo.Shared.IO;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace SignalGo.Server.Owin
@@ -18,6 +19,10 @@ namespace SignalGo.Server.Owin
 
         public override Task Invoke(IOwinContext context)
         {
+            string serviceName = context.Request.Uri.PathAndQuery.Split(new string[] { "/" }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+            if (!BaseProvider.ExistService(serviceName, CurrentServerBase))
+                return Next.Invoke(context);
+
             OwinClientInfo owinClientInfo = new OwinClientInfo();
             owinClientInfo.ConnectedDateTime = DateTime.Now;
             owinClientInfo.IPAddress = context.Request.RemoteIpAddress;

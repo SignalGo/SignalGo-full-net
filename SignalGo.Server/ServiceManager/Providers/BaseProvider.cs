@@ -43,6 +43,14 @@ namespace SignalGo.Server.ServiceManager.Providers
             });
         }
 
+        public static bool ExistService(string serviceName, ServerBase serverBase)
+        {
+            if (serviceName == null)
+                return false;
+            serviceName = serviceName.ToLower();
+            return serverBase.RegisteredServiceTypes.ContainsKey(serviceName);
+        }
+
         internal static MethodCallbackInfo CallMethod(string serviceName, string guid, string methodName, SignalGo.Shared.Models.ParameterInfo[] parameters, ClientInfo client, string json, ServerBase serverBase, HttpPostedFileInfo fileInfo, Func<MethodInfo, bool> canTakeMethod, out IStreamInfo streamInfo, out List<HttpKeyAttribute> httpKeyAttributes, out Type serviceType, out MethodInfo method, out object service, out FileActionResult fileActionResult)
         {
             serviceName = serviceName.ToLower();

@@ -2,6 +2,7 @@
 using SignalGo.Server.ServiceManager;
 using SignalGo.Shared.DataTypes;
 using SignalGo.Shared.Helpers;
+using SignalGo.Shared.IO;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -34,7 +35,7 @@ namespace SignalGo.Server.Models
             get
             {
                 ServerBase currentServer = CurrentTaskServer;
-                if (Task.CurrentId != null && currentServer != null && currentServer.TaskOfClientInfoes.TryGetValue(Task.CurrentId.GetValueOrDefault(),out string clientId))
+                if (Task.CurrentId != null && currentServer != null && currentServer.TaskOfClientInfoes.TryGetValue(Task.CurrentId.GetValueOrDefault(), out string clientId))
                 {
                     currentServer.Clients.TryGetValue(clientId, out ClientInfo clientInfo);
                     return new OperationContext() { Client = clientInfo, ClientId = clientId, ServerBase = currentServer };
@@ -444,20 +445,28 @@ namespace SignalGo.Server.Models
                     if (method.ReturnType == typeof(Task))
                     {
                         string methodName = method.Name;
-                        Task task = ServerExtensions.SendDataWithCallClientServiceMethod(serverBase, client, null, serviceName, method.Name, method.MethodToParameters(x => ServerSerializationHelper.SerializeObject(x, serverBase), args).ToArray());
-                        return task;
+                        if (client.StreamHelper == SignalGoStreamWebSocket.CurrentWebSocket)
+                            return ServerExtensions.SendWebSocketDataWithCallClientServiceMethod(serverBase, client, null, serviceName, method.Name, method.MethodToParameters(x => ServerSerializationHelper.SerializeObject(x, serverBase), args).ToArray());
+                        else
+                            return ServerExtensions.SendDataWithCallClientServiceMethod(serverBase, client, null, serviceName, method.Name, method.MethodToParameters(x => ServerSerializationHelper.SerializeObject(x, serverBase), args).ToArray());
                     }
                     //this is async function
                     else if (method.ReturnType.GetBaseType() == typeof(Task))
                     {
                         string methodName = method.Name;
-                        Task task = ServerExtensions.SendDataWithCallClientServiceMethod(serverBase, client, method.ReturnType.GetGenericArguments()[0], serviceName, method.Name, method.MethodToParameters(x => ServerSerializationHelper.SerializeObject(x, serverBase), args).ToArray());
-                        return task;
+                        if (client.StreamHelper == SignalGoStreamWebSocket.CurrentWebSocket)
+                            return ServerExtensions.SendWebSocketDataWithCallClientServiceMethod(serverBase, client, method.ReturnType.GetGenericArguments()[0], serviceName, method.Name, method.MethodToParameters(x => ServerSerializationHelper.SerializeObject(x, serverBase), args).ToArray());
+                        else
+                            return ServerExtensions.SendDataWithCallClientServiceMethod(serverBase, client, method.ReturnType.GetGenericArguments()[0], serviceName, method.Name, method.MethodToParameters(x => ServerSerializationHelper.SerializeObject(x, serverBase), args).ToArray());
                     }
                     else
                     {
                         string methodName = method.Name;
-                        Task task = ServerExtensions.SendDataWithCallClientServiceMethod(serverBase, client, method.ReturnType, serviceName, method.Name, method.MethodToParameters(x => ServerSerializationHelper.SerializeObject(x, serverBase), args).ToArray());
+                        Task task = null;
+                        if (client.StreamHelper == SignalGoStreamWebSocket.CurrentWebSocket)
+                            task = ServerExtensions.SendWebSocketDataWithCallClientServiceMethod(serverBase, client, method.ReturnType, serviceName, method.Name, method.MethodToParameters(x => ServerSerializationHelper.SerializeObject(x, serverBase), args).ToArray());
+                        else
+                            task = ServerExtensions.SendDataWithCallClientServiceMethod(serverBase, client, method.ReturnType, serviceName, method.Name, method.MethodToParameters(x => ServerSerializationHelper.SerializeObject(x, serverBase), args).ToArray());
                         task.Wait();
                         return task.GetType().GetProperty("Result").GetValue(task, null);
                     }

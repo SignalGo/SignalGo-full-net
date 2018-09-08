@@ -1,10 +1,12 @@
 ﻿using SignalGo.Server.Helpers;
 using SignalGo.Server.Models;
+using SignalGo.Shared.Helpers;
 using SignalGo.Shared.Managers;
 using SignalGo.Shared.Models;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace SignalGo.Server.ServiceManager.Providers
 {
@@ -63,7 +65,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                         MethodCallbackInfo callbackResult = CallMethod(callInfo, client, json, serverBase).Result;
                         SendCallbackData(callbackResult, client, serverBase);
 #else
-                        var callbackResult = await CallMethod(callInfo, client, json, serverBase);
+                        var callbackResult = CallMethod(callInfo, client, json, serverBase);
                         SendCallbackData(callbackResult, client, serverBase);
 #endif
                     }
@@ -87,7 +89,8 @@ namespace SignalGo.Server.ServiceManager.Providers
                             else
                                 continue;
                         }
-                        throw new NotSupportedException();
+                        if (serverBase.ClientServiceCallMethodsResult.TryGetValue(callback.Guid, out KeyValue<Type, object> resultTask))
+                            resultTask.Value.GetType().FindMethod("SetResult").Invoke(resultTask.Value, new object[] { ServerSerializationHelper.Deserialize(callback.Data, resultTask.Key, serverBase) });
                         //var geted = WaitedMethodsForResponse.TryGetValue(client, out ConcurrentDictionary<string, KeyValue<AutoResetEvent, MethodCallbackInfo>> keyValue);
                         //if (geted)
                         //{
@@ -159,18 +162,27 @@ namespace SignalGo.Server.ServiceManager.Providers
         /// <param name="callback"></param>
         /// <param name="client"></param>
         /// <param name="serverBase"></param>
-        private static new void SendCallbackData(MethodCallbackInfo callback, ClientInfo client, ServerBase serverBase)
+#if (NET35 || NET40)
+        private static void SendCallbackData(Task<MethodCallbackInfo> callback, ClientInfo client, ServerBase serverBase)
+#else
+        private static async void SendCallbackData(Task<MethodCallbackInfo> callback, ClientInfo client, ServerBase serverBase)
+#endif
         {
             try
             {
-                string json = ServerSerializationHelper.SerializeObject(callback, serverBase);
+#if (NET35 || NET40)
+                MethodCallbackInfo callbackResult = callback.Result;
+#else
+                var callbackResult = await callback;
+#endif
+                string json = ServerSerializationHelper.SerializeObject(callbackResult, serverBase);
                 if (json.Length > 30000)
                 {
                     List<string> listOfParts = GeneratePartsOfData(json);
                     int i = 1;
                     foreach (string item in listOfParts)
                     {
-                        MethodCallbackInfo cb = callback.Clone();
+                        MethodCallbackInfo cb = callbackResult.Clone();
                         cb.PartNumber = i == listOfParts.Count ? (short)-1 : (short)i;
                         cb.Data = item;
                         json = (int)DataType.ResponseCallMethod + "," + (int)CompressMode.None + "/" + ServerSerializationHelper.SerializeObject(cb, serverBase);
@@ -202,7 +214,7 @@ namespace SignalGo.Server.ServiceManager.Providers
             }
         }
 
-        private static List<string> GeneratePartsOfData(string data)
+        public static List<string> GeneratePartsOfData(string data)
         {
             int partCount = (int)Math.Ceiling((double)data.Length / 30000);
             List<string> partData = new List<string>();

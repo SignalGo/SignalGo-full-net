@@ -1,5 +1,4 @@
-﻿using SignalGo.Client;
-using SignalGo.Server.Models;
+﻿using SignalGo.Server.Models;
 using SignalGo.Server.ServiceManager;
 using SignalGo.Shared.DataTypes;
 using System;
@@ -14,6 +13,7 @@ namespace ServerConsoleTest
     public interface ITestClientService
     {
         Task<int> CallMe(string data);
+        string ReceivedMessage(string name, string family);
     }
 
     public class ClientService : ITestClientService
@@ -26,6 +26,11 @@ namespace ServerConsoleTest
             {
                 return 16;
             });
+        }
+
+        public string ReceivedMessage(string name, string family)
+        {
+            return "ok";
         }
     }
 
@@ -43,6 +48,9 @@ namespace ServerConsoleTest
     {
         public string HelloWorld(string name)
         {
+            ITestClientService client = OperationContext.Current.GetClientService<ITestClientService>();
+            string result = client.ReceivedMessage("ali", "yousefi");
+            Console.WriteLine($"result of ReceivedMessage is {result}");
             //OperationContext<UserInfo>.CurrentSetting = new UserInfo() { Name = userName };
             return $"Hello {name}";
         }

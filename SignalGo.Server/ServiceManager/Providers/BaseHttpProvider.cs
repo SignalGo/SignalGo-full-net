@@ -914,9 +914,18 @@ namespace SignalGo.Server.ServiceManager.Providers
             if (client.IsOwinClient)
                 return;
             string newLine = "\r\n";
-            string firstLine = $"HTTP/1.1 {(int)httpStatusCode} {HttpRequestController.GetStatusDescription((int)httpStatusCode)}" + newLine;
-
-            byte[] headBytes = Encoding.ASCII.GetBytes(firstLine + webResponseHeaderCollection.ToString());
+            string firstLine = "";
+            firstLine = $"HTTP/1.1 {(int)httpStatusCode} {HttpRequestController.GetStatusDescription((int)httpStatusCode)}" + newLine;
+            StringBuilder builder = new StringBuilder();
+            foreach (KeyValuePair<string, string[]> item in webResponseHeaderCollection)
+            {
+                if (item.Value == null)
+                    builder.AppendLine(item.Key + ": ");
+                else
+                    builder.AppendLine(item.Key + ": " + string.Join(",", item.Value));
+            }
+            builder.AppendLine();
+            byte[] headBytes = Encoding.ASCII.GetBytes(firstLine + builder.ToString());
             client.StreamHelper.WriteToStream(client.ClientStream, headBytes);
         }
 
