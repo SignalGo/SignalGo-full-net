@@ -37,19 +37,26 @@ namespace SignalGo.Server.ServiceManager.Providers
                     //a server service method called from client
                     if (dataType == DataType.CallMethod)
                     {
+                        
                         string json = "";
-                        do
+                        if (client.IsOwinClient)
                         {
-                            byte[] bytes = client.StreamHelper.ReadBlockToEnd(stream, compressMode, serverBase.ProviderSetting.MaximumReceiveDataBlock);
-                            //if (ClientsSettings.ContainsKey(client))
-                            //    bytes = DecryptBytes(bytes, client);
-                            json += Encoding.UTF8.GetString(bytes);
+                            json = stream.ReadLine("#end");
                         }
-                        while (json.IndexOf("#end") != json.Length - 4);
+                        else
+                        {
+                            do
+                            {
+                                byte[] bytes = client.StreamHelper.ReadBlockToEnd(stream, compressMode, serverBase.ProviderSetting.MaximumReceiveDataBlock);
+                                //if (ClientsSettings.ContainsKey(client))
+                                //    bytes = DecryptBytes(bytes, client);
+                                json += Encoding.UTF8.GetString(bytes);
+                            }
+                            while (json.IndexOf("#end") != json.Length - 4);
+                        }
 
-                        if (json.IndexOf("#end") == json.Length - 4)
+                        if (json.EndsWith("#end"))
                             json = json.Substring(0, json.Length - 4);
-
                         MethodCallInfo callInfo = ServerSerializationHelper.Deserialize<MethodCallInfo>(json, serverBase);
                         if (callInfo.PartNumber != 0)
                         {
@@ -73,10 +80,22 @@ namespace SignalGo.Server.ServiceManager.Providers
                     //reponse of client method that server called to client
                     else if (dataType == DataType.ResponseCallMethod)
                     {
-                        byte[] bytes = client.StreamHelper.ReadBlockToEnd(stream, compressMode, serverBase.ProviderSetting.MaximumReceiveDataBlock);
-                        //if (ClientsSettings.ContainsKey(client))
-                        //    bytes = DecryptBytes(bytes, client);
-                        string json = Encoding.UTF8.GetString(bytes);
+                        string json = "";
+                        if (client.IsOwinClient)
+                        {
+                            json = stream.ReadLine("#end");
+                        }
+                        else
+                        {
+                            byte[] bytes = client.StreamHelper.ReadBlockToEnd(stream, compressMode, serverBase.ProviderSetting.MaximumReceiveDataBlock);
+                            //if (ClientsSettings.ContainsKey(client))
+                            //    bytes = DecryptBytes(bytes, client);
+                            json = Encoding.UTF8.GetString(bytes);
+                        }
+
+                        if (json.EndsWith("#end"))
+                            json = json.Substring(0, json.Length - 4);
+
                         MethodCallbackInfo callback = ServerSerializationHelper.Deserialize<MethodCallbackInfo>(json, serverBase);
                         if (callback == null)
                             serverBase.AutoLogger.LogText($"{client.IPAddress} {client.ClientId} callback is null:" + json);

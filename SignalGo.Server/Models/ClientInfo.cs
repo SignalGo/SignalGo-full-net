@@ -56,6 +56,8 @@ namespace SignalGo.Server.Models
                 return false;
             }
         }
+
+        public bool IsWebSocket { get; set; }
     }
 
     /// <summary>

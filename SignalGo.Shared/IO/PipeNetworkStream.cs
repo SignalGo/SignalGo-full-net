@@ -68,8 +68,9 @@ namespace SignalGo.Shared.IO
                 IsWaitToRead = false;
                 BlockBuffers.Add(new BufferSegment() { Buffer = buffer, Position = 0 });
             }
-            catch
+            catch(Exception ex)
             {
+                Console.WriteLine(ex);
                 IsClosed = true;
                 IsWaitToRead = false;
                 BlockBuffers.Add(new BufferSegment() { Buffer = null, Position = 0 });
@@ -192,6 +193,15 @@ namespace SignalGo.Shared.IO
             ReadBuffer();
             FirstLineBytes = Read(new byte[] { 13, 10 });
             return Encoding.ASCII.GetString(FirstLineBytes);
+        }
+
+        public string ReadLine(string endOfLine)
+        {
+            if (IsClosed && QueueBuffers.IsEmpty)
+                throw new Exception("read zero buffer! client disconnected");
+            ReadBuffer();
+            var bytes = Read(Encoding.ASCII.GetBytes(endOfLine));
+            return Encoding.ASCII.GetString(bytes);
         }
 
         public static PipeNetworkStream GetPipeNetworkStream(Stream stream)

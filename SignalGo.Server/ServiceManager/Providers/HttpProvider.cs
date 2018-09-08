@@ -40,7 +40,31 @@ namespace SignalGo.Server.ServiceManager.Providers
                 }
                 catch (Exception ex)
                 {
-                    serverBase.DisposeClient(client, "HttpProvider StartToReadingClientData exception 2");
+                    serverBase.DisposeClient(client, "HttpProvider AddHttpClient exception");
+                }
+            });
+        }
+
+#if (NET35 || NET40)
+        public static Task AddWebSocketHttpClient(ClientInfo client, ServerBase serverBase)
+#else
+        public static Task AddWebSocketHttpClient(ClientInfo client, ServerBase serverBase)
+#endif
+        {
+#if (NET35 || NET40)
+            return Task.Factory.StartNew(() =>
+#else
+            return Task.Run(() =>
+#endif
+            {
+                try
+                {
+                    client.IsWebSocket = true;
+                    WebSocketProvider.StartToReadingClientData(client, serverBase);
+                }
+                catch (Exception ex)
+                {
+                    serverBase.DisposeClient(client, "HttpProvider AddWebSocketHttpClient exception");
                 }
             });
         }
@@ -66,6 +90,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 if (requestHeaders.Contains("Sec-WebSocket-Key"))
                 {
                     client = serverBase.ServerDataProvider.CreateClientInfo(false, tcpClient, reader);
+                    client.IsWebSocket = true;
                     client.StreamHelper = SignalGoStreamWebSocket.CurrentWebSocket;
                     string key = requestHeaders.Replace("ey:", "`").Split('`')[1].Replace("\r", "").Split('\n')[0].Trim();
                     string acceptKey = AcceptKey(ref key);
@@ -128,7 +153,7 @@ namespace SignalGo.Server.ServiceManager.Providers
         /// </summary>
         /// <param name="key"></param>
         /// <returns></returns>
-        private static string AcceptKey(ref string key)
+        public static string AcceptKey(ref string key)
         {
             string longKey = key + _guid;
             byte[] hashBytes = ComputeHash(longKey);

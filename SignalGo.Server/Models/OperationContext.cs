@@ -445,7 +445,7 @@ namespace SignalGo.Server.Models
                     if (method.ReturnType == typeof(Task))
                     {
                         string methodName = method.Name;
-                        if (client.StreamHelper == SignalGoStreamWebSocket.CurrentWebSocket)
+                        if (client.IsWebSocket)
                             return ServerExtensions.SendWebSocketDataWithCallClientServiceMethod(serverBase, client, null, serviceName, method.Name, method.MethodToParameters(x => ServerSerializationHelper.SerializeObject(x, serverBase), args).ToArray());
                         else
                             return ServerExtensions.SendDataWithCallClientServiceMethod(serverBase, client, null, serviceName, method.Name, method.MethodToParameters(x => ServerSerializationHelper.SerializeObject(x, serverBase), args).ToArray());
@@ -454,7 +454,7 @@ namespace SignalGo.Server.Models
                     else if (method.ReturnType.GetBaseType() == typeof(Task))
                     {
                         string methodName = method.Name;
-                        if (client.StreamHelper == SignalGoStreamWebSocket.CurrentWebSocket)
+                        if (client.IsWebSocket)
                             return ServerExtensions.SendWebSocketDataWithCallClientServiceMethod(serverBase, client, method.ReturnType.GetGenericArguments()[0], serviceName, method.Name, method.MethodToParameters(x => ServerSerializationHelper.SerializeObject(x, serverBase), args).ToArray());
                         else
                             return ServerExtensions.SendDataWithCallClientServiceMethod(serverBase, client, method.ReturnType.GetGenericArguments()[0], serviceName, method.Name, method.MethodToParameters(x => ServerSerializationHelper.SerializeObject(x, serverBase), args).ToArray());
@@ -463,7 +463,7 @@ namespace SignalGo.Server.Models
                     {
                         string methodName = method.Name;
                         Task task = null;
-                        if (client.StreamHelper == SignalGoStreamWebSocket.CurrentWebSocket)
+                        if (client.IsWebSocket)
                             task = ServerExtensions.SendWebSocketDataWithCallClientServiceMethod(serverBase, client, method.ReturnType, serviceName, method.Name, method.MethodToParameters(x => ServerSerializationHelper.SerializeObject(x, serverBase), args).ToArray());
                         else
                             task = ServerExtensions.SendDataWithCallClientServiceMethod(serverBase, client, method.ReturnType, serviceName, method.Name, method.MethodToParameters(x => ServerSerializationHelper.SerializeObject(x, serverBase), args).ToArray());

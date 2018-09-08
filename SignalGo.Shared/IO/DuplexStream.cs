@@ -45,7 +45,7 @@ namespace SignalGo.Shared.IO
 
         public Task<int> ReadAsync(byte[] buffer, int offset, int count)
         {
-            return _streamWriter.ReadAsync(buffer, offset, count);
+            return _streamreader.ReadAsync(buffer, offset, count);
         }
 #endif
         public void Dispose()
