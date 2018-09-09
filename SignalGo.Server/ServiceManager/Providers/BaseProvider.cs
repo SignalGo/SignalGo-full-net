@@ -116,6 +116,9 @@ namespace SignalGo.Server.ServiceManager.Providers
                     exceptionResult.AppendLine("</Exception>");
                     throw new Exception($"{client.IPAddress} {client.ClientId} " + exceptionResult.ToString());
                 }
+                //generate dataexchanger and attributes from service class when service type is different
+                //if (service.GetType() != method.DeclaringType)
+                //    GetMethods(client, methodName, parameters, service.GetType(), customDataExchanger, securityAttributes, clientLimitationAttribute, concurrentLockAttributes, canTakeMethod).ToList();
 
                 List<object> parametersValues = new List<object>();
                 if (parameters != null)
@@ -405,6 +408,17 @@ namespace SignalGo.Server.ServiceManager.Providers
                     customDataExchangerAttributes.AddRange(method.GetCustomAttributes(typeof(CustomDataExchangerAttribute), true).Cast<CustomDataExchangerAttribute>().Where(x => x.GetExchangerByUserCustomization(client)));
                     clientLimitationAttributes.AddRange(method.GetCustomAttributes(typeof(ClientLimitationAttribute), true).Cast<ClientLimitationAttribute>());
                     concurrentLockAttributes.AddRange(method.GetCustomAttributes(typeof(ConcurrentLockAttribute), true).Cast<ConcurrentLockAttribute>());
+                    if (item != serviceType)
+                    {
+                        var newMethod = FindMethod(serviceType, methodName, parameters, canTakeMethod);
+                        if (newMethod != null)
+                        {
+                            securityContractAttributes.AddRange(newMethod.GetCustomAttributes(typeof(SecurityContractAttribute), true).Cast<SecurityContractAttribute>());
+                            customDataExchangerAttributes.AddRange(newMethod.GetCustomAttributes(typeof(CustomDataExchangerAttribute), true).Cast<CustomDataExchangerAttribute>().Where(x => x.GetExchangerByUserCustomization(client)));
+                            clientLimitationAttributes.AddRange(newMethod.GetCustomAttributes(typeof(ClientLimitationAttribute), true).Cast<ClientLimitationAttribute>());
+                            concurrentLockAttributes.AddRange(newMethod.GetCustomAttributes(typeof(ConcurrentLockAttribute), true).Cast<ConcurrentLockAttribute>());
+                        }
+                    }
                     yield return method;
                 }
             }

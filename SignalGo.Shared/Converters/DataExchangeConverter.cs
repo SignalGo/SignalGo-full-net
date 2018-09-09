@@ -489,12 +489,12 @@ namespace SignalGo.Shared.Converters
             implementICollection = ExchangerTypes == null ? null : ExchangerTypes.Where(x => x.Type == type && (x.GetLimitationMode(IsClient) == Mode || x.GetLimitationMode(IsClient) == LimitExchangeType.Both));
             if (implementICollection == null || implementICollection.Count() == 0)
                 implementICollection = property.GetCustomAttributes<CustomDataExchangerAttribute>(true).Where(x => x.GetLimitationMode(IsClient) == Mode || x.GetLimitationMode(IsClient) == LimitExchangeType.Both);
-            if (type != null)
-            {
-                List<CustomDataExchangerAttribute> newItems = implementICollection.ToList();
-                newItems.AddRange(type.GetCustomAttributes<CustomDataExchangerAttribute>(true).Where(x => x.GetLimitationMode(IsClient) == Mode || x.GetLimitationMode(IsClient) == LimitExchangeType.Both));
-                implementICollection = newItems;
-            }
+            //if (type != null)
+            //{
+            //    List<CustomDataExchangerAttribute> newItems = implementICollection.ToList();
+            //    newItems.AddRange(type.GetCustomAttributes<CustomDataExchangerAttribute>(true).Where(x => x.GetLimitationMode(IsClient) == Mode || x.GetLimitationMode(IsClient) == LimitExchangeType.Both));
+            //    implementICollection = newItems;
+            //}
 
             bool canIgnore = implementICollection == null ? false : implementICollection.Any(x => x.CanIgnore(instance, property, null, type, Server, Client) ?? false);
             if (canIgnore)
@@ -1492,10 +1492,6 @@ namespace SignalGo.Shared.Converters
 
                 foreach (PropertyInfo property in baseType.GetListOfProperties())
                 {
-                    if (property.Name == "RoleInfoes")
-                    {
-
-                    }
                     if (implementICollection != null)
                     {
                         if (implementICollection.ExchangeType == CustomDataExchangerType.Ignore && implementICollection.ContainsProperty(property.Name))
