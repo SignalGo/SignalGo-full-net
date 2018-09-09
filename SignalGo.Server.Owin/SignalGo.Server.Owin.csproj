@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <AssemblyVersion>4.1</AssemblyVersion>
+    <FileVersion>4.1</FileVersion>
+    <Version>4.1</Version>
+    <Authors>Ali Yousefi</Authors>
+    <Company></Company>
+    <DebugType>full</DebugType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Owin" Version="4.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SignalGo.Server\SignalGo.Server.csproj" />
+    <ProjectReference Include="..\SignalGo.Shared\SignalGo.Shared.csproj" />
+  </ItemGroup>
+
+</Project>
