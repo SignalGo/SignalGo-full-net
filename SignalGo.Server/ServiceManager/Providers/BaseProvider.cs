@@ -159,7 +159,12 @@ namespace SignalGo.Server.ServiceManager.Providers
                         {
                             if (parameters.Length <= i || prms[i].Name != parameters[i].Name)
                             {
-                                parametersValues.Insert(i, prms[i].DefaultValue);
+#if (!NETSTANDARD1_6)
+                                if (Convert.IsDBNull(prms[i].DefaultValue))
+                                    parametersValues.Insert(i, DataExchangeConverter.GetDefault(prms[i].ParameterType));
+                                else
+#endif
+                                    parametersValues.Insert(i, prms[i].DefaultValue);
                             }
                         }
                     }
@@ -513,6 +518,8 @@ namespace SignalGo.Server.ServiceManager.Providers
             }
             foreach (MethodInfo method in query)
             {
+                var fakeCount = method.GetCustomAttributes<FakeParameterAttribute>().Count();
+
                 System.Reflection.ParameterInfo[] param = method.GetParameters();
                 bool hasError = false;
                 if (parameters != null)
@@ -521,23 +528,30 @@ namespace SignalGo.Server.ServiceManager.Providers
                     {
                         if (!string.IsNullOrEmpty(p.Name) && !param.Any(x => x.Name.Equals(p.Name, StringComparison.OrdinalIgnoreCase) && param.IndexOf(x) == parameters.IndexOf(p)))
                         {
-                            hasError = true;
-                            break;
+                            if (fakeCount > 0 && parameters.LastOrDefault() == p)
+                                break;
+                            else
+                            {
+                                hasError = true;
+                                break;
+                            }
                         }
                     }
 #if (!NET35 && !NET40)
-                if (!hasError && param.Length != parameters.Length)
-                {
-                    foreach (var p in param)
+                    if (!hasError && param.Length != parameters.Length)
                     {
-                        if (!parameters.Any(x => x.Name.Equals(p.Name, StringComparison.OrdinalIgnoreCase)))
+                        foreach (var p in param)
                         {
-                            if (!p.HasDefaultValue)
-                                hasError = true;
-                            break;
+                            if (!parameters.Any(x => x.Name.Equals(p.Name, StringComparison.OrdinalIgnoreCase)))
+                            {
+                                if (fakeCount > 0 && param.LastOrDefault() == p)
+                                    break;
+                                else if (!p.HasDefaultValue)
+                                    hasError = true;
+                                break;
+                            }
                         }
                     }
-                }
 #endif
                 }
                 if (hasError)

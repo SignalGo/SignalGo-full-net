@@ -196,12 +196,15 @@ namespace SignalGo.Server.ServiceManager
 
                 client.OnDisconnected?.Invoke();
                 OnDisconnectedClientAction?.Invoke(client);
-                //GC.Collect();
             }
             catch (Exception ex)
             {
                 Console.WriteLine("DisposeClient " + ex);
                 AutoLogger.LogError(ex, "DisposeClientError");
+            }
+            finally
+            {
+                GC.Collect();
             }
         }
 
