@@ -65,9 +65,16 @@ namespace SignalGo.Client.ClientManager
         /// <param name="connector">connetor for send data</param>
         /// <param name="callInfo">method for send</param>
         /// <returns></returns>
+#if (NET40 || NET35)
         internal static T SendData<T>(this ConnectorBase connector, MethodCallInfo callInfo)
         {
             string data = SendData(connector, callInfo);
+#else
+        internal static async Task<T> SendData<T>(this ConnectorBase connector, MethodCallInfo callInfo)
+        {
+            string data = await SendData(connector, callInfo);
+#endif
+
             if (string.IsNullOrEmpty(data))
                 return default(T);
             return ClientSerializationHelper.DeserializeObject<T>(data.ToString());
@@ -119,7 +126,11 @@ namespace SignalGo.Client.ClientManager
         /// send data to server
         /// </summary>
         /// <returns></returns>
+#if (NET40 || NET35)
         internal static string SendData(ConnectorBase connector, string serviceName, string methodName, params Shared.Models.ParameterInfo[] args)
+#else
+        internal static Task<string> SendData(ConnectorBase connector, string serviceName, string methodName, params Shared.Models.ParameterInfo[] args)
+#endif
         {
             MethodCallInfo callInfo = new MethodCallInfo();
             callInfo.ServiceName = serviceName;
@@ -149,7 +160,11 @@ namespace SignalGo.Client.ClientManager
             return SendDataAsync<T>(connector, method, callInfo, args);
         }
 
+#if (NET40 || NET35)
         private static string SendData(this ConnectorBase connector, MethodCallInfo callInfo)
+#else
+        private static async Task<string> SendData(this ConnectorBase connector, MethodCallInfo callInfo)
+#endif
         {
             //TryAgain:
             bool isIgnorePriority = false;
@@ -205,7 +220,11 @@ namespace SignalGo.Client.ClientManager
             }
             catch (Exception ex)
             {
+#if (NET40 || NET35)
                 if (connector.IsConnected && !connector.SendPingAndWaitToReceive())
+#else
+                if (connector.IsConnected && !await connector.SendPingAndWaitToReceive())
+#endif
                 {
                     connector.Disconnect();
                 }
@@ -235,11 +254,15 @@ namespace SignalGo.Client.ClientManager
 #if (NET40 || NET35)
             return Task<T>.Factory.StartNew(() =>
 #else
-            return Task.Run(() =>
+            return Task.Run(async () =>
 #endif
             {
                 callInfo.Parameters = method.MethodToParameters(x => ClientSerializationHelper.SerializeObject(x), args).ToArray();
+#if (NET40 || NET35)
                 string result = SendData(connector, callInfo);
+#else
+                string result = await SendData(connector, callInfo);
+#endif
                 object deserialeResult = ClientSerializationHelper.DeserializeObject(result, typeof(T));
                 return (T)deserialeResult;
             });

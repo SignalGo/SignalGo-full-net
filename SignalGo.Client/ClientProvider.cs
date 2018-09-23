@@ -7,6 +7,7 @@ using System;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace SignalGo.Client
 {
@@ -66,7 +67,11 @@ namespace SignalGo.Client
             base.Connect(hostName, uri.Port);
 #endif
             SendFirstLineData();
+#if (NET40 || NET35)
             GetClientIdIfNeed();
+#else
+            GetClientIdIfNeed().GetAwaiter().GetResult();
+#endif
             StartToReadingClientData();
 
             IsConnected = true;
@@ -139,21 +144,32 @@ namespace SignalGo.Client
         /// 
         /// </summary>
         /// <param name="securitySettings"></param>
+#if (NET40 || NET35)
         public void SetSecuritySettings(SecuritySettingsInfo securitySettings)
+#else
+        public async void SetSecuritySettings(SecuritySettingsInfo securitySettings)
+#endif
         {
             SecuritySettings = null;
             if (securitySettings.SecurityMode == SecurityMode.None)
             {
                 securitySettings.Data = null;
+#if (NET40 || NET35)
                 SecuritySettingsInfo result = ConnectorExtensions.SendData<SecuritySettingsInfo>(this, new Shared.Models.MethodCallInfo() { Guid = Guid.NewGuid().ToString(), ServiceName = "/SetSettings", Data = JsonConvert.SerializeObject(securitySettings) });
-
+#else
+                SecuritySettingsInfo result =await ConnectorExtensions.SendData<SecuritySettingsInfo>(this, new Shared.Models.MethodCallInfo() { Guid = Guid.NewGuid().ToString(), ServiceName = "/SetSettings", Data = JsonConvert.SerializeObject(securitySettings) });
+#endif
             }
             else if (securitySettings.SecurityMode == SecurityMode.RSA_AESSecurity)
             {
 #if (!PORTABLE)
                 RSAKey keys = RSASecurity.GenerateRandomKey();
                 securitySettings.Data = new RSAAESEncryptionData() { RSAEncryptionKey = keys.PublicKey };
+#if (NET40 || NET35)
                 SecuritySettingsInfo result = ConnectorExtensions.SendData<SecuritySettingsInfo>(this, new Shared.Models.MethodCallInfo() { Guid = Guid.NewGuid().ToString(), ServiceName = "/SetSettings", Data = JsonConvert.SerializeObject(securitySettings) });
+#else
+                SecuritySettingsInfo result =await ConnectorExtensions.SendData<SecuritySettingsInfo>(this, new Shared.Models.MethodCallInfo() { Guid = Guid.NewGuid().ToString(), ServiceName = "/SetSettings", Data = JsonConvert.SerializeObject(securitySettings) });
+#endif
                 SecuritySettings = new SecuritySettingsInfo() { Data = new RSAAESEncryptionData() { Key = RSASecurity.Decrypt(result.Data.Key, RSASecurity.StringToKey(keys.PrivateKey)), IV = RSASecurity.Decrypt(result.Data.IV, RSASecurity.StringToKey(keys.PrivateKey)) }, SecurityMode = securitySettings.SecurityMode };
 #endif
             }
@@ -165,7 +181,11 @@ namespace SignalGo.Client
             _client.GetStream().Write(firstBytes, 0, firstBytes.Length);
         }
 
+#if (NET40 || NET35)
         private void GetClientIdIfNeed()
+#else
+        private async Task GetClientIdIfNeed()
+#endif
         {
             if (ProviderSetting.AutoDetectRegisterServices)
             {
@@ -175,7 +195,11 @@ namespace SignalGo.Client
                     (byte)CompressMode.None
                 };
 
+#if (NET40 || NET35)
                 StreamHelper.WriteToStream(_clientStream, data.ToArray());
+#else
+                await StreamHelper.WriteToStreamAsync(_clientStream, data.ToArray());
+#endif
             }
         }
     }

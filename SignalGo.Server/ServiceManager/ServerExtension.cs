@@ -14,19 +14,15 @@ namespace SignalGo.Server.ServiceManager
 {
     public static class ServerExtensions
     {
-        public static Stream GetTcpStream(this TcpClient tcpClient, ServerBase serverBase)
+        public static Task<Stream> GetTcpStream(this TcpClient tcpClient, ServerBase serverBase)
         {
             if (serverBase.ProviderSetting.HttpSetting.IsHttps)
             {
-#if (!NETSTANDARD && !NETCOREAPP)
                 return SslTcpManager.GetStream(tcpClient, serverBase.ProviderSetting.HttpSetting.X509Certificate);
-#else
-                throw new NotSupportedException();
-#endif
             }
             else
             {
-                return tcpClient.GetStream();
+                return Task.Run(() => (Stream)tcpClient.GetStream());
             }
         }
         //static ServerExtension()
@@ -105,8 +101,10 @@ namespace SignalGo.Server.ServiceManager
         //    client.StreamHelper.WriteBlockToStream(client.ClientStream, bytes);
         //}
 
-        internal static Task SendDataWithCallClientServiceMethod(ServerBase serverBase, ClientInfo client, Type returnType, string serviceName, string methodName, params Shared.Models.ParameterInfo[] args)
+        internal static async Task SendDataWithCallClientServiceMethod(ServerBase serverBase, ClientInfo client, Type returnType, string serviceName, string methodName, params Shared.Models.ParameterInfo[] args)
         {
+            if (returnType == null)
+                returnType = typeof(object);
             //var method = typeof(ServerExtensions).GetMethod("SendDataWithCallClientServiceMethodGeneric").MakeGenericMethod(returnType);
             //Func<object> run = () =>
             //{
@@ -115,13 +113,13 @@ namespace SignalGo.Server.ServiceManager
 #if (NET35 || NET40)
             return null;// Task<object>.Factory.StartNew(run);
 #else
-            var type = typeof(TaskCompletionSource<>).MakeGenericType(returnType);
-            var taskCompletionSource = Activator.CreateInstance(type);
+            Type type = typeof(TaskCompletionSource<>).MakeGenericType(returnType);
+            object taskCompletionSource = Activator.CreateInstance(type);
             MethodCallInfo callInfo = new MethodCallInfo();
             callInfo.ServiceName = serviceName;
             callInfo.MethodName = methodName;
             callInfo.Parameters = args;
-            var guid = Guid.NewGuid().ToString();
+            string guid = Guid.NewGuid().ToString();
             callInfo.Guid = guid;
             serverBase.ClientServiceCallMethodsResult.TryAdd(guid, new KeyValue<Type, object>(returnType, taskCompletionSource));
             List<byte> bytes = new List<byte>
@@ -129,28 +127,30 @@ namespace SignalGo.Server.ServiceManager
                      (byte)DataType.CallMethod,
                      (byte)CompressMode.None
                 };
-            var jsonBytes = Encoding.UTF8.GetBytes(ServerSerializationHelper.SerializeObject(callInfo, serverBase));
+            byte[] jsonBytes = Encoding.UTF8.GetBytes(ServerSerializationHelper.SerializeObject(callInfo, serverBase));
             byte[] dataLen = BitConverter.GetBytes(jsonBytes.Length);
             bytes.AddRange(dataLen);
             bytes.AddRange(jsonBytes);
 
-            client.StreamHelper.WriteToStream(client.ClientStream, bytes.ToArray());
-            return (Task)taskCompletionSource.GetType().GetProperty("Task").GetValue(taskCompletionSource, null);
+            await client.StreamHelper.WriteToStreamAsync(client.ClientStream, bytes.ToArray());
+            await (Task)taskCompletionSource.GetType().GetProperty("Task").GetValue(taskCompletionSource, null);
 #endif
         }
 
-        internal static Task SendWebSocketDataWithCallClientServiceMethod(ServerBase serverBase, ClientInfo client, Type returnType, string serviceName, string methodName, params Shared.Models.ParameterInfo[] args)
+        internal static async Task SendWebSocketDataWithCallClientServiceMethod(ServerBase serverBase, ClientInfo client, Type returnType, string serviceName, string methodName, params Shared.Models.ParameterInfo[] args)
         {
+            if (returnType == null)
+                returnType = typeof(object);
 #if (NET35 || NET40)
             return null;// Task<object>.Factory.StartNew(run);
 #else
-            var type = typeof(TaskCompletionSource<>).MakeGenericType(returnType);
-            var taskCompletionSource = Activator.CreateInstance(type);
+            Type type = typeof(TaskCompletionSource<>).MakeGenericType(returnType);
+            object taskCompletionSource = Activator.CreateInstance(type);
             MethodCallInfo callInfo = new MethodCallInfo();
             callInfo.ServiceName = serviceName;
             callInfo.MethodName = methodName;
             callInfo.Parameters = args;
-            var guid = Guid.NewGuid().ToString();
+            string guid = Guid.NewGuid().ToString();
             callInfo.Guid = guid;
             serverBase.ClientServiceCallMethodsResult.TryAdd(guid, new KeyValue<Type, object>(returnType, taskCompletionSource));
 
@@ -158,26 +158,26 @@ namespace SignalGo.Server.ServiceManager
             ///when length is large we need to send data by parts
             if (json.Length > 30000)
             {
-                var listOfParts = WebSocketProvider.GeneratePartsOfData(json);
+                List<string> listOfParts = WebSocketProvider.GeneratePartsOfData(json);
                 int i = 1;
-                foreach (var item in listOfParts)
+                foreach (string item in listOfParts)
                 {
-                    var cb = callInfo.Clone();
+                    MethodCallInfo cb = callInfo.Clone();
                     cb.PartNumber = i == listOfParts.Count ? (short)-1 : (short)i;
                     json = (int)DataType.CallMethod + "," + (int)CompressMode.None + "/" + ServerSerializationHelper.SerializeObject(cb, serverBase);
-                    var result = Encoding.UTF8.GetBytes(json);
-                    client.StreamHelper.WriteToStream(client.ClientStream, result);
+                    byte[] result = Encoding.UTF8.GetBytes(json);
+                    await client.StreamHelper.WriteToStreamAsync(client.ClientStream, result);
                     i++;
                 }
             }
             else
             {
                 json = (int)DataType.CallMethod + "," + (int)CompressMode.None + "/" + json;
-                var result = Encoding.UTF8.GetBytes(json);
-                client.StreamHelper.WriteToStream(client.ClientStream, result);
+                byte[] result = Encoding.UTF8.GetBytes(json);
+                await client.StreamHelper.WriteToStreamAsync(client.ClientStream, result);
             }
 
-            return (Task)taskCompletionSource.GetType().GetProperty("Task").GetValue(taskCompletionSource, null);
+            await (Task)taskCompletionSource.GetType().GetProperty("Task").GetValue(taskCompletionSource, null);
 #endif
         }
         //static object SendCallClientMethod(this OperationCalls client, string callerName, params object[] args)

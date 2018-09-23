@@ -1,12 +1,10 @@
 ﻿using Newtonsoft.Json;
 using SignalGo.Shared.IO;
 using System;
-using System.IO;
 using System.Net;
 #if (!PORTABLE)
-using System.Net.Sockets;
 #endif
-using System.Reflection;
+using System.Threading.Tasks;
 
 namespace SignalGo.Shared.Models
 {
@@ -34,8 +32,13 @@ namespace SignalGo.Shared.Models
         /// <summary>
         /// get position of flush stream
         /// </summary>
+#if (NET35 || NET40)
         Func<long> GetPositionFlush { get; set; }
-        KeyValue<DataType, CompressMode> ReadFirstData(PipeNetworkStream stream, uint maximumReceiveStreamHeaderBlock);
+        KeyValue<DataType, CompressMode> ReadFirstData(PipeNetworkStream stream, int maximumReceiveStreamHeaderBlock);
+#else
+        Func<Task<long>> GetPositionFlush { get; set; }
+        Task<KeyValue<DataType, CompressMode>> ReadFirstDataAsync(PipeNetworkStream stream, int maximumReceiveStreamHeaderBlock);
+#endif
     }
 
     public class BaseStreamInfo : IStreamInfo
@@ -44,7 +47,11 @@ namespace SignalGo.Shared.Models
         /// get position of flush stream
         /// </summary>
         [JsonIgnore()]
+#if (NET35 || NET40)
         public Func<long> GetPositionFlush { get; set; }
+#else
+        public Func<Task<long>> GetPositionFlush { get; set; }
+#endif
         /// <summary>
         /// status of request
         /// </summary>
@@ -94,42 +101,51 @@ namespace SignalGo.Shared.Models
         public void Dispose()
         {
             GetStreamAction = null;
-//#if (!PORTABLE)
-//            if (Stream is NetworkStream)
-//            {
-//                try
-//                {
-//#if (NETSTANDARD)
-//                    var property = typeof(NetworkStream).GetTypeInfo().GetProperty("Socket", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Static);
-//#else
-//                    PropertyInfo property = typeof(NetworkStream).GetProperty("Socket", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Static);
-//#endif
-//                    Socket socket = (Socket)property.GetValue(((NetworkStream)Stream), null);
-//#if (NET35)
-//                    socket.Close();
-//#else
-//                    socket.Dispose();
-//#endif
-//                }
-//                catch
-//                {
-//                    //AutoLogger.LogError(ex, "StreamInfo Dispose");
-//                }
-//            }
-//#endif
+            //#if (!PORTABLE)
+            //            if (Stream is NetworkStream)
+            //            {
+            //                try
+            //                {
+            //#if (NETSTANDARD)
+            //                    var property = typeof(NetworkStream).GetTypeInfo().GetProperty("Socket", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Static);
+            //#else
+            //                    PropertyInfo property = typeof(NetworkStream).GetProperty("Socket", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Static);
+            //#endif
+            //                    Socket socket = (Socket)property.GetValue(((NetworkStream)Stream), null);
+            //#if (NET35)
+            //                    socket.Close();
+            //#else
+            //                    socket.Dispose();
+            //#endif
+            //                }
+            //                catch
+            //                {
+            //                    //AutoLogger.LogError(ex, "StreamInfo Dispose");
+            //                }
+            //            }
+            //#endif
             Stream.Dispose();
         }
 
-        public KeyValue<DataType, CompressMode> ReadFirstData(PipeNetworkStream stream, uint maximumReceiveStreamHeaderBlock)
+#if (NET35 || NET40)
+        public KeyValue<DataType, CompressMode> ReadFirstData(PipeNetworkStream stream, int maximumReceiveStreamHeaderBlock)
         {
             DataType responseType = (DataType)SignalGoStreamBase.CurrentBase.ReadOneByte(stream);
             CompressMode compressMode = (CompressMode)SignalGoStreamBase.CurrentBase.ReadOneByte(stream);
             return new KeyValue<DataType, CompressMode>(responseType, compressMode);
         }
-
+#else
+        public async Task<KeyValue<DataType, CompressMode>> ReadFirstDataAsync(PipeNetworkStream stream, int maximumReceiveStreamHeaderBlock)
+        {
+            DataType responseType = (DataType)await SignalGoStreamBase.CurrentBase.ReadOneByteAsync(stream);
+            CompressMode compressMode = (CompressMode)await SignalGoStreamBase.CurrentBase.ReadOneByteAsync(stream);
+            return new KeyValue<DataType, CompressMode>(responseType, compressMode);
+        }
+#endif
         /// <summary>
         /// set position of flush stream
         /// </summary>
+#if (NET35 || NET40)
         public void SetPositionFlush(long position)
         {
             DataType dataType = DataType.FlushStream;
@@ -138,6 +154,17 @@ namespace SignalGo.Shared.Models
             byte[] data = BitConverter.GetBytes(position);
             SignalGoStreamBase.CurrentBase.WriteBlockToStream(Stream, data);
         }
+#else
+        public async Task SetPositionFlush(long position)
+        {
+            DataType dataType = DataType.FlushStream;
+            CompressMode compressMode = CompressMode.None;
+            await SignalGoStreamBase.CurrentBase.WriteToStreamAsync(Stream, new byte[] { (byte)dataType, (byte)compressMode });
+            byte[] data = BitConverter.GetBytes(position);
+            await SignalGoStreamBase.CurrentBase.WriteBlockToStreamAsync(Stream, data);
+        }
+#endif
+
     }
 
     /// <summary>

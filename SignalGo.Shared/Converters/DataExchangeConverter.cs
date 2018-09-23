@@ -19,7 +19,7 @@ namespace SignalGo.Shared.Converters
         /// <summary>
         /// 
         /// </summary>
-        public static Dictionary<int, List<CustomDataExchangerAttribute>> ListOfContextsDataExchangers = new Dictionary<int, List<CustomDataExchangerAttribute>>();
+        public static Dictionary<int, List<CustomDataExchangerAttribute>> ListOfContextsDataExchangers { get; set; } = new Dictionary<int, List<CustomDataExchangerAttribute>>();
 
         public static void TakeOnly(object instance)
         {

@@ -25,11 +25,7 @@ namespace SignalGo.Server.Helpers
         private List<Type> skippedTypes = new List<Type>();
         internal void SendServiceDetail(ClientInfo client, string hostUrl, ServerBase serverBase)
         {
-#if (NET35 || NET40)
-            Task.Factory.StartNew(() =>
-#else
-            Task.Run(() =>
-#endif
+            Task.Run(async () =>
             {
                 try
                 {
@@ -463,25 +459,32 @@ namespace SignalGo.Server.Helpers
                         byte[] dataLen = BitConverter.GetBytes(jsonBytes.Length);
                         bytes.AddRange(dataLen);
                         bytes.AddRange(jsonBytes);
-                        client.StreamHelper.WriteToStream(client.ClientStream, bytes.ToArray());
+                        await client.StreamHelper.WriteToStreamAsync(client.ClientStream, bytes.ToArray());
                     }
                 }
                 catch (Exception ex)
                 {
-                    string json = ServerSerializationHelper.SerializeObject(new Exception(ex.ToString()), serverBase);
-                    List<byte> bytes = new List<byte>
+                    try
                     {
-                                    (byte)DataType.GetServiceDetails,
-                                    (byte)CompressMode.None
-                    };
-                    byte[] jsonBytes = Encoding.UTF8.GetBytes(json);
-                    //if (ClientsSettings.ContainsKey(client))
-                    //    jsonBytes = EncryptBytes(jsonBytes, client);
-                    byte[] dataLen = BitConverter.GetBytes(jsonBytes.Length);
-                    bytes.AddRange(dataLen);
-                    bytes.AddRange(jsonBytes);
-                    client.StreamHelper.WriteToStream(client.ClientStream, bytes.ToArray());
+                        string json = ServerSerializationHelper.SerializeObject(new Exception(ex.ToString()), serverBase);
+                        List<byte> bytes = new List<byte>
+                        {
+                            (byte)DataType.GetServiceDetails,
+                            (byte)CompressMode.None
+                        };
+                        byte[] jsonBytes = Encoding.UTF8.GetBytes(json);
+                        //if (ClientsSettings.ContainsKey(client))
+                        //    jsonBytes = EncryptBytes(jsonBytes, client);
+                        byte[] dataLen = BitConverter.GetBytes(jsonBytes.Length);
+                        bytes.AddRange(dataLen);
+                        bytes.AddRange(jsonBytes);
+                        await client.StreamHelper.WriteToStreamAsync(client.ClientStream, bytes.ToArray());
 
+                    }
+                    catch (Exception)
+                    {
+
+                    }
                     serverBase.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase CallMethod");
                 }
                 finally
@@ -603,7 +606,7 @@ namespace SignalGo.Server.Helpers
 #if (NET35 || NET40)
             Task.Factory.StartNew(() =>
 #else
-            Task.Run(() =>
+            Task.Run(async () =>
 #endif
             {
                 try
@@ -639,7 +642,7 @@ namespace SignalGo.Server.Helpers
                     byte[] dataLen = BitConverter.GetBytes(jsonBytes.Length);
                     bytes.AddRange(dataLen);
                     bytes.AddRange(jsonBytes);
-                    client.StreamHelper.WriteToStream(client.ClientStream, bytes.ToArray());
+                    await client.StreamHelper.WriteToStreamAsync(client.ClientStream, bytes.ToArray());
                 }
                 catch (Exception ex)
                 {

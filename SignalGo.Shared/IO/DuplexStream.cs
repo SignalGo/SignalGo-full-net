@@ -9,6 +9,30 @@ namespace SignalGo.Shared.IO
         private Stream _streamreader;
         private Stream _streamWriter;
 
+        public int ReceiveTimeout
+        {
+            get
+            {
+                return _streamreader.ReadTimeout;
+            }
+            set
+            {
+                _streamreader.ReadTimeout = value;
+            }
+        }
+
+        public int SendTimeout
+        {
+            get
+            {
+                return _streamWriter.WriteTimeout;
+            }
+            set
+            {
+                _streamWriter.WriteTimeout = value;
+            }
+        }
+
         public DuplexStream(Stream streamreader, Stream streamWriter)
         {
             _streamreader = streamreader;

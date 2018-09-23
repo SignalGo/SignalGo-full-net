@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace SignalGo.Server.IO
 {
@@ -19,7 +21,7 @@ namespace SignalGo.Server.IO
 
         private long _Length;
 
-        private uint BoundarySize { get; set; }
+        private int BoundarySize { get; set; }
 
         private long _Position;
 
@@ -78,10 +80,10 @@ namespace SignalGo.Server.IO
         public void SetOfStreamLength(long length, int _BoundarySize)
         {
             _Length = length - _BoundarySize;
-            BoundarySize = (uint)_BoundarySize;
+            BoundarySize = _BoundarySize;
         }
 
-        public override int Read(byte[] buffer, int offset, int count)
+        public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
         {
             if (IsReadFinishedBytes)
                 return -1;
@@ -90,7 +92,7 @@ namespace SignalGo.Server.IO
                 IsReadFinishedBytes = true;
                 //Console.WriteLine("length:" + Length + "pos:" + Position);
                 //Console.WriteLine("need take:" + (Length - Position + BoundarySize));
-                byte[] endBuffer = SignalGoStreamBase.CurrentBase.ReadBlockSize(CurrentStream, (ulong)(Length - Position + BoundarySize));
+                byte[] endBuffer = await SignalGoStreamBase.CurrentBase.ReadBlockSizeAsync(CurrentStream, (int)(Length - Position + BoundarySize));
                 //Console.WriteLine("sizeTake:" + endBuffer.Length);
                 if (endBuffer.Length == 0)
                     return 0;
@@ -122,7 +124,8 @@ namespace SignalGo.Server.IO
                     return -1;
                 }
             }
-            byte[] readedBuffer = CurrentStream.Read(count, out int readCount);
+            byte[] readedBuffer = new byte[count];
+            int readCount = await CurrentStream.ReadAsync(readedBuffer, count);
             Array.Copy(readedBuffer, buffer, readCount);
             Position += readCount;
             if (Position == Length)
@@ -130,18 +133,18 @@ namespace SignalGo.Server.IO
             return readCount;
         }
 
+        public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+        {
+            return CurrentStream.WriteAsync(buffer, offset, count);
+        }
+
         private void FinishRead()
         {
             if (!IsReadFinishedBytes)
             {
-                SignalGoStreamBase.CurrentBase.ReadBlockSize(CurrentStream, BoundarySize);
+                SignalGoStreamBase.CurrentBase.ReadBlockSizeAsync(CurrentStream, BoundarySize);
             }
             IsReadFinishedBytes = true;
-        }
-
-        public void Write(byte[] buffer)
-        {
-            CurrentStream.Write(buffer);
         }
 
         public override void Flush()
@@ -161,7 +164,12 @@ namespace SignalGo.Server.IO
 
         public override void Write(byte[] buffer, int offset, int count)
         {
-            CurrentStream.Write(buffer);
+            throw new NotImplementedException("not support pls use write async");
+        }
+
+        public override int Read(byte[] buffer, int offset, int count)
+        {
+            throw new NotImplementedException("not support pls use read async");
         }
     }
 }

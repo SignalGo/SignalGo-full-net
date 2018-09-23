@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Threading.Tasks;
 
 namespace SignalGo.Shared.Helpers
 {
@@ -36,7 +37,7 @@ namespace SignalGo.Shared.Helpers
                     break;
             }
         }
-        public static TService Wrap<TService>(Func<string, MethodInfo, Shared.Models.ParameterInfo[], object> CallMethodAction)
+        public static TService Wrap<TService>(Func<string, MethodInfo, Shared.Models.ParameterInfo[], Task<object>> CallMethodAction)
             where TService : class
         {
             return (TService)Wrap(typeof(TService), CallMethodAction);
@@ -56,7 +57,7 @@ namespace SignalGo.Shared.Helpers
             return result;
         }
 
-        internal static Object Wrap(Type serviceInterfaceType, Func<string, MethodInfo, Shared.Models.ParameterInfo[], object> CallMethodAction)
+        internal static Object Wrap(Type serviceInterfaceType, Func<string, MethodInfo, Shared.Models.ParameterInfo[], Task<object>> CallMethodAction)
         {
             //this method load GetCurrentMethod for xamarin linked assembly
             //var fix = System.Reflection.MethodInfo.GetCurrentMethod();

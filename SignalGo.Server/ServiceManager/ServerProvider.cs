@@ -101,7 +101,7 @@ namespace SignalGo.Server.ServiceManager
                         {
                             //if (!ClientServices.Contains(type) && type.GetIsInterface())
                             //    ClientServices.Add(type);
-                            RegisterServerService(type);
+                            RegisterClientService(type);
                         }
                         else if (att.ServiceType == ServiceType.HttpService)
                         {

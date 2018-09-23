@@ -2,7 +2,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <!---->
-    <TargetFrameworks>net40;net35;net45;netstandard1.6;netstandard2.0;</TargetFrameworks>
+    <TargetFrameworks>net45;netstandard1.6;netstandard2.0;</TargetFrameworks>
     <MinimumVisualStudioVersion>10.0</MinimumVisualStudioVersion>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -108,6 +108,7 @@
     <PackageReference Include="System.Threading.Thread" Version="4.3.0" />
     <PackageReference Include="System.Reflection.TypeExtensions" Version="4.5.1" />
     <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
+    <PackageReference Include="System.Net.Security" Version="4.3.2" />
     <!--<PackageReference Include="NETStandard.Library" Version="1.6.1" />-->
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">

@@ -4,7 +4,6 @@ using SignalGo.Shared.IO;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
 using System.Security.Cryptography;
@@ -27,7 +26,7 @@ namespace SignalGo.Server.ServiceManager.Providers
 #if (NET35 || NET40)
             return Task.Factory.StartNew(() =>
 #else
-            return Task.Run(() =>
+            return Task.Run(async () =>
 #endif
             {
                 try
@@ -36,11 +35,11 @@ namespace SignalGo.Server.ServiceManager.Providers
                         client.RequestHeaders = requestHeaders;
                     if (responseHeaders != null)
                         client.ResponseHeaders = responseHeaders;
-                    HandleHttpRequest(methodName, address, serverBase, client);
+                    await HandleHttpRequest(methodName, address, serverBase, client);
                 }
                 catch (Exception ex)
                 {
-                    serverBase.DisposeClient(client, "HttpProvider AddHttpClient exception");
+                    serverBase.DisposeClient(client, null, "HttpProvider AddHttpClient exception");
                 }
             });
         }
@@ -64,29 +63,27 @@ namespace SignalGo.Server.ServiceManager.Providers
                 }
                 catch (Exception ex)
                 {
-                    serverBase.DisposeClient(client, "HttpProvider AddWebSocketHttpClient exception");
+                    serverBase.DisposeClient(client, null, "HttpProvider AddWebSocketHttpClient exception");
                 }
             });
         }
 
-#if (NET35 || NET40)
-        public static void StartToReadingClientData(TcpClient tcpClient, ServerBase serverBase, PipeNetworkStream reader, string requestHeaders)
-#else
-        public static async void StartToReadingClientData(TcpClient tcpClient, ServerBase serverBase, PipeNetworkStream reader, string requestHeaders)
-#endif
+
+        public static async Task StartToReadingClientData(TcpClient tcpClient, ServerBase serverBase, PipeNetworkStream reader, string requestHeaders)
         {
-            Console.WriteLine($"Http Client Connected: {((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address.ToString().Replace("::ffff:", "")}");
+            //Console.WriteLine($"Http Client Connected: {((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address.ToString().Replace("::ffff:", "")}");
             ClientInfo client = null;
             try
             {
                 while (true)
                 {
-                    string line = reader.ReadLine();
+                    string line = await reader.ReadLineAsync();
                     requestHeaders += line;
                     if (line == "\r\n")
                         break;
                 }
-
+                tcpClient.ReceiveTimeout = -1;
+                tcpClient.SendTimeout = -1;
                 if (requestHeaders.Contains("Sec-WebSocket-Key"))
                 {
                     client = serverBase.ServerDataProvider.CreateClientInfo(false, tcpClient, reader);
@@ -102,7 +99,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                      + "Connection: Upgrade" + newLine
                      + "Sec-WebSocket-Accept: " + acceptKey + newLine + newLine;
                     byte[] bytes = System.Text.Encoding.UTF8.GetBytes(response);
-                    client.ClientStream.Write(bytes);
+                    await client.ClientStream.WriteAsync(bytes, 0, bytes.Length);
                     WebSocketProvider.StartToReadingClientData(client, serverBase);
                 }
                 else
@@ -123,19 +120,18 @@ namespace SignalGo.Server.ServiceManager.Providers
 
                             string methodName = GetHttpMethodName(lines[0]);
                             string address = GetHttpAddress(lines[0]);
-#if (NET35 || NET40)
-                            AddHttpClient((HttpClientInfo)client, serverBase, address, methodName, GetHttpHeaders(lines.Skip(1).ToArray()), null);
-#else
-                            await AddHttpClient((HttpClientInfo)client, serverBase, address, methodName, GetHttpHeaders(lines.Skip(1).ToArray()), null);
-#endif
+                            if (requestHeaders != null)
+                                ((HttpClientInfo)client).RequestHeaders = GetHttpHeaders(lines.Skip(1).ToArray());
+                            client.Level = $"go to HandleHttpRequest {address}";
+
+                            await HandleHttpRequest(methodName, address, serverBase, (HttpClientInfo)client);
                         }
                         else
-                            serverBase.DisposeClient(client, "HttpProvider StartToReadingClientData no line detected");
-
+                            serverBase.DisposeClient(client, tcpClient, "HttpProvider StartToReadingClientData no line detected");
                     }
                     catch
                     {
-                        serverBase.DisposeClient(client, "HttpProvider StartToReadingClientData exception");
+                        serverBase.DisposeClient(client, tcpClient, "HttpProvider StartToReadingClientData exception");
                     }
                 }
             }
@@ -143,7 +139,7 @@ namespace SignalGo.Server.ServiceManager.Providers
             {
                 //if (client != null)
                 //serverBase.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase HttpProvider StartToReadingClientData");
-                serverBase.DisposeClient(client, "HttpProvider StartToReadingClientData exception 2");
+                serverBase.DisposeClient(client, tcpClient, "HttpProvider StartToReadingClientData exception 2");
             }
         }
 

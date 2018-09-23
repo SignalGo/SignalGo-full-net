@@ -58,6 +58,9 @@ namespace SignalGo.Server.Models
         }
 
         public bool IsWebSocket { get; set; }
+
+        public string Level { get; set; }
+
     }
 
     /// <summary>

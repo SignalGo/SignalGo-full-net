@@ -176,7 +176,7 @@ namespace SignalGo.Server.Helpers
             foreach (Type serviceType in type.GetTypesByAttribute<ServiceContractAttribute>(x => x.ServiceType == serviceTypeEnum).ToList())
             {
                 typeGenerated.Add(serviceType);
-                foreach (MethodInfo methodInfo in serviceType.GetListOfMethodsWithAllOfBases().Where(x => !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_")))))
+                foreach (MethodInfo methodInfo in serviceType.GetListOfMethodsWithAllOfBases().Where(x => !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_"))) && !x.IsStatic))
                 {
                     GenerateMethod(methodInfo, classReferenceInfo);
                     methodGenerated.Add(methodInfo);
@@ -199,7 +199,7 @@ namespace SignalGo.Server.Helpers
             foreach (Type serviceType in type.GetTypesByAttribute<ServiceContractAttribute>(x => x.ServiceType == ServiceType.HttpService).ToList())
             {
                 typeGenerated.Add(serviceType);
-                foreach (MethodInfo methodInfo in serviceType.GetListOfDeclaredMethods().Where(x => !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_")))))
+                foreach (MethodInfo methodInfo in serviceType.GetListOfDeclaredMethods().Where(x => !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_"))) && !x.IsStatic))
                 {
                     GenerateMethod(methodInfo, classReferenceInfo);
                     methodGenerated.Add(methodInfo);

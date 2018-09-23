@@ -68,15 +68,15 @@ namespace SignalGo.Shared.Models
         /// <summary>
         /// maximum send data block
         /// </summary>
-        public uint MaximumSendDataBlock { get; set; } = uint.MaxValue;
+        public int MaximumSendDataBlock { get; set; } = int.MaxValue;
         /// <summary>
         /// maximum receive data block
         /// </summary>
-        public uint MaximumReceiveDataBlock { get; set; } = uint.MaxValue;
+        public int MaximumReceiveDataBlock { get; set; } = int.MaxValue;
         /// <summary>
         /// maximum header of stream for download from client
         /// </summary>
-        public uint MaximumReceiveStreamHeaderBlock { get; set; } = 65536;
+        public int MaximumReceiveStreamHeaderBlock { get; set; } = 65536;
         /// <summary>
         /// automatic try to reconnect after disconnect
         /// </summary>
