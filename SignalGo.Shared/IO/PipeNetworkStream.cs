@@ -96,7 +96,7 @@ namespace SignalGo.Shared.IO
                 await BlockBuffers.AddAsync(new BufferSegment() { Buffer = buffer, Position = 0 });
 #endif
             }
-            catch// (Exception ex)
+            catch (Exception ex)
             {
                 //Console.WriteLine(ex);
                 IsClosed = true;

@@ -65,7 +65,7 @@ namespace SignalGo.Shared.IO
             stream.Write(size, 0, data.Length);
             stream.Write(data, 0, data.Length);
 #else
-            return stream.WriteAsync(size, 0, data.Length).ContinueWith((t) => stream.WriteAsync(data, 0, data.Length));
+            return stream.WriteAsync(size, 0, size.Length).ContinueWith((t) => stream.WriteAsync(data, 0, data.Length));
 #endif
         }
 

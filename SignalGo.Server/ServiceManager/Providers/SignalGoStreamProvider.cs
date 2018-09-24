@@ -6,6 +6,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace SignalGo.Server.ServiceManager.Providers
 {
@@ -20,12 +21,12 @@ namespace SignalGo.Server.ServiceManager.Providers
                 byte firstByte = await client.StreamHelper.ReadOneByteAsync(stream);
                 if (firstByte == 0)
                 {
-                    DownloadStreamFromClient(client, serverBase);
+                    await DownloadStreamFromClient(client, serverBase);
                 }
                 //download from server and upload from client
                 else
                 {
-                    UploadStreamToClient(client, serverBase);
+                    await UploadStreamToClient(client, serverBase);
                 }
                 serverBase.DisposeClient(client, null, "StartToReadingClientData finished");
             }
@@ -41,7 +42,7 @@ namespace SignalGo.Server.ServiceManager.Providers
         /// </summary>
         /// <param name="stream">client stream</param>
         /// <param name="client">client</param>
-        private static async void DownloadStreamFromClient(ClientInfo client, ServerBase serverBase)
+        private static async Task DownloadStreamFromClient(ClientInfo client, ServerBase serverBase)
         {
             MethodCallbackInfo callback = null;
             string guid = Guid.NewGuid().ToString();
@@ -79,7 +80,7 @@ namespace SignalGo.Server.ServiceManager.Providers
         /// </summary>
         /// <param name="stream">client stream</param>
         /// <param name="client">client</param>
-        private static async void UploadStreamToClient(ClientInfo client, ServerBase serverBase)
+        private static async Task UploadStreamToClient(ClientInfo client, ServerBase serverBase)
         {
             MethodCallbackInfo callback = null;
             IStreamInfo streamInfo = null;
@@ -115,7 +116,7 @@ namespace SignalGo.Server.ServiceManager.Providers
             }
             catch (Exception ex)
             {
-                if (streamInfo == null)
+                if (streamInfo != null)
                     streamInfo.Dispose();
                 stream.Dispose();
                 if (userStream != null)
@@ -123,7 +124,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     userStream.Dispose();
                     Console.WriteLine("user stream disposed");
                 }
-                if (!isCallbackSended)
+                if (!isCallbackSended && !client.ClientStream.IsClosed)
                 {
                     if (callback == null)
                         callback = new MethodCallbackInfo();

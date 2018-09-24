@@ -449,7 +449,17 @@ namespace SignalGo.Server.Models
         {
             if (typeof(T).GetIsInterface())
             {
-                T objectInstance = InterfaceWrapper.Wrap<T>(async (serviceName, method, args) =>
+                T objectInstance = InterfaceWrapper.Wrap<T>((serviceName, method, args) =>
+                {
+                    string methodName = method.Name;
+                    Task task = null;
+                    if (client.IsWebSocket)
+                        task = ServerExtensions.SendWebSocketDataWithCallClientServiceMethod(serverBase, client, method.ReturnType, serviceName, method.Name, method.MethodToParameters(x => ServerSerializationHelper.SerializeObject(x, serverBase), args).ToArray());
+                    else
+                        task = ServerExtensions.SendDataWithCallClientServiceMethod(serverBase, client, method.ReturnType, serviceName, method.Name, method.MethodToParameters(x => ServerSerializationHelper.SerializeObject(x, serverBase), args).ToArray());
+                    task.GetAwaiter().GetResult();
+                    return task.GetType().GetProperty("Result").GetValue(task, null);
+                }, (serviceName, method, args) =>
                 {
                     //this is async action
                     if (method.ReturnType == typeof(Task))
@@ -469,17 +479,7 @@ namespace SignalGo.Server.Models
                         else
                             return ServerExtensions.SendDataWithCallClientServiceMethod(serverBase, client, method.ReturnType.GetGenericArguments()[0], serviceName, method.Name, method.MethodToParameters(x => ServerSerializationHelper.SerializeObject(x, serverBase), args).ToArray());
                     }
-                    else
-                    {
-                        string methodName = method.Name;
-                        Task task = null;
-                        if (client.IsWebSocket)
-                            task = ServerExtensions.SendWebSocketDataWithCallClientServiceMethod(serverBase, client, method.ReturnType, serviceName, method.Name, method.MethodToParameters(x => ServerSerializationHelper.SerializeObject(x, serverBase), args).ToArray());
-                        else
-                            task = ServerExtensions.SendDataWithCallClientServiceMethod(serverBase, client, method.ReturnType, serviceName, method.Name, method.MethodToParameters(x => ServerSerializationHelper.SerializeObject(x, serverBase), args).ToArray());
-                        await task;
-                        return task.GetType().GetProperty("Result").GetValue(task, null);
-                    }
+                    throw new NotSupportedException();
                 });
 
                 return objectInstance;

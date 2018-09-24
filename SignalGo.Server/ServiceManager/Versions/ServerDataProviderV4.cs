@@ -158,6 +158,11 @@ namespace SignalGo.Server.ServiceManager.Versions
                 string firstLineString = await reader.ReadLineAsync();
                 if (firstLineString.Contains("SignalGo-Stream/4.0"))
                 {
+                    if (!_serverBase.ProviderSetting.IsEnabledToUseTimeout)
+                    {
+                        tcpClient.GetStream().ReadTimeout = -1;
+                        tcpClient.GetStream().WriteTimeout = -1;
+                    }
                     client = CreateClientInfo(false, tcpClient, reader);
                     client.StreamHelper = SignalGoStreamBase.CurrentBase;
                     SignalGoStreamProvider.StartToReadingClientData(client, _serverBase);

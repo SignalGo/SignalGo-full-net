@@ -318,11 +318,33 @@ namespace SignalGo.Client.ClientManager
 #endif
             }
 
-#if (NET40 || NET35)
             T objectInstance = InterfaceWrapper.Wrap<T>((serviceName, method, args) =>
+            {
+                if (typeof(void) == method.ReturnType)
+                {
+#if (NET40 || NET35)
+                    ConnectorExtensions.SendData(this, serviceName, method.Name, method.MethodToParameters(x => ClientSerializationHelper.SerializeObject(x), args).ToArray());
 #else
-            T objectInstance = InterfaceWrapper.Wrap<T>(async (serviceName, method, args) =>
+                    ConnectorExtensions.SendDataAsync(this, serviceName, method.Name, method.MethodToParameters(x => ClientSerializationHelper.SerializeObject(x), args).ToArray()).GetAwaiter().GetResult();
 #endif
+                    return null;
+                }
+                else
+                {
+                    MethodInfo getServiceMethod = type.FindMethod(method.Name);
+                    List<CustomDataExchangerAttribute> customDataExchanger = getServiceMethod.GetCustomAttributes(typeof(CustomDataExchangerAttribute), true).Cast<CustomDataExchangerAttribute>().Where(x => x.GetExchangerByUserCustomization(this)).ToList();
+#if (NET40 || NET35)
+                    string data = ConnectorExtensions.SendData(this, serviceName, method.Name, method.MethodToParameters(x => ClientSerializationHelper.SerializeObject(x), args).ToArray());
+#else
+                    string data = ConnectorExtensions.SendDataAsync(this, serviceName, method.Name, method.MethodToParameters(x => ClientSerializationHelper.SerializeObject(x), args).ToArray()).GetAwaiter().GetResult();
+#endif
+                    if (data == null)
+                        return null;
+                    object result = ClientSerializationHelper.DeserializeObject(data.ToString(), method.ReturnType, customDataExchanger: customDataExchanger.ToArray());
+
+                    return result;
+                };
+            }, (serviceName, method, args) =>
             {
                 //this is async action
                 if (method.ReturnType == typeof(Task))
@@ -330,15 +352,7 @@ namespace SignalGo.Client.ClientManager
                     string methodName = method.Name;
                     if (methodName.EndsWith("Async"))
                         methodName = methodName.Substring(0, methodName.Length - 5);
-#if (NET40 || NET35)
-                    return Task.Factory.StartNew(() =>
-#else
-                    return Task.Run(() =>
-#endif
-                    {
-                        ConnectorExtensions.SendData(this, serviceName, methodName, method.MethodToParameters(x => ClientSerializationHelper.SerializeObject(x), args).ToArray());
-                        return (object)null;
-                    });
+                    return ConnectorExtensions.SendDataTaskAsync<object>(this, serviceName, methodName, method, method.MethodToParameters(x => ClientSerializationHelper.SerializeObject(x), args).ToArray());
                 }
                 //this is async function
                 else if (method.ReturnType.GetBaseType() == typeof(Task))
@@ -347,63 +361,13 @@ namespace SignalGo.Client.ClientManager
                     if (methodName.ToLower().EndsWith("async"))
                         methodName = methodName.Substring(0, methodName.Length - 5);
                     // ConnectorExtension.SendDataAsync<object>()
-                    MethodInfo findMethod = typeof(ConnectorExtensions).FindMethod("SendDataTask", BindingFlags.Static | BindingFlags.NonPublic);
+                    MethodInfo findMethod = typeof(ConnectorExtensions).FindMethod("SendDataTaskAsync", BindingFlags.Static | BindingFlags.NonPublic);
                     Type methodType = method.ReturnType.GetListOfGenericArguments().FirstOrDefault();
                     MethodInfo madeMethod = findMethod.MakeGenericMethod(methodType);
-#if (NET40 || NET35)
-                    return Task.Factory.StartNew(() => madeMethod.Invoke(this, new object[] { this, serviceName, methodName, method, args }));
-#else
-                    return Task.Run(() => madeMethod.Invoke(this, new object[] { this, serviceName, methodName, method, args }));
-#endif
 
-                    //var funcR = new Func<object>(() =>
-                    //{
-                    //    var data = ConnectorExtension.SendDataAsync(this, serviceName, methodName, args);
-                    //    if (data == null)
-                    //        return null;
-                    //    if (data is StreamInfo)
-                    //        return data;
-                    //    else
-                    //    {
-                    //        var result = ClientSerializationHelper.DeserializeObject(data.ToString(), methodType);
-                    //        return result;
-                    //    }
-                    //});
-                    //var mc_custom_type = typeof(FunctionCaster<>).MakeGenericType(methodType);
-                    //var mc_instance = Activator.CreateInstance(mc_custom_type);
-                    //var mc_custom_method = mc_custom_type.FindMethod("Do");
-                    //return mc_custom_method.Invoke(mc_instance, new object[] { funcR });
+                    return madeMethod.Invoke(this, new object[] { this, serviceName, methodName, method, args });
                 }
-                else
-                {
-                    if (typeof(void) == method.ReturnType)
-                    {
-#if (NET40 || NET35)
-                        ConnectorExtensions.SendData(this, serviceName, method.Name, method.MethodToParameters(x => ClientSerializationHelper.SerializeObject(x), args).ToArray());
-#else
-                        await ConnectorExtensions.SendData(this, serviceName, method.Name, method.MethodToParameters(x => ClientSerializationHelper.SerializeObject(x), args).ToArray());
-#endif
-                        return null;
-                    }
-                    else
-                    {
-                        MethodInfo getServiceMethod = type.FindMethod(method.Name);
-                        List<CustomDataExchangerAttribute> customDataExchanger = getServiceMethod.GetCustomAttributes(typeof(CustomDataExchangerAttribute), true).Cast<CustomDataExchangerAttribute>().Where(x => x.GetExchangerByUserCustomization(this)).ToList();
-#if (NET40 || NET35)
-                        string data = ConnectorExtensions.SendData(this, serviceName, method.Name, method.MethodToParameters(x => ClientSerializationHelper.SerializeObject(x), args).ToArray());
-#else
-                        string data = await ConnectorExtensions.SendData(this, serviceName, method.Name, method.MethodToParameters(x => ClientSerializationHelper.SerializeObject(x), args).ToArray());
-#endif
-                        if (data == null)
-                            return null;
-                        object result = ClientSerializationHelper.DeserializeObject(data.ToString(), method.ReturnType, customDataExchanger: customDataExchanger.ToArray());
-#if (NET40 || NET35)
-                        return Task.Factory.StartNew(() => result);
-#else
-                        return Task.Run(() => result);
-#endif
-                    };
-                }
+                throw new NotSupportedException();
             });
 
             Services.TryAdd(name, objectInstance);
@@ -441,27 +405,28 @@ namespace SignalGo.Client.ClientManager
 
             T objectInstance = InterfaceWrapper.Wrap<T>((serviceName, method, args) =>
             {
+#if (NET40 || NET35)
+                return UploadStreamAsync<object>(name, serverAddress, port, serviceName, method, args).Result;
+#else
+                return UploadStreamAsync<object>(name, serverAddress, port, serviceName, method, args).GetAwaiter().GetResult();
+#endif
+            }, (serviceName, method, args) =>
+            {
                 if (method.ReturnType == typeof(Task))
                 {
-                    return UploadStream(name, serverAddress, port, serviceName, method, args, false);
+                    return UploadStreamAsync<object>(name, serverAddress, port, serviceName, method, args);
                 }
                 //this is async function
                 else if (method.ReturnType.GetBaseType() == typeof(Task))
                 {
-                    // ConnectorExtension.SendDataAsync<object>()
-                    MethodInfo findMethod = typeof(ConnectorBase).FindMethod("UploadStreamAsync", BindingFlags.Instance | BindingFlags.NonPublic);
+                    //return UploadStreamAsync(name, serverAddress, port, serviceName, method, args);
+                    //ConnectorExtension.SendDataAsync<object>()
+                    MethodInfo findMethod = typeof(ConnectorBase).FindMethod("UploadStreamAsync");
                     Type methodType = method.ReturnType.GetListOfGenericArguments().FirstOrDefault();
                     MethodInfo madeMethod = findMethod.MakeGenericMethod(methodType);
-#if (NET40 || NET35)
-                    return Task.Factory.StartNew(() => madeMethod.Invoke(this, new object[] { name, serverAddress, port, serviceName, method, args }));
-#else
-                    return Task.Run(() => madeMethod.Invoke(this, new object[] { name, serverAddress, port, serviceName, method, args }));
-#endif
+                    return madeMethod.Invoke(this, new object[] { name, serverAddress, port, serviceName, method, args });
                 }
-                else
-                {
-                    return UploadStream(name, serverAddress, port, serviceName, method, args, false);
-                }
+                throw new NotSupportedException();
             });
             InstancesOfRegisterStreamService.TryAdd(callKey, objectInstance);
             return objectInstance;
@@ -476,9 +441,9 @@ namespace SignalGo.Client.ClientManager
         //}
 
 #if (NET40 || NET35)
-        public Task<object> UploadStream(string name, string serverAddress, int? port, string serviceName, MethodInfo method, object[] args, bool isAsync)
+        public Task<T> UploadStreamAsync<T>(string name, string serverAddress, int? port, string serviceName, MethodInfo method, object[] args)
 #else
-        public async Task<object> UploadStream(string name, string serverAddress, int? port, string serviceName, MethodInfo method, object[] args, bool isAsync)
+        public async Task<T> UploadStreamAsync<T>(string name, string serverAddress, int? port, string serviceName, MethodInfo method, object[] args)
 #endif
         {
             if (string.IsNullOrEmpty(serverAddress))
@@ -648,7 +613,7 @@ namespace SignalGo.Client.ClientManager
             if (callbackInfo.IsException)
                 throw new Exception(callbackInfo.Data);
             Type methodType = method.ReturnType;
-            if (isAsync)
+            if (methodType.GetBaseType() == typeof(Task))
                 methodType = method.ReturnType.GetListOfGenericArguments().FirstOrDefault();
 
             object result = ClientSerializationHelper.DeserializeObject(callbackInfo.Data, methodType);
@@ -671,9 +636,9 @@ namespace SignalGo.Client.ClientManager
             }
 
 #if (NET40 || NET35)
-            return Task.Factory.StartNew(() => result);
+            return Task.Factory.StartNew(() => (T)result);
 #else
-            return result;
+            return (T)result;
 #endif
         }
         public static T SendOneWayMethod<T>(string serverAddress, int port, string serviceName, string methodName, params Shared.Models.ParameterInfo[] parameters)
@@ -964,11 +929,10 @@ namespace SignalGo.Client.ClientManager
                             string json = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
                             MethodCallbackInfo callback = ClientSerializationHelper.DeserializeObject<MethodCallbackInfo>(json);
 
-                            bool geted = ConnectorExtensions.WaitedMethodsForResponse.TryGetValue(callback.Guid, out KeyValue<AutoResetEvent, MethodCallbackInfo> keyValue);
+                            bool geted = ConnectorExtensions.WaitedMethodsForResponse.TryGetValue(callback.Guid, out TaskCompletionSource<MethodCallbackInfo> keyValue);
                             if (geted)
                             {
-                                keyValue.Value = callback;
-                                keyValue.Key.Set();
+                                keyValue.SetResult(callback);
                             }
                         }
                         else if (dataType == DataType.GetServiceDetails)
@@ -1128,13 +1092,12 @@ namespace SignalGo.Client.ClientManager
             }
             catch (Exception ex)
             {
-                if (ConnectorExtensions.WaitedMethodsForResponse.TryGetValue(callback.Guid, out KeyValue<AutoResetEvent, MethodCallbackInfo> keyValue))
+                if (ConnectorExtensions.WaitedMethodsForResponse.TryGetValue(callback.Guid, out TaskCompletionSource<MethodCallbackInfo> keyValue))
                 {
-                    if (keyValue.Value == null)
-                        keyValue.Value = new MethodCallbackInfo();
-                    keyValue.Value.IsException = true;
-                    keyValue.Value.Data = ex.Message;
-                    keyValue.Key.Set();
+                    MethodCallbackInfo data = new MethodCallbackInfo();
+                    data.IsException = true;
+                    data.Data = ex.Message;
+                    keyValue.SetResult(data);
                 }
                 //AutoLogger.LogError(ex, "ConnectorBase SendData");
             }
@@ -1369,9 +1332,9 @@ namespace SignalGo.Client.ClientManager
 #else
                 _client.Close();
 #endif
-            foreach (KeyValuePair<string, KeyValue<AutoResetEvent, MethodCallbackInfo>> item in ConnectorExtensions.WaitedMethodsForResponse)
+            foreach (KeyValuePair<string, TaskCompletionSource<MethodCallbackInfo>> item in ConnectorExtensions.WaitedMethodsForResponse)
             {
-                item.Value.Key.Set();
+                item.Value.SetCanceled();
             }
             ConnectorExtensions.WaitedMethodsForResponse.Clear();
             if (IsConnected)

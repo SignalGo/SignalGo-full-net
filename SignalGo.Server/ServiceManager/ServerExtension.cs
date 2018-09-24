@@ -101,7 +101,7 @@ namespace SignalGo.Server.ServiceManager
         //    client.StreamHelper.WriteBlockToStream(client.ClientStream, bytes);
         //}
 
-        internal static async Task SendDataWithCallClientServiceMethod(ServerBase serverBase, ClientInfo client, Type returnType, string serviceName, string methodName, params Shared.Models.ParameterInfo[] args)
+        internal static async Task<object> SendDataWithCallClientServiceMethod(ServerBase serverBase, ClientInfo client, Type returnType, string serviceName, string methodName, params Shared.Models.ParameterInfo[] args)
         {
             if (returnType == null)
                 returnType = typeof(object);
@@ -133,11 +133,11 @@ namespace SignalGo.Server.ServiceManager
             bytes.AddRange(jsonBytes);
 
             await client.StreamHelper.WriteToStreamAsync(client.ClientStream, bytes.ToArray());
-            await (Task)taskCompletionSource.GetType().GetProperty("Task").GetValue(taskCompletionSource, null);
+            return taskCompletionSource.GetType().GetProperty("Task").GetValue(taskCompletionSource, null);
 #endif
         }
 
-        internal static async Task SendWebSocketDataWithCallClientServiceMethod(ServerBase serverBase, ClientInfo client, Type returnType, string serviceName, string methodName, params Shared.Models.ParameterInfo[] args)
+        internal static async Task<object> SendWebSocketDataWithCallClientServiceMethod(ServerBase serverBase, ClientInfo client, Type returnType, string serviceName, string methodName, params Shared.Models.ParameterInfo[] args)
         {
             if (returnType == null)
                 returnType = typeof(object);
@@ -177,7 +177,7 @@ namespace SignalGo.Server.ServiceManager
                 await client.StreamHelper.WriteToStreamAsync(client.ClientStream, result);
             }
 
-            await (Task)taskCompletionSource.GetType().GetProperty("Task").GetValue(taskCompletionSource, null);
+            return taskCompletionSource.GetType().GetProperty("Task").GetValue(taskCompletionSource, null);
 #endif
         }
         //static object SendCallClientMethod(this OperationCalls client, string callerName, params object[] args)

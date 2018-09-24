@@ -46,7 +46,7 @@ namespace SignalGo.Shared.IO
             _stream.Flush();
         }
 #else
-   public Task FlushAsync()
+        public Task FlushAsync()
         {
             return _stream.FlushAsync();
         }
@@ -59,7 +59,7 @@ namespace SignalGo.Shared.IO
 #else
         public async Task<int> ReadAsync(byte[] buffer, int offset, int count)
         {
-            if (_stream.ReadTimeout > 0)
+            if (_stream.CanTimeout && _stream.ReadTimeout > 0)
             {
                 int ReciveCount = 0;
                 Task receiveTask = Task.Run(async () => { ReciveCount = await _stream.ReadAsync(buffer, offset, count); });
