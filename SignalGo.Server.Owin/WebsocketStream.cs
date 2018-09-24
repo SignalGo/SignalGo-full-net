@@ -13,6 +13,10 @@ namespace SignalGo.Server.Owin
             _webSocket = webSocket;
         }
 
+        public int ReceiveTimeout { get; set; } = -1;
+
+        public int SendTimeout { get; set; } = -1;
+
         public void Dispose()
         {
 

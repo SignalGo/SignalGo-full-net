@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <!--netstandard2.0;-->
-    <TargetFrameworks>net45;net40;net35;netstandard1.6;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>net35;net40;net45;netstandard1.6;netstandard2.0</TargetFrameworks>
     <MinimumVisualStudioVersion>10.0</MinimumVisualStudioVersion>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -87,10 +87,10 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net45|AnyCPU'">
+  <!--<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net45|AnyCPU'">
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningsAsErrors />
-  </PropertyGroup>
+  </PropertyGroup>-->
 
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net35'">
@@ -102,6 +102,7 @@
     <Reference Include="System.Xml" />
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
     <PackageReference Include="TaskParallelLibrary" Version="1.0.2856" />
+    <PackageReference Include="NetLegacySupport.Tuple" Version="1.1.1" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net40'">
     <Reference Include="Microsoft.CSharp" />
@@ -165,6 +166,7 @@
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
     <PackageReference Include="rda.SocketsForPCL" Version="2.0.2" />
     <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
+    <PackageReference Include="Microsoft.Extensions.Primitives" Version="2.1.1" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'portable-net45+win8+wpa81'">
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />

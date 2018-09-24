@@ -1,6 +1,8 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace SignalGo.Shared.IO
 {
@@ -62,12 +64,19 @@ namespace SignalGo.Shared.IO
             throw new NotImplementedException();
         }
 
+#if (NET35 || NET40)
         public override int Read(byte[] buffer, int offset, int count)
         {
-            byte[] result = _pipeNetworkStream.Read(count, out int readCount);
-            Array.Copy(result, buffer, result.Length);
+            int readCount = _pipeNetworkStream.Read(buffer, count);
             return readCount;
         }
+#else
+        public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+        {
+            int readCount = await _pipeNetworkStream.ReadAsync(buffer, count);
+            return readCount;
+        }
+#endif
 
         public override long Seek(long offset, SeekOrigin origin)
         {
@@ -78,13 +87,34 @@ namespace SignalGo.Shared.IO
         {
             throw new NotImplementedException();
         }
+#if (!NET35 && !NET40)
+        public override int Read(byte[] buffer, int offset, int count)
+        {
+            throw new NotImplementedException();
+        }
 
         public override void Write(byte[] buffer, int offset, int count)
         {
-            if (buffer.Length != count)
-                _pipeNetworkStream.Write(buffer.Take(count).ToArray());
-            else
-                _pipeNetworkStream.Write(buffer);
+            throw new NotImplementedException();
         }
+#endif
+
+#if (NET35 || NET40)
+        public override void Write(byte[] buffer, int offset, int count)
+        {
+            if (buffer.Length != count)
+                _pipeNetworkStream.Write(buffer.Take(count).ToArray(), offset, count);
+            else
+                _pipeNetworkStream.Write(buffer, offset, count);
+        }
+#else
+        public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+        {
+            if (buffer.Length != count)
+                return _pipeNetworkStream.WriteAsync(buffer.Take(count).ToArray(), offset, count);
+            else
+                return _pipeNetworkStream.WriteAsync(buffer, offset, count);
+        }
+#endif
     }
 }

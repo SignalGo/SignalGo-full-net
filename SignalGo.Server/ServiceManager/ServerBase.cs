@@ -10,6 +10,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Sockets;
 using System.Reflection;
 
 namespace SignalGo.Server.ServiceManager
@@ -160,13 +161,23 @@ namespace SignalGo.Server.ServiceManager
             ModellingReferencesAssemblies.Add(assembly);
         }
 
-        internal void DisposeClient(ClientInfo client, string reason)
+        internal void DisposeClient(ClientInfo client, TcpClient tcpClient, string reason)
         {
             try
             {
                 //Console.WriteLine($"Client disposed " + (client == null ? "null!" : client.ClientId) + " reason: " + reason);
                 if (client == null)
+                {
+                    if (tcpClient != null)
+                    {
+#if (NETSTANDARD1_6 || NETCOREAPP1_1)
+                        tcpClient.Dispose();
+#else
+                        tcpClient.Close();
+#endif
+                    }
                     return;
+                }
                 Clients.Remove(client.ClientId);
                 try
                 {
@@ -196,12 +207,15 @@ namespace SignalGo.Server.ServiceManager
 
                 client.OnDisconnected?.Invoke();
                 OnDisconnectedClientAction?.Invoke(client);
-                //GC.Collect();
             }
             catch (Exception ex)
             {
                 Console.WriteLine("DisposeClient " + ex);
                 AutoLogger.LogError(ex, "DisposeClientError");
+            }
+            finally
+            {
+                //GC.Collect();
             }
         }
 
@@ -224,7 +238,7 @@ namespace SignalGo.Server.ServiceManager
         /// <param name="client">client info</param>
         public void CloseClient(ClientInfo client)
         {
-            DisposeClient(client, "manualy called CloseClient");
+            DisposeClient(client, null, "manualy called CloseClient");
         }
         /// <summary>
         ///  This closes the client passing its id
@@ -233,7 +247,7 @@ namespace SignalGo.Server.ServiceManager
         public void CloseClient(string clientId)
         {
             if (Clients.TryGetValue(clientId, out ClientInfo client))
-                DisposeClient(client, "manualy called CloseClient 2");
+                DisposeClient(client, null, "manualy called CloseClient 2");
         }
         /// <summary>
         /// When server is disposed
@@ -252,7 +266,7 @@ namespace SignalGo.Server.ServiceManager
         {
             foreach (KeyValuePair<string, ClientInfo> item in Clients.ToList())
             {
-                DisposeClient(item.Value, "server stopped");
+                DisposeClient(item.Value, null, "server stopped");
             }
             IsStarted = false;
             OnServerDisconnectedAction?.Invoke();

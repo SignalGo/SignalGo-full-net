@@ -24,7 +24,7 @@ namespace SignalGo.Server.Owin
         {
             if (!RequestHeaders.ContainsKey(header))
                 return null;
-            return ResponseHeaders[header].FirstOrDefault();
+            return RequestHeaders[header].FirstOrDefault();
         }
     }
 }

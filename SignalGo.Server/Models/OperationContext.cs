@@ -2,7 +2,6 @@
 using SignalGo.Server.ServiceManager;
 using SignalGo.Shared.DataTypes;
 using SignalGo.Shared.Helpers;
-using SignalGo.Shared.IO;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -30,6 +29,7 @@ namespace SignalGo.Server.Models
                     CurrentTaskServerTasks[Task.CurrentId.GetValueOrDefault()] = value;
             }
         }
+
         public static OperationContext Current
         {
             get
@@ -37,8 +37,8 @@ namespace SignalGo.Server.Models
                 ServerBase currentServer = CurrentTaskServer;
                 if (Task.CurrentId != null && currentServer != null && currentServer.TaskOfClientInfoes.TryGetValue(Task.CurrentId.GetValueOrDefault(), out string clientId))
                 {
-                    currentServer.Clients.TryGetValue(clientId, out ClientInfo clientInfo);
-                    return new OperationContext() { Client = clientInfo, ClientId = clientId, ServerBase = currentServer };
+                    if (currentServer.Clients.TryGetValue(clientId, out ClientInfo clientInfo))
+                        return new OperationContext() { Client = clientInfo, ClientId = clientId, ServerBase = currentServer };
                 }
                 throw new Exception("Task.CurrentId is null or empty! Do not call this property or method inside of another thread or task you have to call this inside of server methods not another thread");
             }
@@ -117,15 +117,15 @@ namespace SignalGo.Server.Models
         {
 
         }
+
     }
 
     public class OperationContextBase
     {
         internal static ConcurrentDictionary<ClientInfo, HashSet<object>> SavedSettings { get; set; } = new ConcurrentDictionary<ClientInfo, HashSet<object>>();
         internal static ConcurrentDictionary<string, HashSet<object>> CustomClientSavedSettings { get; set; } = new ConcurrentDictionary<string, HashSet<object>>();
-        internal static object GetCurrentSetting(Type type)
+        internal static object GetCurrentSetting(Type type, OperationContext context)
         {
-            OperationContext context = OperationContext.Current;
             if (context == null)
                 throw new Exception("SynchronizationContext is null or empty! Do not call this property inside of another thread that do not have any synchronizationContext or you can call SynchronizationContext.SetSynchronizationContext(new SynchronizationContext()); and ServerBase.AllDispatchers must contine this");
 
@@ -133,12 +133,7 @@ namespace SignalGo.Server.Models
             {
                 var sessionPeroperty = type.GetListOfProperties().Where(x => x.GetCustomAttributes<HttpKeyAttribute>().FirstOrDefault(y => !y.IsExpireField) != null).Select(x => new { Info = x, Attribute = x.GetCustomAttributes<HttpKeyAttribute>().FirstOrDefault() }).FirstOrDefault();
                 var expirePeroperty = type.GetListOfProperties().Where(x => x.GetCustomAttributes<HttpKeyAttribute>().FirstOrDefault(y => y.IsExpireField) != null).Select(x => new { Info = x, Attribute = x.GetCustomAttributes<HttpKeyAttribute>().FirstOrDefault() }).FirstOrDefault();
-                //var property = type.GetListOfProperties().Select(x => new
-                //{
-                //    Info = x,
-                //    Attribute = x.GetCustomAttributes<HttpKeyAttribute>().FirstOrDefault(y => !y.IsExpireField),
-                //    ExpiredAttribute = type.GetListOfProperties().Where(y => y.GetCustomAttributes<HttpKeyAttribute>().FirstOrDefault(j => j.IsExpireField) != null).Select(y => y.GetCustomAttributes<HttpKeyAttribute>().FirstOrDefault(j => j.IsExpireField)).FirstOrDefault()
-                //}).FirstOrDefault(x => x.Attribute != null);
+
                 if (sessionPeroperty == null)
                     throw new Exception("HttpKeyAttribute on your one properties on class not found please made your string property that have HttpKeyAttribute on the top!");
                 else if (sessionPeroperty.Info.PropertyType != typeof(string))
@@ -176,6 +171,16 @@ namespace SignalGo.Server.Models
             return null;
         }
 
+        internal static bool HasSettingNoHttp(Type type, ClientInfo clientInfo)
+        {
+            if (clientInfo is HttpClientInfo)
+                return false;
+            else if (SavedSettings.TryGetValue(clientInfo, out HashSet<object> result))
+            {
+                return result.Any(x => x.GetType() == type);
+            }
+            return false;
+        }
         /// <summary>
         /// set setting for this client
         /// </summary>
@@ -255,7 +260,7 @@ namespace SignalGo.Server.Models
         {
             get
             {
-                return (T)GetCurrentSetting(typeof(T));
+                return (T)GetCurrentSetting(typeof(T), OperationContext.Current);
             }
             set
             {
@@ -413,6 +418,11 @@ namespace SignalGo.Server.Models
             }
             return null;
         }
+
+        public static bool HasSettingNoHttp(ClientInfo clientInfo)
+        {
+            return HasSettingNoHttp(typeof(T), clientInfo);
+        }
     }
 
     public class ClientContext<T>
@@ -441,6 +451,16 @@ namespace SignalGo.Server.Models
             {
                 T objectInstance = InterfaceWrapper.Wrap<T>((serviceName, method, args) =>
                 {
+                    string methodName = method.Name;
+                    Task task = null;
+                    if (client.IsWebSocket)
+                        task = ServerExtensions.SendWebSocketDataWithCallClientServiceMethod(serverBase, client, method.ReturnType, serviceName, method.Name, method.MethodToParameters(x => ServerSerializationHelper.SerializeObject(x, serverBase), args).ToArray());
+                    else
+                        task = ServerExtensions.SendDataWithCallClientServiceMethod(serverBase, client, method.ReturnType, serviceName, method.Name, method.MethodToParameters(x => ServerSerializationHelper.SerializeObject(x, serverBase), args).ToArray());
+                    task.GetAwaiter().GetResult();
+                    return task.GetType().GetProperty("Result").GetValue(task, null);
+                }, (serviceName, method, args) =>
+                {
                     //this is async action
                     if (method.ReturnType == typeof(Task))
                     {
@@ -459,17 +479,7 @@ namespace SignalGo.Server.Models
                         else
                             return ServerExtensions.SendDataWithCallClientServiceMethod(serverBase, client, method.ReturnType.GetGenericArguments()[0], serviceName, method.Name, method.MethodToParameters(x => ServerSerializationHelper.SerializeObject(x, serverBase), args).ToArray());
                     }
-                    else
-                    {
-                        string methodName = method.Name;
-                        Task task = null;
-                        if (client.IsWebSocket)
-                            task = ServerExtensions.SendWebSocketDataWithCallClientServiceMethod(serverBase, client, method.ReturnType, serviceName, method.Name, method.MethodToParameters(x => ServerSerializationHelper.SerializeObject(x, serverBase), args).ToArray());
-                        else
-                            task = ServerExtensions.SendDataWithCallClientServiceMethod(serverBase, client, method.ReturnType, serviceName, method.Name, method.MethodToParameters(x => ServerSerializationHelper.SerializeObject(x, serverBase), args).ToArray());
-                        task.Wait();
-                        return task.GetType().GetProperty("Result").GetValue(task, null);
-                    }
+                    throw new NotSupportedException();
                 });
 
                 return objectInstance;
@@ -666,6 +676,35 @@ namespace SignalGo.Server.Models
             return GetListOfExcludeClientServices<T>(context.ServerBase, clientIds);
         }
 
+        /// <summary>
+        /// filter all client services context by client list
+        /// </summary>
+        /// <typeparam name="T">type of service</typeparam>
+        /// <param name="context">client context</param>
+        /// <param name="clients">clients of clients to get client context</param>
+        /// <returns>list of service context</returns>
+        public static IEnumerable<ClientContext<T>> FilterClientContextServices<T>(this OperationContext context, Func<ClientInfo, bool> where) where T : class
+        {
+            return FilterClientContextServices<T>(context.ServerBase, where);
+        }
+
+        /// <summary>
+        /// filter all client services context by client list
+        /// </summary>
+        /// <typeparam name="T">type of service</typeparam>
+        /// <param name="context">client context</param>
+        /// <param name="clients">clients of clients to get client context</param>
+        /// <returns>list of service context</returns>
+        public static IEnumerable<ClientContext<T>> FilterClientContextServicesButMe<T>(this OperationContext context, Func<ClientInfo, bool> where) where T : class
+        {
+            foreach (ClientInfo item in context.ServerBase.Clients.Values.Where(where))
+            {
+                if (item == context.Client)
+                    continue;
+                T find = GenerateClientServiceInstance<T>(context.ServerBase, item);
+                yield return new ClientContext<T>(find, item);
+            }
+        }
 
 
 
@@ -775,6 +814,22 @@ namespace SignalGo.Server.Models
         public static IEnumerable<ClientContext<T>> GetListOfClientContextServices<T>(this ServerBase serverBase, IEnumerable<ClientInfo> clients) where T : class
         {
             foreach (ClientInfo item in clients)
+            {
+                T find = GenerateClientServiceInstance<T>(serverBase, item);
+                yield return new ClientContext<T>(find, item);
+            }
+        }
+
+        /// <summary>
+        /// filter all client services context by client list
+        /// </summary>
+        /// <typeparam name="T">type of service</typeparam>
+        /// <param name="context">client context</param>
+        /// <param name="clients">clients of clients to get client context</param>
+        /// <returns>list of service context</returns>
+        public static IEnumerable<ClientContext<T>> FilterClientContextServices<T>(this ServerBase serverBase, Func<ClientInfo, bool> where) where T : class
+        {
+            foreach (ClientInfo item in serverBase.Clients.Values.Where(where))
             {
                 T find = GenerateClientServiceInstance<T>(serverBase, item);
                 yield return new ClientContext<T>(find, item);

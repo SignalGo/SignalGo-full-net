@@ -1,89 +1,104 @@
 ﻿using SignalGo.Server.Models;
 using SignalGo.Server.ServiceManager.Providers;
+using SignalGo.Shared.Converters;
 using SignalGo.Shared.IO;
 using System;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SignalGo.Server.ServiceManager.Versions
 {
     public class ServerDataProviderV4 : IServerDataProvider
     {
-        private TcpListener _server;
+        internal TcpListener _server;
         private ServerBase _serverBase;
+        internal bool IsWaitForClient { get; set; }
+
+        private readonly object _lockobject = new object();
+        private volatile int _ConnectedCount;
+        private volatile int _WaitingToReadFirstLineCount;
 #if (NET35 || NET40)
         public void Start(ServerBase serverBase, int port)
 #else
-        public async void Start(ServerBase serverBase, int port)
+        public void Start(ServerBase serverBase, int port)
 #endif
         {
-            _serverBase = serverBase;
-            Exception exception = null;
-            try
+            Thread thread = new Thread(() =>
             {
-                _server = new TcpListener(IPAddress.IPv6Any, port);
+                _serverBase = serverBase;
+                try
+                {
+                    _server = new TcpListener(IPAddress.IPv6Any, port);
 #if (NET35)
 #else
-                _server.Server.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
+                    _server.Server.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
 #endif
-                _server.Server.NoDelay = true;
+                    _server.Server.NoDelay = true;
 
-                _server.Start();
-                if (serverBase.ProviderSetting.IsEnabledToUseTimeout)
-                {
-                    _server.Server.SendTimeout = (int)serverBase.ProviderSetting.SendDataTimeout.TotalMilliseconds;
-                    _server.Server.ReceiveTimeout = (int)serverBase.ProviderSetting.ReceiveDataTimeout.TotalMilliseconds;
-                }
-                serverBase.IsStarted = true;
-                while (true)
-                {
-                    try
+                    _server.Start();
+                    if (serverBase.ProviderSetting.IsEnabledToUseTimeout)
                     {
-#if (NET35 || NET40)
-                        TcpClient client = _server.AcceptTcpClient();
+                        _server.Server.SendTimeout = (int)serverBase.ProviderSetting.SendDataTimeout.TotalMilliseconds;
+                        _server.Server.ReceiveTimeout = (int)serverBase.ProviderSetting.ReceiveDataTimeout.TotalMilliseconds;
+                    }
+                    serverBase.IsStarted = true;
+                    while (true)
+                    {
+                        try
+                        {
+                            IsWaitForClient = true;
+#if (NETSTANDARD1_6)
+                            TcpClient client = _server.AcceptTcpClientAsync().GetAwaiter().GetResult();
 #else
-                        var client = await _server.AcceptTcpClientAsync();
+                            TcpClient client = _server.AcceptTcpClient();
+
 #endif
-                        InitializeClient(client);
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine(ex);
+                            IsWaitForClient = false;
+                            InitializeClient(client);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine(ex);
+                        }
+                        _ConnectedCount++;
                     }
                 }
-            }
-            catch (Exception ex)
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Server Disposed! : " + ex);
+                    serverBase.OnServerInternalExceptionAction?.Invoke(ex);
+                    serverBase.AutoLogger.LogError(ex, "Connect Server");
+                }
+                finally
+                {
+                    Console.WriteLine("server finished");
+                    serverBase.Stop();
+                }
+            })
             {
-                Console.WriteLine("Server Disposed! : " + ex);
-                serverBase.OnServerInternalExceptionAction?.Invoke(ex);
-                serverBase.AutoLogger.LogError(ex, "Connect Server");
-                exception = ex;
-                serverBase.Stop();
-            }
-            if (exception != null)
-                throw exception;
+                IsBackground = false
+            };
+            thread.Start();
         }
 
         /// <summary>
         /// initialzie and read client
         /// </summary>
         /// <param name="tcpClient"></param>
-#if (NET35 || NET40)
         public void InitializeClient(TcpClient tcpClient)
-#else
-        public async void InitializeClient(TcpClient tcpClient)
-#endif
         {
-#if (NET35 || NET40)
-            Task.Factory.StartNew(() =>
-#else
-            await Task.Run(async () =>
-#endif
+            Task.Run(async () =>
             {
                 try
                 {
-                    PipeNetworkStream stream = new PipeNetworkStream(new NormalStream(tcpClient.GetTcpStream(_serverBase)));
+                    int timeout = (int)_serverBase.ProviderSetting.ReceiveDataTimeout.TotalMilliseconds;
+                    tcpClient.GetStream().ReadTimeout = 5000;
+                    tcpClient.GetStream().WriteTimeout = 5000;
+                    PipeNetworkStream stream = new PipeNetworkStream(new NormalStream(await tcpClient.GetTcpStream(_serverBase)), timeout);
                     ExchangeClient(stream, tcpClient);
                 }
                 catch (Exception)
@@ -126,17 +141,28 @@ namespace SignalGo.Server.ServiceManager.Versions
         /// <param name="firstLineString"></param>
         /// <param name="firstLineBytes"></param>
         /// <param name="tcpClient"></param>
-        public void ExchangeClient(PipeNetworkStream reader, TcpClient tcpClient)
+        public async void ExchangeClient(PipeNetworkStream reader, TcpClient tcpClient)
         {
             //File.WriteAllBytes("I:\\signalgotext.txt", reader.LastBytesReaded);
             ClientInfo client = null;
             try
             {
-                string firstLineString = reader.ReadLine();
-                byte[] firstLineBytes = reader.FirstLineBytes;
+                lock (_lockobject)
+                    _WaitingToReadFirstLineCount++;
+                if (_serverBase.ProviderSetting.IsEnabledToUseTimeout)
+                {
+                    tcpClient.GetStream().ReadTimeout = (int)_serverBase.ProviderSetting.ReceiveDataTimeout.TotalMilliseconds;
+                    tcpClient.GetStream().WriteTimeout = (int)_serverBase.ProviderSetting.SendDataTimeout.TotalMilliseconds;
+                }
 
+                string firstLineString = await reader.ReadLineAsync();
                 if (firstLineString.Contains("SignalGo-Stream/4.0"))
                 {
+                    if (!_serverBase.ProviderSetting.IsEnabledToUseTimeout)
+                    {
+                        tcpClient.GetStream().ReadTimeout = -1;
+                        tcpClient.GetStream().WriteTimeout = -1;
+                    }
                     client = CreateClientInfo(false, tcpClient, reader);
                     client.StreamHelper = SignalGoStreamBase.CurrentBase;
                     SignalGoStreamProvider.StartToReadingClientData(client, _serverBase);
@@ -152,24 +178,66 @@ namespace SignalGo.Server.ServiceManager.Versions
                     client = CreateClientInfo(false, tcpClient, reader);
                     //"SignalGo/1.0";
                     client.StreamHelper = SignalGoStreamBase.CurrentBase;
-                    tcpClient.ReceiveTimeout = (int)_serverBase.ProviderSetting.ServerServiceSetting.ReceiveDataTimeout.TotalMilliseconds;
-                    tcpClient.SendTimeout = (int)_serverBase.ProviderSetting.ServerServiceSetting.SendDataTimeout.TotalMilliseconds;
+                    if (_serverBase.ProviderSetting.ServerServiceSetting.IsEnabledToUseTimeout)
+                    {
+                        tcpClient.ReceiveTimeout = (int)_serverBase.ProviderSetting.ServerServiceSetting.ReceiveDataTimeout.TotalMilliseconds;
+                        tcpClient.SendTimeout = (int)_serverBase.ProviderSetting.ServerServiceSetting.SendDataTimeout.TotalMilliseconds;
+                    }
 
                     SignalGoDuplexServiceProvider.StartToReadingClientData(client, _serverBase);
                 }
                 else if (firstLineString.Contains("HTTP/"))
                 {
+                    if (_serverBase.ProviderSetting.HttpSetting.IsEnabledToUseTimeout)
+                    {
+                        tcpClient.GetStream().ReadTimeout = (int)_serverBase.ProviderSetting.HttpSetting.ReceiveDataTimeout.TotalMilliseconds;
+                        tcpClient.GetStream().WriteTimeout = (int)_serverBase.ProviderSetting.HttpSetting.SendDataTimeout.TotalMilliseconds;
+                    }
                     HttpProvider.StartToReadingClientData(tcpClient, _serverBase, reader, firstLineString);
                 }
                 else
                 {
-                    _serverBase.DisposeClient(client, "AddClient header not support");
+                    _serverBase.DisposeClient(client, tcpClient, "AddClient header not support");
                 }
             }
             catch (Exception)
             {
-                _serverBase.DisposeClient(client, "exception");
+                _serverBase.DisposeClient(client, tcpClient, "exception");
             }
+            finally
+            {
+                lock (_lockobject)
+                    _WaitingToReadFirstLineCount--;
+            }
+        }
+
+        public string GetInformation()
+        {
+            StringBuilder stringBuilder = new StringBuilder();
+            stringBuilder.AppendLine("Clients Connected Count: " + _serverBase.Clients.Count);
+#if (!NETSTANDARD1_6)
+            stringBuilder.AppendLine("Thread Count: " + System.Diagnostics.Process.GetCurrentProcess().Threads.Count);
+#endif
+            stringBuilder.AppendLine("ClientServiceCallMethodsResult Count: " + _serverBase.ClientServiceCallMethodsResult.Count);
+            stringBuilder.AppendLine("MultipleInstanceServices Count: " + _serverBase.MultipleInstanceServices.Count);
+            stringBuilder.AppendLine("SingleInstanceServices Count: " + _serverBase.SingleInstanceServices.Count);
+            stringBuilder.AppendLine("TaskOfClientInfoes Count: " + _serverBase.TaskOfClientInfoes.Count);
+            stringBuilder.AppendLine("CustomClientSavedSettings Count: " + OperationContextBase.CustomClientSavedSettings.Count);
+            stringBuilder.AppendLine("CustomClientSavedSettings Count: " + OperationContextBase.SavedSettings.Count);
+            stringBuilder.AppendLine("CachedCustomAttributes Count: " + AttributeHelper.CachedCustomAttributes.Count);
+            stringBuilder.AppendLine("CachedTypesOfAttribute Count: " + AttributeHelper.CachedTypesOfAttribute.Count);
+            stringBuilder.AppendLine("InheritCachedCustomAttributes Count: " + AttributeHelper.InheritCachedCustomAttributes.Count);
+            stringBuilder.AppendLine("CachedMethods Count: " + BaseProvider.CachedMethods.Count);
+            stringBuilder.AppendLine("ListOfContextsDataExchangers Count: " + DataExchanger.ListOfContextsDataExchangers.Count);
+            stringBuilder.AppendLine("CurrentTaskServerTasks Count: " + OperationContext.CurrentTaskServerTasks.Count);
+            stringBuilder.AppendLine("IsWaitForClient: " + IsWaitForClient);
+            stringBuilder.AppendLine("IsStarted: " + _serverBase.IsStarted);
+            stringBuilder.AppendLine("Connected: " + _server.Server.Connected);
+            stringBuilder.AppendLine("Available: " + _server.Server.Available);
+            stringBuilder.AppendLine("_ConnectedCount: " + _ConnectedCount);
+            stringBuilder.AppendLine("_WaitingToReadFirstLineCount: " + _WaitingToReadFirstLineCount);
+
+            return stringBuilder.ToString();
         }
     }
 }

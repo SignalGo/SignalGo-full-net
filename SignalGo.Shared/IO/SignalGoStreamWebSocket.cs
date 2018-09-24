@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace SignalGo.Shared.IO
 {
@@ -12,28 +13,33 @@ namespace SignalGo.Shared.IO
         }
 
         public static ISignalGoStream CurrentWebSocket { get; set; }
+
+
 #if (NET35 || NET40)
         public override void WriteToStream(PipeNetworkStream stream, byte[] data)
-        {
-            byte[] encode = EncodeMessageToSend(data);
-            stream.Write(encode);
-        }
 #else
-        public override async void WriteToStream(PipeNetworkStream stream, byte[] data)
+        public override Task WriteToStreamAsync(PipeNetworkStream stream, byte[] data)
+#endif
         {
             byte[] encode = EncodeMessageToSend(data);
-            await stream.WriteAsync(encode);
-        }
+#if (NET35 || NET40)
+            stream.Write(encode, 0, encode.Length);
+#else
+            return stream.WriteAsync(encode, 0, encode.Length);
 #endif
-
-        public override byte[] ReadBlockSize(PipeNetworkStream stream, ulong count)
+        }
+#if (NET35 || NET40)
+        public override byte[] ReadBlockSize(PipeNetworkStream stream, int count)
+#else
+        public override async Task<byte[]> ReadBlockSizeAsync(PipeNetworkStream stream, int count)
+#endif
         {
             List<byte> bytes = new List<byte>();
-            ulong lengthReaded = 0;
+            int lengthReaded = 0;
 
             while (lengthReaded < count)
             {
-                ulong countToRead = count;
+                int countToRead = count;
                 if (lengthReaded + countToRead > count)
                 {
                     countToRead = count - lengthReaded;
@@ -41,22 +47,39 @@ namespace SignalGo.Shared.IO
                 //#if (!PORTABLE)
                 //                Console.WriteLine("countToRead: " + countToRead);
                 //#endif
-                var readBytes = stream.Read((int)countToRead, out int readCount);
+                byte[] readBytes = new byte[countToRead];
+#if (NET35 || NET40)
+                int readCount =  stream.Read(readBytes, countToRead);
+#else
+                int readCount = await stream.ReadAsync(readBytes, countToRead);
+#endif
                 if (readCount <= 0)
                     throw new Exception("read zero buffer! client disconnected: " + readCount);
-                lengthReaded += (ulong)readCount;
+                lengthReaded += readCount;
                 bytes.AddRange(readBytes.ToList().GetRange(0, readCount));
             }
             return bytes.ToArray();
         }
 
-        public override byte[] ReadBlockToEnd(PipeNetworkStream stream, CompressMode compress, uint maximum)
+#if (NET35 || NET40)
+        public override byte[] ReadBlockToEnd(PipeNetworkStream stream, CompressMode compress, int maximum)
+#else
+        public override async Task<byte[]> ReadBlockToEndAsync(PipeNetworkStream stream, CompressMode compress, int maximum)
+#endif
         {
-            ulong size = 0;
-            List<byte> bytes = GetLengthOfWebSocket(stream, ref size);
-            byte[] newBytes = ReadBlockSize(stream, size);
+#if (NET35 || NET40)
+            Tuple<int, byte[]> data = GetLengthOfWebSocket(stream);
+#else
+            Tuple<int, byte[]> data = await GetLengthOfWebSocketAsync(stream);
+#endif
+            byte[] buffer = data.Item2;
+#if (NET35 || NET40)
+            byte[] newBytes = ReadBlockSize(stream, data.Item1);
+#else
+            byte[] newBytes = await ReadBlockSizeAsync(stream, data.Item1);
+#endif
             List<byte> b = new List<byte>();
-            b.AddRange(bytes);
+            b.AddRange(buffer);
             b.AddRange(newBytes);
             byte[] decode = DecodeMessage(b.ToArray());
             if (decode == null || decode.Length == 0)
@@ -66,17 +89,33 @@ namespace SignalGo.Shared.IO
             return decode;
         }
 
+#if (NET35 || NET40)
         public override byte ReadOneByte(PipeNetworkStream stream)
         {
             byte[] dataBytes = ReadBlockToEnd(stream, CompressMode.None, 1);
             return dataBytes[0];
         }
+#else
+        public override async Task<byte> ReadOneByteAsync(PipeNetworkStream stream)
+        {
+            byte[] dataBytes = await ReadBlockToEndAsync(stream, CompressMode.None, 1);
+            return dataBytes[0];
+        }
+#endif
 
-        private List<byte> GetLengthOfWebSocket(PipeNetworkStream stream, ref ulong len)
+#if (NET35 || NET40)
+        private Tuple<int, byte[]> GetLengthOfWebSocket(PipeNetworkStream stream)
+#else
+        private async Task<Tuple<int, byte[]>> GetLengthOfWebSocketAsync(PipeNetworkStream stream)
+#endif
         {
             List<byte> bytes = new List<byte>();
-
+            int len = 0;
+#if (NET35 || NET40)
             bytes.AddRange(ReadBlockSize(stream, 2));
+#else
+            bytes.AddRange(await ReadBlockSizeAsync(stream, 2));
+#endif
             //#if (!PORTABLE)
             //            Console.WriteLine("read block bytes: " + bytes.Count);
             //            foreach (var item in bytes)
@@ -88,19 +127,27 @@ namespace SignalGo.Shared.IO
 
             if (bytes[1] - 128 <= 125)
             {
-                len = (ulong)bytes[1] - 128;
+                len = bytes[1] - 128;
                 len += 4;
             }
             else if (bytes[1] - 128 == 126)
             {
+#if (NET35 || NET40)
                 byte[] newSize = ReadBlockSize(stream, 2);
+#else
+                byte[] newSize = await ReadBlockSizeAsync(stream, 2);
+#endif
                 bytes.AddRange(newSize);
                 len = BitConverter.ToUInt16(new byte[2] { newSize[1], newSize[0] }, 0);
                 len += 4;
             }
             else if (bytes[1] - 128 == 127)
             {
+#if (NET35 || NET40)
                 byte[] newSize = ReadBlockSize(stream, 8);
+#else
+                byte[] newSize = await ReadBlockSizeAsync(stream, 8);
+#endif
                 bytes.AddRange(newSize);
                 len = BitConverter.ToUInt16(new byte[8] { bytes[7], newSize[6], newSize[5], newSize[4], newSize[3], newSize[2], newSize[1], newSize[0] }, 0);
                 len += 4;
@@ -109,7 +156,8 @@ namespace SignalGo.Shared.IO
             {
                 throw new Exception("incorrect websocket data");
             }
-            return bytes;
+
+            return new Tuple<int, byte[]>(len, bytes.ToArray());
         }
 
         public override byte[] EncodeMessageToSend(byte[] bytesRaw)

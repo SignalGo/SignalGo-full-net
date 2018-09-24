@@ -22,25 +22,16 @@ namespace SignalGo.Server.ServiceManager.Providers
     /// </summary>
     public abstract class BaseProvider
     {
-        internal static Task<MethodCallbackInfo> CallMethod(MethodCallInfo callInfo, ClientInfo client, string json, ServerBase serverBase)
+        internal static async Task<MethodCallbackInfo> CallMethod(MethodCallInfo callInfo, ClientInfo client, string json, ServerBase serverBase)
         {
-#if (NET40 || NET35)
-            return Task.Factory.StartNew(() =>
-#else
-            return Task.Run(() =>
-#endif
+            try
             {
-                serverBase.AddTask(Task.CurrentId.GetValueOrDefault(), client.ClientId);
-                try
-                {
-                    return CallMethod(callInfo.ServiceName, callInfo.Guid, callInfo.MethodName, callInfo.Parameters.ToArray(), client, json, serverBase, null, null, out IStreamInfo streamInfo, out List<HttpKeyAttribute> httpKeyAttributes, out Type serviceType, out MethodInfo method, out object serviceInsatnce, out FileActionResult fileActionResult);
-                }
-                finally
-                {
-                    serverBase.RemoveTask(Task.CurrentId.GetValueOrDefault());
-                }
-                //SendCallbackData(callback, client, serverBase);
-            });
+                CallMethodResultInfo<OperationContext> result = await CallMethod(callInfo.ServiceName, callInfo.Guid, callInfo.MethodName, callInfo.Parameters.ToArray(), null, client, json, serverBase, null, null);
+                return result.CallbackInfo;
+            }
+            finally
+            {
+            }
         }
 
         public static bool ExistService(string serviceName, ServerBase serverBase)
@@ -51,292 +42,302 @@ namespace SignalGo.Server.ServiceManager.Providers
             return serverBase.RegisteredServiceTypes.ContainsKey(serviceName);
         }
 
-        internal static MethodCallbackInfo CallMethod(string serviceName, string guid, string methodName, SignalGo.Shared.Models.ParameterInfo[] parameters, ClientInfo client, string json, ServerBase serverBase, HttpPostedFileInfo fileInfo, Func<MethodInfo, bool> canTakeMethod, out IStreamInfo streamInfo, out List<HttpKeyAttribute> httpKeyAttributes, out Type serviceType, out MethodInfo method, out object service, out FileActionResult fileActionResult)
+        internal static Task<CallMethodResultInfo<OperationContext>> CallMethod(string serviceName, string guid, string methodName, SignalGo.Shared.Models.ParameterInfo[] parameters, string jsonParameters, ClientInfo client, string json, ServerBase serverBase, HttpPostedFileInfo fileInfo, Func<MethodInfo, bool> canTakeMethod)
         {
-            serviceName = serviceName.ToLower();
-            httpKeyAttributes = new List<HttpKeyAttribute>();
-            OperationContext.CurrentTaskServer = serverBase;
-            object result = null;
-            method = null;
-            serviceType = null;
-            service = null;
-            Exception exception = null;
-            fileActionResult = null;
-            streamInfo = null;
-            MethodCallbackInfo callback = new MethodCallbackInfo()
+            return Task.Run(async () =>
             {
-                Guid = guid
-            };
+                int taskId = Task.CurrentId.GetValueOrDefault();
+                serverBase.AddTask(taskId, client.ClientId);
 
-            try
-            {
-
-                if (!serverBase.RegisteredServiceTypes.TryGetValue(serviceName, out serviceType))
-                    throw new Exception($"{client.IPAddress} {client.ClientId} Service {serviceName} not found");
-
-                service = GetInstanceOfService(client, serviceName, serviceType, serverBase);
-                if (service == null)
-                    throw new Exception($"{client.IPAddress} {client.ClientId} service {serviceName} not found");
-
-                if (fileInfo != null)
+                object result = null;
+                MethodInfo method = null;//4
+                Type serviceType = null;//3
+                object service = null;//5
+                Exception exception = null;
+                FileActionResult fileActionResult = null;//6
+                IStreamInfo streamInfo = null;//1
+                MethodCallbackInfo callback = null;
+                List<HttpKeyAttribute> httpKeyAttributes = new List<HttpKeyAttribute>();//2
+                OperationContext context = OperationContext.Current;
+                try
                 {
-                    if (service is IHttpClientInfo serviceClientInfo)
-                    {
-                        serviceClientInfo.SetFirstFile(fileInfo);
-                    }
-                    else if (client is HttpClientInfo httpClientInfo)
-                    {
-                        httpClientInfo.SetFirstFile(fileInfo);
-                    }
-                }
-                List<SecurityContractAttribute> securityAttributes = new List<SecurityContractAttribute>();
-                List<CustomDataExchangerAttribute> customDataExchanger = new List<CustomDataExchangerAttribute>();
-                List<ClientLimitationAttribute> clientLimitationAttribute = new List<ClientLimitationAttribute>();
-                List<ConcurrentLockAttribute> concurrentLockAttributes = new List<ConcurrentLockAttribute>();
+                    serviceName = serviceName.ToLower();
+                    OperationContext.CurrentTaskServer = serverBase;
 
-                List<MethodInfo> allMethods = GetMethods(client, methodName, parameters, serviceType, customDataExchanger, securityAttributes, clientLimitationAttribute, concurrentLockAttributes, canTakeMethod).ToList();
-                method = allMethods.FirstOrDefault();
-                if (method == null)
-                {
-                    StringBuilder exceptionResult = new StringBuilder();
-                    exceptionResult.AppendLine("<Exception>");
-                    exceptionResult.AppendLine($"method {methodName} not found");
-                    exceptionResult.AppendLine("<Parameters>");
+                    callback = new MethodCallbackInfo()
+                    {
+                        Guid = guid
+                    };
+                    if (!serverBase.RegisteredServiceTypes.TryGetValue(serviceName, out serviceType))
+                        throw new Exception($"{client.IPAddress} {client.ClientId} Service {serviceName} not found");
+
+                    service = GetInstanceOfService(client, serviceName, serviceType, serverBase);
+                    if (service == null)
+                        throw new Exception($"{client.IPAddress} {client.ClientId} service {serviceName} not found");
+
+                    if (fileInfo != null)
+                    {
+                        if (service is IHttpClientInfo serviceClientInfo)
+                        {
+                            serviceClientInfo.SetFirstFile(fileInfo);
+                        }
+                        else if (client is HttpClientInfo httpClientInfo)
+                        {
+                            httpClientInfo.SetFirstFile(fileInfo);
+                        }
+                    }
+                    List<SecurityContractAttribute> securityAttributes = new List<SecurityContractAttribute>();
+                    List<CustomDataExchangerAttribute> customDataExchanger = new List<CustomDataExchangerAttribute>();
+                    List<ClientLimitationAttribute> clientLimitationAttribute = new List<ClientLimitationAttribute>();
+                    List<ConcurrentLockAttribute> concurrentLockAttributes = new List<ConcurrentLockAttribute>();
+
+                    List<MethodInfo> allMethods = GetMethods(client, methodName, parameters, serviceType, customDataExchanger, securityAttributes, clientLimitationAttribute, concurrentLockAttributes, canTakeMethod).ToList();
+                    method = allMethods.FirstOrDefault();
+                    if (method == null && !string.IsNullOrEmpty(jsonParameters))
+                    {
+                        parameters = new Shared.Models.ParameterInfo[1] { new Shared.Models.ParameterInfo() { Name = "", Value = jsonParameters } };
+                        allMethods = GetMethods(client, methodName, parameters, serviceType, customDataExchanger, securityAttributes, clientLimitationAttribute, concurrentLockAttributes, canTakeMethod).ToList();
+                        method = allMethods.FirstOrDefault();
+                    }
+                    if (method == null)
+                    {
+                        StringBuilder exceptionResult = new StringBuilder();
+                        exceptionResult.AppendLine("<Exception>");
+                        exceptionResult.AppendLine($"method {methodName} not found");
+                        exceptionResult.AppendLine("<Parameters>");
+                        if (parameters != null)
+                        {
+                            foreach (Shared.Models.ParameterInfo item in parameters)
+                            {
+                                exceptionResult.AppendLine((item.Value ?? "null;") + " name: " + (item.Name ?? "no name"));
+                            }
+                        }
+                        exceptionResult.AppendLine("</Parameters>");
+                        exceptionResult.AppendLine("<JSON>");
+                        exceptionResult.AppendLine(json);
+                        exceptionResult.AppendLine("</JSON>");
+                        exceptionResult.AppendLine("</Exception>");
+                        throw new Exception($"{client.IPAddress} {client.ClientId} " + exceptionResult.ToString());
+                    }
+                    //generate dataexchanger and attributes from service class when service type is different
+                    //if (service.GetType() != method.DeclaringType)
+                    //    GetMethods(client, methodName, parameters, service.GetType(), customDataExchanger, securityAttributes, clientLimitationAttribute, concurrentLockAttributes, canTakeMethod).ToList();
+
+                    List<object> parametersValues = new List<object>();
                     if (parameters != null)
                     {
+                        int index = 0;
+                        System.Reflection.ParameterInfo[] prms = method.GetParameters();
                         foreach (Shared.Models.ParameterInfo item in parameters)
                         {
-                            exceptionResult.AppendLine((item.Value ?? "null;") + " name: " + (item.Name ?? "no name"));
-                        }
-                    }
-                    exceptionResult.AppendLine("</Parameters>");
-                    exceptionResult.AppendLine("<JSON>");
-                    exceptionResult.AppendLine(json);
-                    exceptionResult.AppendLine("</JSON>");
-                    exceptionResult.AppendLine("</Exception>");
-                    throw new Exception($"{client.IPAddress} {client.ClientId} " + exceptionResult.ToString());
-                }
-
-                List<object> parametersValues = new List<object>();
-                if (parameters != null)
-                {
-                    int index = 0;
-                    System.Reflection.ParameterInfo[] prms = method.GetParameters();
-                    foreach (Shared.Models.ParameterInfo item in parameters)
-                    {
-                        if (item.Value == null)
-                            parametersValues.Add(DataExchangeConverter.GetDefault(prms[index].ParameterType));
-                        else
-                        {
-                            List<CustomDataExchangerAttribute> parameterDataExchanger = customDataExchanger.ToList();
-                            parameterDataExchanger.AddRange(GetMethodParameterBinds(index, allMethods.ToArray()).Where(x => x.GetExchangerByUserCustomization(client)));
-                            if (SerializeHelper.GetTypeCodeOfObject(prms[index].ParameterType) != SerializeObjectType.Object && !item.Value.StartsWith("\""))
-                                item.Value = "\"" + item.Value + "\"";
-                            object resultJson = ServerSerializationHelper.Deserialize(item.Value, prms[index].ParameterType, serverBase, customDataExchanger: parameterDataExchanger.ToArray(), client: client);
-
-                            if (resultJson == null)
-                            {
-                                if (string.IsNullOrEmpty(item.Value))
-                                    parametersValues.Add(null);
-                                else
-                                    parametersValues.Add(item.Value);
-                            }
+                            if (item.Value == null)
+                                parametersValues.Add(DataExchangeConverter.GetDefault(prms[index].ParameterType));
                             else
                             {
-                                parametersValues.Add(resultJson);
-                                if (resultJson is IStreamInfo _streamInfo)
-                                    _streamInfo.Stream = client.ClientStream;
-                            }
-                        }
-                        index++;
-                    }
-                    if (parameters.Length != prms.Length)
-                    {
-                        for (int i = 0; i < prms.Length; i++)
-                        {
-                            if (parameters.Length <= i || prms[i].Name != parameters[i].Name)
-                            {
-                                parametersValues.Insert(i, prms[i].DefaultValue);
-                            }
-                        }
-                    }
-                }
+                                List<CustomDataExchangerAttribute> parameterDataExchanger = customDataExchanger.ToList();
+                                parameterDataExchanger.AddRange(GetMethodParameterBinds(index, allMethods.ToArray()).Where(x => x.GetExchangerByUserCustomization(client)));
+                                if (SerializeHelper.GetTypeCodeOfObject(prms[index].ParameterType) != SerializeObjectType.Object && !item.Value.StartsWith("\""))
+                                    item.Value = "\"" + item.Value + "\"";
+                                object resultJson = ServerSerializationHelper.Deserialize(item.Value, prms[index].ParameterType, serverBase, customDataExchanger: parameterDataExchanger.ToArray(), client: client);
 
-                foreach (ClientLimitationAttribute attrib in clientLimitationAttribute)
-                {
-                    string[] allowAddresses = attrib.GetAllowAccessIpAddresses();
-                    if (allowAddresses != null && allowAddresses.Length > 0)
-                    {
-                        if (!allowAddresses.Contains(client.IPAddress))
+                                if (resultJson == null)
+                                {
+                                    if (string.IsNullOrEmpty(item.Value))
+                                        parametersValues.Add(null);
+                                    else
+                                        parametersValues.Add(item.Value);
+                                }
+                                else
+                                {
+                                    parametersValues.Add(resultJson);
+                                    if (resultJson is IStreamInfo _streamInfo)
+                                        _streamInfo.Stream = client.ClientStream;
+                                }
+                            }
+                            index++;
+                        }
+                        if (parameters.Length != prms.Length)
                         {
-                            string msg = $"Client IP Have Not Access To Call Method: {client.IPAddress}";
-                            serverBase.AutoLogger.LogText(msg);
-                            callback.IsException = true;
-                            callback.Data = msg;
-                            return callback;
+                            for (int i = 0; i < prms.Length; i++)
+                            {
+                                if (parameters.Length <= i || prms[i].Name != parameters[i].Name)
+                                {
+#if (!NETSTANDARD1_6)
+                                    if (Convert.IsDBNull(prms[i].DefaultValue))
+                                        parametersValues.Insert(i, DataExchangeConverter.GetDefault(prms[i].ParameterType));
+                                    else
+#endif
+                                        parametersValues.Insert(i, prms[i].DefaultValue);
+                                }
+                            }
                         }
                     }
-                    else
+
+                    foreach (ClientLimitationAttribute attrib in clientLimitationAttribute)
                     {
-                        string[] denyAddresses = attrib.GetDenyAccessIpAddresses();
-                        if (denyAddresses != null && denyAddresses.Length > 0)
+                        string[] allowAddresses = attrib.GetAllowAccessIpAddresses();
+                        if (allowAddresses != null && allowAddresses.Length > 0)
                         {
-                            if (denyAddresses.Contains(client.IPAddress))
+                            if (!allowAddresses.Contains(client.IPAddress))
                             {
-                                string msg = $"Client IP Is Deny Access To Call Method: {client.IPAddress}";
+                                string msg = $"Client IP Have Not Access To Call Method: {client.IPAddress}";
                                 serverBase.AutoLogger.LogText(msg);
                                 callback.IsException = true;
                                 callback.Data = msg;
-                                serverBase.AutoLogger.LogText(msg);
-                                return callback;
+                                return new CallMethodResultInfo<OperationContext>(callback, streamInfo, httpKeyAttributes, serviceType, method, service, fileActionResult, context);
                             }
                         }
-                    }
-                }
-
-                //when method have static locl attribute calling is going to lock
-                ConcurrentLockAttribute concurrentLockAttribute = concurrentLockAttributes.FirstOrDefault();
-
-                MethodsCallHandler.BeginMethodCallAction?.Invoke(client, guid, serviceName, method, parameters);
-
-                //check if client have permissions for call method
-                bool canCall = true;
-                foreach (SecurityContractAttribute attrib in securityAttributes)
-                {
-                    if (!attrib.CheckPermission(client, service, method, parametersValues))
-                    {
-                        callback.IsAccessDenied = true;
-                        canCall = false;
-                        if (method.ReturnType != typeof(void))
+                        else
                         {
-                            object data = null;
-                            data = attrib.GetValueWhenDenyPermission(client, service, method, parametersValues);
-                            callback.Data = data == null ? null : ServerSerializationHelper.SerializeObject(data, serverBase, customDataExchanger: customDataExchanger.ToArray(), client: client);
-                        }
-                        break;
-                    }
-                }
-                //var data = (IStreamInfo)parametersValues.FirstOrDefault(x => x.GetType() == typeof(StreamInfo) || (x.GetType().GetIsGenericType() && x.GetType().GetGenericTypeDefinition() == typeof(StreamInfo<>)));
-                //var upStream = new UploadStreamGo(stream);
-                if (canCall)
-                {
-                    try
-                    {
-                        if (concurrentLockAttribute != null)
-                        {
-                            switch (concurrentLockAttribute.Type)
+                            string[] denyAddresses = attrib.GetDenyAccessIpAddresses();
+                            if (denyAddresses != null && denyAddresses.Length > 0)
                             {
-                                case ConcurrentLockType.Full:
-                                    {
-                                        lock (serverBase)
-                                        {
-                                            result = method.Invoke(service, parametersValues.ToArray());
-                                        }
-                                        break;
-                                    }
-                                case ConcurrentLockType.PerClient:
-                                    {
-                                        lock (client)
-                                        {
-                                            result = method.Invoke(service, parametersValues.ToArray());
-                                        }
-                                        break;
-                                    }
-                                case ConcurrentLockType.PerIpAddress:
-                                    {
-                                        lock (client.IPAddress)
-                                        {
-                                            result = method.Invoke(service, parametersValues.ToArray());
-                                        }
-                                        break;
-                                    }
-                                case ConcurrentLockType.PerMethod:
-                                    {
-                                        lock (method)
-                                        {
-                                            result = method.Invoke(service, parametersValues.ToArray());
-                                        }
-                                        break;
-                                    }
+                                if (denyAddresses.Contains(client.IPAddress))
+                                {
+                                    string msg = $"Client IP Is Deny Access To Call Method: {client.IPAddress}";
+                                    serverBase.AutoLogger.LogText(msg);
+                                    callback.IsException = true;
+                                    callback.Data = msg;
+                                    serverBase.AutoLogger.LogText(msg);
+                                    return new CallMethodResultInfo<OperationContext>(callback, streamInfo, httpKeyAttributes, serviceType, method, service, fileActionResult, context);
+                                }
                             }
                         }
-                        else
-                            result = method.Invoke(service, parametersValues.ToArray());
-
-                        HttpKeyAttribute httpKeyOnMethod = (HttpKeyAttribute)method.GetCustomAttributes(typeof(HttpKeyAttribute), true).FirstOrDefault();
-                        if (httpKeyOnMethod != null)
-                            httpKeyAttributes.Add(httpKeyOnMethod);
-                        if (serverBase.ProviderSetting.HttpKeyResponses != null)
-                        {
-                            httpKeyAttributes.AddRange(serverBase.ProviderSetting.HttpKeyResponses);
-                        }
-
-                        if (result != null && result.GetType() == typeof(Task))
-                        {
-                            Task taskResult = (Task)result;
-#if (NET40 || NET35)
-                            taskResult.Wait();
-#else
-                            taskResult.Wait();
-#endif
-                            result = null;
-                        }
-                        //this is async function
-                        else if (result != null && result.GetType().GetBaseType() == typeof(Task))
-                        {
-#if (NET40 || NET35)
-                            Task task = (Task)result;
-                            task.Wait();
-                            result = task.GetType().GetProperty("Result").GetValue(task, null);
-#else
-                            var task = ((Task)result);
-                            task.Wait();
-                            result = task.GetType().GetProperty("Result").GetValue(task, null);
-#endif
-                        }
-
-                        if (result is FileActionResult fResult)
-                            fileActionResult = fResult;
-                        else
-                        {
-                            if (result is IStreamInfo iSResult)
-                                streamInfo = iSResult;
-                            callback.Data = result == null ? null : ServerSerializationHelper.SerializeObject(result, serverBase, customDataExchanger: customDataExchanger.ToArray(), client: client);
-                        }
                     }
-                    catch (Exception ex)
+
+                    //when method have static locl attribute calling is going to lock
+                    ConcurrentLockAttribute concurrentLockAttribute = concurrentLockAttributes.FirstOrDefault();
+
+                    MethodsCallHandler.BeginMethodCallAction?.Invoke(client, guid, serviceName, method, parameters);
+
+                    //check if client have permissions for call method
+                    bool canCall = true;
+                    foreach (SecurityContractAttribute attrib in securityAttributes)
                     {
-                        if (serverBase.ErrorHandlingFunction != null)
-                            result = serverBase.ErrorHandlingFunction(ex, serviceType, method);
-                        exception = ex;
-                        serverBase.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase CallMethod: {methodName}");
-                        callback.IsException = true;
-                        callback.Data = ServerSerializationHelper.SerializeObject(ex.ToString(), serverBase);
+                        if (!attrib.CheckPermission(client, service, method, parametersValues))
+                        {
+                            callback.IsAccessDenied = true;
+                            canCall = false;
+                            if (method.ReturnType != typeof(void))
+                            {
+                                object data = null;
+                                data = attrib.GetValueWhenDenyPermission(client, service, method, parametersValues);
+                                callback.Data = data == null ? null : ServerSerializationHelper.SerializeObject(data, serverBase, customDataExchanger: customDataExchanger.ToArray(), client: client);
+                            }
+                            break;
+                        }
                     }
-                }
-            }
-            catch (Exception ex)
-            {
-                exception = ex;
-                serverBase.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase CallMethod 2: {methodName}");
-                callback.IsException = true;
-                callback.Data = ServerSerializationHelper.SerializeObject(ex.ToString(), serverBase);
-            }
-            finally
-            {
-                //serverBase.TaskOfClientInfoes.TryRemove(Task.CurrentId.GetValueOrDefault(), out string clientId);
+                    //var data = (IStreamInfo)parametersValues.FirstOrDefault(x => x.GetType() == typeof(StreamInfo) || (x.GetType().GetIsGenericType() && x.GetType().GetGenericTypeDefinition() == typeof(StreamInfo<>)));
+                    //var upStream = new UploadStreamGo(stream);
+                    if (canCall)
+                    {
+                        try
+                        {
+                            if (concurrentLockAttribute != null)
+                            {
+                                switch (concurrentLockAttribute.Type)
+                                {
+                                    case ConcurrentLockType.Full:
+                                        {
+                                            lock (serverBase)
+                                            {
+                                                result = method.Invoke(service, parametersValues.ToArray());
+                                            }
+                                            break;
+                                        }
+                                    case ConcurrentLockType.PerClient:
+                                        {
+                                            lock (client)
+                                            {
+                                                result = method.Invoke(service, parametersValues.ToArray());
+                                            }
+                                            break;
+                                        }
+                                    case ConcurrentLockType.PerIpAddress:
+                                        {
+                                            lock (client.IPAddress)
+                                            {
+                                                result = method.Invoke(service, parametersValues.ToArray());
+                                            }
+                                            break;
+                                        }
+                                    case ConcurrentLockType.PerMethod:
+                                        {
+                                            lock (method)
+                                            {
+                                                result = method.Invoke(service, parametersValues.ToArray());
+                                            }
+                                            break;
+                                        }
+                                }
+                            }
+                            else
+                                result = method.Invoke(service, parametersValues.ToArray());
 
-                try
-                {
-                    MethodsCallHandler.EndMethodCallAction?.Invoke(client, guid, serviceName, method, parameters, callback?.Data, exception);
+                            HttpKeyAttribute httpKeyOnMethod = (HttpKeyAttribute)method.GetCustomAttributes(typeof(HttpKeyAttribute), true).FirstOrDefault();
+                            if (httpKeyOnMethod != null)
+                                httpKeyAttributes.Add(httpKeyOnMethod);
+                            if (serverBase.ProviderSetting.HttpKeyResponses != null)
+                            {
+                                httpKeyAttributes.AddRange(serverBase.ProviderSetting.HttpKeyResponses);
+                            }
+
+                            if (result != null && result.GetType() == typeof(Task))
+                            {
+                                await (Task)result;
+                                result = null;
+                            }
+                            //this is async function
+                            else if (result != null && result.GetType().GetBaseType() == typeof(Task))
+                            {
+                                Task task = ((Task)result);
+                                await task;
+                                result = task.GetType().GetProperty("Result").GetValue(task, null);
+                            }
+
+                            if (result is FileActionResult fResult)
+                                fileActionResult = fResult;
+                            else
+                            {
+                                if (result is IStreamInfo iSResult)
+                                    streamInfo = iSResult;
+                                callback.Data = result == null ? null : ServerSerializationHelper.SerializeObject(result, serverBase, customDataExchanger: customDataExchanger.ToArray(), client: client);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            if (serverBase.ErrorHandlingFunction != null)
+                                result = serverBase.ErrorHandlingFunction(ex, serviceType, method);
+                            exception = ex;
+                            serverBase.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase CallMethod: {methodName}");
+                            callback.IsException = true;
+                            callback.Data = ServerSerializationHelper.SerializeObject(ex.ToString(), serverBase);
+                        }
+                    }
                 }
                 catch (Exception ex)
                 {
+                    exception = ex;
                     serverBase.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase CallMethod 2: {methodName}");
+                    callback.IsException = true;
+                    callback.Data = ServerSerializationHelper.SerializeObject(ex.ToString(), serverBase);
                 }
-            }
-            DataExchanger.Clear();
-            return callback;
+                finally
+                {
+                    //serverBase.TaskOfClientInfoes.TryRemove(Task.CurrentId.GetValueOrDefault(), out string clientId);
+                    serverBase.RemoveTask(taskId);
+                    try
+                    {
+                        MethodsCallHandler.EndMethodCallAction?.Invoke(client, guid, serviceName, method, parameters, callback?.Data, exception);
+                    }
+                    catch (Exception ex)
+                    {
+                        serverBase.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase CallMethod 2: {methodName}");
+                    }
+                }
+                DataExchanger.Clear();
+                return new CallMethodResultInfo<OperationContext>(callback, streamInfo, httpKeyAttributes, serviceType, method, service, fileActionResult, context);
+            });
         }
 
         private static object GetInstanceOfService(ClientInfo client, string serviceName, Type serviceType, ServerBase serverBase)
@@ -405,6 +406,17 @@ namespace SignalGo.Server.ServiceManager.Providers
                     customDataExchangerAttributes.AddRange(method.GetCustomAttributes(typeof(CustomDataExchangerAttribute), true).Cast<CustomDataExchangerAttribute>().Where(x => x.GetExchangerByUserCustomization(client)));
                     clientLimitationAttributes.AddRange(method.GetCustomAttributes(typeof(ClientLimitationAttribute), true).Cast<ClientLimitationAttribute>());
                     concurrentLockAttributes.AddRange(method.GetCustomAttributes(typeof(ConcurrentLockAttribute), true).Cast<ConcurrentLockAttribute>());
+                    if (item != serviceType)
+                    {
+                        MethodInfo newMethod = FindMethod(serviceType, methodName, parameters, canTakeMethod);
+                        if (newMethod != null)
+                        {
+                            securityContractAttributes.AddRange(newMethod.GetCustomAttributes(typeof(SecurityContractAttribute), true).Cast<SecurityContractAttribute>());
+                            customDataExchangerAttributes.AddRange(newMethod.GetCustomAttributes(typeof(CustomDataExchangerAttribute), true).Cast<CustomDataExchangerAttribute>().Where(x => x.GetExchangerByUserCustomization(client)));
+                            clientLimitationAttributes.AddRange(newMethod.GetCustomAttributes(typeof(ClientLimitationAttribute), true).Cast<ClientLimitationAttribute>());
+                            concurrentLockAttributes.AddRange(newMethod.GetCustomAttributes(typeof(ConcurrentLockAttribute), true).Cast<ConcurrentLockAttribute>());
+                        }
+                    }
                     yield return method;
                 }
             }
@@ -428,7 +440,7 @@ namespace SignalGo.Server.ServiceManager.Providers
             return result.ToArray();
         }
 
-        private static ConcurrentDictionary<string, MethodInfo> CachedMethods { get; set; } = new ConcurrentDictionary<string, MethodInfo>();
+        internal static ConcurrentDictionary<string, MethodInfo> CachedMethods { get; set; } = new ConcurrentDictionary<string, MethodInfo>();
 
         private static System.Reflection.MethodInfo FindMethod(Type serviceType, string methodName, Shared.Models.ParameterInfo[] parameters, Func<MethodInfo, bool> canTakeMethod)
         {
@@ -499,6 +511,8 @@ namespace SignalGo.Server.ServiceManager.Providers
             }
             foreach (MethodInfo method in query)
             {
+                int fakeCount = method.GetCustomAttributes<FakeParameterAttribute>().Count();
+
                 System.Reflection.ParameterInfo[] param = method.GetParameters();
                 bool hasError = false;
                 if (parameters != null)
@@ -507,23 +521,30 @@ namespace SignalGo.Server.ServiceManager.Providers
                     {
                         if (!string.IsNullOrEmpty(p.Name) && !param.Any(x => x.Name.Equals(p.Name, StringComparison.OrdinalIgnoreCase) && param.IndexOf(x) == parameters.IndexOf(p)))
                         {
-                            hasError = true;
-                            break;
+                            if (fakeCount > 0 && parameters.LastOrDefault() == p)
+                                break;
+                            else
+                            {
+                                hasError = true;
+                                break;
+                            }
                         }
                     }
 #if (!NET35 && !NET40)
-                if (!hasError && param.Length != parameters.Length)
-                {
-                    foreach (var p in param)
+                    if (!hasError && param.Length != parameters.Length)
                     {
-                        if (!parameters.Any(x => x.Name.Equals(p.Name, StringComparison.OrdinalIgnoreCase)))
+                        foreach (System.Reflection.ParameterInfo p in param)
                         {
-                            if (!p.HasDefaultValue)
-                                hasError = true;
-                            break;
+                            if (!parameters.Any(x => x.Name.Equals(p.Name, StringComparison.OrdinalIgnoreCase)))
+                            {
+                                if (fakeCount > 0 && param.LastOrDefault() == p)
+                                    break;
+                                else if (!p.HasDefaultValue)
+                                    hasError = true;
+                                break;
+                            }
                         }
                     }
-                }
 #endif
                 }
                 if (hasError)
@@ -565,9 +586,9 @@ namespace SignalGo.Server.ServiceManager.Providers
 #if (NET35 || NET40)
                 MethodCallbackInfo result = callback.Result;
 #else
-                var result = await callback;
+                MethodCallbackInfo result = await callback;
 #endif
-                SendCallbackData(result, client, serverBase);
+                await SendCallbackData(result, client, serverBase);
             }
             catch (Exception ex)
             {
@@ -589,7 +610,7 @@ namespace SignalGo.Server.ServiceManager.Providers
         /// <param name="callback"></param>
         /// <param name="client"></param>
         /// <param name="serverBase"></param>
-        internal static void SendCallbackData(MethodCallbackInfo callback, ClientInfo client, ServerBase serverBase)
+        internal static Task SendCallbackData(MethodCallbackInfo callback, ClientInfo client, ServerBase serverBase)
         {
             string json = ServerSerializationHelper.SerializeObject(callback, serverBase);
             byte[] bytes = Encoding.UTF8.GetBytes(json);
@@ -606,7 +627,7 @@ namespace SignalGo.Server.ServiceManager.Providers
             if (data.Count > serverBase.ProviderSetting.MaximumSendDataBlock)
                 throw new Exception($"{client.IPAddress} {client.ClientId} SendCallbackData data length exceeds MaximumSendDataBlock");
 
-            client.StreamHelper.WriteToStream(client.ClientStream, data.ToArray());
+            return client.StreamHelper.WriteToStreamAsync(client.ClientStream, data.ToArray());
         }
     }
 }

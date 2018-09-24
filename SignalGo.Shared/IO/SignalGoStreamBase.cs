@@ -12,25 +12,15 @@ namespace SignalGo.Shared.IO
             CurrentBase = new SignalGoStreamBase();
         }
 
-        
+
         public static ISignalGoStream CurrentBase { get; set; }
 
-        public virtual void WriteToStream(PipeNetworkStream stream, byte[] data)
-        {
-            stream.Write(data);
-        }
-
-#if (!NET35 && !NET40)
-        public virtual Task WriteToStreamAsync(PipeNetworkStream stream, byte[] data)
-        {
-            return stream.WriteAsync(data);
-        }
-#endif
 
         public virtual byte[] EncodeMessageToSend(byte[] bytesRaw)
         {
             throw new NotImplementedException();
         }
+
 
         /// <summary>
         /// read data from stream
@@ -38,55 +28,47 @@ namespace SignalGo.Shared.IO
         /// <param name="stream">your stream to read a block</param>
         /// <param name="compress">compress mode</param>
         /// <returns>return a block byte array</returns>
-        public virtual byte[] ReadBlockToEnd(PipeNetworkStream stream, CompressMode compress, uint maximum)
+
+#if (NET35 || NET40)
+        public virtual byte[] ReadBlockToEnd(PipeNetworkStream stream, CompressMode compress, int maximum)
+#else
+        public virtual async Task<byte[]> ReadBlockToEndAsync(PipeNetworkStream stream, CompressMode compress, int maximum)
+#endif
         {
             //first 4 bytes are size of block
+#if (NET35 || NET40)
             byte[] dataLenByte = ReadBlockSize(stream, 4);
+#else
+            byte[] dataLenByte = await ReadBlockSizeAsync(stream, 4);
+#endif
             //convert bytes to int
             int dataLength = BitConverter.ToInt32(dataLenByte, 0);
             if (dataLength > maximum)
                 throw new Exception("dataLength is upper than maximum :" + dataLength);
             //read a block
-            byte[] dataBytes = ReadBlockSize(stream, (ulong)dataLength);
+#if (NET35 || NET40)
+            byte[] dataBytes = ReadBlockSize(stream, dataLength);
+#else
+            byte[] dataBytes = await ReadBlockSizeAsync(stream, dataLength);
+#endif
             return dataBytes;
         }
 
-        public virtual byte[] ReadBlockSize(PipeNetworkStream stream, ulong count)
-        {
-            List<byte> bytes = new List<byte>();
-            ulong lengthReaded = 0;
-
-            while (lengthReaded < count)
-            {
-                ulong countToRead = count;
-                if (lengthReaded + countToRead > count)
-                {
-                    countToRead = count - lengthReaded;
-                }
-                byte[] readBytes = stream.Read((int)countToRead, out int readCount);
-                if (readCount <= 0)
-                    throw new Exception("read zero buffer! client disconnected: " + readCount);
-                lengthReaded += (ulong)readCount;
-                bytes.AddRange(readBytes.ToList().GetRange(0, readCount));
-            }
-            return bytes.ToArray();
-        }
-
 #if (NET35 || NET40)
-        public virtual void WriteBlockToStream(PipeNetworkStream stream, byte[] data)
-        {
-            byte[] size = BitConverter.GetBytes(data.Length);
-            stream.Write(size);
-            stream.Write(data);
-        }
+        public void WriteBlockToStream(PipeNetworkStream stream, byte[] data)
 #else
-        public virtual void WriteBlockToStream(PipeNetworkStream stream, byte[] data)
+        public Task WriteBlockToStreamAsync(PipeNetworkStream stream, byte[] data)
+#endif
         {
             byte[] size = BitConverter.GetBytes(data.Length);
-            stream.Write(size);
-            stream.Write(data);
-        }
+#if (NET35 || NET40)
+            stream.Write(size, 0, data.Length);
+            stream.Write(data, 0, data.Length);
+#else
+            return stream.WriteAsync(size, 0, size.Length).ContinueWith((t) => stream.WriteAsync(data, 0, data.Length));
 #endif
+        }
+
         /// <summary>
         /// read one byte from server
         /// </summary>
@@ -95,29 +77,61 @@ namespace SignalGo.Shared.IO
         /// <param name="maximum">maximum read</param>
         /// <param name="isWebSocket">if reading socket is websocket</param>
         /// <returns></returns>
+#if (NET35 || NET40)
         public virtual byte ReadOneByte(PipeNetworkStream stream)
         {
             return stream.ReadOneByte();
         }
-        //#if (NET35 || NET40)
-        //        public virtual byte ReadOneByteAsync(Stream stream)
-        //#else
-        //        public virtual async Task<byte> ReadOneByteAsync(IStream stream)
-        //#endif
-        //        {
-        //#if (NET35 || NET40)
-        //            var data = stream.ReadByte();
-        //#else
-        //            byte[] bytes = new byte[1];
-        //            int data = await stream.ReadAsync(bytes, 0, bytes.Length);
-        //#endif
-        //            if (data <= 0)
-        //                throw new Exception($"read one byte is correct or disconnected client! {data}");
-        //#if (NET35 || NET40)
-        //            return (byte)data;
-        //#else
-        //            return bytes[0];
-        //#endif
-        //        }
+#else
+        public virtual Task<byte> ReadOneByteAsync(PipeNetworkStream stream)
+        {
+            return stream.ReadOneByteAcync();
+        }
+#endif
+
+
+#if (NET35 || NET40)
+        public virtual byte[] ReadBlockSize(PipeNetworkStream stream, int count)
+#else
+        public virtual async Task<byte[]> ReadBlockSizeAsync(PipeNetworkStream stream, int count)
+#endif
+        {
+            List<byte> bytes = new List<byte>();
+            int lengthReaded = 0;
+
+            while (lengthReaded < count)
+            {
+                int countToRead = count;
+                if (lengthReaded + countToRead > count)
+                {
+                    countToRead = count - lengthReaded;
+                }
+                byte[] readBytes = new byte[countToRead];
+#if (NET35 || NET40)
+                int readCount = stream.Read(readBytes, countToRead);
+#else
+                int readCount = await stream.ReadAsync(readBytes, countToRead);
+#endif
+                if (readCount <= 0)
+                    throw new Exception("read zero buffer! client disconnected: " + readCount);
+                lengthReaded += readCount;
+                bytes.AddRange(readBytes.ToList().GetRange(0, readCount));
+            }
+            return bytes.ToArray();
+        }
+
+#if (NET35 || NET40)
+        public virtual void WriteToStream(PipeNetworkStream stream, byte[] data)
+        {
+            stream.Write(data, 0, data.Length);
+        }
+#else
+        public virtual Task WriteToStreamAsync(PipeNetworkStream stream, byte[] data)
+        {
+            return stream.WriteAsync(data, 0, data.Length);
+        }
+#endif
+
+
     }
 }
