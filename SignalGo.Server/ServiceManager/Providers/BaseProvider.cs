@@ -26,7 +26,7 @@ namespace SignalGo.Server.ServiceManager.Providers
         {
             try
             {
-                CallMethodResultInfo<OperationContext> result = await CallMethod(callInfo.ServiceName, callInfo.Guid, callInfo.MethodName, callInfo.Parameters.ToArray(), client, json, serverBase, null, null);
+                CallMethodResultInfo<OperationContext> result = await CallMethod(callInfo.ServiceName, callInfo.Guid, callInfo.MethodName, callInfo.Parameters.ToArray(), null, client, json, serverBase, null, null);
                 return result.CallbackInfo;
             }
             finally
@@ -42,7 +42,7 @@ namespace SignalGo.Server.ServiceManager.Providers
             return serverBase.RegisteredServiceTypes.ContainsKey(serviceName);
         }
 
-        internal static Task<CallMethodResultInfo<OperationContext>> CallMethod(string serviceName, string guid, string methodName, SignalGo.Shared.Models.ParameterInfo[] parameters, ClientInfo client, string json, ServerBase serverBase, HttpPostedFileInfo fileInfo, Func<MethodInfo, bool> canTakeMethod)
+        internal static Task<CallMethodResultInfo<OperationContext>> CallMethod(string serviceName, string guid, string methodName, SignalGo.Shared.Models.ParameterInfo[] parameters, string jsonParameters, ClientInfo client, string json, ServerBase serverBase, HttpPostedFileInfo fileInfo, Func<MethodInfo, bool> canTakeMethod)
         {
             return Task.Run(async () =>
             {
@@ -93,6 +93,12 @@ namespace SignalGo.Server.ServiceManager.Providers
 
                     List<MethodInfo> allMethods = GetMethods(client, methodName, parameters, serviceType, customDataExchanger, securityAttributes, clientLimitationAttribute, concurrentLockAttributes, canTakeMethod).ToList();
                     method = allMethods.FirstOrDefault();
+                    if (method == null && !string.IsNullOrEmpty(jsonParameters))
+                    {
+                        parameters = new Shared.Models.ParameterInfo[1] { new Shared.Models.ParameterInfo() { Name = "", Value = jsonParameters } };
+                        allMethods = GetMethods(client, methodName, parameters, serviceType, customDataExchanger, securityAttributes, clientLimitationAttribute, concurrentLockAttributes, canTakeMethod).ToList();
+                        method = allMethods.FirstOrDefault();
+                    }
                     if (method == null)
                     {
                         StringBuilder exceptionResult = new StringBuilder();

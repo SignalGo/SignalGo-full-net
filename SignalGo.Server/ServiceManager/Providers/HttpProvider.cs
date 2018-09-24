@@ -122,7 +122,6 @@ namespace SignalGo.Server.ServiceManager.Providers
                             string address = GetHttpAddress(lines[0]);
                             if (requestHeaders != null)
                                 ((HttpClientInfo)client).RequestHeaders = GetHttpHeaders(lines.Skip(1).ToArray());
-                            client.Level = $"go to HandleHttpRequest {address}";
 
                             await HandleHttpRequest(methodName, address, serverBase, (HttpClientInfo)client);
                         }

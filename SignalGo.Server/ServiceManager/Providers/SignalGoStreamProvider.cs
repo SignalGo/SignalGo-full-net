@@ -1,15 +1,11 @@
 ﻿using SignalGo.Server.Helpers;
 using SignalGo.Server.Models;
-using SignalGo.Shared.DataTypes;
-using SignalGo.Shared.Http;
 using SignalGo.Shared.IO;
 using SignalGo.Shared.Models;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace SignalGo.Server.ServiceManager.Providers
 {
@@ -55,8 +51,8 @@ namespace SignalGo.Server.ServiceManager.Providers
                 string json = Encoding.UTF8.GetString(bytes);
                 MethodCallInfo callInfo = ServerSerializationHelper.Deserialize<MethodCallInfo>(json, serverBase);
 
-                var result =await CallMethod(callInfo.ServiceName, callInfo.Guid, callInfo.MethodName,
-                    callInfo.Parameters, client, null, serverBase, null, null);
+                CallMethodResultInfo<OperationContext> result = await CallMethod(callInfo.ServiceName, callInfo.Guid, callInfo.MethodName,
+                    callInfo.Parameters, null, client, null, serverBase, null, null);
                 callback = result.CallbackInfo;
             }
             catch (IOException ex)
@@ -95,8 +91,8 @@ namespace SignalGo.Server.ServiceManager.Providers
                 byte[] bytes = await client.StreamHelper.ReadBlockToEndAsync(client.ClientStream, CompressMode.None, serverBase.ProviderSetting.MaximumReceiveStreamHeaderBlock);
                 string json = Encoding.UTF8.GetString(bytes);
                 MethodCallInfo callInfo = ServerSerializationHelper.Deserialize<MethodCallInfo>(json, serverBase);
-                var result = await  CallMethod(callInfo.ServiceName, callInfo.Guid, callInfo.MethodName,
-                    callInfo.Parameters, client, null, serverBase, null, null);
+                CallMethodResultInfo<OperationContext> result = await CallMethod(callInfo.ServiceName, callInfo.Guid, callInfo.MethodName,
+                    callInfo.Parameters, null, client, null, serverBase, null, null);
                 callback = result.CallbackInfo;
                 streamInfo = result.StreamInfo;
                 userStream = streamInfo.Stream;

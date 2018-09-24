@@ -7,11 +7,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 
 namespace SignalGo.Server.Helpers
 {
     public class ServiceReferenceHelper
     {
+        public bool IsRenameDuplicateMethodNames { get; set; }
+
         /// <summary>
         /// 
         /// </summary>
@@ -270,18 +273,39 @@ namespace SignalGo.Server.Helpers
             NamespaceReferenceInfo.Classes.Add(classReferenceInfo);
         }
 
+        private Dictionary<string, List<string>> ServiceMethods = new Dictionary<string, List<string>>();
+
         private void GenerateMethod(MethodInfo methodInfo, ClassReferenceInfo classReferenceInfo)
         {
             if (methodInfo.GetParameters().Any(x => x.IsOut || x.IsRetval) || methodInfo.DeclaringType == typeof(object))
                 return;
+            if (IsRenameDuplicateMethodNames)
+            {
+                if (!ServiceMethods.ContainsKey(classReferenceInfo.Name))
+                    ServiceMethods[classReferenceInfo.Name] = new List<string>();
+            }
             MethodReferenceInfo methodReferenceInfo = new MethodReferenceInfo();
 
             AddToGenerate(methodInfo.ReturnType);
             string returnType = "void";
             if (methodInfo.ReturnType != typeof(void))
                 returnType = GetFullNameOfType(methodInfo.ReturnType, true);
+            string methodName = methodInfo.Name;
+
+            if (IsRenameDuplicateMethodNames)
+            {
+                int i = 1;
+                while (ServiceMethods[classReferenceInfo.Name].Contains(methodName))
+                {
+                    methodName = methodInfo.Name + i;
+                    i++;
+                }
+            }
             methodReferenceInfo.ReturnTypeName = returnType;
             methodReferenceInfo.Name = methodInfo.Name;
+            methodReferenceInfo.DuplicateName = methodName;
+            if (IsRenameDuplicateMethodNames)
+                ServiceMethods[classReferenceInfo.Name].Add(methodName);
             GenerateMethodParameters(methodInfo, methodReferenceInfo);
             classReferenceInfo.Methods.Add(methodReferenceInfo);
         }
@@ -348,6 +372,14 @@ namespace SignalGo.Server.Helpers
                 return "decimal";
             else if (type == typeof(object))
                 return "object";
+            else if (type == typeof(Task))
+            {
+                return "void";
+            }
+            else if (type.GetBaseType() == typeof(Task))
+            {
+                return GetFullNameOfType(type.GetGenericArguments()[0], withNameSpace);
+            }
             if (CannotGenerateAssemblyTypes(type))
                 AddUsingIfNotExist(type);
             if (type.GetIsGenericType())

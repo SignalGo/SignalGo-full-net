@@ -1,11 +1,7 @@
 ﻿using SignalGo.Server.Helpers;
 using SignalGo.Server.Models;
-using SignalGo.Shared.DataTypes;
-using SignalGo.Shared.Http;
 using SignalGo.Shared.Models;
 using System;
-using System.Collections.Generic;
-using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -44,7 +40,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 string json = Encoding.UTF8.GetString(bytes);
                 MethodCallInfo callInfo = ServerSerializationHelper.Deserialize<MethodCallInfo>(json, serverBase);
                 //MethodsCallHandler.BeginStreamCallAction?.Invoke(client, guid, serviceName, methodName, values);
-                var result = await CallMethod(callInfo.ServiceName, callInfo.Guid, callInfo.MethodName, callInfo.Parameters, client, null, serverBase, null, null);
+                CallMethodResultInfo<OperationContext> result = await CallMethod(callInfo.ServiceName, callInfo.Guid, callInfo.MethodName, callInfo.Parameters, null, client, null, serverBase, null, null);
                 callback = result.CallbackInfo;
             }
             catch (Exception ex)

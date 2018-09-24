@@ -178,7 +178,6 @@ namespace SignalGo.Server.ServiceManager
                     }
                     return;
                 }
-                Console.WriteLine(client.Level);
                 Clients.Remove(client.ClientId);
                 try
                 {

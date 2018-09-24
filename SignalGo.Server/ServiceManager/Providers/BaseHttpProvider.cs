@@ -65,7 +65,6 @@ namespace SignalGo.Server.ServiceManager.Providers
                     }
                     else
                     {
-                        client.Level = $"go to RunHttpRequest {address}";
                         await RunHttpRequest(serverBase, address, "POST", content, client);
                     }
                     serverBase.DisposeClient(client, null, "AddClient finish post call");
@@ -113,7 +112,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     serverBase.DisposeClient(client, null, "AddClient http ok signalGo");
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 serverBase.DisposeClient(client, null, "HandleHttpRequest exception");
             }
@@ -126,7 +125,6 @@ namespace SignalGo.Server.ServiceManager.Providers
         /// <param name="client">client</param>
         internal static async Task RunHttpRequest(ServerBase serverBase, string address, string httpMethod, string content, HttpClientInfo client)
         {
-            client.Level = $"RunHttpRequest {address} {httpMethod}";
 
             string newLine = "\r\n";
 
@@ -235,6 +233,7 @@ namespace SignalGo.Server.ServiceManager.Providers
             MethodInfo method = null;
             try
             {
+                string jsonParameters = null;
                 if (!string.IsNullOrEmpty(address) && serverBase.RegisteredServiceTypes.ContainsKey(address))
                 {
                     List<Shared.Models.ParameterInfo> values = new List<Shared.Models.ParameterInfo>();
@@ -249,6 +248,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     {
                         try
                         {
+                            jsonParameters = parameters;
                             JObject des = JObject.Parse(parameters);
                             //if (IsMethodInfoOfJsonParameters(methods, des.Properties().Select(x => x.Name).ToList()))
                             //{
@@ -259,7 +259,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                             }
                             //}
                             //else
-                            //    values.Add(new Shared.Models.ParameterInfo() { Name = "", Value = parameters });
+                            //values.Add(new Shared.Models.ParameterInfo() { Name = "", Value = parameters });
                         }
                         catch (Exception ex)
                         {
@@ -278,15 +278,14 @@ namespace SignalGo.Server.ServiceManager.Providers
                             }
                         }
                     }
-                    client.Level = $"go to CallHttpMethod {methodName}";
 
-                    CallMethodResultInfo<OperationContext> result = await CallHttpMethod(client, address, methodName, values, serverBase, method, data, newLine, null, null);
+                    CallMethodResultInfo<OperationContext> result = await CallHttpMethod(client, address, methodName, values, jsonParameters, serverBase, method, data, newLine, null, null);
                     serviceType = result.ServiceType;
 
                 }
                 else
                 {
-                    CallMethodResultInfo<OperationContext> result = await CallHttpMethod(client, address, methodName, null, serverBase, method, data, newLine, null, null);
+                    CallMethodResultInfo<OperationContext> result = await CallHttpMethod(client, address, methodName, null,null, serverBase, method, data, newLine, null, null);
                     serviceType = result.ServiceType;
                 }
             }
@@ -323,7 +322,7 @@ namespace SignalGo.Server.ServiceManager.Providers
 
             try
             {
-                CallMethodResultInfo<OperationContext> result = await CallHttpMethod(client, "", "-noName-", null, serverBase, method, null, newLine, null, x => x.GetCustomAttributes<HomePageAttribute>().Count() > 0);
+                CallMethodResultInfo<OperationContext> result = await CallHttpMethod(client, "", "-noName-", null,null, serverBase, method, null, newLine, null, x => x.GetCustomAttributes<HomePageAttribute>().Count() > 0);
                 serviceType = result.ServiceType;
             }
             catch (Exception ex)
@@ -349,10 +348,9 @@ namespace SignalGo.Server.ServiceManager.Providers
             }
 
         }
-        internal static async Task<CallMethodResultInfo<OperationContext>> CallHttpMethod(HttpClientInfo client, string address, string methodName, IEnumerable<Shared.Models.ParameterInfo> values, ServerBase serverBase, MethodInfo method
+        internal static async Task<CallMethodResultInfo<OperationContext>> CallHttpMethod(HttpClientInfo client, string address, string methodName, IEnumerable<Shared.Models.ParameterInfo> values, string jsonParameters, ServerBase serverBase, MethodInfo method
             , string data, string newLine, HttpPostedFileInfo fileInfo, Func<MethodInfo, bool> canTakeMethod)
         {
-            client.Level = $"CallHttpMethod {methodName}";
             if (values != null)
             {
                 foreach (Shared.Models.ParameterInfo item in values.Where(x => x.Value == "null"))
@@ -360,13 +358,12 @@ namespace SignalGo.Server.ServiceManager.Providers
                     item.Value = null;
                 }
             }
-            CallMethodResultInfo<OperationContext> result = await CallMethod(address, _guid, methodName, values?.ToArray(), client, "", serverBase, fileInfo, canTakeMethod);
+            CallMethodResultInfo<OperationContext> result = await CallMethod(address, _guid, methodName, values?.ToArray(), jsonParameters, client, "", serverBase, fileInfo, canTakeMethod);
 
             method = result.Method;
 
             if (result.CallbackInfo.IsException || result.CallbackInfo.IsAccessDenied)
             {
-                client.Level = "access denied "+ methodName;
                 data = newLine + result.CallbackInfo.Data + newLine;
 
                 await SendInternalErrorMessage(data, serverBase, client, newLine, (result.CallbackInfo.IsAccessDenied ? serverBase.ProviderSetting.HttpSetting.DefaultAccessDenidHttpStatusCode : HttpStatusCode.InternalServerError));
@@ -410,7 +407,6 @@ namespace SignalGo.Server.ServiceManager.Providers
             }
             else
             {
-                client.Level = $"go to RunHttpActionResult {methodName}";
                 await RunHttpActionResult(client, result.CallbackInfo.Data, client, serverBase);
             }
 
@@ -678,7 +674,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 try
                 {
                     List<Shared.Models.ParameterInfo> values = new List<Shared.Models.ParameterInfo>();
-
+                    string jsonParameters = "";
                     //var methods = (from x in RegisteredHttpServiceTypes[address].GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance) where x.Name.ToLower() == methodName && x.IsPublic && !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_"))) select x).ToList();
                     //if (methods.Count == 0)
                     //{
@@ -698,6 +694,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     }
                     else if (client.GetRequestHeaderValue("content-type") == "application/json")
                     {
+                        jsonParameters = parameters;
                         JObject des = JObject.Parse(parameters);
                         foreach (JProperty item in des.Properties())
                         {
@@ -721,7 +718,7 @@ namespace SignalGo.Server.ServiceManager.Providers
 
 
 
-                    CallMethodResultInfo<OperationContext> result = await CallHttpMethod(client, address, methodName, values, serverBase, method, data, newLine, fileInfo, null);
+                    CallMethodResultInfo<OperationContext> result = await CallHttpMethod(client, address, methodName, values, jsonParameters, serverBase, method, data, newLine, fileInfo, null);
 
                     serviceType = result.ServiceType;
                     serviceInstance = result.ServiceInstance;
@@ -772,7 +769,7 @@ namespace SignalGo.Server.ServiceManager.Providers
             {
                 PipeNetworkStream stream = client.ClientStream;
 
-                Shared.Models.ServiceReference.NamespaceReferenceInfo referenceData = new ServiceReferenceHelper().GetServiceReferenceCSharpCode(client.GetRequestHeaderValue("servicenamespace"), serverBase);
+                Shared.Models.ServiceReference.NamespaceReferenceInfo referenceData = new ServiceReferenceHelper() { IsRenameDuplicateMethodNames = client.RequestHeaders["selectedLanguage"].FirstOrDefault() == "1" }.GetServiceReferenceCSharpCode(client.GetRequestHeaderValue("servicenamespace"), serverBase);
                 string result = ServerSerializationHelper.SerializeObject(referenceData, serverBase);
                 Shared.Http.WebHeaderCollection responseHeaders = new WebHeaderCollection
                 {
