@@ -3,7 +3,6 @@ using SignalGo.Server.ServiceManager.Providers;
 using SignalGo.Shared.Converters;
 using SignalGo.Shared.IO;
 using System;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -169,6 +168,11 @@ namespace SignalGo.Server.ServiceManager.Versions
                 }
                 else if (firstLineString.Contains("SignalGo-OneWay/4.0"))
                 {
+                    if (!_serverBase.ProviderSetting.IsEnabledToUseTimeout)
+                    {
+                        tcpClient.GetStream().ReadTimeout = -1;
+                        tcpClient.GetStream().WriteTimeout = -1;
+                    }
                     client = CreateClientInfo(false, tcpClient, reader);
                     client.StreamHelper = SignalGoStreamBase.CurrentBase;
                     OneWayServiceProvider.StartToReadingClientData(client, _serverBase);
@@ -183,7 +187,11 @@ namespace SignalGo.Server.ServiceManager.Versions
                         tcpClient.ReceiveTimeout = (int)_serverBase.ProviderSetting.ServerServiceSetting.ReceiveDataTimeout.TotalMilliseconds;
                         tcpClient.SendTimeout = (int)_serverBase.ProviderSetting.ServerServiceSetting.SendDataTimeout.TotalMilliseconds;
                     }
-
+                    else
+                    {
+                        tcpClient.GetStream().ReadTimeout = -1;
+                        tcpClient.GetStream().WriteTimeout = -1;
+                    }
                     SignalGoDuplexServiceProvider.StartToReadingClientData(client, _serverBase);
                 }
                 else if (firstLineString.Contains("HTTP/"))
@@ -193,7 +201,7 @@ namespace SignalGo.Server.ServiceManager.Versions
                         tcpClient.GetStream().ReadTimeout = (int)_serverBase.ProviderSetting.HttpSetting.ReceiveDataTimeout.TotalMilliseconds;
                         tcpClient.GetStream().WriteTimeout = (int)_serverBase.ProviderSetting.HttpSetting.SendDataTimeout.TotalMilliseconds;
                     }
-                    HttpProvider.StartToReadingClientData(tcpClient, _serverBase, reader, firstLineString);
+                    await HttpProvider.StartToReadingClientData(tcpClient, _serverBase, reader, firstLineString);
                 }
                 else
                 {

@@ -779,15 +779,10 @@ namespace SignalGo.Server.ServiceManager.Providers
                 byte[] dataBytes = Encoding.UTF8.GetBytes(result);
                 await SendResponseHeadersToClient(HttpStatusCode.OK, responseHeaders, client, dataBytes.Length);
                 await SendResponseDataToClient(dataBytes, client);
-                await Task.Delay(100);
             }
-            catch
+            catch(Exception ex)
             {
 
-            }
-            finally
-            {
-                serverBase.DisposeClient(client, null, "SendSignalGoServiceReference finished");
             }
         }
 

@@ -142,7 +142,7 @@ namespace SignalGo.Server.ServiceManager.Providers
 
                                 if (resultJson == null)
                                 {
-                                    if (string.IsNullOrEmpty(item.Value))
+                                    if (string.IsNullOrEmpty(item.Value) || item.Value == "\"\"")
                                         parametersValues.Add(null);
                                     else
                                         parametersValues.Add(item.Value);
