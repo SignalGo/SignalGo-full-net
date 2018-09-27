@@ -1383,7 +1383,7 @@ namespace SignalGo.Client.ClientManager
 
             }
         }
-
+        
 
         /// <summary>
         /// close and dispose connector
