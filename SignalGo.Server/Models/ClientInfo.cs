@@ -7,6 +7,16 @@ using System.Net.Sockets;
 
 namespace SignalGo.Server.Models
 {
+    public enum ClientProtocolType : byte
+    {
+        None = 0,
+        Http = 1,
+        SignalGoDuplex = 2,
+        SignalGoOneWay = 3,
+        SignalGoStream = 4,
+        WebSocket = 5,
+    }
+
     /// <summary>
     /// information of tcp client
     /// </summary>
@@ -58,6 +68,8 @@ namespace SignalGo.Server.Models
         }
 
         public bool IsWebSocket { get; set; }
+
+        public ClientProtocolType ProtocolType { get; set; } = ClientProtocolType.None;
     }
 
     /// <summary>

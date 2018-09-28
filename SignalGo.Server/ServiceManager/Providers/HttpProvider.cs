@@ -87,6 +87,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 if (requestHeaders.Contains("Sec-WebSocket-Key"))
                 {
                     client = serverBase.ServerDataProvider.CreateClientInfo(false, tcpClient, reader);
+                    client.ProtocolType = ClientProtocolType.WebSocket;
                     client.IsWebSocket = true;
                     client.StreamHelper = SignalGoStreamWebSocket.CurrentWebSocket;
                     string key = requestHeaders.Replace("ey:", "`").Split('`')[1].Replace("\r", "").Split('\n')[0].Trim();
@@ -108,6 +109,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     {
                         //serverBase.TaskOfClientInfoes
                         client = (HttpClientInfo)serverBase.ServerDataProvider.CreateClientInfo(true, tcpClient, reader);
+                        client.ProtocolType = ClientProtocolType.Http;
                         client.StreamHelper = SignalGoStreamBase.CurrentBase;
 
                         string[] lines = null;
