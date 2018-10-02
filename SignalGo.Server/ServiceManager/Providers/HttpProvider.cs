@@ -20,13 +20,13 @@ namespace SignalGo.Server.ServiceManager.Providers
 #if (NET35 || NET40)
         public static Task AddHttpClient(HttpClientInfo client, ServerBase serverBase, string address, string methodName, IDictionary<string, string[]> requestHeaders, IDictionary<string, string[]> responseHeaders)
 #else
-        public static Task AddHttpClient(HttpClientInfo client, ServerBase serverBase, string address, string methodName, IDictionary<string, string[]> requestHeaders, IDictionary<string, string[]> responseHeaders)
+        public static async Task AddHttpClient(HttpClientInfo client, ServerBase serverBase, string address, string methodName, IDictionary<string, string[]> requestHeaders, IDictionary<string, string[]> responseHeaders)
 #endif
         {
 #if (NET35 || NET40)
             return Task.Factory.StartNew(() =>
 #else
-            return Task.Run(async () =>
+            await Task.Run(async () =>
 #endif
             {
                 try

@@ -31,6 +31,10 @@ namespace SignalGo.Shared.Models
         /// handle cross origin access from browser origin header
         /// </summary>
         public bool HandleCrossOriginAccess { get; set; }
+        /// <summary>
+        /// cors of origin to allow access
+        /// </summary>
+        public Func<object, string> GetCustomOriginFunction { get; set; }
 
         /// <summary>
         /// X509Certificate

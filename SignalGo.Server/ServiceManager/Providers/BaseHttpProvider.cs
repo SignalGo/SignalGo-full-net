@@ -122,25 +122,15 @@ namespace SignalGo.Server.ServiceManager.Providers
                 }
                 else if (methodName.ToLower() == "options" && !string.IsNullOrEmpty(address) && address != "/")
                 {
-                    Shared.Http.WebHeaderCollection responseHeaders = new WebHeaderCollection();
-
                     if (serverBase.ProviderSetting.HttpSetting.HandleCrossOriginAccess)
-                    {
-                        responseHeaders.Add("Access-Control-Allow-Origin", client.RequestHeaders["origin"]);
-                        responseHeaders.Add("Access-Control-Allow-Credentials", "true");
-
-                        if (!string.IsNullOrEmpty(client.GetRequestHeaderValue("Access-Control-Request-Headers")))
-                        {
-                            responseHeaders.Add("Access-Control-Allow-Headers", client.RequestHeaders["Access-Control-Request-Headers"]);
-                        }
-                    }
+                        AddOriginHeader(client, serverBase);
                     string message = newLine + $"Success" + newLine;
-                    responseHeaders.Add("Content-Type", "text/html; charset=utf-8");
-                    responseHeaders.Add("Connection", "Close");
+                    client.ResponseHeaders.Add("Content-Type", "text/html; charset=utf-8");
+                    client.ResponseHeaders.Add("Connection", "Close");
 
                     byte[] dataBytes = Encoding.UTF8.GetBytes(message);
 
-                    await SendResponseHeadersToClient(HttpStatusCode.OK, responseHeaders, client, dataBytes.Length);
+                    await SendResponseHeadersToClient(HttpStatusCode.OK, client.ResponseHeaders, client, dataBytes.Length);
                     await SendResponseDataToClient(dataBytes, client);
                     serverBase.DisposeClient(client, null, "AddClient finish post call");
                 }
@@ -168,6 +158,29 @@ namespace SignalGo.Server.ServiceManager.Providers
                 serverBase.DisposeClient(client, null, "HandleHttpRequest exception");
             }
         }
+
+        private static void AddOriginHeader(HttpClientInfo client, ServerBase serverBase)
+        {
+            if (serverBase.ProviderSetting.HttpSetting.GetCustomOriginFunction == null)
+            {
+                if (client.RequestHeaders.ContainsKey("origin"))
+                {
+                    client.ResponseHeaders.Add("Access-Control-Allow-Origin", client.RequestHeaders["origin"]);
+                }
+                else
+                    client.ResponseHeaders.Add("Access-Control-Allow-Origin", "*");
+            }
+            else
+                client.ResponseHeaders.Add("Access-Control-Allow-Origin", serverBase.ProviderSetting.HttpSetting.GetCustomOriginFunction(client));
+
+            client.ResponseHeaders.Add("Access-Control-Allow-Credentials", "true");
+            if (!string.IsNullOrEmpty(client.GetRequestHeaderValue("Access-Control-Request-Headers")))
+                client.ResponseHeaders.Add("Access-Control-Allow-Headers", client.RequestHeaders["Access-Control-Request-Headers"]);
+            else
+                client.ResponseHeaders.Add("Access-Control-Allow-Headers", "*");
+            client.ResponseHeaders.Add("Access-Control-Allow-Methods", "*");
+        }
+
         /// <summary>
         /// run method of server http class with address and headers
         /// </summary>
@@ -432,12 +445,7 @@ namespace SignalGo.Server.ServiceManager.Providers
             }
             if (serverBase.ProviderSetting.HttpSetting.HandleCrossOriginAccess)
             {
-                client.ResponseHeaders.Add("Access-Control-Allow-Origin", client.RequestHeaders["origin"]);
-                client.ResponseHeaders.Add("Access-Control-Allow-Credentials", new string[] { "true" });
-                if (!string.IsNullOrEmpty(client.GetRequestHeaderValue("Access-Control-Request-Headers")))
-                {
-                    client.ResponseHeaders.Add("Access-Control-Allow-Headers", client.RequestHeaders["Access-Control-Request-Headers"]);
-                }
+                AddOriginHeader(client, serverBase);
             }
             HttpKeyAttribute httpKeyOnMethod = (HttpKeyAttribute)method.GetCustomAttributes(typeof(HttpKeyAttribute), true).FirstOrDefault();
             if (httpKeyOnMethod != null)
@@ -931,13 +939,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 Shared.Http.WebHeaderCollection responseHeaders = new WebHeaderCollection();
                 if (serverBase.ProviderSetting.HttpSetting.HandleCrossOriginAccess)
                 {
-                    responseHeaders.Add("Access-Control-Allow-Origin", client.RequestHeaders["origin"]);
-                    responseHeaders.Add("Access-Control-Allow-Credentials", "true");
-
-                    if (!string.IsNullOrEmpty(client.GetRequestHeaderValue("Access-Control-Request-Headers")))
-                    {
-                        responseHeaders.Add("Access-Control-Allow-Headers", client.RequestHeaders["Access-Control-Request-Headers"]);
-                    }
+                    AddOriginHeader(client, serverBase);
                 }
                 string message = newLine + $"{msg}" + newLine;
 
@@ -1021,12 +1023,7 @@ namespace SignalGo.Server.ServiceManager.Providers
 
         internal static async Task SendResponseDataToClient(byte[] dataBytes, ClientInfo client)
         {
-            //byte[] dataBytes = Encoding.UTF8.GetBytes(dataResult);
-            //Array.Resize(ref dataBytes, dataBytes.Length + 2);
-            //dataBytes[dataBytes.Length - 2] = 13;
-            //dataBytes[dataBytes.Length - 1] = 10;
             await client.StreamHelper.WriteToStreamAsync(client.ClientStream, dataBytes);
-            await Task.Delay(100);
         }
 
     }

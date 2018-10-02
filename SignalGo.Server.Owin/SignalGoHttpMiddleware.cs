@@ -7,7 +7,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
 using System.Threading.Tasks;
 
 namespace SignalGo.Server.Owin
@@ -23,7 +22,7 @@ namespace SignalGo.Server.Owin
             _next = next;
         }
 
-        public Task Invoke(HttpContext context)
+        public async Task Invoke(HttpContext context)
         {
             //context.Response.Headers.Add("Access-Control-Allow-Origin", "*");
             //context.Response.Headers.Add("Access-Control-Allow-Credentials", "true");
@@ -41,7 +40,10 @@ namespace SignalGo.Server.Owin
             string serviceName = uri.Split(new string[] { "/" }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
             bool isWebSocketd = context.Request.Headers.ContainsKey("Sec-WebSocket-Key");
             if (!BaseProvider.ExistService(serviceName, CurrentServerBase) && !isWebSocketd && !context.Request.Headers.ContainsKey("signalgo-servicedetail"))
-                return _next.Invoke(context);
+            {
+                await _next.Invoke(context);
+                return;
+            }
 
             OwinClientInfo owinClientInfo = new OwinClientInfo();
             owinClientInfo.ConnectedDateTime = DateTime.Now;
@@ -65,16 +67,18 @@ namespace SignalGo.Server.Owin
                 //}
                 //WebsocketClient websocketClient = new WebsocketClient() { ClientInfo = owinClientInfo, CurrentServerBase = CurrentServerBase };
                 //accept(null, websocketClient.RunWebSocket);
-                return Task.FromResult<object>(null);
+                await Task.FromResult<object>(null);
 
             }
             else
             {
                 owinClientInfo.StreamHelper = SignalGoStreamBase.CurrentBase;
                 owinClientInfo.ClientStream = new PipeNetworkStream(new DuplexStream(context.Request.Body, context.Response.Body));
-                return HttpProvider.AddHttpClient(owinClientInfo, CurrentServerBase, uri, context.Request.Method, null, null);
+                await HttpProvider.AddHttpClient(owinClientInfo, CurrentServerBase, uri, context.Request.Method, null, null);
             }
         }
+
+
     }
 
     public class HttpHeaderCollection : IDictionary<string, string[]>
