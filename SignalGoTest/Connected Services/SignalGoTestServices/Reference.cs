@@ -3,11 +3,11 @@ using System.Threading.Tasks;
 using SignalGo.Shared.Models;
 using System;
 using System.Collections.Generic;
-using SignalGoTestServices.ServerServices;
-using SignalGoTestServices.HttpServices;
-using SignalGoTestServices.ClientServices;
+using SignalGoTest2Services.ServerServices;
+using SignalGoTest2Services.HttpServices;
+using SignalGoTest2Services.ClientServices;
 
-namespace SignalGoTestServices.ServerServices
+namespace SignalGoTest2Services.ServerServices
 {
     [ServiceContract("testservermodelserverservice",ServiceType.ServerService, InstanceType.SingleInstance)]
     public interface ITestServerModel
@@ -16,40 +16,42 @@ namespace SignalGoTestServices.ServerServices
         Task<System.Tuple<bool>> LogoutAsync(string yourName);
         string HelloWorld(string yourName);
         Task<string> HelloWorldAsync(string yourName);
-        System.Collections.Generic.List<SignalGoTest.ClientModels.UserInfoTest> GetListOfUsers();
-        Task<System.Collections.Generic.List<SignalGoTest.ClientModels.UserInfoTest>> GetListOfUsersAsync();
-        System.Collections.Generic.List<SignalGoTest.ClientModels.PostInfoTest> GetPostsOfUser(int userId);
-        Task<System.Collections.Generic.List<SignalGoTest.ClientModels.PostInfoTest>> GetPostsOfUserAsync(int userId);
-        System.Collections.Generic.List<SignalGoTest.ClientModels.UserInfoTest> GetListOfUsersCustom();
-        Task<System.Collections.Generic.List<SignalGoTest.ClientModels.UserInfoTest>> GetListOfUsersCustomAsync();
-        System.Collections.Generic.List<SignalGoTest.ClientModels.PostInfoTest> GetCustomPostsOfUser(int userId);
-        Task<System.Collections.Generic.List<SignalGoTest.ClientModels.PostInfoTest>> GetCustomPostsOfUserAsync(int userId);
-        bool HelloBind(SignalGoTest.ClientModels.UserInfoTest userInfoTest, SignalGoTest.ClientModels.UserInfoTest userInfoTest2, SignalGoTest.ClientModels.UserInfoTest userInfoTest3);
-        Task<bool> HelloBindAsync(SignalGoTest.ClientModels.UserInfoTest userInfoTest, SignalGoTest.ClientModels.UserInfoTest userInfoTest2, SignalGoTest.ClientModels.UserInfoTest userInfoTest3);
-        bool Login(SignalGoTest.ClientModels.UserInfoTest userInfoTest);
-        Task<bool> LoginAsync(SignalGoTest.ClientModels.UserInfoTest userInfoTest);
+        System.Collections.Generic.List<SignalGoTest2.Models.UserInfoTest> GetListOfUsers();
+        Task<System.Collections.Generic.List<SignalGoTest2.Models.UserInfoTest>> GetListOfUsersAsync();
+        System.Collections.Generic.List<SignalGoTest2.Models.PostInfoTest> GetPostsOfUser(int userId);
+        Task<System.Collections.Generic.List<SignalGoTest2.Models.PostInfoTest>> GetPostsOfUserAsync(int userId);
+        System.Collections.Generic.List<SignalGoTest2.Models.UserInfoTest> GetListOfUsersCustom();
+        Task<System.Collections.Generic.List<SignalGoTest2.Models.UserInfoTest>> GetListOfUsersCustomAsync();
+        System.Collections.Generic.List<SignalGoTest2.Models.PostInfoTest> GetCustomPostsOfUser(int userId);
+        Task<System.Collections.Generic.List<SignalGoTest2.Models.PostInfoTest>> GetCustomPostsOfUserAsync(int userId);
+        bool HelloBind(SignalGoTest2.Models.UserInfoTest userInfoTest, SignalGoTest2.Models.UserInfoTest userInfoTest2, SignalGoTest2.Models.UserInfoTest userInfoTest3);
+        Task<bool> HelloBindAsync(SignalGoTest2.Models.UserInfoTest userInfoTest, SignalGoTest2.Models.UserInfoTest userInfoTest2, SignalGoTest2.Models.UserInfoTest userInfoTest3);
+        bool Login(SignalGoTest2.Models.UserInfoTest userInfoTest);
+        Task<bool> LoginAsync(SignalGoTest2.Models.UserInfoTest userInfoTest);
+        string ServerAsyncMethod(string name);
+        Task<string> ServerAsyncMethodAsync(string name);
     }
 }
 
-namespace SignalGoTestServices.StreamServices
+namespace SignalGoTest2Services.StreamServices
 {
     [ServiceContract("testserverstreammodelstreamservice",ServiceType.StreamService, InstanceType.SingleInstance)]
     public interface ITestServerStreamModel
     {
-        SignalGo.Shared.Models.StreamInfo<string> DownloadImage(string name, SignalGoTest.ClientModels.TestStreamModel testStreamModel);
-        Task<SignalGo.Shared.Models.StreamInfo<string>> DownloadImageAsync(string name, SignalGoTest.ClientModels.TestStreamModel testStreamModel);
+        SignalGo.Shared.Models.StreamInfo<string> DownloadImage(string name, SignalGoTest2.Models.TestStreamModel testStreamModel);
+        Task<SignalGo.Shared.Models.StreamInfo<string>> DownloadImageAsync(string name, SignalGoTest2.Models.TestStreamModel testStreamModel);
     }
 }
 
-namespace SignalGoTestServices.OneWayServices
+namespace SignalGoTest2Services.OneWayServices
 {
 }
 
-namespace SignalGoTestServices.HttpServices
+namespace SignalGoTest2Services.HttpServices
 {
 }
 
-namespace SignalGoTest.ClientModels
+namespace SignalGoTest2.Models
 {
     public class TestStreamModel : SignalGo.Shared.Models.NotifyPropertyChangedBase
     {
@@ -142,8 +144,8 @@ namespace SignalGoTest.ClientModels
                 }
         }
 
-        private System.Collections.Generic.List<SignalGoTest.ClientModels.PostInfoTest> _PostInfoes;
-        public System.Collections.Generic.List<SignalGoTest.ClientModels.PostInfoTest> PostInfoes
+        private System.Collections.Generic.List<SignalGoTest2.Models.PostInfoTest> _PostInfoes;
+        public System.Collections.Generic.List<SignalGoTest2.Models.PostInfoTest> PostInfoes
         {
                 get
                 {
@@ -156,8 +158,8 @@ namespace SignalGoTest.ClientModels
                 }
         }
 
-        private System.Collections.Generic.List<SignalGoTest.ClientModels.RoleInfoTest> _RoleInfoes;
-        public System.Collections.Generic.List<SignalGoTest.ClientModels.RoleInfoTest> RoleInfoes
+        private System.Collections.Generic.List<SignalGoTest2.Models.RoleInfoTest> _RoleInfoes;
+        public System.Collections.Generic.List<SignalGoTest2.Models.RoleInfoTest> RoleInfoes
         {
                 get
                 {
@@ -170,8 +172,8 @@ namespace SignalGoTest.ClientModels
                 }
         }
 
-        private SignalGoTest.ClientModels.PostInfoTest _LastPostInfo;
-        public SignalGoTest.ClientModels.PostInfoTest LastPostInfo
+        private SignalGoTest2.Models.PostInfoTest _LastPostInfo;
+        public SignalGoTest2.Models.PostInfoTest LastPostInfo
         {
                 get
                 {
@@ -245,8 +247,8 @@ namespace SignalGoTest.ClientModels
                 }
         }
 
-        private SignalGoTest.ClientModels.UserInfoTest _User;
-        public SignalGoTest.ClientModels.UserInfoTest User
+        private SignalGoTest2.Models.UserInfoTest _User;
+        public SignalGoTest2.Models.UserInfoTest User
         {
                 get
                 {
@@ -259,8 +261,8 @@ namespace SignalGoTest.ClientModels
                 }
         }
 
-        private SignalGoTest.ClientModels.RoleInfoTest _PostRoleToSee;
-        public SignalGoTest.ClientModels.RoleInfoTest PostRoleToSee
+        private SignalGoTest2.Models.RoleInfoTest _PostRoleToSee;
+        public SignalGoTest2.Models.RoleInfoTest PostRoleToSee
         {
                 get
                 {
@@ -292,8 +294,8 @@ namespace SignalGoTest.ClientModels
                 }
         }
 
-        private SignalGoTest.ClientModels.RoleTypeTest _Type;
-        public SignalGoTest.ClientModels.RoleTypeTest Type
+        private SignalGoTest2.Models.RoleTypeTest _Type;
+        public SignalGoTest2.Models.RoleTypeTest Type
         {
                 get
                 {
@@ -306,8 +308,8 @@ namespace SignalGoTest.ClientModels
                 }
         }
 
-        private SignalGoTest.ClientModels.UserInfoTest _User;
-        public SignalGoTest.ClientModels.UserInfoTest User
+        private SignalGoTest2.Models.UserInfoTest _User;
+        public SignalGoTest2.Models.UserInfoTest User
         {
                 get
                 {
@@ -325,11 +327,11 @@ namespace SignalGoTest.ClientModels
 
 }
 
-namespace SignalGoTestServices.ClientServices
+namespace SignalGoTest2Services.ClientServices
 {
 }
 
-namespace SignalGoTest.ClientModels
+namespace SignalGoTest2.Models
 {
     public enum RoleTypeTest : int
     {

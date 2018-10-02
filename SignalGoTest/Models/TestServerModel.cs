@@ -123,5 +123,14 @@ namespace SignalGoTest.Models
                 return true;
             return false;
         }
+
+        public async Task<string> ServerAsyncMethod(string name)
+        {
+            await Task.Delay(1500);
+            if (name == "hello")
+                return "hello guys";
+            else
+                return "not found";
+        }
     }
 }

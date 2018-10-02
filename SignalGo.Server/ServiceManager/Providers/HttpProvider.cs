@@ -82,10 +82,11 @@ namespace SignalGo.Server.ServiceManager.Providers
                     if (line == "\r\n")
                         break;
                 }
-                tcpClient.ReceiveTimeout = -1;
-                tcpClient.SendTimeout = -1;
+
                 if (requestHeaders.Contains("Sec-WebSocket-Key"))
                 {
+                    tcpClient.ReceiveTimeout = -1;
+                    tcpClient.SendTimeout = -1;
                     client = serverBase.ServerDataProvider.CreateClientInfo(false, tcpClient, reader);
                     client.ProtocolType = ClientProtocolType.WebSocket;
                     client.IsWebSocket = true;

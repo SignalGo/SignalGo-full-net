@@ -452,13 +452,18 @@ namespace SignalGo.Server.Models
                 T objectInstance = InterfaceWrapper.Wrap<T>((serviceName, method, args) =>
                 {
                     string methodName = method.Name;
-                    Task task = null;
+                    Task<object> task = null;
                     if (client.IsWebSocket)
                         task = ServerExtensions.SendWebSocketDataWithCallClientServiceMethod(serverBase, client, method.ReturnType, serviceName, method.Name, method.MethodToParameters(x => ServerSerializationHelper.SerializeObject(x, serverBase), args).ToArray());
                     else
                         task = ServerExtensions.SendDataWithCallClientServiceMethod(serverBase, client, method.ReturnType, serviceName, method.Name, method.MethodToParameters(x => ServerSerializationHelper.SerializeObject(x, serverBase), args).ToArray());
-                    task.GetAwaiter().GetResult();
-                    return task.GetType().GetProperty("Result").GetValue(task, null);
+                    var result1 = task.GetAwaiter().GetResult();
+                    if (result1 is Task task2)
+                    {
+                        task2.GetAwaiter().GetResult();
+                        return task2.GetType().GetProperty("Result").GetValue(task2, null);
+                    }
+                    return result1;
                 }, (serviceName, method, args) =>
                 {
                     //this is async action

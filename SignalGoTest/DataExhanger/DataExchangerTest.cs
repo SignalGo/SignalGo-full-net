@@ -1,5 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using SignalGoTest.ClientModels;
+using SignalGoTest2.Models;
+using SignalGoTest2Services.ServerServices;
 using System.Threading.Tasks;
 
 namespace SignalGoTest.DataExhanger
@@ -15,7 +16,7 @@ namespace SignalGoTest.DataExhanger
 
             //while (true)
             //    System.Threading.Thread.Sleep(500);
-            SignalGoTestServices.ServerServices.ITestServerModel service = client.RegisterServerServiceInterfaceWrapper<SignalGoTestServices.ServerServices.ITestServerModel>();
+            ITestServerModel service = client.RegisterServerServiceInterfaceWrapper<ITestServerModel>();
             UserInfoTest test = new UserInfoTest() { Age = 10, Id = 15, Username = "user name", LastPostInfo = new PostInfoTest() { }, Password = "pass", PostInfoes = new System.Collections.Generic.List<PostInfoTest>() { }, RoleInfoes = new System.Collections.Generic.List<RoleInfoTest>() { new RoleInfoTest() { } } };
             UserInfoTest test1 = new UserInfoTest() { Age = 10, Id = 15, Username = "user name", LastPostInfo = new PostInfoTest() { }, Password = "pass", PostInfoes = new System.Collections.Generic.List<PostInfoTest>() { }, RoleInfoes = new System.Collections.Generic.List<RoleInfoTest>() { new RoleInfoTest() { Id = 5 } } };
             UserInfoTest test2 = new UserInfoTest() { Age = 10, Id = 15, Username = "user name", LastPostInfo = new PostInfoTest() { }, Password = "pass", PostInfoes = new System.Collections.Generic.List<PostInfoTest>() { }, RoleInfoes = new System.Collections.Generic.List<RoleInfoTest>() { new RoleInfoTest() { } } };
@@ -58,7 +59,7 @@ namespace SignalGoTest.DataExhanger
 
             //while (true)
             //    System.Threading.Thread.Sleep(500);
-            SignalGoTestServices.ServerServices.ITestServerModel service = client.RegisterServerServiceInterfaceWrapper<SignalGoTestServices.ServerServices.ITestServerModel>();
+            ITestServerModel service = client.RegisterServerServiceInterfaceWrapper<ITestServerModel>();
             UserInfoTest test = new UserInfoTest() { Age = 10, Id = 15, Username = "user name", LastPostInfo = new PostInfoTest() { }, Password = "pass", PostInfoes = new System.Collections.Generic.List<PostInfoTest>() { }, RoleInfoes = new System.Collections.Generic.List<RoleInfoTest>() { new RoleInfoTest() { } } };
             UserInfoTest test1 = new UserInfoTest() { Age = 10, Id = 15, Username = "user name", LastPostInfo = new PostInfoTest() { }, Password = "pass", PostInfoes = new System.Collections.Generic.List<PostInfoTest>() { }, RoleInfoes = new System.Collections.Generic.List<RoleInfoTest>() { new RoleInfoTest() { Id = 5 } } };
             UserInfoTest test2 = new UserInfoTest() { Age = 10, Id = 15, Username = "user name", LastPostInfo = new PostInfoTest() { }, Password = "pass", PostInfoes = new System.Collections.Generic.List<PostInfoTest>() { }, RoleInfoes = new System.Collections.Generic.List<RoleInfoTest>() { new RoleInfoTest() { } } };

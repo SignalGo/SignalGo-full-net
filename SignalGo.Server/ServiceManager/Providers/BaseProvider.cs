@@ -233,6 +233,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     {
                         try
                         {
+                            Task taskResult = null;
                             if (concurrentLockAttribute != null)
                             {
                                 switch (concurrentLockAttribute.Type)
@@ -241,7 +242,10 @@ namespace SignalGo.Server.ServiceManager.Providers
                                         {
                                             lock (serverBase)
                                             {
-                                                result = method.Invoke(service, parametersValues.ToArray());
+                                                if (IsTask(method))
+                                                    taskResult = (Task)method.Invoke(service, parametersValues.ToArray());
+                                                else
+                                                    result = method.Invoke(service, parametersValues.ToArray());
                                             }
                                             break;
                                         }
@@ -249,7 +253,10 @@ namespace SignalGo.Server.ServiceManager.Providers
                                         {
                                             lock (client)
                                             {
-                                                result = method.Invoke(service, parametersValues.ToArray());
+                                                if (IsTask(method))
+                                                    taskResult = (Task)method.Invoke(service, parametersValues.ToArray());
+                                                else
+                                                    result = method.Invoke(service, parametersValues.ToArray());
                                             }
                                             break;
                                         }
@@ -257,7 +264,10 @@ namespace SignalGo.Server.ServiceManager.Providers
                                         {
                                             lock (client.IPAddress)
                                             {
-                                                result = method.Invoke(service, parametersValues.ToArray());
+                                                if (IsTask(method))
+                                                    taskResult = (Task)method.Invoke(service, parametersValues.ToArray());
+                                                else
+                                                    result = method.Invoke(service, parametersValues.ToArray());
                                             }
                                             break;
                                         }
@@ -265,15 +275,28 @@ namespace SignalGo.Server.ServiceManager.Providers
                                         {
                                             lock (method)
                                             {
-                                                result = method.Invoke(service, parametersValues.ToArray());
+                                                if (IsTask(method))
+                                                    taskResult = (Task)method.Invoke(service, parametersValues.ToArray());
+                                                else
+                                                    result = method.Invoke(service, parametersValues.ToArray());
                                             }
                                             break;
                                         }
                                 }
                             }
                             else
-                                result = method.Invoke(service, parametersValues.ToArray());
-
+                            {
+                                if (IsTask(method))
+                                    taskResult = (Task)method.Invoke(service, parametersValues.ToArray());
+                                else
+                                    result = method.Invoke(service, parametersValues.ToArray());
+                            }
+                            if (taskResult != null)
+                            {
+                                await taskResult;
+                                if (taskResult.GetType() != typeof(Task))
+                                    result = taskResult.GetType().GetProperty("Result").GetValue(taskResult);
+                            }
                             HttpKeyAttribute httpKeyOnMethod = (HttpKeyAttribute)method.GetCustomAttributes(typeof(HttpKeyAttribute), true).FirstOrDefault();
                             if (httpKeyOnMethod != null)
                                 httpKeyAttributes.Add(httpKeyOnMethod);
@@ -420,6 +443,11 @@ namespace SignalGo.Server.ServiceManager.Providers
                     yield return method;
                 }
             }
+        }
+
+        private static bool IsTask(MethodInfo methodInfo)
+        {
+            return methodInfo.ReturnType == typeof(Task) || methodInfo.ReturnType.GetBaseType() == typeof(Task);
         }
 
         private static CustomDataExchangerAttribute[] GetMethodParameterBinds(int parameterIndex, params MethodInfo[] methodInfoes)

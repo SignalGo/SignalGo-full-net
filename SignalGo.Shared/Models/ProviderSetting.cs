@@ -101,7 +101,7 @@ namespace SignalGo.Shared.Models
         /// <summary>
         /// call again priority func<bool> for get return true
         /// </summary>
-        public int PriorityFunctionDelayTime { get; set; } = 2000;
+        public int PriorityFunctionDelayTime { get; set; } = 500;
 
         /// <summary>
         /// data exchanger is limitation of data types and properties to send and receive from client and server

@@ -25,6 +25,7 @@ namespace SignalGoTest.Models
         bool HelloBind([Bind(Include = "Id")]UserInfoTest userInfoTest, [Bind(Exclude = "Username")]UserInfoTest userInfoTest2,
             [Bind(Includes = new string[] { "Id", "Username" })]UserInfoTest userInfoTest3);
         bool Login(UserInfoTest userInfoTest);
+        Task<string> ServerAsyncMethod(string name);
     }
 
     [SignalGo.Shared.DataTypes.ServiceContract("TestServerModel", ServiceType.ClientService, InstanceType = SignalGo.Shared.DataTypes.InstanceType.SingleInstance)]

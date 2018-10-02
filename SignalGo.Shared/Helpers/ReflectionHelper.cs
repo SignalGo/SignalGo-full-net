@@ -219,11 +219,7 @@ namespace SignalGo.Shared.Helpers
 #if (NETSTANDARD || NETCOREAPP || PORTABLE)
                 .GetTypeInfo()
 #endif
-#if (PORTABLE)
-                .GetDeclaredMethod(name);
-#else
-                .GetMethod(name, BindingFlags.IgnoreCase | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
-#endif
+                .GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static).Where(x=>x.Name.ToLower() == name.ToLower()).FirstOrDefault();
         }
         /// <summary>
         /// get method
