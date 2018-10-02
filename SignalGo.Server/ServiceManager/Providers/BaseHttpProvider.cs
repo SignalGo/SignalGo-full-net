@@ -63,6 +63,57 @@ namespace SignalGo.Server.ServiceManager.Providers
                     {
                         await SendSignalGoServiceReference(client, serverBase);
                     }
+                    else if (client.RequestHeaders.ContainsKey("signalgo-servicedetail"))
+                    {
+                        string host = "";
+                        if (client.RequestHeaders.ContainsKey("host"))
+                            host = client.RequestHeaders["host"].FirstOrDefault();
+                        ServerServicesManager serverServicesManager = new ServerServicesManager();
+                        string json = "";
+                        bool isParameterDetails = client.RequestHeaders["signalgo-servicedetail"].FirstOrDefault() == "parameter";
+                        if (isParameterDetails)
+                        {
+                            int len = int.Parse(client.GetRequestHeaderValue("content-length"));
+                            if (content.Length < len)
+                            {
+                                List<byte> resultBytes = new List<byte>();
+                                int readedCount = 0;
+                                while (readedCount < len)
+                                {
+                                    byte[] buffer = new byte[len - content.Length];
+                                    int readCount = await client.ClientStream.ReadAsync(buffer, buffer.Length);
+                                    if (readCount <= 0)
+                                        throw new Exception("zero byte readed socket disconnected!");
+                                    resultBytes.AddRange(buffer.ToList().GetRange(0, readCount));
+                                    readedCount += readCount;
+                                }
+                                json = Encoding.UTF8.GetString(resultBytes.ToArray(), 0, resultBytes.Count);
+                            }
+                            MethodParameterDetails detail = ServerSerializationHelper.Deserialize<MethodParameterDetails>(json, serverBase);
+
+                            if (!serverBase.RegisteredServiceTypes.TryGetValue(detail.ServiceName, out Type serviceType))
+                                throw new Exception($"{client.IPAddress} {client.ClientId} Service {detail.ServiceName} not found");
+                            if (serviceType == null)
+                                throw new Exception($"{client.IPAddress} {client.ClientId} serviceType {detail.ServiceName} not found");
+
+                            json = serverServicesManager.SendMethodParameterDetail(serviceType, detail, serverBase);
+                        }
+                        else
+                        {
+                            ProviderDetailsInfo detail = serverServicesManager.SendServiceDetail(host, serverBase);
+                            json = ServerSerializationHelper.SerializeObject(detail, serverBase);
+                        }
+
+                        Shared.Http.WebHeaderCollection responseHeaders = new WebHeaderCollection
+                        {
+                            { "Content-Type", "application/json; charset=utf-8" },
+                            { "Connection", "Close" }
+                        };
+
+                        byte[] dataBytes = Encoding.UTF8.GetBytes(newLine + json + newLine);
+                        await SendResponseHeadersToClient(HttpStatusCode.OK, responseHeaders, client, dataBytes.Length);
+                        await SendResponseDataToClient(dataBytes, client);
+                    }
                     else
                     {
                         await RunHttpRequest(serverBase, address, "POST", content, client);
@@ -285,7 +336,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 }
                 else
                 {
-                    CallMethodResultInfo<OperationContext> result = await CallHttpMethod(client, address, methodName, null,null, serverBase, method, data, newLine, null, null);
+                    CallMethodResultInfo<OperationContext> result = await CallHttpMethod(client, address, methodName, null, null, serverBase, method, data, newLine, null, null);
                     serviceType = result.ServiceType;
                 }
             }
@@ -322,7 +373,7 @@ namespace SignalGo.Server.ServiceManager.Providers
 
             try
             {
-                CallMethodResultInfo<OperationContext> result = await CallHttpMethod(client, "", "-noName-", null,null, serverBase, method, null, newLine, null, x => x.GetCustomAttributes<HomePageAttribute>().Count() > 0);
+                CallMethodResultInfo<OperationContext> result = await CallHttpMethod(client, "", "-noName-", null, null, serverBase, method, null, newLine, null, x => x.GetCustomAttributes<HomePageAttribute>().Count() > 0);
                 serviceType = result.ServiceType;
             }
             catch (Exception ex)
@@ -780,7 +831,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 await SendResponseHeadersToClient(HttpStatusCode.OK, responseHeaders, client, dataBytes.Length);
                 await SendResponseDataToClient(dataBytes, client);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
 
             }
