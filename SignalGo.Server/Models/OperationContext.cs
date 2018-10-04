@@ -171,6 +171,17 @@ namespace SignalGo.Server.Models
             return null;
         }
 
+
+        public static void SetCustomClientSetting(string customClientId, object setting)
+        {
+            if (setting == null)
+                throw new Exception("setting is null or empty! please fill all parameters");
+            if (string.IsNullOrEmpty(customClientId))
+                throw new Exception("customClientId is null or empty! please fill all parameters on headers or etc");
+            else if (!CustomClientSavedSettings.TryAdd(customClientId, new HashSet<object>() { setting }) && CustomClientSavedSettings.TryGetValue(customClientId, out HashSet<object> result) && !result.Contains(setting))
+                result.Add(setting);
+        }
+
         internal static bool HasSettingNoHttp(Type type, ClientInfo clientInfo)
         {
             if (clientInfo is HttpClientInfo)
@@ -187,6 +198,11 @@ namespace SignalGo.Server.Models
         /// <param name="setting"></param>
         public static void SetSetting(object setting, OperationContext context)
         {
+            if (context.Client is HttpClientInfo)
+            {
+                string key = GetKeyFromSetting(setting.GetType(), setting);
+                SetCustomClientSetting(key, setting);
+            }
             if (!SavedSettings.ContainsKey(context.Client))
                 SavedSettings.TryAdd(context.Client, new HashSet<object>() { setting });
             else if (SavedSettings.TryGetValue(context.Client, out HashSet<object> result) && !result.Contains(setting))
@@ -268,12 +284,6 @@ namespace SignalGo.Server.Models
                 if (context == null)
                     throw new Exception("SynchronizationContext is null or empty! Do not call this property inside of another thread that do not have any synchronizationContext or you can call SynchronizationContext.SetSynchronizationContext(new SynchronizationContext()); and ServerBase.AllDispatchers must contine this");
 
-                if (context.Client is HttpClientInfo)
-                {
-                    string key = GetKeyFromSetting(typeof(T), value);
-                    SetCustomClientSetting(key, value);
-                    //SetSetting(value, context);
-                }
                 SetSetting(value, context);
             }
         }
@@ -328,17 +338,6 @@ namespace SignalGo.Server.Models
             return GetSetting(clientInfo);
         }
 
-        public static void SetCustomClientSetting(string customClientId, object setting)
-        {
-            if (setting == null)
-                throw new Exception("setting is null or empty! please fill all parameters");
-            if (string.IsNullOrEmpty(customClientId))
-                throw new Exception("customClientId is null or empty! please fill all parameters on headers or etc");
-            //if (!CustomClientSavedSettings.ContainsKey(customClientId))
-            //    ;
-            else if (!CustomClientSavedSettings.TryAdd(customClientId, new HashSet<object>() { setting }) && CustomClientSavedSettings.TryGetValue(customClientId, out HashSet<object> result) && !result.Contains(setting))
-                result.Add(setting);
-        }
 
         /// <summary>
         /// get setting of your custom client id or sessions or etc

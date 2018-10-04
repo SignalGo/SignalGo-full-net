@@ -132,7 +132,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     List<object> parametersValues = null;
                     Dictionary<string, object> parametersKeyValues = new Dictionary<string, object>();
 
-                    bool hasNoNameParameter = parameters.Any(x => string.IsNullOrEmpty(x.Name));
+                    bool hasNoNameParameter = parameters == null ? false : parameters.Any(x => string.IsNullOrEmpty(x.Name));
 
                     if (parameters != null)
                     {
@@ -226,14 +226,14 @@ namespace SignalGo.Server.ServiceManager.Providers
                             //has named parameter with no name
                             if (parametersKeyValues.Any(x => !x.Key.StartsWith(".")))
                             {
-                                var noNames = parametersKeyValues.Where(x => x.Key.StartsWith("."));
-                                var names = parametersKeyValues.Where(x => !x.Key.StartsWith("."));
+                                IEnumerable<KeyValuePair<string, object>> noNames = parametersKeyValues.Where(x => x.Key.StartsWith("."));
+                                IEnumerable<KeyValuePair<string, object>> names = parametersKeyValues.Where(x => !x.Key.StartsWith("."));
                                 List<KeyValuePair<string, object>> items = new List<KeyValuePair<string, object>>();
                                 items.AddRange(noNames);
                                 items.AddRange(names.Select(x => new KeyValuePair<string, object>(".emptyName", null)));
-                                foreach (var item in names)
+                                foreach (KeyValuePair<string, object> item in names)
                                 {
-                                    var find = prms.FirstOrDefault(x => x.Name.Equals(item.Key, StringComparison.OrdinalIgnoreCase));
+                                    System.Reflection.ParameterInfo find = prms.FirstOrDefault(x => x.Name.Equals(item.Key, StringComparison.OrdinalIgnoreCase));
                                     index = prms.IndexOf(find);
                                     items.Remove(items.FirstOrDefault(x => x.Key == ".emptyName"));
                                     items.Insert(index, new KeyValuePair<string, object>(find.Name, item.Value));

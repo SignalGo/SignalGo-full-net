@@ -308,7 +308,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                             values.Add(new Shared.Models.ParameterInfo() { Name = item.Key, Value = item.Value });
                         }
                     }
-                    else if (client.GetRequestHeaderValue("content-type") == "application/json")
+                    else if (client.GetRequestHeaderValue("content-type") == "application/json" || client.GetRequestHeaderValue("accept") == "application/json")
                     {
                         try
                         {
@@ -995,7 +995,7 @@ namespace SignalGo.Server.ServiceManager.Providers
             string firstLine = "";
             firstLine = $"HTTP/1.1 {(int)httpStatusCode} {HttpRequestController.GetStatusDescription((int)httpStatusCode)}" + newLine;
 
-            if (!webResponseHeaderCollection.ContainsKey("Content-Type") || !webResponseHeaderCollection["Content-Type"].Contains("utf-8"))
+            if (!webResponseHeaderCollection.ContainsKey("Content-Type"))//|| !webResponseHeaderCollection["Content-Type"].Contains("utf-8")
             {
                 webResponseHeaderCollection["Content-Type"] = "text/html; charset=utf-8".Split(',');
             }

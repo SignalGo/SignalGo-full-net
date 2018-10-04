@@ -22,27 +22,27 @@ namespace SignalGo.Shared.DataTypes
         /// <summary>
         /// name of header when client request
         /// </summary>
-        public string RequestHeaderName { get; set; }
+        public string RequestHeaderName { get; set; } = "Cookie";
         /// <summary>
         /// name of header when client getting response
         /// </summary>
-        public string ResponseHeaderName { get; set; }
+        public string ResponseHeaderName { get; set; } = "Set-Cookie";
         /// <summary>
         /// separate char for value of header for example for Set-Cookie header is ';'
         /// </summary>
-        public string HeaderValueSeparate { get; set; }
+        public string HeaderValueSeparate { get; set; } = ";";
         /// <summary>
         /// separate char between key and value of header for example for Set-Cookie header is '='
         /// </summary>
-        public string HeaderKeyValueSeparate { get; set; }
+        public string HeaderKeyValueSeparate { get; set; } = "=";
         /// <summary>
         /// name of key that you saves your session id
         /// </summary>
-        public string KeyName { get; set; }
+        public string KeyName { get; set; } = "_session";
         /// <summary>
         /// add perfix to last of header value
         /// </summary>
-        public string Perfix { get; set; }
+        public string Perfix { get; set; } = "; path=/";
         /// <summary>
         /// is field of expire
         /// </summary>

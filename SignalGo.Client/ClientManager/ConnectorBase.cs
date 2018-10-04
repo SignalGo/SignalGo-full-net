@@ -1378,15 +1378,16 @@ namespace SignalGo.Client.ClientManager
 #else
                 _client.Close();
 #endif
+            if (IsConnected)
+            {
+                IsConnected = false;
+            }
             foreach (KeyValuePair<string, TaskCompletionSource<MethodCallbackInfo>> item in ConnectorExtensions.WaitedMethodsForResponse)
             {
                 item.Value.TrySetCanceled();
             }
             ConnectorExtensions.WaitedMethodsForResponse.Clear();
-            if (IsConnected)
-            {
-                IsConnected = false;
-            }
+           
             OnConnectionChanged?.Invoke(ConnectionStatus.Disconnected);
 
             //if (!IsAutoReconnecting)
