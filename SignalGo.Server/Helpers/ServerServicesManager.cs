@@ -24,9 +24,10 @@ namespace SignalGo.Server.Helpers
         {
             //try
             //{
-
-            Uri url = new Uri(hostUrl);
-            hostUrl = url.Host + ":" + url.Port;
+            if (!hostUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase))
+                hostUrl += "http://";
+            if (Uri.TryCreate(hostUrl, UriKind.Absolute, out Uri uri))
+                hostUrl = uri.Host + ":" + uri.Port;
             using (XmlCommentLoader xmlCommentLoader = new XmlCommentLoader())
             {
                 List<Type> modelTypes = new List<Type>();

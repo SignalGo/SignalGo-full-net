@@ -39,6 +39,8 @@ namespace SignalGo.Server.ServiceManager.Providers
                 }
                 catch (Exception ex)
                 {
+                    if (client.IsOwinClient)
+                        throw;
                     serverBase.DisposeClient(client, null, "HttpProvider AddHttpClient exception");
                 }
             });
