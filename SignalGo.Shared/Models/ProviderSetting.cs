@@ -31,6 +31,10 @@ namespace SignalGo.Shared.Models
         /// handle cross origin access from browser origin header
         /// </summary>
         public bool HandleCrossOriginAccess { get; set; }
+        /// <summary>
+        /// cors of origin to allow access
+        /// </summary>
+        public Func<object, string> GetCustomOriginFunction { get; set; }
 
         /// <summary>
         /// X509Certificate
@@ -101,7 +105,7 @@ namespace SignalGo.Shared.Models
         /// <summary>
         /// call again priority func<bool> for get return true
         /// </summary>
-        public int PriorityFunctionDelayTime { get; set; } = 2000;
+        public int PriorityFunctionDelayTime { get; set; } = 500;
 
         /// <summary>
         /// data exchanger is limitation of data types and properties to send and receive from client and server

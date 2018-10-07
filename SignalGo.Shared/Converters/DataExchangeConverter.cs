@@ -259,7 +259,11 @@ namespace SignalGo.Shared.Converters
                     try
                     {
                         JToken json = JToken.Load(reader);
-                        object instance = json.ToObject(serializehandling.ParameterType);
+                        object instance = null;
+                        if (serializehandling.ParameterType == typeof(JToken))
+                            instance = json;
+                        else
+                            instance = json.ToObject(serializehandling.ParameterType);
                         value = serializehandling.Delegate.DynamicInvoke(instance);
                     }
                     catch (Exception ex)
@@ -292,7 +296,8 @@ namespace SignalGo.Shared.Converters
         /// </returns>
         public override bool CanConvert(Type objectType)
         {
-            if (objectType.GetIsGenericType() && objectType.GetGenericTypeDefinition() == BaseType || SerializeHelper.HandleDeserializingObjectList.ContainsKey(objectType))
+            //objectType.GetIsGenericType() && objectType.GetGenericTypeDefinition() == BaseType ||
+            if (SerializeHelper.HandleDeserializingObjectList.ContainsKey(objectType))
                 return true;
             return false;
         }

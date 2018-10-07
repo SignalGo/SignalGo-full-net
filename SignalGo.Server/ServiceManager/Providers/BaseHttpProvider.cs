@@ -16,7 +16,6 @@ using System.Net.Sockets;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
-using WebHeaderCollection = SignalGo.Shared.Http.WebHeaderCollection;
 
 namespace SignalGo.Server.ServiceManager.Providers
 {
@@ -55,7 +54,11 @@ namespace SignalGo.Server.ServiceManager.Providers
                         content = headerResponse.Substring(indexOfStartedContent, headerResponse.Length - indexOfStartedContent);
                     }
 
-                    if (client.RequestHeaders["content-type"] != null && client.GetRequestHeaderValue("content-type").ToLower().Contains("multipart/form-data"))
+                    if (client.RequestHeaders.ContainsKey("signalgo-servicedetail"))
+                    {
+                        await GenerateServiceDetails(client, content, serverBase, newLine);
+                    }
+                    else if (client.RequestHeaders["content-type"] != null && client.GetRequestHeaderValue("content-type").ToLower().Contains("multipart/form-data"))
                     {
                         await RunPostHttpRequestFile(address, "POST", content, client, serverBase);
                     }
@@ -71,25 +74,15 @@ namespace SignalGo.Server.ServiceManager.Providers
                 }
                 else if (methodName.ToLower() == "options" && !string.IsNullOrEmpty(address) && address != "/")
                 {
-                    Shared.Http.WebHeaderCollection responseHeaders = new WebHeaderCollection();
-
                     if (serverBase.ProviderSetting.HttpSetting.HandleCrossOriginAccess)
-                    {
-                        responseHeaders.Add("Access-Control-Allow-Origin", client.RequestHeaders["origin"]);
-                        responseHeaders.Add("Access-Control-Allow-Credentials", "true");
-
-                        if (!string.IsNullOrEmpty(client.GetRequestHeaderValue("Access-Control-Request-Headers")))
-                        {
-                            responseHeaders.Add("Access-Control-Allow-Headers", client.RequestHeaders["Access-Control-Request-Headers"]);
-                        }
-                    }
+                        AddOriginHeader(client, serverBase);
                     string message = newLine + $"Success" + newLine;
-                    responseHeaders.Add("Content-Type", "text/html; charset=utf-8");
-                    responseHeaders.Add("Connection", "Close");
+                    client.ResponseHeaders.Add("Content-Type", "text/html; charset=utf-8");
+                    client.ResponseHeaders.Add("Connection", "Close");
 
                     byte[] dataBytes = Encoding.UTF8.GetBytes(message);
 
-                    await SendResponseHeadersToClient(HttpStatusCode.OK, responseHeaders, client, dataBytes.Length);
+                    await SendResponseHeadersToClient(HttpStatusCode.OK, client.ResponseHeaders, client, dataBytes.Length);
                     await SendResponseDataToClient(dataBytes, client);
                     serverBase.DisposeClient(client, null, "AddClient finish post call");
                 }
@@ -100,23 +93,95 @@ namespace SignalGo.Server.ServiceManager.Providers
                 }
                 else
                 {
-                    Shared.Http.WebHeaderCollection responseHeaders = new WebHeaderCollection
-                    {
-                        { "Content-Type", "text/html" },
-                        { "Connection", "Close" }
-                    };
+                    client.ResponseHeaders.Add("Content-Type", "text/html");
+                    client.ResponseHeaders.Add("Connection", "Close");
 
                     byte[] dataBytes = Encoding.UTF8.GetBytes(newLine + "SignalGo Server OK" + newLine);
-                    await SendResponseHeadersToClient(HttpStatusCode.OK, responseHeaders, client, dataBytes.Length);
+                    await SendResponseHeadersToClient(HttpStatusCode.OK, client.ResponseHeaders, client, dataBytes.Length);
                     await SendResponseDataToClient(dataBytes, client);
                     serverBase.DisposeClient(client, null, "AddClient http ok signalGo");
                 }
             }
             catch (Exception ex)
             {
+                if (client.IsOwinClient)
+                    throw;
                 serverBase.DisposeClient(client, null, "HandleHttpRequest exception");
             }
         }
+
+        private static async Task GenerateServiceDetails(HttpClientInfo client, string content, ServerBase serverBase, string newLine)
+        {
+            string host = "";
+            if (client.RequestHeaders.ContainsKey("host"))
+                host = client.RequestHeaders["host"].FirstOrDefault();
+            ServerServicesManager serverServicesManager = new ServerServicesManager();
+            string json = "";
+            bool isParameterDetails = client.RequestHeaders["signalgo-servicedetail"].FirstOrDefault() == "parameter";
+            if (isParameterDetails)
+            {
+                int len = int.Parse(client.GetRequestHeaderValue("content-length"));
+                if (content.Length < len)
+                {
+                    List<byte> resultBytes = new List<byte>();
+                    int readedCount = 0;
+                    while (readedCount < len)
+                    {
+                        byte[] buffer = new byte[len - content.Length];
+                        int readCount = await client.ClientStream.ReadAsync(buffer, buffer.Length);
+                        if (readCount <= 0)
+                            throw new Exception("zero byte readed socket disconnected!");
+                        resultBytes.AddRange(buffer.ToList().GetRange(0, readCount));
+                        readedCount += readCount;
+                    }
+                    json = Encoding.UTF8.GetString(resultBytes.ToArray(), 0, resultBytes.Count);
+                }
+                MethodParameterDetails detail = ServerSerializationHelper.Deserialize<MethodParameterDetails>(json, serverBase);
+
+                if (!serverBase.RegisteredServiceTypes.TryGetValue(detail.ServiceName, out Type serviceType))
+                    throw new Exception($"{client.IPAddress} {client.ClientId} Service {detail.ServiceName} not found");
+                if (serviceType == null)
+                    throw new Exception($"{client.IPAddress} {client.ClientId} serviceType {detail.ServiceName} not found");
+
+                json = serverServicesManager.SendMethodParameterDetail(serviceType, detail, serverBase);
+            }
+            else
+            {
+                ProviderDetailsInfo detail = serverServicesManager.SendServiceDetail(host, serverBase);
+                json = ServerSerializationHelper.SerializeObject(detail, serverBase);
+            }
+
+            client.ResponseHeaders["Content-Type"] = "application/json; charset=utf-8".Split(',');
+            client.ResponseHeaders["Connection"] = "Close".Split(',');
+
+            byte[] dataBytes = Encoding.UTF8.GetBytes(newLine + json + newLine);
+            await SendResponseHeadersToClient(HttpStatusCode.OK, client.ResponseHeaders, client, dataBytes.Length);
+            await SendResponseDataToClient(dataBytes, client);
+        }
+
+
+        private static void AddOriginHeader(HttpClientInfo client, ServerBase serverBase)
+        {
+            if (serverBase.ProviderSetting.HttpSetting.GetCustomOriginFunction == null)
+            {
+                if (client.RequestHeaders.ContainsKey("origin"))
+                {
+                    client.ResponseHeaders.Add("Access-Control-Allow-Origin", client.RequestHeaders["origin"]);
+                }
+                else
+                    client.ResponseHeaders.Add("Access-Control-Allow-Origin", "*");
+            }
+            else
+                client.ResponseHeaders.Add("Access-Control-Allow-Origin", serverBase.ProviderSetting.HttpSetting.GetCustomOriginFunction(client));
+
+            client.ResponseHeaders.Add("Access-Control-Allow-Credentials", "true");
+            if (!string.IsNullOrEmpty(client.GetRequestHeaderValue("Access-Control-Request-Headers")))
+                client.ResponseHeaders.Add("Access-Control-Allow-Headers", client.RequestHeaders["Access-Control-Request-Headers"]);
+            else
+                client.ResponseHeaders.Add("Access-Control-Allow-Headers", "*");
+            client.ResponseHeaders.Add("Access-Control-Allow-Methods", "*");
+        }
+
         /// <summary>
         /// run method of server http class with address and headers
         /// </summary>
@@ -244,7 +309,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                             values.Add(new Shared.Models.ParameterInfo() { Name = item.Key, Value = item.Value });
                         }
                     }
-                    else if (client.GetRequestHeaderValue("content-type") == "application/json")
+                    else if (client.GetRequestHeaderValue("content-type") == "application/json" || client.GetRequestHeaderValue("accept") == "application/json")
                     {
                         try
                         {
@@ -285,7 +350,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 }
                 else
                 {
-                    CallMethodResultInfo<OperationContext> result = await CallHttpMethod(client, address, methodName, null,null, serverBase, method, data, newLine, null, null);
+                    CallMethodResultInfo<OperationContext> result = await CallHttpMethod(client, address, methodName, null, null, serverBase, method, data, newLine, null, null);
                     serviceType = result.ServiceType;
                 }
             }
@@ -322,7 +387,7 @@ namespace SignalGo.Server.ServiceManager.Providers
 
             try
             {
-                CallMethodResultInfo<OperationContext> result = await CallHttpMethod(client, "", "-noName-", null,null, serverBase, method, null, newLine, null, x => x.GetCustomAttributes<HomePageAttribute>().Count() > 0);
+                CallMethodResultInfo<OperationContext> result = await CallHttpMethod(client, "", "-noName-", null, null, serverBase, method, null, newLine, null, x => x.GetCustomAttributes<HomePageAttribute>().Count() > 0);
                 serviceType = result.ServiceType;
             }
             catch (Exception ex)
@@ -381,12 +446,7 @@ namespace SignalGo.Server.ServiceManager.Providers
             }
             if (serverBase.ProviderSetting.HttpSetting.HandleCrossOriginAccess)
             {
-                client.ResponseHeaders.Add("Access-Control-Allow-Origin", client.RequestHeaders["origin"]);
-                client.ResponseHeaders.Add("Access-Control-Allow-Credentials", new string[] { "true" });
-                if (!string.IsNullOrEmpty(client.GetRequestHeaderValue("Access-Control-Request-Headers")))
-                {
-                    client.ResponseHeaders.Add("Access-Control-Allow-Headers", client.RequestHeaders["Access-Control-Request-Headers"]);
-                }
+                AddOriginHeader(client, serverBase);
             }
             HttpKeyAttribute httpKeyOnMethod = (HttpKeyAttribute)method.GetCustomAttributes(typeof(HttpKeyAttribute), true).FirstOrDefault();
             if (httpKeyOnMethod != null)
@@ -771,23 +831,15 @@ namespace SignalGo.Server.ServiceManager.Providers
 
                 Shared.Models.ServiceReference.NamespaceReferenceInfo referenceData = new ServiceReferenceHelper() { IsRenameDuplicateMethodNames = client.RequestHeaders["selectedLanguage"].FirstOrDefault() == "1" }.GetServiceReferenceCSharpCode(client.GetRequestHeaderValue("servicenamespace"), serverBase);
                 string result = ServerSerializationHelper.SerializeObject(referenceData, serverBase);
-                Shared.Http.WebHeaderCollection responseHeaders = new WebHeaderCollection
-                {
-                    { "Content-Type", "text/html; charset=utf-8" },
-                    { "Service-Type", "SignalGoServiceType" }
-                };
+                client.ResponseHeaders.Add("Content-Type", "text/html; charset=utf-8");
+                client.ResponseHeaders.Add("Service-Type", "SignalGoServiceType");
                 byte[] dataBytes = Encoding.UTF8.GetBytes(result);
-                await SendResponseHeadersToClient(HttpStatusCode.OK, responseHeaders, client, dataBytes.Length);
+                await SendResponseHeadersToClient(HttpStatusCode.OK, client.ResponseHeaders, client, dataBytes.Length);
                 await SendResponseDataToClient(dataBytes, client);
-                await Task.Delay(100);
             }
-            catch
+            catch (Exception ex)
             {
 
-            }
-            finally
-            {
-                serverBase.DisposeClient(client, null, "SendSignalGoServiceReference finished");
             }
         }
 
@@ -882,25 +934,18 @@ namespace SignalGo.Server.ServiceManager.Providers
             try
             {
                 //{ 500} {HttpRequestController.GetStatusDescription((int)HttpStatusCode.InternalServerError)}
-                Shared.Http.WebHeaderCollection responseHeaders = new WebHeaderCollection();
                 if (serverBase.ProviderSetting.HttpSetting.HandleCrossOriginAccess)
                 {
-                    responseHeaders.Add("Access-Control-Allow-Origin", client.RequestHeaders["origin"]);
-                    responseHeaders.Add("Access-Control-Allow-Credentials", "true");
-
-                    if (!string.IsNullOrEmpty(client.GetRequestHeaderValue("Access-Control-Request-Headers")))
-                    {
-                        responseHeaders.Add("Access-Control-Allow-Headers", client.RequestHeaders["Access-Control-Request-Headers"]);
-                    }
+                    AddOriginHeader(client, serverBase);
                 }
                 string message = newLine + $"{msg}" + newLine;
 
-                responseHeaders.Add("Content-Type", "text/html; charset=utf-8");
+                client.ResponseHeaders.Add("Content-Type", "text/html; charset=utf-8");
                 //responseHeaders.Add("Content-Length", (message.Length - 2).ToString());
-                responseHeaders.Add("Connection", "Close");
+                client.ResponseHeaders.Add("Connection", "Close");
 
                 byte[] dataBytes = Encoding.UTF8.GetBytes(message);
-                await SendResponseHeadersToClient(httpStatusCode, responseHeaders, client, dataBytes.Length);
+                await SendResponseHeadersToClient(httpStatusCode, client.ResponseHeaders, client, dataBytes.Length);
                 await SendResponseDataToClient(dataBytes, client);
             }
             catch (SocketException)
@@ -924,12 +969,20 @@ namespace SignalGo.Server.ServiceManager.Providers
 
                 if (contextResult != null)
                 {
-                    var property = contextResult.GetType().GetListOfProperties().Select(x => new { Info = x, Attribute = x.GetCustomAttributes<HttpKeyAttribute>().FirstOrDefault(y => !y.IsExpireField), ExpiredAttribute = x.GetCustomAttributes<HttpKeyAttribute>().FirstOrDefault(y => y.IsExpireField) }).FirstOrDefault(x => x.Attribute != null);
-                    if (property != null)
+                    foreach (var property in contextResult.GetType().GetListOfProperties().Select(x => new { Info = x, Attribute = x.GetCustomAttributes<HttpKeyAttribute>().GroupBy(y => y.KeyType) }))
                     {
-                        if (!client.ResponseHeaders.ContainsKey(property.Attribute.ResponseHeaderName))
+                        foreach (IGrouping<HttpKeyType, HttpKeyAttribute> group in property.Attribute)
                         {
-                            client.ResponseHeaders[property.Attribute.ResponseHeaderName] = new string[] { OperationContextBase.IncludeValue((string)property.Info.GetValue(contextResult, null), property.Attribute.KeyName, property.Attribute.HeaderValueSeparate, property.Attribute.HeaderKeyValueSeparate) + property.Attribute.Perfix };
+                            if (group.Key == HttpKeyType.Cookie)
+                            {
+                                foreach (HttpKeyAttribute httpKey in group.ToList())
+                                {
+                                    if (!client.ResponseHeaders.ContainsKey(httpKey.ResponseHeaderName))
+                                    {
+                                        client.ResponseHeaders[httpKey.ResponseHeaderName] = new string[] { OperationContextBase.IncludeValue((string)property.Info.GetValue(contextResult, null), httpKey.KeyName, httpKey.HeaderValueSeparate, httpKey.HeaderKeyValueSeparate) + httpKey.Perfix };
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -939,25 +992,25 @@ namespace SignalGo.Server.ServiceManager.Providers
 
         internal static async Task SendResponseHeadersToClient(HttpStatusCode httpStatusCode, IDictionary<string, string[]> webResponseHeaderCollection, ClientInfo client, int contentLength)
         {
-            if (client.IsOwinClient)
-            {
-                return;
-            }
+
             string newLine = "\r\n";
             string firstLine = "";
             firstLine = $"HTTP/1.1 {(int)httpStatusCode} {HttpRequestController.GetStatusDescription((int)httpStatusCode)}" + newLine;
 
-            if (!webResponseHeaderCollection.ContainsKey("Content-Type") || !webResponseHeaderCollection["Content-Type"].Contains("utf-8"))
+            if (!webResponseHeaderCollection.ContainsKey("Content-Type"))//|| !webResponseHeaderCollection["Content-Type"].Contains("utf-8")
             {
                 webResponseHeaderCollection["Content-Type"] = "text/html; charset=utf-8".Split(',');
             }
-            if (!webResponseHeaderCollection.ContainsKey("Content-Length"))
+            if (!webResponseHeaderCollection.ContainsKey("Content-Length") || webResponseHeaderCollection["Content-Length"].FirstOrDefault() == "0")
                 webResponseHeaderCollection.Add("Content-Length", (contentLength).ToString().Split(','));
             else
             {
 
             }
-
+            if (client.IsOwinClient)
+            {
+                return;
+            }
             StringBuilder builder = new StringBuilder();
             foreach (KeyValuePair<string, string[]> item in webResponseHeaderCollection)
             {
@@ -975,13 +1028,7 @@ namespace SignalGo.Server.ServiceManager.Providers
 
         internal static async Task SendResponseDataToClient(byte[] dataBytes, ClientInfo client)
         {
-            //byte[] dataBytes = Encoding.UTF8.GetBytes(dataResult);
-            //Array.Resize(ref dataBytes, dataBytes.Length + 2);
-            //dataBytes[dataBytes.Length - 2] = 13;
-            //dataBytes[dataBytes.Length - 1] = 10;
             await client.StreamHelper.WriteToStreamAsync(client.ClientStream, dataBytes);
-            await Task.Delay(100);
         }
-
     }
 }

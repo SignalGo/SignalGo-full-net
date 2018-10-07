@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 
 namespace SignalGo.Shared.Helpers
 {
@@ -98,6 +99,14 @@ namespace SignalGo.Shared.Helpers
                 return "decimal";
             else if (type == typeof(string))
                 return "string";
+            else if (type == typeof(Task))
+            {
+                return "void";
+            }
+            else if (type.GetBaseType() == typeof(Task))
+            {
+                return GetFriendlyName(type.GetGenericArguments()[0]);
+            }
             else if (type.GetIsGenericType())
                 return type.Name.Split('`')[0] + "<" + string.Join(", ", type.GetListOfGenericArguments().Select(x => GetFriendlyName(x)).ToArray()) + ">";
             else

@@ -58,6 +58,15 @@ namespace SignalGo.Client.ClientManager
 
         }
 
+#if (NET40 || NET35)
+        public virtual void ConnectAsync(string url, bool isWebsocket = false)
+#else
+        public virtual Task ConnectAsync(string url, bool isWebsocket = false)
+#endif
+        {
+            throw new NotImplementedException();
+        }
+
         private bool _IsConnected = false;
         /// <summary>
         /// if provider is connected
@@ -100,47 +109,39 @@ namespace SignalGo.Client.ClientManager
         /// </summary>
         internal ConcurrentDictionary<string, KeyValue<SynchronizationContext, object>> Callbacks { get; set; } = new ConcurrentDictionary<string, KeyValue<SynchronizationContext, object>>();
         internal ConcurrentDictionary<string, object> Services { get; set; } = new ConcurrentDictionary<string, object>();
-        internal AutoResetEvent AutoReconnectDelayResetEvent { get; set; } = new AutoResetEvent(true);
+
         internal AutoResetEvent HoldAllPrioritiesResetEvent { get; set; } = new AutoResetEvent(true);
+        internal TaskCompletionSource<object> HoldAllPrioritiesTaskResult = new TaskCompletionSource<object>();
+        internal TaskCompletionSource<object> AutoReconnectWaitToDisconnectTaskResult = new TaskCompletionSource<object>();
+        internal TaskCompletionSource<ProviderDetailsInfo> ServiceDetailEventTaskResult = null;
+        internal TaskCompletionSource<string> ServiceParameterDetailEventTaskResult = null;
 
         internal SecuritySettingsInfo SecuritySettings { get; set; } = null;
 
         internal string _address = "";
         internal int _port = 0;
-        private readonly object _connectLock = new object();
         /// <summary>
         /// connect to server
         /// </summary>
         /// <param name="address">server address</param>
         /// <param name="port">server port</param>
+#if (NET35 || NET40)
         internal void Connect(string address, int port)
-        {
-            lock (_connectLock)
-            {
-                if (IsConnected)
-                    throw new Exception("client is connected!");
-                if (IsDisposed)
-                    throw new ObjectDisposedException("Connector");
-                if (IsWebSocket)
-                    StreamHelper = SignalGoStreamWebSocket.CurrentWebSocket;
-                else
-                    StreamHelper = SignalGoStreamBase.CurrentBase;
-                _ManulyDisconnected = false;
-                _address = address;
-                _port = port;
-#if (NET45)
-                _client = new TcpClient(address, port);
-#elif (NETSTANDARD)
-                _client = new TcpClient();
-                bool isSuccess = _client.ConnectAsync(address, port).Wait(new TimeSpan(0, 0, 5));
-                if (!isSuccess)
-                    throw new TimeoutException();
-#elif (PORTABLE)
-                _client = new Sockets.Plugin.TcpSocketClient();
-                bool isSuccess = _client.ConnectAsync(address, port).Wait(new TimeSpan(0, 0, 5));
-                if (!isSuccess)
-                    throw new TimeoutException();
 #else
+        internal async Task Connect(string address, int port)
+#endif
+        {
+            if (IsConnected)
+                throw new Exception("client is connected!");
+            if (IsDisposed)
+                throw new ObjectDisposedException("Connector");
+            if (IsWebSocket)
+                StreamHelper = SignalGoStreamWebSocket.CurrentWebSocket;
+            else
+                StreamHelper = SignalGoStreamBase.CurrentBase;
+            _address = address;
+            _port = port;
+#if (NET35 || NET40)
                 _client = new TcpClient();
                 _client.NoDelay = true;
                 IAsyncResult result = _client.BeginConnect(address, port, null, null);
@@ -154,9 +155,12 @@ namespace SignalGo.Client.ClientManager
 
                 // we have connected
                 _client.EndConnect(result);
+#else
+            _client = new TcpClient();
+            await _client.ConnectAsync(address, port);
 #endif
-                _clientStream = new PipeNetworkStream(new NormalStream(_client.GetStream()));
-            }
+            _clientStream = new PipeNetworkStream(new NormalStream(_client.GetStream()));
+
         }
 
         /// <summary>
@@ -187,45 +191,83 @@ namespace SignalGo.Client.ClientManager
         /// <returns></returns>
         internal object GetDefault(Type t)
         {
-#if (!PORTABLE)
             return GetType().GetMethod("GetDefaultGeneric").MakeGenericMethod(t).Invoke(this, null);
-#else
-            return this.GetType().FindMethod("GetDefaultGeneric").MakeGenericMethod(t).Invoke(this, null);
-#endif
         }
 
+#if (NET35 || NET40)
         internal void RunPriorities()
+#else
+        internal async Task RunPriorities()
+#endif
         {
             if (!IsPriorityEnabled)
                 return;
             foreach (Delegate item in PriorityActionsAfterConnected)
             {
-                if (!IsPriorityEnabled)
-                    break;
-                if (item is Action)
-                    ((Action)item)();
-                else if (item is Func<PriorityAction>)
+                try
                 {
-                    PriorityAction priorityAction = PriorityAction.TryAgain;
-                    do
+                    if (!IsPriorityEnabled || !IsConnected)
+                        break;
+                    if (item is Action action)
+                        action();
+                    else if (item is Func<PriorityAction>)
                     {
-#if (PORTABLE)
-                        Task.Delay(ProviderSetting.PriorityFunctionDelayTime).Wait();
-#else
-                        Thread.Sleep(ProviderSetting.PriorityFunctionDelayTime);
-#endif
-                        priorityAction = ((Func<PriorityAction>)item)();
+                        PriorityAction priorityAction = PriorityAction.TryAgain;
+                        do
+                        {
+                            if (!IsConnected)
+                                break;
+                            Thread.Sleep(ProviderSetting.PriorityFunctionDelayTime);
+                            priorityAction = ((Func<PriorityAction>)item)();
+                            if (priorityAction == PriorityAction.BreakAll)
+                                break;
+                            else if (priorityAction == PriorityAction.HoldAll)
+                            {
+                                HoldAllPrioritiesResetEvent.Reset();
+                                HoldAllPrioritiesResetEvent.WaitOne();
+                            }
+                        }
+                        while (IsPriorityEnabled && priorityAction == PriorityAction.TryAgain);
                         if (priorityAction == PriorityAction.BreakAll)
                             break;
-                        else if (priorityAction == PriorityAction.HoldAll)
-                        {
-                            HoldAllPrioritiesResetEvent.Reset();
-                            HoldAllPrioritiesResetEvent.WaitOne();
-                        }
                     }
-                    while (IsPriorityEnabled && priorityAction == PriorityAction.TryAgain);
-                    if (priorityAction == PriorityAction.BreakAll)
-                        break;
+                    else if (item is Func<Task<PriorityAction>> function)
+                    {
+                        PriorityAction priorityAction = PriorityAction.TryAgain;
+                        do
+                        {
+                            if (!IsConnected)
+                                break;
+#if (NET35 || NET40)
+                            Thread.Sleep(ProviderSetting.PriorityFunctionDelayTime);
+#else
+                            await Task.Delay(ProviderSetting.PriorityFunctionDelayTime);
+#endif
+#if (NET35 || NET40)
+                        priorityAction = function().Result;
+#else
+                            priorityAction = await function();
+#endif
+                            if (priorityAction == PriorityAction.BreakAll)
+                                break;
+                            else if (priorityAction == PriorityAction.HoldAll)
+                            {
+                                HoldAllPrioritiesTaskResult = new TaskCompletionSource<object>();
+#if (NET35 || NET40)
+                            var result = HoldAllPrioritiesTaskResult.Task.Result;
+#else
+                                await HoldAllPrioritiesTaskResult.Task;
+#endif
+                            }
+                        }
+                        while (IsPriorityEnabled && priorityAction == PriorityAction.TryAgain);
+                        if (priorityAction == PriorityAction.BreakAll)
+                            break;
+                    }
+                }
+                catch (Exception ex)
+                {
+
                 }
             }
         }
@@ -240,9 +282,13 @@ namespace SignalGo.Client.ClientManager
             IsPriorityEnabled = true;
         }
 
+        /// <summary>
+        /// un hold priority when you return hold all
+        /// </summary>
         public void UnHoldPriority()
         {
             HoldAllPrioritiesResetEvent.Set();
+            HoldAllPrioritiesTaskResult.SetResult(null);
         }
         /// <summary>
         /// get default value from type
@@ -932,7 +978,10 @@ namespace SignalGo.Client.ClientManager
                             bool geted = ConnectorExtensions.WaitedMethodsForResponse.TryGetValue(callback.Guid, out TaskCompletionSource<MethodCallbackInfo> keyValue);
                             if (geted)
                             {
-                                keyValue.SetResult(callback);
+                                if (callback.IsException)
+                                    keyValue.SetException(new Exception(callback.Data));
+                                else
+                                    keyValue.SetResult(callback);
                             }
                         }
                         else if (dataType == DataType.GetServiceDetails)
@@ -945,11 +994,11 @@ namespace SignalGo.Client.ClientManager
                             if (SecuritySettings != null)
                                 bytes = DecryptBytes(bytes);
                             string json = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
-                            getServiceDetialResult = ClientSerializationHelper.DeserializeObject<ProviderDetailsInfo>(json);
+                            ProviderDetailsInfo getServiceDetialResult = ClientSerializationHelper.DeserializeObject<ProviderDetailsInfo>(json);
                             if (getServiceDetialResult == null)
-                                getServiceDetialExceptionResult = ClientSerializationHelper.DeserializeObject<Exception>(json);
-                            getServiceDetailEvent.Set();
-                            getServiceDetailEvent.Reset();
+                                ServiceDetailEventTaskResult.SetException(ClientSerializationHelper.DeserializeObject<Exception>(json));
+                            else
+                                ServiceDetailEventTaskResult.SetResult(getServiceDetialResult);
                         }
                         else if (dataType == DataType.GetMethodParameterDetails)
                         {
@@ -961,9 +1010,7 @@ namespace SignalGo.Client.ClientManager
                             if (SecuritySettings != null)
                                 bytes = DecryptBytes(bytes);
                             string json = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
-                            getmethodParameterDetailsResult = json;
-                            getServiceDetailEvent.Set();
-                            getServiceDetailEvent.Reset();
+                            ServiceParameterDetailEventTaskResult.SetResult(json);
                         }
                         else if (dataType == DataType.GetClientId)
                         {
@@ -987,6 +1034,7 @@ namespace SignalGo.Client.ClientManager
                 }
                 catch (Exception ex)
                 {
+                    Console.WriteLine("Client Disconnected");
                     AutoLogger.LogError(ex, "StartToReadingClientData");
                     Disconnect();
                 }
@@ -1094,10 +1142,7 @@ namespace SignalGo.Client.ClientManager
             {
                 if (ConnectorExtensions.WaitedMethodsForResponse.TryGetValue(callback.Guid, out TaskCompletionSource<MethodCallbackInfo> keyValue))
                 {
-                    MethodCallbackInfo data = new MethodCallbackInfo();
-                    data.IsException = true;
-                    data.Data = ex.Message;
-                    keyValue.SetResult(data);
+                    keyValue.SetException(ex);
                 }
                 //AutoLogger.LogError(ex, "ConnectorBase SendData");
             }
@@ -1127,7 +1172,9 @@ namespace SignalGo.Client.ClientManager
             try
             {
                 OnCalledMethodAction?.Invoke(callInfo);
-                object service = Callbacks[callInfo.ServiceName].Value;
+                if (!Callbacks.TryGetValue(callInfo.ServiceName.ToLower(), out KeyValue<SynchronizationContext, object> keyValue))
+                    throw new Exception($"Callback service {callInfo.ServiceName} not found or not registred in client side!");
+                object service = keyValue.Value;
                 //#if (PORTABLE)
                 MethodInfo method = service.GetType().FindMethod(callInfo.MethodName);
                 //#else
@@ -1227,9 +1274,6 @@ namespace SignalGo.Client.ClientManager
 #endif
         }
 
-        private ManualResetEvent getServiceDetailEvent = new ManualResetEvent(false);
-        private ProviderDetailsInfo getServiceDetialResult = null;
-        private Exception getServiceDetialExceptionResult = null;
 
 #if (NET40 || NET35)
         public ProviderDetailsInfo GetListOfServicesWithDetials(string hostUrl)
@@ -1251,19 +1295,16 @@ namespace SignalGo.Client.ClientManager
             data.AddRange(bytes);
             if (data.Count > ProviderSetting.MaximumSendDataBlock)
                 throw new Exception("SendCallbackData data length is upper than MaximumSendDataBlock");
-
+            ServiceDetailEventTaskResult = new TaskCompletionSource<ProviderDetailsInfo>();
 #if (NET40 || NET35)
             StreamHelper.WriteToStream(_clientStream, data.ToArray());
+            return ServiceDetailEventTaskResult.Task.Result;
 #else
             await StreamHelper.WriteToStreamAsync(_clientStream, data.ToArray());
+            return await ServiceDetailEventTaskResult.Task;
 #endif
-            getServiceDetailEvent.WaitOne();
-            if (getServiceDetialExceptionResult != null)
-                throw getServiceDetialExceptionResult;
-            return getServiceDetialResult;
         }
 
-        private string getmethodParameterDetailsResult = "";
 #if (NET40 || NET35)
         public string GetMethodParameterDetial(MethodParameterDetails methodParameterDetails)
 #else
@@ -1287,14 +1328,14 @@ namespace SignalGo.Client.ClientManager
             data.AddRange(bytes);
             if (data.Count > ProviderSetting.MaximumSendDataBlock)
                 throw new Exception("SendCallbackData data length is upper than MaximumSendDataBlock");
-
+            ServiceParameterDetailEventTaskResult = new TaskCompletionSource<string>();
 #if (NET40 || NET35)
             StreamHelper.WriteToStream(_clientStream, data.ToArray());
+            return ServiceParameterDetailEventTaskResult.Task.Result;
 #else
             await StreamHelper.WriteToStreamAsync(_clientStream, data.ToArray());
+            return await ServiceParameterDetailEventTaskResult.Task;
 #endif
-            getServiceDetailEvent.WaitOne();
-            return getmethodParameterDetailsResult;
         }
 
         /// <summary>
@@ -1316,13 +1357,18 @@ namespace SignalGo.Client.ClientManager
             PriorityActionsAfterConnected.Add(function);
         }
 
-        private readonly object _autoReconnectLock = new object();
-        private bool _ManulyDisconnected = false;
+        /// <summary>
+        /// calls this function after connected and befor holded methods
+        /// if you return false this will hold methods and call this function again after a time until you return true
+        /// </summary>
+        /// <param name="function"></param>
+        public void AddPriorityAsyncFunction(Func<Task<PriorityAction>> function)
+        {
+            PriorityActionsAfterConnected.Add(function);
+        }
+
         public void Disconnect()
         {
-            if (_ManulyDisconnected)
-                return;
-            _ManulyDisconnected = true;
             if (IsDisposed)
                 throw new ObjectDisposedException("Connector");
 
@@ -1332,56 +1378,58 @@ namespace SignalGo.Client.ClientManager
 #else
                 _client.Close();
 #endif
-            foreach (KeyValuePair<string, TaskCompletionSource<MethodCallbackInfo>> item in ConnectorExtensions.WaitedMethodsForResponse)
-            {
-                item.Value.SetCanceled();
-            }
-            ConnectorExtensions.WaitedMethodsForResponse.Clear();
             if (IsConnected)
             {
                 IsConnected = false;
             }
+            foreach (KeyValuePair<string, TaskCompletionSource<MethodCallbackInfo>> item in ConnectorExtensions.WaitedMethodsForResponse)
+            {
+                item.Value.TrySetCanceled();
+            }
+            ConnectorExtensions.WaitedMethodsForResponse.Clear();
+           
             OnConnectionChanged?.Invoke(ConnectionStatus.Disconnected);
 
-            getServiceDetailEvent?.Reset();
-            if (!IsAutoReconnecting)
-            {
-                lock (_autoReconnectLock)
-                {
-                    if (ProviderSetting.AutoReconnect && !IsAutoReconnecting)
-                    {
-                        IsAutoReconnecting = true;
-                        while (!IsConnected && !IsDisposed)
-                        {
-                            try
-                            {
-                                OnConnectionChanged?.Invoke(ConnectionStatus.Reconnecting);
-                                OnAutoReconnecting?.Invoke();
-                                Connect(ServerUrl);
-                            }
-                            catch (Exception ex)
-                            {
+            //if (!IsAutoReconnecting)
+            //{
+            //    lock (_autoReconnectLock)
+            //    {
+            //        if (ProviderSetting.AutoReconnect && !IsAutoReconnecting)
+            //        {
+            //            IsAutoReconnecting = true;
+            //            while (!IsConnected && !IsDisposed)
+            //            {
+            //                try
+            //                {
+            //                    OnConnectionChanged?.Invoke(ConnectionStatus.Reconnecting);
+            //                    OnAutoReconnecting?.Invoke();
+            //                    Connect(ServerUrl);
+            //                }
+            //                catch (Exception ex)
+            //                {
 
-                            }
-                            finally
-                            {
-                                AutoReconnectDelayResetEvent.Reset();
-                                AutoReconnectDelayResetEvent.WaitOne(ProviderSetting.AutoReconnectTime);
-                            }
-                        }
-                        //foreach (var item in HoldMethodsToReconnect.ToList())
-                        //{
-                        //    item.Set();
-                        //}
-                        //HoldMethodsToReconnect.Clear();
-                        IsAutoReconnecting = false;
-                    }
-                }
-            }
-            else
-            {
+            //                }
+            //                finally
+            //                {
+            //                    AutoReconnectDelayResetEvent.Reset();
+            //                    AutoReconnectDelayResetEvent.WaitOne(ProviderSetting.AutoReconnectTime);
+            //                }
+            //            }
+            //            //foreach (var item in HoldMethodsToReconnect.ToList())
+            //            //{
+            //            //    item.Set();
+            //            //}
+            //            //HoldMethodsToReconnect.Clear();
+            //            IsAutoReconnecting = false;
+            //        }
+            //    }
+            //}
+            //else
+            //{
 
-            }
+            //}
+            if (AutoReconnectWaitToDisconnectTaskResult.Task.Status != TaskStatus.RanToCompletion)
+                AutoReconnectWaitToDisconnectTaskResult.SetResult(null);
         }
 
 

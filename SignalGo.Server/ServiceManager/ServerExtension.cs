@@ -133,7 +133,8 @@ namespace SignalGo.Server.ServiceManager
             bytes.AddRange(jsonBytes);
 
             await client.StreamHelper.WriteToStreamAsync(client.ClientStream, bytes.ToArray());
-            return taskCompletionSource.GetType().GetProperty("Task").GetValue(taskCompletionSource, null);
+            var result = taskCompletionSource.GetType().GetProperty("Task").GetValue(taskCompletionSource, null);
+            return result;
 #endif
         }
 

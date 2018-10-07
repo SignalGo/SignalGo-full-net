@@ -21,6 +21,14 @@ namespace SignalGo.Shared.Helpers
             }
         }
 
+        public static IEnumerable<Shared.Models.ParameterInfo> MethodToParameters(this Models.ServiceDetailsMethod methodInfo,List<Models.ServiceDetailsParameterInfo> parameters, Func<object, string> serialize)
+        {
+            foreach (var parameterInfo in parameters)
+            {
+                yield return new Shared.Models.ParameterInfo() { Name = parameterInfo.Name, Value = serialize(parameterInfo.Value) };
+            }
+        }
+
 #if (!NET35)
         public static IEnumerable<Shared.Models.ParameterInfo> MethodToParameters(this System.Dynamic.InvokeMemberBinder methodInfo, Func<object, string> serialize, params object[] args)
         {
@@ -211,11 +219,7 @@ namespace SignalGo.Shared.Helpers
 #if (NETSTANDARD || NETCOREAPP || PORTABLE)
                 .GetTypeInfo()
 #endif
-#if (PORTABLE)
-                .GetDeclaredMethod(name);
-#else
-                .GetMethod(name, BindingFlags.IgnoreCase | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
-#endif
+                .GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static).Where(x=>x.Name.ToLower() == name.ToLower()).FirstOrDefault();
         }
         /// <summary>
         /// get method

@@ -147,8 +147,7 @@ namespace SignalGo.Server.ServiceManager.Versions
             ClientInfo client = null;
             try
             {
-                lock (_lockobject)
-                    _WaitingToReadFirstLineCount++;
+                _WaitingToReadFirstLineCount++;
                 if (_serverBase.ProviderSetting.IsEnabledToUseTimeout)
                 {
                     tcpClient.GetStream().ReadTimeout = (int)_serverBase.ProviderSetting.ReceiveDataTimeout.TotalMilliseconds;
@@ -164,18 +163,26 @@ namespace SignalGo.Server.ServiceManager.Versions
                         tcpClient.GetStream().WriteTimeout = -1;
                     }
                     client = CreateClientInfo(false, tcpClient, reader);
+                    client.ProtocolType = ClientProtocolType.SignalGoStream;
                     client.StreamHelper = SignalGoStreamBase.CurrentBase;
                     SignalGoStreamProvider.StartToReadingClientData(client, _serverBase);
                 }
                 else if (firstLineString.Contains("SignalGo-OneWay/4.0"))
                 {
+                    if (!_serverBase.ProviderSetting.IsEnabledToUseTimeout)
+                    {
+                        tcpClient.GetStream().ReadTimeout = -1;
+                        tcpClient.GetStream().WriteTimeout = -1;
+                    }
                     client = CreateClientInfo(false, tcpClient, reader);
+                    client.ProtocolType = ClientProtocolType.SignalGoOneWay;
                     client.StreamHelper = SignalGoStreamBase.CurrentBase;
                     OneWayServiceProvider.StartToReadingClientData(client, _serverBase);
                 }
                 else if (firstLineString.Contains("SignalGo/4.0"))
                 {
                     client = CreateClientInfo(false, tcpClient, reader);
+                    client.ProtocolType = ClientProtocolType.SignalGoDuplex;
                     //"SignalGo/1.0";
                     client.StreamHelper = SignalGoStreamBase.CurrentBase;
                     if (_serverBase.ProviderSetting.ServerServiceSetting.IsEnabledToUseTimeout)
@@ -183,7 +190,11 @@ namespace SignalGo.Server.ServiceManager.Versions
                         tcpClient.ReceiveTimeout = (int)_serverBase.ProviderSetting.ServerServiceSetting.ReceiveDataTimeout.TotalMilliseconds;
                         tcpClient.SendTimeout = (int)_serverBase.ProviderSetting.ServerServiceSetting.SendDataTimeout.TotalMilliseconds;
                     }
-
+                    else
+                    {
+                        tcpClient.GetStream().ReadTimeout = -1;
+                        tcpClient.GetStream().WriteTimeout = -1;
+                    }
                     SignalGoDuplexServiceProvider.StartToReadingClientData(client, _serverBase);
                 }
                 else if (firstLineString.Contains("HTTP/"))
@@ -193,7 +204,7 @@ namespace SignalGo.Server.ServiceManager.Versions
                         tcpClient.GetStream().ReadTimeout = (int)_serverBase.ProviderSetting.HttpSetting.ReceiveDataTimeout.TotalMilliseconds;
                         tcpClient.GetStream().WriteTimeout = (int)_serverBase.ProviderSetting.HttpSetting.SendDataTimeout.TotalMilliseconds;
                     }
-                    HttpProvider.StartToReadingClientData(tcpClient, _serverBase, reader, firstLineString);
+                    await HttpProvider.StartToReadingClientData(tcpClient, _serverBase, reader, firstLineString);
                 }
                 else
                 {
@@ -206,8 +217,7 @@ namespace SignalGo.Server.ServiceManager.Versions
             }
             finally
             {
-                lock (_lockobject)
-                    _WaitingToReadFirstLineCount--;
+                _WaitingToReadFirstLineCount--;
             }
         }
 
@@ -215,6 +225,12 @@ namespace SignalGo.Server.ServiceManager.Versions
         {
             StringBuilder stringBuilder = new StringBuilder();
             stringBuilder.AppendLine("Clients Connected Count: " + _serverBase.Clients.Count);
+            stringBuilder.AppendLine("Http Clients Connected Count: " + _serverBase.Clients.Values.Count(x => x.ProtocolType == ClientProtocolType.Http));
+            stringBuilder.AppendLine("SignalGoDuplex Clients Connected Count: " + _serverBase.Clients.Values.Count(x => x.ProtocolType == ClientProtocolType.SignalGoDuplex));
+            stringBuilder.AppendLine("SignalGoOneWay Clients Connected Count: " + _serverBase.Clients.Values.Count(x => x.ProtocolType == ClientProtocolType.SignalGoOneWay));
+            stringBuilder.AppendLine("SignalGoStream Clients Connected Count: " + _serverBase.Clients.Values.Count(x => x.ProtocolType == ClientProtocolType.SignalGoStream));
+            stringBuilder.AppendLine("WebSocket Clients Connected Count: " + _serverBase.Clients.Values.Count(x => x.ProtocolType == ClientProtocolType.WebSocket));
+            stringBuilder.AppendLine("None Clients Connected Count: " + _serverBase.Clients.Values.Count(x => x.ProtocolType == ClientProtocolType.None));
 #if (!NETSTANDARD1_6)
             stringBuilder.AppendLine("Thread Count: " + System.Diagnostics.Process.GetCurrentProcess().Threads.Count);
 #endif
@@ -237,6 +253,20 @@ namespace SignalGo.Server.ServiceManager.Versions
             stringBuilder.AppendLine("_ConnectedCount: " + _ConnectedCount);
             stringBuilder.AppendLine("_WaitingToReadFirstLineCount: " + _WaitingToReadFirstLineCount);
 
+            IGrouping<string, ClientInfo> maximumConnectionOfIp = _serverBase.Clients.Values.GroupBy(x => x.IPAddress).OrderByDescending(x => x.Count()).FirstOrDefault();
+            if (maximumConnectionOfIp != null)
+            {
+                stringBuilder.AppendLine("Max ConnectionCount Of Ip: " + maximumConnectionOfIp.Key + " Count:" + maximumConnectionOfIp.Count());
+
+                stringBuilder.AppendLine($"Http {maximumConnectionOfIp.Key} Connected Count: " + maximumConnectionOfIp.Count(x => x.ProtocolType == ClientProtocolType.Http));
+                stringBuilder.AppendLine($"SignalGoDuplex {maximumConnectionOfIp.Key} Connected Count: " + maximumConnectionOfIp.Count(x => x.ProtocolType == ClientProtocolType.SignalGoDuplex));
+                stringBuilder.AppendLine($"SignalGoOneWay {maximumConnectionOfIp.Key} Connected Count: " + maximumConnectionOfIp.Count(x => x.ProtocolType == ClientProtocolType.SignalGoOneWay));
+                stringBuilder.AppendLine($"SignalGoStream {maximumConnectionOfIp.Key} Connected Count: " + maximumConnectionOfIp.Count(x => x.ProtocolType == ClientProtocolType.SignalGoStream));
+                stringBuilder.AppendLine($"WebSocket {maximumConnectionOfIp.Key} Connected Count: " + maximumConnectionOfIp.Count(x => x.ProtocolType == ClientProtocolType.WebSocket));
+                stringBuilder.AppendLine($"None {maximumConnectionOfIp.Key} Connected Count: " + maximumConnectionOfIp.Count(x => x.ProtocolType == ClientProtocolType.None));
+
+
+            }
             return stringBuilder.ToString();
         }
     }

@@ -130,9 +130,9 @@ namespace SignalGo.Client.ClientManager
         /// </summary>
         /// <returns></returns>
 #if (NET40 || NET35)
-        internal static string SendData(ConnectorBase connector, string serviceName, string methodName, params Shared.Models.ParameterInfo[] args)
+        public static string SendData(ConnectorBase connector, string serviceName, string methodName, params Shared.Models.ParameterInfo[] args)
 #else
-        internal static Task<string> SendDataAsync(ConnectorBase connector, string serviceName, string methodName, params Shared.Models.ParameterInfo[] args)
+        public static Task<string> SendDataAsync(ConnectorBase connector, string serviceName, string methodName, params Shared.Models.ParameterInfo[] args)
 #endif
         {
             MethodCallInfo callInfo = new MethodCallInfo();

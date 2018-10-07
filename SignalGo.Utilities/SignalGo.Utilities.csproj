@@ -49,6 +49,7 @@
     <Compile Include="Drawing\Shapes\Rectangle.cs" />
     <Compile Include="Drawing\Shapes\Size.cs" />
     <Compile Include="Drawing\Shapes\Vector.cs" />
+    <Compile Include="Drawing\Utilities\RectangleUtil.cs" />
     <Compile Include="Models\IDataFactoryModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

@@ -123,6 +123,7 @@ namespace SignalGo.Server.Models
     public class OperationContextBase
     {
         internal static ConcurrentDictionary<ClientInfo, HashSet<object>> SavedSettings { get; set; } = new ConcurrentDictionary<ClientInfo, HashSet<object>>();
+        internal static ConcurrentDictionary<string, string> SavedKeyParametersNameSettings { get; set; } = new ConcurrentDictionary<string, string>();
         internal static ConcurrentDictionary<string, HashSet<object>> CustomClientSavedSettings { get; set; } = new ConcurrentDictionary<string, HashSet<object>>();
         internal static object GetCurrentSetting(Type type, OperationContext context)
         {
@@ -131,44 +132,104 @@ namespace SignalGo.Server.Models
 
             if (context.Client is HttpClientInfo)
             {
-                var sessionPeroperty = type.GetListOfProperties().Where(x => x.GetCustomAttributes<HttpKeyAttribute>().FirstOrDefault(y => !y.IsExpireField) != null).Select(x => new { Info = x, Attribute = x.GetCustomAttributes<HttpKeyAttribute>().FirstOrDefault() }).FirstOrDefault();
-                var expirePeroperty = type.GetListOfProperties().Where(x => x.GetCustomAttributes<HttpKeyAttribute>().FirstOrDefault(y => y.IsExpireField) != null).Select(x => new { Info = x, Attribute = x.GetCustomAttributes<HttpKeyAttribute>().FirstOrDefault() }).FirstOrDefault();
+                bool isFindSessionProperty = false;
+                List<string> keys = new List<string>();
+                var properties = type.GetListOfProperties().Select(x => new { Info = x, Attribute = x.GetCustomAttributes<HttpKeyAttribute>().GroupBy(y => y.KeyType) });
 
-                if (sessionPeroperty == null)
-                    throw new Exception("HttpKeyAttribute on your one properties on class not found please made your string property that have HttpKeyAttribute on the top!");
-                else if (sessionPeroperty.Info.PropertyType != typeof(string))
-                    throw new Exception("type of your HttpKeyAttribute must be as string because this will used for headers of http calls and you must made it custom");
-
-                HttpClientInfo httpClient = context.Client as HttpClientInfo;
-                object setting = GetSetting(context.Client, type);
-                if (setting == null && (httpClient.RequestHeaders == null || string.IsNullOrEmpty(httpClient.GetRequestHeaderValue(sessionPeroperty.Attribute.RequestHeaderName))))
-                    return null;
-
-                string key = "";
-                if (setting == null)
-                    key = ExtractValue(httpClient.GetRequestHeaderValue(sessionPeroperty.Attribute.RequestHeaderName), sessionPeroperty.Attribute.KeyName, sessionPeroperty.Attribute.HeaderValueSeparate, sessionPeroperty.Attribute.HeaderKeyValueSeparate);
-                else
-                    key = GetKeyFromSetting(type, setting);
-                if (CustomClientSavedSettings.TryGetValue(key, out HashSet<object> result))
+                foreach (var property in properties)
                 {
-                    object obj = result.FirstOrDefault(x => x.GetType() == type);
-                    if (obj == null)
-                        return null;
-                    if (expirePeroperty != null && obj != null && expirePeroperty.Attribute.CheckIsExpired(obj.GetType().GetProperty(expirePeroperty.Info.Name).GetValue(obj, null)))
+                    foreach (IGrouping<HttpKeyType, HttpKeyAttribute> group in property.Attribute)
                     {
-                        result.Remove(obj);
-                        if (result.Count == 0)
-                            CustomClientSavedSettings.TryRemove(key, out result);
-                        return null;
+                        if (group.Key == HttpKeyType.Cookie)
+                        {
+                            if (property.Info.PropertyType != typeof(string))
+                                throw new Exception("type of your HttpKeyAttribute must be as string because this will used for headers of http calls and you must made it custom");
+                            foreach (HttpKeyAttribute httpKey in group.ToList())
+                            {
+                                isFindSessionProperty = true;
+                                HttpClientInfo httpClient = context.Client as HttpClientInfo;
+                                object setting = GetSetting(context.Client, type);
+                                if (setting == null && (httpClient.RequestHeaders == null || string.IsNullOrEmpty(httpClient.GetRequestHeaderValue(httpKey.RequestHeaderName))))
+                                    continue;
+
+                                if (setting == null)
+                                    keys.Add(ExtractValue(httpClient.GetRequestHeaderValue(httpKey.RequestHeaderName), httpKey.KeyName, httpKey.HeaderValueSeparate, httpKey.HeaderKeyValueSeparate));
+                                else
+                                    keys.Add(GetKeyFromSetting(type, setting));
+                            }
+                        }
+                        else if (group.Key == HttpKeyType.ParameterName)
+                        {
+                            if (property.Info.PropertyType != typeof(string))
+                                throw new Exception("type of your HttpKeyAttribute must be as string because this will used for headers of http calls and you must made it custom");
+                            foreach (HttpKeyAttribute httpKey in group.ToList())
+                            {
+                                isFindSessionProperty = true;
+                                HttpClientInfo httpClient = context.Client as HttpClientInfo;
+                                if (httpClient.HttpKeyParameterValue != null)
+                                {
+                                    keys.Add(httpClient.HttpKeyParameterValue);
+                                }
+
+                            }
+                        }
                     }
-                    return obj;
                 }
+                foreach (var property in properties)
+                {
+                    foreach (IGrouping<HttpKeyType, HttpKeyAttribute> group in property.Attribute)
+                    {
+                        if (group.Key == HttpKeyType.ExpireField)
+                        {
+                            foreach (HttpKeyAttribute httpKey in group.ToList())
+                            {
+                                foreach (var key in keys)
+                                {
+                                    if (CustomClientSavedSettings.TryGetValue(key, out HashSet<object> result))
+                                    {
+                                        object obj = result.FirstOrDefault(x => x.GetType() == type);
+                                        if (obj == null)
+                                            continue;
+                                        if (property != null && obj != null && httpKey.CheckIsExpired(obj.GetType().GetProperty(property.Info.Name).GetValue(obj, null)))
+                                        {
+                                            result.Remove(obj);
+                                            if (result.Count == 0)
+                                                CustomClientSavedSettings.TryRemove(key, out result);
+                                            continue;
+                                        }
+                                        return obj;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                if (!isFindSessionProperty)
+                    throw new Exception("HttpKeyAttribute on your one properties on class not found please made your string property that have HttpKeyAttribute on the top!");
+                else
+                    return null;
             }
             else if (SavedSettings.TryGetValue(context.Client, out HashSet<object> result))
             {
                 return result.FirstOrDefault(x => x.GetType() == type);
             }
             return null;
+        }
+
+
+        public static void SetCustomClientSetting(string customClientId, object setting)
+        {
+            if (setting == null)
+                throw new Exception("setting is null or empty! please fill all parameters");
+            if (string.IsNullOrEmpty(customClientId))
+                throw new Exception("customClientId is null or empty! please fill all parameters on headers or etc");
+            else if (!CustomClientSavedSettings.TryAdd(customClientId, new HashSet<object>() { setting }) && CustomClientSavedSettings.TryGetValue(customClientId, out HashSet<object> result) && !result.Contains(setting))
+                result.Add(setting);
+            var httpKeys = setting.GetType().GetListOfProperties().SelectMany(x => x.GetCustomAttributes(typeof(HttpKeyAttribute), true).Cast<HttpKeyAttribute>()).Where(x => x.KeyType == HttpKeyType.ParameterName).Select(x => x.KeyParameterName).ToList();
+            foreach (var item in httpKeys)
+            {
+                SavedKeyParametersNameSettings.TryAdd(item.ToLower(), item);
+            }
         }
 
         internal static bool HasSettingNoHttp(Type type, ClientInfo clientInfo)
@@ -187,6 +248,11 @@ namespace SignalGo.Server.Models
         /// <param name="setting"></param>
         public static void SetSetting(object setting, OperationContext context)
         {
+            if (context.Client is HttpClientInfo)
+            {
+                string key = GetKeyFromSetting(setting.GetType(), setting);
+                SetCustomClientSetting(key, setting);
+            }
             if (!SavedSettings.ContainsKey(context.Client))
                 SavedSettings.TryAdd(context.Client, new HashSet<object>() { setting });
             else if (SavedSettings.TryGetValue(context.Client, out HashSet<object> result) && !result.Contains(setting))
@@ -268,12 +334,6 @@ namespace SignalGo.Server.Models
                 if (context == null)
                     throw new Exception("SynchronizationContext is null or empty! Do not call this property inside of another thread that do not have any synchronizationContext or you can call SynchronizationContext.SetSynchronizationContext(new SynchronizationContext()); and ServerBase.AllDispatchers must contine this");
 
-                if (context.Client is HttpClientInfo)
-                {
-                    string key = GetKeyFromSetting(typeof(T), value);
-                    SetCustomClientSetting(key, value);
-                    //SetSetting(value, context);
-                }
                 SetSetting(value, context);
             }
         }
@@ -328,17 +388,6 @@ namespace SignalGo.Server.Models
             return GetSetting(clientInfo);
         }
 
-        public static void SetCustomClientSetting(string customClientId, object setting)
-        {
-            if (setting == null)
-                throw new Exception("setting is null or empty! please fill all parameters");
-            if (string.IsNullOrEmpty(customClientId))
-                throw new Exception("customClientId is null or empty! please fill all parameters on headers or etc");
-            //if (!CustomClientSavedSettings.ContainsKey(customClientId))
-            //    ;
-            else if (!CustomClientSavedSettings.TryAdd(customClientId, new HashSet<object>() { setting }) && CustomClientSavedSettings.TryGetValue(customClientId, out HashSet<object> result) && !result.Contains(setting))
-                result.Add(setting);
-        }
 
         /// <summary>
         /// get setting of your custom client id or sessions or etc
@@ -452,13 +501,18 @@ namespace SignalGo.Server.Models
                 T objectInstance = InterfaceWrapper.Wrap<T>((serviceName, method, args) =>
                 {
                     string methodName = method.Name;
-                    Task task = null;
+                    Task<object> task = null;
                     if (client.IsWebSocket)
                         task = ServerExtensions.SendWebSocketDataWithCallClientServiceMethod(serverBase, client, method.ReturnType, serviceName, method.Name, method.MethodToParameters(x => ServerSerializationHelper.SerializeObject(x, serverBase), args).ToArray());
                     else
                         task = ServerExtensions.SendDataWithCallClientServiceMethod(serverBase, client, method.ReturnType, serviceName, method.Name, method.MethodToParameters(x => ServerSerializationHelper.SerializeObject(x, serverBase), args).ToArray());
-                    task.GetAwaiter().GetResult();
-                    return task.GetType().GetProperty("Result").GetValue(task, null);
+                    object result1 = task.GetAwaiter().GetResult();
+                    if (result1 is Task task2)
+                    {
+                        task2.GetAwaiter().GetResult();
+                        return task2.GetType().GetProperty("Result").GetValue(task2, null);
+                    }
+                    return result1;
                 }, (serviceName, method, args) =>
                 {
                     //this is async action

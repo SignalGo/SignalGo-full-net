@@ -39,9 +39,10 @@ namespace ServerConsoleTest
     public interface ITestManager
     {
         string HelloWorld(string userName);
-        Task<bool> HelloWorldAsync(string userName, string password);
+        Task<string> HelloWorldAsync(string userName);
         string Test();
         int Sum(int x, int y);
+        Task<int> SumAsync(int x, int y);
     }
 
     public partial class TestService : ITestManager
@@ -55,7 +56,7 @@ namespace ServerConsoleTest
             return $"Hello {name}";
         }
 
-        public Task<bool> HelloWorldAsync(string userName, string password)
+        public Task<string> HelloWorldAsync(string userName)
         {
             throw new NotImplementedException();
         }
@@ -63,6 +64,11 @@ namespace ServerConsoleTest
         public int Sum(int x, int y)
         {
             return x + y;
+        }
+
+        public Task<int> SumAsync(int x, int y)
+        {
+            throw new NotImplementedException();
         }
 
         public string Test()
@@ -122,6 +128,7 @@ namespace ServerConsoleTest
                 //var result3 = service2.HelloWorld("reza123", "passee");
                 //var result4 = service2.Test();
                 //result2 = service.Test();
+                ClientAutoReconnectTest();
                 Console.WriteLine("seerver started");
             }
             catch (Exception ex)
@@ -137,7 +144,7 @@ namespace ServerConsoleTest
             SignalGo.Client.ClientProvider clientProvider = new SignalGo.Client.ClientProvider();
             clientProvider.Connect("http://localhost:3284/TestServices/SignalGo");
             ITestManager service = clientProvider.RegisterServerServiceInterfaceWrapper<ITestManager>();
-            bool result = await service.HelloWorldAsync("ali123", "passee");
+            var result = await service.HelloWorldAsync("ali123");
         }
 
         //public static void PiplineTest()
@@ -148,5 +155,61 @@ namespace ServerConsoleTest
 
         //    var socket = tcpListener.AcceptSocket();
         //}
+
+
+        private static async void ClientAutoReconnectTest()
+        {
+            SignalGo.Client.ClientProvider clientProvider = new SignalGo.Client.ClientProvider();
+            clientProvider.ProviderSetting.PriorityFunctionDelayTime = 0;
+            ITestManager service = clientProvider.RegisterServerServiceInterfaceWrapper<ITestManager>();
+            clientProvider.RegisterClientService<ClientService>();
+            clientProvider.ConnectAsyncAutoReconnect("http://localhost:9752/SignalGoTestService", async (isConnected) =>
+            {
+                try
+                {
+                    Console.WriteLine("connection changed: " + isConnected);
+                    if (isConnected)
+                    {
+                        Console.WriteLine("sum async calling");
+                        for (int i = 0; i < 100; i++)
+                        {
+                            int sumResult = await service.SumAsync(10, 5);
+                            await Task.Delay(1000);
+                            Console.WriteLine("sum async called: " + sumResult);
+                        }
+                    }
+                }
+                catch
+                {
+
+                }
+            });
+
+            clientProvider.AddPriorityAsyncFunction(async () =>
+            {
+                try
+                {
+                    Console.WriteLine("HelloWorldAsync Calling");
+                    var result = await service.HelloWorldAsync("ali123");
+                    Console.WriteLine("HelloWorldAsync Success " + result);
+                    if (result == $"Hello ali123")
+                        return SignalGo.Client.PriorityAction.NoPlan;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
+                }
+                return SignalGo.Client.PriorityAction.TryAgain;
+            });
+
+            Task.Run(async () =>
+            {
+                while (true)
+                {
+                    await Task.Delay(10000);
+                    clientProvider.TestDisConnect();
+                }
+            });
+        }
     }
 }

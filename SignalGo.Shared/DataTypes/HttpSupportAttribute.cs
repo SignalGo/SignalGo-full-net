@@ -16,38 +16,49 @@ namespace SignalGo.Shared.DataTypes
     //    }
     //}
 
+    public enum HttpKeyType
+    {
+        Cookie = 0,
+        ParameterName = 1,
+        ExpireField = 2
+    }
+
+    [AttributeUsage(AttributeTargets.Property, AllowMultiple = true)]
     public class HttpKeyAttribute : Attribute
     {
         public Type SettingType { get; set; }
         /// <summary>
         /// name of header when client request
         /// </summary>
-        public string RequestHeaderName { get; set; }
+        public string RequestHeaderName { get; set; } = "Cookie";
         /// <summary>
         /// name of header when client getting response
         /// </summary>
-        public string ResponseHeaderName { get; set; }
+        public string ResponseHeaderName { get; set; } = "Set-Cookie";
         /// <summary>
         /// separate char for value of header for example for Set-Cookie header is ';'
         /// </summary>
-        public string HeaderValueSeparate { get; set; }
+        public string HeaderValueSeparate { get; set; } = ";";
         /// <summary>
         /// separate char between key and value of header for example for Set-Cookie header is '='
         /// </summary>
-        public string HeaderKeyValueSeparate { get; set; }
+        public string HeaderKeyValueSeparate { get; set; } = "=";
         /// <summary>
         /// name of key that you saves your session id
         /// </summary>
-        public string KeyName { get; set; }
+        public string KeyName { get; set; } = "_session";
         /// <summary>
         /// add perfix to last of header value
         /// </summary>
-        public string Perfix { get; set; }
+        public string Perfix { get; set; } = "; path=/";
         /// <summary>
-        /// is field of expire
+        /// type of your key
         /// </summary>
-        public bool IsExpireField { get; set; }
-
+        public HttpKeyType KeyType { get; set; } = HttpKeyType.Cookie;
+        /// <summary>
+        /// name of key parameter when your keytype is ParameterName
+        /// </summary>
+        public string KeyParameterName { get; set; }
 
         public HttpKeyAttribute()
         {

@@ -27,7 +27,7 @@ namespace SignalGo.Server.Helpers
             if (obj == null)
                 return "";
             if (serverBase != null && serverBase.ProviderSetting.IsEnabledDataExchanger)
-                return JsonConvert.SerializeObject(obj, Formatting.None, new JsonSerializerSettings() { ReferenceLoopHandling = ReferenceLoopHandling.Ignore, Converters = new List<JsonConverter>() { new DataExchangeConverter(LimitExchangeType.OutgoingCall, customDataExchanger) { Server = serverBase, Client = client, IsEnabledReferenceResolver = serverBase.ProviderSetting.IsEnabledReferenceResolver, IsEnabledReferenceResolverForArray = serverBase.ProviderSetting.IsEnabledReferenceResolverForArray, } }, Formatting = Formatting.None, NullValueHandling = nullValueHandling });
+                return JsonConvert.SerializeObject(obj, Formatting.None, new JsonSerializerSettings() { ReferenceLoopHandling = ReferenceLoopHandling.Ignore, Converters = new List<JsonConverter>() { new CustomICollectionCreationConverter(), new DataExchangeConverter(LimitExchangeType.OutgoingCall, customDataExchanger) { Server = serverBase, Client = client, IsEnabledReferenceResolver = serverBase.ProviderSetting.IsEnabledReferenceResolver, IsEnabledReferenceResolverForArray = serverBase.ProviderSetting.IsEnabledReferenceResolverForArray, } }, Formatting = Formatting.None, NullValueHandling = nullValueHandling });
             return JsonConvert.SerializeObject(obj, new JsonSerializerSettings() { Formatting = Formatting.None, NullValueHandling = nullValueHandling, ReferenceLoopHandling = ReferenceLoopHandling.Ignore });
         }
 
@@ -60,7 +60,7 @@ namespace SignalGo.Server.Helpers
             if (string.IsNullOrEmpty(json))
                 return null;
             if (serverBase != null && serverBase.ProviderSetting.IsEnabledDataExchanger)
-                return JsonConvert.DeserializeObject(json, type, new JsonSerializerSettings() { ReferenceLoopHandling = ReferenceLoopHandling.Ignore, Converters = new List<JsonConverter>() { new DataExchangeConverter(LimitExchangeType.IncomingCall, customDataExchanger) { Server = serverBase, Client = client, IsEnabledReferenceResolver = serverBase.ProviderSetting.IsEnabledReferenceResolver, IsEnabledReferenceResolverForArray = serverBase.ProviderSetting.IsEnabledReferenceResolverForArray } }, Formatting = Formatting.None, NullValueHandling = nullValueHandling });
+                return JsonConvert.DeserializeObject(json, type, new JsonSerializerSettings() { ReferenceLoopHandling = ReferenceLoopHandling.Ignore, Converters = new List<JsonConverter>() { new CustomICollectionCreationConverter(), new DataExchangeConverter(LimitExchangeType.IncomingCall, customDataExchanger) { Server = serverBase, Client = client, IsEnabledReferenceResolver = serverBase.ProviderSetting.IsEnabledReferenceResolver, IsEnabledReferenceResolverForArray = serverBase.ProviderSetting.IsEnabledReferenceResolverForArray } }, Formatting = Formatting.None, NullValueHandling = nullValueHandling });
             return JsonConvert.DeserializeObject(json, type, new JsonSerializerSettings() { Formatting = Formatting.None, NullValueHandling = nullValueHandling, ReferenceLoopHandling = ReferenceLoopHandling.Ignore });
         }
 
@@ -81,7 +81,7 @@ namespace SignalGo.Server.Helpers
             if (!IsValidJson(json))
                 json = SerializeObject(json, serverBase, nullValueHandling, customDataExchanger, client);
             if (serverBase != null && serverBase.ProviderSetting.IsEnabledDataExchanger)
-                return JsonConvert.DeserializeObject(json, type, new JsonSerializerSettings() { ReferenceLoopHandling = ReferenceLoopHandling.Ignore, Converters = new List<JsonConverter>() { new DataExchangeConverter(LimitExchangeType.IncomingCall, customDataExchanger) { Server = serverBase, Client = client, IsEnabledReferenceResolver = serverBase.ProviderSetting.IsEnabledReferenceResolver, IsEnabledReferenceResolverForArray = serverBase.ProviderSetting.IsEnabledReferenceResolverForArray } }, Formatting = Formatting.None, NullValueHandling = nullValueHandling });
+                return JsonConvert.DeserializeObject(json, type, new JsonSerializerSettings() { ReferenceLoopHandling = ReferenceLoopHandling.Ignore, Converters = new List<JsonConverter>() { new CustomICollectionCreationConverter(), new DataExchangeConverter(LimitExchangeType.IncomingCall, customDataExchanger) { Server = serverBase, Client = client, IsEnabledReferenceResolver = serverBase.ProviderSetting.IsEnabledReferenceResolver, IsEnabledReferenceResolverForArray = serverBase.ProviderSetting.IsEnabledReferenceResolverForArray } }, Formatting = Formatting.None, NullValueHandling = nullValueHandling });
             return JsonConvert.DeserializeObject(json, type, new JsonSerializerSettings() { Formatting = Formatting.None, NullValueHandling = nullValueHandling, ReferenceLoopHandling = ReferenceLoopHandling.Ignore });
         }
 

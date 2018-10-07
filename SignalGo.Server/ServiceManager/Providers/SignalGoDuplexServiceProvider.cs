@@ -33,11 +33,11 @@ namespace SignalGo.Server.ServiceManager.Providers
                         continue;
                     }
                     //compress mode of data
-                    CompressMode compressMode = (CompressMode) await client.StreamHelper.ReadOneByteAsync(stream);
+                    CompressMode compressMode = (CompressMode)await client.StreamHelper.ReadOneByteAsync(stream);
                     //a server service method called from client
                     if (dataType == DataType.CallMethod)
                     {
-                        byte[] bytes =await client.StreamHelper.ReadBlockToEndAsync(stream, compressMode, serverBase.ProviderSetting.MaximumReceiveDataBlock);
+                        byte[] bytes = await client.StreamHelper.ReadBlockToEndAsync(stream, compressMode, serverBase.ProviderSetting.MaximumReceiveDataBlock);
                         //if (ClientsSettings.ContainsKey(client))
                         //    bytes = DecryptBytes(bytes, client);
                         string json = Encoding.UTF8.GetString(bytes);
@@ -58,7 +58,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     //reponse of client method that server called to client
                     else if (dataType == DataType.ResponseCallMethod)
                     {
-                        byte[] bytes =await client.StreamHelper.ReadBlockToEndAsync(stream, compressMode, serverBase.ProviderSetting.MaximumReceiveDataBlock);
+                        byte[] bytes = await client.StreamHelper.ReadBlockToEndAsync(stream, compressMode, serverBase.ProviderSetting.MaximumReceiveDataBlock);
                         //if (ClientsSettings.ContainsKey(client))
                         //    bytes = DecryptBytes(bytes, client);
                         string json = Encoding.UTF8.GetString(bytes);
@@ -75,27 +75,61 @@ namespace SignalGo.Server.ServiceManager.Providers
                                 continue;
                         }
                         if (serverBase.ClientServiceCallMethodsResult.TryGetValue(callback.Guid, out KeyValue<Type, object> resultTask))
-                            resultTask.Value.GetType().FindMethod("SetResult").Invoke(resultTask.Value, new object[] { ServerSerializationHelper.Deserialize(callback.Data, resultTask.Key, serverBase) });
+                        {
+                            if (callback.IsException)
+                                resultTask.Value.GetType().FindMethod("SetException").Invoke(resultTask.Value, new object[] { new Exception(callback.Data) });
+                            else
+                                resultTask.Value.GetType().FindMethod("SetResult").Invoke(resultTask.Value, new object[] { ServerSerializationHelper.Deserialize(callback.Data, resultTask.Key, serverBase) });
+                        }
                     }
                     else if (dataType == DataType.GetServiceDetails)
                     {
-                        byte[] bytes =await client.StreamHelper.ReadBlockToEndAsync(stream, compressMode, serverBase.ProviderSetting.MaximumReceiveDataBlock);
+                        byte[] bytes = await client.StreamHelper.ReadBlockToEndAsync(stream, compressMode, serverBase.ProviderSetting.MaximumReceiveDataBlock);
                         //if (ClientsSettings.ContainsKey(client))
                         //    bytes = DecryptBytes(bytes, client);
                         string json = Encoding.UTF8.GetString(bytes);
                         string hostUrl = ServerSerializationHelper.Deserialize<string>(json, serverBase);
                         ServerServicesManager serverServicesManager = new ServerServicesManager();
-                        serverServicesManager.SendServiceDetail(client, hostUrl, serverBase);
+                        ProviderDetailsInfo detail = serverServicesManager.SendServiceDetail(hostUrl, serverBase);
+                        json = ServerSerializationHelper.SerializeObject(detail, serverBase);
+                        List<byte> resultBytes = new List<byte>
+                        {
+                            (byte)DataType.GetServiceDetails,
+                            (byte)CompressMode.None
+                        };
+                        byte[] jsonBytes = Encoding.UTF8.GetBytes(json);
+                        byte[] dataLen = BitConverter.GetBytes(jsonBytes.Length);
+                        resultBytes.AddRange(dataLen);
+                        resultBytes.AddRange(jsonBytes);
+                        await client.StreamHelper.WriteToStreamAsync(client.ClientStream, resultBytes.ToArray());
                     }
                     else if (dataType == DataType.GetMethodParameterDetails)
                     {
-                        byte[] bytes =await client.StreamHelper.ReadBlockToEndAsync(stream, compressMode, serverBase.ProviderSetting.MaximumReceiveDataBlock);
+                        byte[] bytes = await client.StreamHelper.ReadBlockToEndAsync(stream, compressMode, serverBase.ProviderSetting.MaximumReceiveDataBlock);
                         //if (ClientsSettings.ContainsKey(client))
                         //    bytes = DecryptBytes(bytes, client);
                         string json = Encoding.UTF8.GetString(bytes);
                         MethodParameterDetails detail = ServerSerializationHelper.Deserialize<MethodParameterDetails>(json, serverBase);
+
+                        if (!serverBase.RegisteredServiceTypes.TryGetValue(detail.ServiceName, out Type serviceType))
+                            throw new Exception($"{client.IPAddress} {client.ClientId} Service {detail.ServiceName} not found");
+                        if (serviceType == null)
+                            throw new Exception($"{client.IPAddress} {client.ClientId} serviceType {detail.ServiceName} not found");
+
                         ServerServicesManager serverServicesManager = new ServerServicesManager();
-                        serverServicesManager.SendMethodParameterDetail(client, detail, serverBase);
+
+                        json = serverServicesManager.SendMethodParameterDetail(serviceType, detail, serverBase);
+                        List<byte> resultBytes = new List<byte>
+                        {
+                            (byte)DataType.GetMethodParameterDetails,
+                            (byte)CompressMode.None
+                        };
+
+                        byte[] jsonBytes = Encoding.UTF8.GetBytes(json);
+                        byte[] dataLen = BitConverter.GetBytes(jsonBytes.Length);
+                        resultBytes.AddRange(dataLen);
+                        resultBytes.AddRange(jsonBytes);
+                        await client.StreamHelper.WriteToStreamAsync(client.ClientStream, resultBytes.ToArray());
                     }
                     else if (dataType == DataType.GetClientId)
                     {
@@ -113,7 +147,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                         if (data.Count > serverBase.ProviderSetting.MaximumSendDataBlock)
                             throw new Exception($"{client.IPAddress} {client.ClientId} GetClientId data length exceeds MaximumSendDataBlock");
 
-                       await client.StreamHelper.WriteToStreamAsync(client.ClientStream, data.ToArray());
+                        await client.StreamHelper.WriteToStreamAsync(client.ClientStream, data.ToArray());
                     }
                     else
                     {

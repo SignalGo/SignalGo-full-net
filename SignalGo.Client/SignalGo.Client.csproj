@@ -10,10 +10,10 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>SignalGo.Client</RootNamespace>
     <AssemblyName>SignalGo.Client</AssemblyName>
-    <AssemblyVersion>4.1</AssemblyVersion>
-    <FileVersion>4.1</FileVersion>
+    <AssemblyVersion>4.2</AssemblyVersion>
+    <FileVersion>4.2</FileVersion>
     <!--<VersionPrefix>4.1</VersionPrefix>-->
-    <Version>4.1</Version>
+    <Version>4.2</Version>
     <DebugType>full</DebugType>
     <Copyright>Copyright © ali.visual.studio@gmail.com 2016</Copyright>
     <Description>

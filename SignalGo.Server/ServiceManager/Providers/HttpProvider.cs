@@ -20,13 +20,13 @@ namespace SignalGo.Server.ServiceManager.Providers
 #if (NET35 || NET40)
         public static Task AddHttpClient(HttpClientInfo client, ServerBase serverBase, string address, string methodName, IDictionary<string, string[]> requestHeaders, IDictionary<string, string[]> responseHeaders)
 #else
-        public static Task AddHttpClient(HttpClientInfo client, ServerBase serverBase, string address, string methodName, IDictionary<string, string[]> requestHeaders, IDictionary<string, string[]> responseHeaders)
+        public static async Task AddHttpClient(HttpClientInfo client, ServerBase serverBase, string address, string methodName, IDictionary<string, string[]> requestHeaders, IDictionary<string, string[]> responseHeaders)
 #endif
         {
 #if (NET35 || NET40)
             return Task.Factory.StartNew(() =>
 #else
-            return Task.Run(async () =>
+            await Task.Run(async () =>
 #endif
             {
                 try
@@ -39,6 +39,8 @@ namespace SignalGo.Server.ServiceManager.Providers
                 }
                 catch (Exception ex)
                 {
+                    if (client.IsOwinClient)
+                        throw;
                     serverBase.DisposeClient(client, null, "HttpProvider AddHttpClient exception");
                 }
             });
@@ -82,11 +84,13 @@ namespace SignalGo.Server.ServiceManager.Providers
                     if (line == "\r\n")
                         break;
                 }
-                tcpClient.ReceiveTimeout = -1;
-                tcpClient.SendTimeout = -1;
+
                 if (requestHeaders.Contains("Sec-WebSocket-Key"))
                 {
+                    tcpClient.ReceiveTimeout = -1;
+                    tcpClient.SendTimeout = -1;
                     client = serverBase.ServerDataProvider.CreateClientInfo(false, tcpClient, reader);
+                    client.ProtocolType = ClientProtocolType.WebSocket;
                     client.IsWebSocket = true;
                     client.StreamHelper = SignalGoStreamWebSocket.CurrentWebSocket;
                     string key = requestHeaders.Replace("ey:", "`").Split('`')[1].Replace("\r", "").Split('\n')[0].Trim();
@@ -108,6 +112,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     {
                         //serverBase.TaskOfClientInfoes
                         client = (HttpClientInfo)serverBase.ServerDataProvider.CreateClientInfo(true, tcpClient, reader);
+                        client.ProtocolType = ClientProtocolType.Http;
                         client.StreamHelper = SignalGoStreamBase.CurrentBase;
 
                         string[] lines = null;

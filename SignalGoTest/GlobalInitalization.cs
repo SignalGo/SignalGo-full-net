@@ -1,5 +1,4 @@
 ﻿using SignalGo.Client;
-using SignalGoTest.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,8 +21,8 @@ namespace SignalGoTest
             if (server == null)
             {
                 server = new SignalGo.Server.ServiceManager.ServerProvider();
-                server.RegisterServerService<TestServerStreamModel>();
-                server.RegisterServerService<TestServerModel>();
+                server.RegisterServerService<Models.TestServerStreamModel>();
+                server.RegisterServerService<Models.TestServerModel>();
                 server.Start("http://localhost:1132/SignalGoTestService");
                 server.OnConnectedClientAction = (client) =>
                 {
@@ -75,11 +74,6 @@ namespace SignalGoTest
             //connect to your server must have full address that your server is listen
             provider.Connect("http://localhost:1132/SignalGoTestService");
             return provider;
-        }
-
-        public static SignalGoTestServices.StreamServices.ITestServerStreamModel GetStreamService()
-        {
-            return client.RegisterStreamServiceInterfaceWrapper<SignalGoTestServices.StreamServices.ITestServerStreamModel>();
         }
     }
 }

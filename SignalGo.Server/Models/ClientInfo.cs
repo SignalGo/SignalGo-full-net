@@ -1,4 +1,5 @@
-﻿using SignalGo.Shared.Http;
+﻿using SignalGo.Shared.DataTypes;
+using SignalGo.Shared.Http;
 using SignalGo.Shared.IO;
 using SignalGo.Shared.Models;
 using System;
@@ -7,6 +8,16 @@ using System.Net.Sockets;
 
 namespace SignalGo.Server.Models
 {
+    public enum ClientProtocolType : byte
+    {
+        None = 0,
+        Http = 1,
+        SignalGoDuplex = 2,
+        SignalGoOneWay = 3,
+        SignalGoStream = 4,
+        WebSocket = 5,
+    }
+
     /// <summary>
     /// information of tcp client
     /// </summary>
@@ -58,6 +69,8 @@ namespace SignalGo.Server.Models
         }
 
         public bool IsWebSocket { get; set; }
+
+        public ClientProtocolType ProtocolType { get; set; } = ClientProtocolType.None;
     }
 
     /// <summary>
@@ -78,6 +91,10 @@ namespace SignalGo.Server.Models
         /// </summary>
         public virtual IDictionary<string, string[]> ResponseHeaders { get; set; } = new WebHeaderCollection();
         /// <summary>
+        /// key parameter value
+        /// </summary>
+        public string HttpKeyParameterValue { get; set; }
+        /// <summary>
         /// file of http posted file
         /// </summary>
         private HttpPostedFileInfo _currentFile = null;
@@ -97,6 +114,8 @@ namespace SignalGo.Server.Models
                 return null;
             return ((WebHeaderCollection)RequestHeaders)[header];
         }
+
+
     }
 
 }

@@ -125,8 +125,8 @@ namespace SignalGo.Shared.IO
             BufferSegment result = null;
             if (QueueBuffers.IsEmpty)
             {
-                ReadBuffer();
-                //BlockBuffers.Timeout = Stream.ReceiveTimeout;
+                if (BlockBuffers.Count == 0)
+                    ReadBuffer();
 
 #if (NET35 || NET40)
                 result = BlockBuffers.TakeAsync();
@@ -180,8 +180,8 @@ namespace SignalGo.Shared.IO
                 BufferSegment result = null;
                 if (QueueBuffers.IsEmpty)
                 {
-                    ReadBuffer();
-                    //BlockBuffers.Timeout = Stream.ReceiveTimeout;
+                    if (BlockBuffers.Count == 0)
+                        ReadBuffer();
 
 #if (NET35 || NET40)
                     result = BlockBuffers.TakeAsync();
@@ -234,12 +234,11 @@ namespace SignalGo.Shared.IO
         {
             if (IsClosed && QueueBuffers.IsEmpty && BlockBuffers.Count == 0)
                 throw new Exception("read zero buffer! client disconnected");
-            ReadBuffer();
             BufferSegment result = null;
             if (QueueBuffers.IsEmpty)
             {
-                ReadBuffer();
-                //BlockBuffers.Timeout = Stream.ReceiveTimeout;
+                if (BlockBuffers.Count == 0)
+                    ReadBuffer();
 
 #if (NET35 || NET40)
                 result = BlockBuffers.TakeAsync();
@@ -287,7 +286,6 @@ namespace SignalGo.Shared.IO
         {
             if (IsClosed && QueueBuffers.IsEmpty && BlockBuffers.Count == 0)
                 throw new Exception("read zero buffer! client disconnected");
-            ReadBuffer();
 #if (NET35 || NET40)
             return Encoding.ASCII.GetString(Read(new byte[] { 13, 10 }));
 #else
@@ -303,7 +301,6 @@ namespace SignalGo.Shared.IO
         {
             if (IsClosed && QueueBuffers.IsEmpty && BlockBuffers.Count == 0)
                 throw new Exception("read zero buffer! client disconnected");
-            ReadBuffer();
 #if (NET35 || NET40)
             byte[] bytes = Read(Encoding.ASCII.GetBytes(endOfLine));
 #else
