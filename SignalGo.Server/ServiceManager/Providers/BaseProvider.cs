@@ -254,6 +254,13 @@ namespace SignalGo.Server.ServiceManager.Providers
 
                     //List<object> parameterValues = new List<object>();
 
+                    if (OperationContextBase.SavedKeyParametersNameSettings.Count > 0 && client is HttpClientInfo httpClient)
+                    {
+                        Shared.Models.ParameterInfo find = parameters.FirstOrDefault(x => OperationContextBase.SavedKeyParametersNameSettings.ContainsKey(x.Name.ToLower()));
+                        if (find != null)
+                            httpClient.HttpKeyParameterValue = find.Value;
+                    }
+
 
 
                     foreach (ClientLimitationAttribute attrib in clientLimitationAttribute)
@@ -380,9 +387,9 @@ namespace SignalGo.Server.ServiceManager.Providers
                                 if (taskResult.GetType() != typeof(Task))
                                     result = taskResult.GetType().GetProperty("Result").GetValue(taskResult);
                             }
-                            HttpKeyAttribute httpKeyOnMethod = (HttpKeyAttribute)method.GetCustomAttributes(typeof(HttpKeyAttribute), true).FirstOrDefault();
-                            if (httpKeyOnMethod != null)
-                                httpKeyAttributes.Add(httpKeyOnMethod);
+
+                            List<HttpKeyAttribute> httpKeys = method.GetCustomAttributes(typeof(HttpKeyAttribute), true).Cast<HttpKeyAttribute>().ToList();
+                            httpKeyAttributes.AddRange(httpKeys);
                             if (serverBase.ProviderSetting.HttpKeyResponses != null)
                             {
                                 httpKeyAttributes.AddRange(serverBase.ProviderSetting.HttpKeyResponses);

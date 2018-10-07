@@ -16,6 +16,14 @@ namespace SignalGo.Shared.DataTypes
     //    }
     //}
 
+    public enum HttpKeyType
+    {
+        Cookie = 0,
+        ParameterName = 1,
+        ExpireField = 2
+    }
+
+    [AttributeUsage(AttributeTargets.Property, AllowMultiple = true)]
     public class HttpKeyAttribute : Attribute
     {
         public Type SettingType { get; set; }
@@ -44,10 +52,13 @@ namespace SignalGo.Shared.DataTypes
         /// </summary>
         public string Perfix { get; set; } = "; path=/";
         /// <summary>
-        /// is field of expire
+        /// type of your key
         /// </summary>
-        public bool IsExpireField { get; set; }
-
+        public HttpKeyType KeyType { get; set; } = HttpKeyType.Cookie;
+        /// <summary>
+        /// name of key parameter when your keytype is ParameterName
+        /// </summary>
+        public string KeyParameterName { get; set; }
 
         public HttpKeyAttribute()
         {

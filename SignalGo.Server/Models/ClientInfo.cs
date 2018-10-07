@@ -1,4 +1,5 @@
-﻿using SignalGo.Shared.Http;
+﻿using SignalGo.Shared.DataTypes;
+using SignalGo.Shared.Http;
 using SignalGo.Shared.IO;
 using SignalGo.Shared.Models;
 using System;
@@ -90,6 +91,10 @@ namespace SignalGo.Server.Models
         /// </summary>
         public virtual IDictionary<string, string[]> ResponseHeaders { get; set; } = new WebHeaderCollection();
         /// <summary>
+        /// key parameter value
+        /// </summary>
+        public string HttpKeyParameterValue { get; set; }
+        /// <summary>
         /// file of http posted file
         /// </summary>
         private HttpPostedFileInfo _currentFile = null;
@@ -109,6 +114,8 @@ namespace SignalGo.Server.Models
                 return null;
             return ((WebHeaderCollection)RequestHeaders)[header];
         }
+
+
     }
 
 }
