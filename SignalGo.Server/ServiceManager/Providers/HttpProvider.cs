@@ -126,7 +126,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                             string methodName = GetHttpMethodName(lines[0]);
                             string address = GetHttpAddress(lines[0]);
                             if (requestHeaders != null)
-                                ((HttpClientInfo)client).RequestHeaders = GetHttpHeaders(lines.Skip(1).ToArray());
+                                ((HttpClientInfo)client).RequestHeaders = SignalGo.Shared.Http.WebHeaderCollection.GetHttpHeaders(lines.Skip(1).ToArray());
 
                             await HandleHttpRequest(methodName, address, serverBase, (HttpClientInfo)client);
                         }
@@ -196,27 +196,6 @@ namespace SignalGo.Server.ServiceManager.Providers
                 return lines[1];
             return "";
         }
-
-        /// <summary>
-        /// get http header from response
-        /// </summary>
-        /// <param name="lines">lines of headers</param>
-        /// <returns>http headers</returns>
-        private static Shared.Http.WebHeaderCollection GetHttpHeaders(string[] lines)
-        {
-            Shared.Http.WebHeaderCollection result = new Shared.Http.WebHeaderCollection();
-            foreach (string item in lines)
-            {
-                string[] keyValues = item.Split(new[] { ':' }, 2);
-                if (keyValues.Length > 1)
-                {
-                    result.Add(keyValues[0], keyValues[1].TrimStart());
-                }
-            }
-            return result;
-        }
-
-
 
         private bool IsMethodInfoOfJsonParameters(IEnumerable<MethodInfo> methods, List<string> names)
         {

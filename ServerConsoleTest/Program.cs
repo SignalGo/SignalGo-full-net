@@ -1,4 +1,5 @@
-﻿using SignalGo.Server.Models;
+﻿using SignalGo.Client;
+using SignalGo.Server.Models;
 using SignalGo.Server.ServiceManager;
 using SignalGo.Shared.DataTypes;
 using System;
@@ -93,7 +94,7 @@ namespace ServerConsoleTest
         [HttpKey(ResponseHeaderName = "Set-Cookie", RequestHeaderName = "Cookie", Perfix = "; path=/", KeyName = "_session", HeaderValueSeparate = ";", HeaderKeyValueSeparate = "=")]
         public string Session { get; set; }
 
-        [HttpKey(IsExpireField = true)]
+        [HttpKey(KeyType = HttpKeyType.ExpireField)]
         public DateTime ExpireDateTime { get; set; }
     }
 
@@ -105,6 +106,11 @@ namespace ServerConsoleTest
         {
             try
             {
+                HttpClient tesClient = new HttpClient();
+                tesClient.Post("http://panel.menno.ir/Authentication/Login", null, new SignalGo.Shared.Models.ParameterInfo[] {
+                    new SignalGo.Shared.Models.ParameterInfo(){ Name = "username" , Value ="ali"},
+                    new SignalGo.Shared.Models.ParameterInfo(){ Name ="password",Value = "12345" }
+                });
                 //PipeNetworkStream pipeNetworkStream = new PipeNetworkStream(null);
                 //byte[] result = pipeNetworkStream.Read(100, out int readCount);
                 ServerProvider serverProvider = new ServerProvider();
@@ -144,7 +150,7 @@ namespace ServerConsoleTest
             SignalGo.Client.ClientProvider clientProvider = new SignalGo.Client.ClientProvider();
             clientProvider.Connect("http://localhost:3284/TestServices/SignalGo");
             ITestManager service = clientProvider.RegisterServerServiceInterfaceWrapper<ITestManager>();
-            var result = await service.HelloWorldAsync("ali123");
+            string result = await service.HelloWorldAsync("ali123");
         }
 
         //public static void PiplineTest()
@@ -190,7 +196,7 @@ namespace ServerConsoleTest
                 try
                 {
                     Console.WriteLine("HelloWorldAsync Calling");
-                    var result = await service.HelloWorldAsync("ali123");
+                    string result = await service.HelloWorldAsync("ali123");
                     Console.WriteLine("HelloWorldAsync Success " + result);
                     if (result == $"Hello ali123")
                         return SignalGo.Client.PriorityAction.NoPlan;

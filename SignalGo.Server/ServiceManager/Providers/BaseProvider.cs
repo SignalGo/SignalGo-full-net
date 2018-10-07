@@ -433,7 +433,12 @@ namespace SignalGo.Server.ServiceManager.Providers
                     exception = ex;
                     serverBase.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase CallMethod 2: {methodName}");
                     callback.IsException = true;
-                    callback.Data = ServerSerializationHelper.SerializeObject(ex.ToString(), serverBase);
+                    if (serverBase.ErrorHandlingFunction != null)
+                    {
+                        callback.Data = ServerSerializationHelper.SerializeObject(serverBase.ErrorHandlingFunction(ex, serviceType, method));
+                    }
+                    else
+                        callback.Data = ServerSerializationHelper.SerializeObject(ex.ToString(), serverBase);
                 }
                 finally
                 {

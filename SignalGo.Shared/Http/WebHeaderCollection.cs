@@ -8,6 +8,25 @@ namespace SignalGo.Shared.Http
 {
     public class WebHeaderCollection : IDictionary<string, string[]>, ICollection<KeyValuePair<string, string[]>>, IEnumerable<KeyValuePair<string, string[]>>, IEnumerable
     {
+
+        /// <summary>
+        /// get http header from response
+        /// </summary>
+        /// <param name="lines">lines of headers</param>
+        /// <returns>http headers</returns>
+        public static Shared.Http.WebHeaderCollection GetHttpHeaders(string[] lines)
+        {
+            Shared.Http.WebHeaderCollection result = new Shared.Http.WebHeaderCollection();
+            foreach (string item in lines)
+            {
+                string[] keyValues = item.Split(new[] { ':' }, 2);
+                if (keyValues.Length > 1)
+                {
+                    result.Add(keyValues[0], keyValues[1].TrimStart());
+                }
+            }
+            return result;
+        }
         private ConcurrentDictionary<string, string[]> Items { get; set; } = new ConcurrentDictionary<string, string[]>();
         //
         // Summary:
