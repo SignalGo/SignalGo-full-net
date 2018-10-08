@@ -1,11 +1,17 @@
 # Wiki and Nuget
 [![NuGet](https://img.shields.io/badge/github-full%20wiki-brightgreen.svg)](https://github.com/SignalGo/SignalGo-full-net/wiki)
-[![NuGet](https://img.shields.io/badge/nuget-server.net%20v4.1.0-blue.svg)](https://www.nuget.org/packages/SignalGo.Net.Server/)  [![NuGet](https://img.shields.io/badge/nuget-client.net%20v4.1.0-blue.svg)](https://www.nuget.org/packages/SignalGo.Net.Client/)  [![NuGet](https://img.shields.io/badge/nuget-javascript%20v4.1.0-blue.svg)](https://www.nuget.org/packages/SignalGo.JavaScript.Client/)
+[![NuGet](https://img.shields.io/badge/nuget-server.net%20v4.3.0-blue.svg)](https://www.nuget.org/packages/SignalGo.Net.Server/)  [![NuGet](https://img.shields.io/badge/nuget-client.net%20v4.3.0-blue.svg)](https://www.nuget.org/packages/SignalGo.Net.Client/)  [![NuGet](https://img.shields.io/badge/nuget-javascript%20v4.3.0-blue.svg)](https://www.nuget.org/packages/SignalGo.JavaScript.Client/)
 
 # Signal Go
 
 SignalGo is a library for Cross-Platform developers that makes it incredibly simple and easy to add real-time web functionality to your applications. What is "real-time web" functionality? It's the ability to have your server-side code push content to the connected clients as it happens, in real-time. like WCF and SignalR
 
+# Why Signal Go?
+
+Signalgo has more features and structures but very easy to use, Signalgo has a visual studio extension to generate all of your needs on client side (don't write 1 line code in client side! no create models,enums,services,methods,etc),
+Signalgo has own protocol over json that is very fast and support http and https protocol too. Signalgo has a signalgo test application (with WPF UI) for test your server side methods witout write any code witout any client
+I made signalgo for clean codes and no need to write more codes for make an appliaction.
+Signalgo will make you a fast programmer
 
 ## Features:
 
@@ -15,31 +21,33 @@ SignalGo is a library for Cross-Platform developers that makes it incredibly sim
 
 3.Send and receive data with UDP connection for sound and video streamming
 
-4.Return data from a method (client and server)
+4.Linq query to Clients for send or receive data
 
-5.Linq query to Clients for send or receive data
+5.Setting for maximum and minimum and timeout data transport
 
-6.Setting for maximum and minimum and timeout data transport
+6.Using best security algoritm for send or receive data and support for https
 
-7.Using best security algoritm for send or receive data
+7.Call methods from http GET and POST protocol (like call from browser or postman) or upload and download files and manage Controllers like asp.net MVC
 
-8.Call methods from http GET and POST protocol (like call from browser) or upload and download files and manage Controllers like asp.net MVC
-
-9.Support async await methods
+8.Full support for async await methods server and client side
      
-10.Full logging systeam
+9.Full logging systeam
      
-11.Manage data exchanger to customize model properties in send and receive data without create new class
+10.Manage data exchanger to customize model properties in send and receive data without create new class for your models
 
-12.Ip limitation for call methods
+11.Ip limitation for call methods
 
-13.Easy to manage permissions with attribute you can customize your permissions before client call methods
+12.Easy to manage permissions with attribute you can customize your permissions before client call methods
 
-14.Automatic handle object references and pointers in serialize and deserialize system
+13.Automatic handle object references and pointers in serialize and deserialize system
 
-15.Add service reference with visual studio for client side [![NuGet](https://img.shields.io/badge/github-wiki-brightgreen.svg)](https://github.com/SignalGo/SignalGo-full-net/wiki/Add-Service-Reference---Auto-generate-all-services-and-models-in-client-side)
+14.Add service reference with visual studio for client side [![NuGet](https://img.shields.io/badge/github-wiki-brightgreen.svg)](https://github.com/SignalGo/SignalGo-full-net/wiki/Add-Service-Reference---Auto-generate-all-services-and-models-in-client-side)
 
-16.Support Owin to host on IIS
+15.Support Owin to host on IIS
+
+16.easy to manage and access clients very clean code in server side
+
+17.support for duplex client and server service providers
 
 and other fetures...
 
@@ -84,8 +92,7 @@ static void Main(string[] args)
 
 After create your [server side project](Service-Providers-(Server-Side-Example)) you must create your client side project for connect to your server.
 
-In the client side you just need your interface service not your service class that have implemented methods.
-So I think this is better for you if your service interface project be separated from your service class projects because you dont need create your service interfaces again for your client side this will make easy way for you to manage your services when you just add reference from service interface project to your client project.
+In the client side you just need your server address and use the Signalgo extension for visual studio [![NuGet](https://img.shields.io/badge/github-wiki-brightgreen.svg)](https://github.com/SignalGo/SignalGo-full-net/wiki/Add-Service-Reference---Auto-generate-all-services-and-models-in-client-side) to generate all of your needs in client side and just use like this:
 
 ```csharp
                 //your client connector that will be connect to your server
@@ -98,14 +105,6 @@ So I think this is better for you if your service interface project be separated
                 var result = testServerModel.HelloWorld("ali");
                 //print your result to console
                 Console.WriteLine(result.Item1);
-```
-
-SignalGo have another way to register your service interface like:
-
-```csharp
-var testServerModel = provider.RegisterServerServiceDynamic<ITestServerModel>();
-//or
-var testServerModel = provider.RegisterServerServiceDynamic("TestServerModel");
 ```
 
 ### [You can read more Wiki by click here](https://github.com/SignalGo/SignalGo-full-net/wiki)
@@ -218,21 +217,7 @@ var testServerModel = provider.RegisterServerServiceDynamic("TestServerModel");
     }
 ```
 
-after create your controller class you must register that in to your server after start like:
-
-```csharp
-    class Program
-    {
-        static void Main(string[] args)
-        {
-            var server = new SignalGo.Server.ServiceManager.ServerProvider();
-            server.Start("http://localhost:1199/SignalGoTestServicesProject");
-            server.RegisterServerService<SignalGoServerMethods>();
-            server.RegisterClientService<ISignalGoClientMethods>();
-            server.AddHttpService(typeof(SimpleHttpRequest));
-        }
-    }
-```
+after create your service class just register that like i said before in server and client side.
 
 after that you can call your methods from this addresses:
 
@@ -248,11 +233,11 @@ http://localhost:1199/AddressTest/Hello?ali
 
 ## Install package from nuget:
 
-Install-Package SignalGo.Net.Server  [![NuGet](https://img.shields.io/badge/nuget-server.net%20v3.6.0-blue.svg)](https://www.nuget.org/packages/SignalGo.Net.Server/)
+Install-Package SignalGo.Net.Server  [![NuGet](https://img.shields.io/badge/nuget-server.net%20v4.3.0-blue.svg)](https://www.nuget.org/packages/SignalGo.Net.Server/)
 
-Install-Package SignalGo.Net.Client  [![NuGet](https://img.shields.io/badge/nuget-client.net%20v3.6.0-blue.svg)](https://www.nuget.org/packages/SignalGo.Net.Client/)
+Install-Package SignalGo.Net.Client  [![NuGet](https://img.shields.io/badge/nuget-client.net%20v4.3.0-blue.svg)](https://www.nuget.org/packages/SignalGo.Net.Client/)
 
-Install-Package SignalGo.JavaScript.Client  [![NuGet](https://img.shields.io/badge/nuget-javascript%20v3.6.0-blue.svg)](https://www.nuget.org/packages/SignalGo.JavaScript.Client/)
+Install-Package SignalGo.JavaScript.Client  [![NuGet](https://img.shields.io/badge/nuget-javascript%20v4.1-blue.svg)](https://www.nuget.org/packages/SignalGo.JavaScript.Client/)
 
 # Pull Requests
 I welcome all pull requests from you guys.Here are 3 basic rules of your request:
