@@ -45,10 +45,301 @@ namespace SignalGoTest2Services.StreamServices
 
 namespace SignalGoTest2Services.OneWayServices
 {
+    [ServiceContract("testservermodelonewayservice",ServiceType.OneWayService, InstanceType.SingleInstance)]
+    public class TestServerModel
+    {
+        public static TestServerModel Current { get; set; }
+        string _signalGoServerAddress = "";
+        int _signalGoPortNumber = 0;
+        public TestServerModel(string signalGoServerAddress, int signalGoPortNumber)
+        {
+            _signalGoServerAddress = signalGoServerAddress;
+            _signalGoPortNumber = signalGoPortNumber;
+        }
+         public System.Tuple<bool> Logout(string yourName)
+        {
+                return SignalGo.Client.ClientProvider.SendOneWayMethod<System.Tuple<bool>>(_signalGoServerAddress, _signalGoPortNumber, "testservermodelonewayservice", "Logout", new SignalGo.Shared.Models.ParameterInfo() {  Name = "yourName", Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(yourName) });
+        }
+         public Task<System.Tuple<bool>> LogoutAsync(string yourName)
+        {
+                return SignalGo.Client.ClientProvider.SendOneWayMethodAsync<System.Tuple<bool>>(_signalGoServerAddress, _signalGoPortNumber, "testservermodelonewayservice", "Logout", new SignalGo.Shared.Models.ParameterInfo() {  Name = "yourName", Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(yourName) });
+        }
+         public string HelloWorld(string yourName)
+        {
+                return SignalGo.Client.ClientProvider.SendOneWayMethod<string>(_signalGoServerAddress, _signalGoPortNumber, "testservermodelonewayservice", "HelloWorld", new SignalGo.Shared.Models.ParameterInfo() {  Name = "yourName", Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(yourName) });
+        }
+         public Task<string> HelloWorldAsync(string yourName)
+        {
+                return SignalGo.Client.ClientProvider.SendOneWayMethodAsync<string>(_signalGoServerAddress, _signalGoPortNumber, "testservermodelonewayservice", "HelloWorld", new SignalGo.Shared.Models.ParameterInfo() {  Name = "yourName", Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(yourName) });
+        }
+         public System.Collections.Generic.List<SignalGoTest2.Models.UserInfoTest> GetListOfUsers()
+        {
+                return SignalGo.Client.ClientProvider.SendOneWayMethod<System.Collections.Generic.List<SignalGoTest2.Models.UserInfoTest>>(_signalGoServerAddress, _signalGoPortNumber, "testservermodelonewayservice", "GetListOfUsers");
+        }
+         public Task<System.Collections.Generic.List<SignalGoTest2.Models.UserInfoTest>> GetListOfUsersAsync()
+        {
+                return SignalGo.Client.ClientProvider.SendOneWayMethodAsync<System.Collections.Generic.List<SignalGoTest2.Models.UserInfoTest>>(_signalGoServerAddress, _signalGoPortNumber, "testservermodelonewayservice", "GetListOfUsers");
+        }
+         public System.Collections.Generic.List<SignalGoTest2.Models.PostInfoTest> GetPostsOfUser(int userId)
+        {
+                return SignalGo.Client.ClientProvider.SendOneWayMethod<System.Collections.Generic.List<SignalGoTest2.Models.PostInfoTest>>(_signalGoServerAddress, _signalGoPortNumber, "testservermodelonewayservice", "GetPostsOfUser", new SignalGo.Shared.Models.ParameterInfo() {  Name = "userId", Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(userId) });
+        }
+         public Task<System.Collections.Generic.List<SignalGoTest2.Models.PostInfoTest>> GetPostsOfUserAsync(int userId)
+        {
+                return SignalGo.Client.ClientProvider.SendOneWayMethodAsync<System.Collections.Generic.List<SignalGoTest2.Models.PostInfoTest>>(_signalGoServerAddress, _signalGoPortNumber, "testservermodelonewayservice", "GetPostsOfUser", new SignalGo.Shared.Models.ParameterInfo() {  Name = "userId", Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(userId) });
+        }
+         public System.Collections.Generic.List<SignalGoTest2.Models.UserInfoTest> GetListOfUsersCustom()
+        {
+                return SignalGo.Client.ClientProvider.SendOneWayMethod<System.Collections.Generic.List<SignalGoTest2.Models.UserInfoTest>>(_signalGoServerAddress, _signalGoPortNumber, "testservermodelonewayservice", "GetListOfUsersCustom");
+        }
+         public Task<System.Collections.Generic.List<SignalGoTest2.Models.UserInfoTest>> GetListOfUsersCustomAsync()
+        {
+                return SignalGo.Client.ClientProvider.SendOneWayMethodAsync<System.Collections.Generic.List<SignalGoTest2.Models.UserInfoTest>>(_signalGoServerAddress, _signalGoPortNumber, "testservermodelonewayservice", "GetListOfUsersCustom");
+        }
+         public System.Collections.Generic.List<SignalGoTest2.Models.PostInfoTest> GetCustomPostsOfUser(int userId)
+        {
+                return SignalGo.Client.ClientProvider.SendOneWayMethod<System.Collections.Generic.List<SignalGoTest2.Models.PostInfoTest>>(_signalGoServerAddress, _signalGoPortNumber, "testservermodelonewayservice", "GetCustomPostsOfUser", new SignalGo.Shared.Models.ParameterInfo() {  Name = "userId", Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(userId) });
+        }
+         public Task<System.Collections.Generic.List<SignalGoTest2.Models.PostInfoTest>> GetCustomPostsOfUserAsync(int userId)
+        {
+                return SignalGo.Client.ClientProvider.SendOneWayMethodAsync<System.Collections.Generic.List<SignalGoTest2.Models.PostInfoTest>>(_signalGoServerAddress, _signalGoPortNumber, "testservermodelonewayservice", "GetCustomPostsOfUser", new SignalGo.Shared.Models.ParameterInfo() {  Name = "userId", Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(userId) });
+        }
+         public bool HelloBind(SignalGoTest2.Models.UserInfoTest userInfoTest, SignalGoTest2.Models.UserInfoTest userInfoTest2, SignalGoTest2.Models.UserInfoTest userInfoTest3)
+        {
+                return SignalGo.Client.ClientProvider.SendOneWayMethod<bool>(_signalGoServerAddress, _signalGoPortNumber, "testservermodelonewayservice", "HelloBind", new SignalGo.Shared.Models.ParameterInfo() {  Name = "userInfoTest", Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(userInfoTest) }, new SignalGo.Shared.Models.ParameterInfo() {  Name = "userInfoTest2", Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(userInfoTest2) }, new SignalGo.Shared.Models.ParameterInfo() {  Name = "userInfoTest3", Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(userInfoTest3) });
+        }
+         public Task<bool> HelloBindAsync(SignalGoTest2.Models.UserInfoTest userInfoTest, SignalGoTest2.Models.UserInfoTest userInfoTest2, SignalGoTest2.Models.UserInfoTest userInfoTest3)
+        {
+                return SignalGo.Client.ClientProvider.SendOneWayMethodAsync<bool>(_signalGoServerAddress, _signalGoPortNumber, "testservermodelonewayservice", "HelloBind", new SignalGo.Shared.Models.ParameterInfo() {  Name = "userInfoTest", Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(userInfoTest) }, new SignalGo.Shared.Models.ParameterInfo() {  Name = "userInfoTest2", Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(userInfoTest2) }, new SignalGo.Shared.Models.ParameterInfo() {  Name = "userInfoTest3", Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(userInfoTest3) });
+        }
+         public bool Login(SignalGoTest2.Models.UserInfoTest userInfoTest)
+        {
+                return SignalGo.Client.ClientProvider.SendOneWayMethod<bool>(_signalGoServerAddress, _signalGoPortNumber, "testservermodelonewayservice", "Login", new SignalGo.Shared.Models.ParameterInfo() {  Name = "userInfoTest", Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(userInfoTest) });
+        }
+         public Task<bool> LoginAsync(SignalGoTest2.Models.UserInfoTest userInfoTest)
+        {
+                return SignalGo.Client.ClientProvider.SendOneWayMethodAsync<bool>(_signalGoServerAddress, _signalGoPortNumber, "testservermodelonewayservice", "Login", new SignalGo.Shared.Models.ParameterInfo() {  Name = "userInfoTest", Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(userInfoTest) });
+        }
+         public string ServerAsyncMethod(string name)
+        {
+                return SignalGo.Client.ClientProvider.SendOneWayMethod<string>(_signalGoServerAddress, _signalGoPortNumber, "testservermodelonewayservice", "ServerAsyncMethod", new SignalGo.Shared.Models.ParameterInfo() {  Name = "name", Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(name) });
+        }
+         public Task<string> ServerAsyncMethodAsync(string name)
+        {
+                return SignalGo.Client.ClientProvider.SendOneWayMethodAsync<string>(_signalGoServerAddress, _signalGoPortNumber, "testservermodelonewayservice", "ServerAsyncMethod", new SignalGo.Shared.Models.ParameterInfo() {  Name = "name", Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(name) });
+        }
+    }
 }
 
 namespace SignalGoTest2Services.HttpServices
 {
+    public class TestServerModel
+    {
+        public TestServerModel(string serverUrl, SignalGo.Client.HttpClient httpClient = null)
+        {
+            _serverUrl = serverUrl;
+            _httpClient = httpClient;
+            if (_httpClient == null)
+                _httpClient = new SignalGo.Client.HttpClient();
+        }
+
+        private readonly string _serverUrl = null;
+        private SignalGo.Client.HttpClient _httpClient;
+        public SignalGo.Shared.Http.WebHeaderCollection RequestHeaders
+        {
+            get
+            {
+                return _httpClient.RequestHeaders;
+            }
+            set
+            {
+                _httpClient.RequestHeaders = value;
+            }
+        }
+
+        public SignalGo.Shared.Http.WebHeaderCollection ResponseHeaders { get; set; }
+        public System.Net.HttpStatusCode Status { get; set; }
+        public System.Tuple<bool> Logout(string yourName)
+        {
+                SignalGo.Client.HttpClientResponse result = _httpClient.Post(_serverUrl + (_serverUrl.EndsWith("/") ? "" : "/") + "testservermodel/Logout", new SignalGo.Shared.Models.ParameterInfo[]
+                {
+                         new  SignalGo.Shared.Models.ParameterInfo() { Name = nameof(yourName),Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(yourName) },
+                });
+                ResponseHeaders = result.ResponseHeaders;
+                Status = result.Status;
+                return SignalGo.Client.ClientSerializationHelper.DeserializeObject<System.Tuple<bool>>(result.Data);
+        }
+        public async Task<System.Tuple<bool>> LogoutAsync(string yourName)
+        {
+                SignalGo.Client.HttpClientResponse result = await _httpClient.PostAsync(_serverUrl + (_serverUrl.EndsWith("/") ? "" : "/") + "testservermodel/Logout", new SignalGo.Shared.Models.ParameterInfo[]
+                {
+                         new  SignalGo.Shared.Models.ParameterInfo() { Name = nameof(yourName),Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(yourName) },
+                });
+                ResponseHeaders = result.ResponseHeaders;
+                Status = result.Status;
+                return SignalGo.Client.ClientSerializationHelper.DeserializeObject<System.Tuple<bool>>(result.Data);
+        }
+        public string HelloWorld(string yourName)
+        {
+                SignalGo.Client.HttpClientResponse result = _httpClient.Post(_serverUrl + (_serverUrl.EndsWith("/") ? "" : "/") + "testservermodel/HelloWorld", new SignalGo.Shared.Models.ParameterInfo[]
+                {
+                         new  SignalGo.Shared.Models.ParameterInfo() { Name = nameof(yourName),Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(yourName) },
+                });
+                ResponseHeaders = result.ResponseHeaders;
+                Status = result.Status;
+                return SignalGo.Client.ClientSerializationHelper.DeserializeObject<string>(result.Data);
+        }
+        public async Task<string> HelloWorldAsync(string yourName)
+        {
+                SignalGo.Client.HttpClientResponse result = await _httpClient.PostAsync(_serverUrl + (_serverUrl.EndsWith("/") ? "" : "/") + "testservermodel/HelloWorld", new SignalGo.Shared.Models.ParameterInfo[]
+                {
+                         new  SignalGo.Shared.Models.ParameterInfo() { Name = nameof(yourName),Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(yourName) },
+                });
+                ResponseHeaders = result.ResponseHeaders;
+                Status = result.Status;
+                return SignalGo.Client.ClientSerializationHelper.DeserializeObject<string>(result.Data);
+        }
+        public System.Collections.Generic.List<SignalGoTest2.Models.UserInfoTest> GetListOfUsers()
+        {
+                SignalGo.Client.HttpClientResponse result = _httpClient.Post(_serverUrl + (_serverUrl.EndsWith("/") ? "" : "/") + "testservermodel/GetListOfUsers", new SignalGo.Shared.Models.ParameterInfo[]
+                {
+                });
+                ResponseHeaders = result.ResponseHeaders;
+                Status = result.Status;
+                return SignalGo.Client.ClientSerializationHelper.DeserializeObject<System.Collections.Generic.List<SignalGoTest2.Models.UserInfoTest>>(result.Data);
+        }
+        public async Task<System.Collections.Generic.List<SignalGoTest2.Models.UserInfoTest>> GetListOfUsersAsync()
+        {
+                SignalGo.Client.HttpClientResponse result = await _httpClient.PostAsync(_serverUrl + (_serverUrl.EndsWith("/") ? "" : "/") + "testservermodel/GetListOfUsers", new SignalGo.Shared.Models.ParameterInfo[]
+                {
+                });
+                ResponseHeaders = result.ResponseHeaders;
+                Status = result.Status;
+                return SignalGo.Client.ClientSerializationHelper.DeserializeObject<System.Collections.Generic.List<SignalGoTest2.Models.UserInfoTest>>(result.Data);
+        }
+        public System.Collections.Generic.List<SignalGoTest2.Models.PostInfoTest> GetPostsOfUser(int userId)
+        {
+                SignalGo.Client.HttpClientResponse result = _httpClient.Post(_serverUrl + (_serverUrl.EndsWith("/") ? "" : "/") + "testservermodel/GetPostsOfUser", new SignalGo.Shared.Models.ParameterInfo[]
+                {
+                         new  SignalGo.Shared.Models.ParameterInfo() { Name = nameof(userId),Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(userId) },
+                });
+                ResponseHeaders = result.ResponseHeaders;
+                Status = result.Status;
+                return SignalGo.Client.ClientSerializationHelper.DeserializeObject<System.Collections.Generic.List<SignalGoTest2.Models.PostInfoTest>>(result.Data);
+        }
+        public async Task<System.Collections.Generic.List<SignalGoTest2.Models.PostInfoTest>> GetPostsOfUserAsync(int userId)
+        {
+                SignalGo.Client.HttpClientResponse result = await _httpClient.PostAsync(_serverUrl + (_serverUrl.EndsWith("/") ? "" : "/") + "testservermodel/GetPostsOfUser", new SignalGo.Shared.Models.ParameterInfo[]
+                {
+                         new  SignalGo.Shared.Models.ParameterInfo() { Name = nameof(userId),Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(userId) },
+                });
+                ResponseHeaders = result.ResponseHeaders;
+                Status = result.Status;
+                return SignalGo.Client.ClientSerializationHelper.DeserializeObject<System.Collections.Generic.List<SignalGoTest2.Models.PostInfoTest>>(result.Data);
+        }
+        public System.Collections.Generic.List<SignalGoTest2.Models.UserInfoTest> GetListOfUsersCustom()
+        {
+                SignalGo.Client.HttpClientResponse result = _httpClient.Post(_serverUrl + (_serverUrl.EndsWith("/") ? "" : "/") + "testservermodel/GetListOfUsersCustom", new SignalGo.Shared.Models.ParameterInfo[]
+                {
+                });
+                ResponseHeaders = result.ResponseHeaders;
+                Status = result.Status;
+                return SignalGo.Client.ClientSerializationHelper.DeserializeObject<System.Collections.Generic.List<SignalGoTest2.Models.UserInfoTest>>(result.Data);
+        }
+        public async Task<System.Collections.Generic.List<SignalGoTest2.Models.UserInfoTest>> GetListOfUsersCustomAsync()
+        {
+                SignalGo.Client.HttpClientResponse result = await _httpClient.PostAsync(_serverUrl + (_serverUrl.EndsWith("/") ? "" : "/") + "testservermodel/GetListOfUsersCustom", new SignalGo.Shared.Models.ParameterInfo[]
+                {
+                });
+                ResponseHeaders = result.ResponseHeaders;
+                Status = result.Status;
+                return SignalGo.Client.ClientSerializationHelper.DeserializeObject<System.Collections.Generic.List<SignalGoTest2.Models.UserInfoTest>>(result.Data);
+        }
+        public System.Collections.Generic.List<SignalGoTest2.Models.PostInfoTest> GetCustomPostsOfUser(int userId)
+        {
+                SignalGo.Client.HttpClientResponse result = _httpClient.Post(_serverUrl + (_serverUrl.EndsWith("/") ? "" : "/") + "testservermodel/GetCustomPostsOfUser", new SignalGo.Shared.Models.ParameterInfo[]
+                {
+                         new  SignalGo.Shared.Models.ParameterInfo() { Name = nameof(userId),Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(userId) },
+                });
+                ResponseHeaders = result.ResponseHeaders;
+                Status = result.Status;
+                return SignalGo.Client.ClientSerializationHelper.DeserializeObject<System.Collections.Generic.List<SignalGoTest2.Models.PostInfoTest>>(result.Data);
+        }
+        public async Task<System.Collections.Generic.List<SignalGoTest2.Models.PostInfoTest>> GetCustomPostsOfUserAsync(int userId)
+        {
+                SignalGo.Client.HttpClientResponse result = await _httpClient.PostAsync(_serverUrl + (_serverUrl.EndsWith("/") ? "" : "/") + "testservermodel/GetCustomPostsOfUser", new SignalGo.Shared.Models.ParameterInfo[]
+                {
+                         new  SignalGo.Shared.Models.ParameterInfo() { Name = nameof(userId),Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(userId) },
+                });
+                ResponseHeaders = result.ResponseHeaders;
+                Status = result.Status;
+                return SignalGo.Client.ClientSerializationHelper.DeserializeObject<System.Collections.Generic.List<SignalGoTest2.Models.PostInfoTest>>(result.Data);
+        }
+        public bool HelloBind(SignalGoTest2.Models.UserInfoTest userInfoTest, SignalGoTest2.Models.UserInfoTest userInfoTest2, SignalGoTest2.Models.UserInfoTest userInfoTest3)
+        {
+                SignalGo.Client.HttpClientResponse result = _httpClient.Post(_serverUrl + (_serverUrl.EndsWith("/") ? "" : "/") + "testservermodel/HelloBind", new SignalGo.Shared.Models.ParameterInfo[]
+                {
+                         new  SignalGo.Shared.Models.ParameterInfo() { Name = nameof(userInfoTest),Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(userInfoTest) },
+                         new  SignalGo.Shared.Models.ParameterInfo() { Name = nameof(userInfoTest2),Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(userInfoTest2) },
+                         new  SignalGo.Shared.Models.ParameterInfo() { Name = nameof(userInfoTest3),Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(userInfoTest3) },
+                });
+                ResponseHeaders = result.ResponseHeaders;
+                Status = result.Status;
+                return SignalGo.Client.ClientSerializationHelper.DeserializeObject<bool>(result.Data);
+        }
+        public async Task<bool> HelloBindAsync(SignalGoTest2.Models.UserInfoTest userInfoTest, SignalGoTest2.Models.UserInfoTest userInfoTest2, SignalGoTest2.Models.UserInfoTest userInfoTest3)
+        {
+                SignalGo.Client.HttpClientResponse result = await _httpClient.PostAsync(_serverUrl + (_serverUrl.EndsWith("/") ? "" : "/") + "testservermodel/HelloBind", new SignalGo.Shared.Models.ParameterInfo[]
+                {
+                         new  SignalGo.Shared.Models.ParameterInfo() { Name = nameof(userInfoTest),Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(userInfoTest) },
+                         new  SignalGo.Shared.Models.ParameterInfo() { Name = nameof(userInfoTest2),Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(userInfoTest2) },
+                         new  SignalGo.Shared.Models.ParameterInfo() { Name = nameof(userInfoTest3),Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(userInfoTest3) },
+                });
+                ResponseHeaders = result.ResponseHeaders;
+                Status = result.Status;
+                return SignalGo.Client.ClientSerializationHelper.DeserializeObject<bool>(result.Data);
+        }
+        public bool Login(SignalGoTest2.Models.UserInfoTest userInfoTest)
+        {
+                SignalGo.Client.HttpClientResponse result = _httpClient.Post(_serverUrl + (_serverUrl.EndsWith("/") ? "" : "/") + "testservermodel/Login", new SignalGo.Shared.Models.ParameterInfo[]
+                {
+                         new  SignalGo.Shared.Models.ParameterInfo() { Name = nameof(userInfoTest),Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(userInfoTest) },
+                });
+                ResponseHeaders = result.ResponseHeaders;
+                Status = result.Status;
+                return SignalGo.Client.ClientSerializationHelper.DeserializeObject<bool>(result.Data);
+        }
+        public async Task<bool> LoginAsync(SignalGoTest2.Models.UserInfoTest userInfoTest)
+        {
+                SignalGo.Client.HttpClientResponse result = await _httpClient.PostAsync(_serverUrl + (_serverUrl.EndsWith("/") ? "" : "/") + "testservermodel/Login", new SignalGo.Shared.Models.ParameterInfo[]
+                {
+                         new  SignalGo.Shared.Models.ParameterInfo() { Name = nameof(userInfoTest),Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(userInfoTest) },
+                });
+                ResponseHeaders = result.ResponseHeaders;
+                Status = result.Status;
+                return SignalGo.Client.ClientSerializationHelper.DeserializeObject<bool>(result.Data);
+        }
+        public string ServerAsyncMethod(string name)
+        {
+                SignalGo.Client.HttpClientResponse result = _httpClient.Post(_serverUrl + (_serverUrl.EndsWith("/") ? "" : "/") + "testservermodel/ServerAsyncMethod", new SignalGo.Shared.Models.ParameterInfo[]
+                {
+                         new  SignalGo.Shared.Models.ParameterInfo() { Name = nameof(name),Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(name) },
+                });
+                ResponseHeaders = result.ResponseHeaders;
+                Status = result.Status;
+                return SignalGo.Client.ClientSerializationHelper.DeserializeObject<string>(result.Data);
+        }
+        public async Task<string> ServerAsyncMethodAsync(string name)
+        {
+                SignalGo.Client.HttpClientResponse result = await _httpClient.PostAsync(_serverUrl + (_serverUrl.EndsWith("/") ? "" : "/") + "testservermodel/ServerAsyncMethod", new SignalGo.Shared.Models.ParameterInfo[]
+                {
+                         new  SignalGo.Shared.Models.ParameterInfo() { Name = nameof(name),Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(name) },
+                });
+                ResponseHeaders = result.ResponseHeaders;
+                Status = result.Status;
+                return SignalGo.Client.ClientSerializationHelper.DeserializeObject<string>(result.Data);
+        }
+    }
 }
 
 namespace SignalGoTest2.Models

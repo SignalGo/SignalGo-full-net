@@ -13,6 +13,8 @@ namespace SignalGoTest.Models
     }
 
     [SignalGo.Shared.DataTypes.ServiceContract("TestServerModel", ServiceType.ServerService, InstanceType = SignalGo.Shared.DataTypes.InstanceType.SingleInstance)]
+    [SignalGo.Shared.DataTypes.ServiceContract("TestServerModel", ServiceType.HttpService, InstanceType = SignalGo.Shared.DataTypes.InstanceType.SingleInstance)]
+    [SignalGo.Shared.DataTypes.ServiceContract("TestServerModel", ServiceType.OneWayService, InstanceType = SignalGo.Shared.DataTypes.InstanceType.SingleInstance)]
     public interface ITestServerModel : ITestServerModelBase
     {
         //string HelloWorld([Bind(Excludes = new string[] { "CategoryDescription" })]string yourName);

@@ -106,11 +106,11 @@ namespace ServerConsoleTest
         {
             try
             {
-                HttpClient tesClient = new HttpClient();
-                tesClient.Post("http://panel.menno.ir/Authentication/Login", null, new SignalGo.Shared.Models.ParameterInfo[] {
-                    new SignalGo.Shared.Models.ParameterInfo(){ Name = "username" , Value ="ali"},
-                    new SignalGo.Shared.Models.ParameterInfo(){ Name ="password",Value = "12345" }
-                });
+                //HttpClient tesClient = new HttpClient();
+                //tesClient.Post("http://panel.menno.ir/Authentication/Login", new SignalGo.Shared.Models.ParameterInfo[] {
+                //    new SignalGo.Shared.Models.ParameterInfo(){ Name = "username" , Value ="ali"},
+                //    new SignalGo.Shared.Models.ParameterInfo(){ Name ="password",Value = "12345" }
+                //});
                 //PipeNetworkStream pipeNetworkStream = new PipeNetworkStream(null);
                 //byte[] result = pipeNetworkStream.Read(100, out int readCount);
                 ServerProvider serverProvider = new ServerProvider();
