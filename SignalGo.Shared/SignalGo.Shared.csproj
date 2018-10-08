@@ -5,10 +5,10 @@
     <MinimumVisualStudioVersion>10.0</MinimumVisualStudioVersion>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <AssemblyVersion>4.2</AssemblyVersion>
-    <FileVersion>4.2</FileVersion>
+    <AssemblyVersion>4.3</AssemblyVersion>
+    <FileVersion>4.3</FileVersion>
     <!--<VersionPrefix>4.0</VersionPrefix>-->
-    <Version>4.2</Version>
+    <Version>4.3</Version>
     <!--<VersionSuffix>beta1</VersionSuffix>-->
     <Authors>Ali Yousefi</Authors>
     <Company></Company>
@@ -40,15 +40,17 @@
 
       11.manage data exchanger to customize model properties in send and receive data without create new class
       and other features...
+      
+      12.full async await tasks support
     </Description>
     <Copyright>Copyright © ali.visual.studio@gmail.com 2016</Copyright>
     <Summary>
     </Summary>
     <PackageReleaseNotes>
       1.fix bugs and more improvement
-      2.support for tuples
-      3.rename InitializeService to RegisterServerService
-      rename RegisterClientServiceInterfaceWrapper to RegisterServerServiceInterfaceWrapper
+      2.added HttpKeyAttribute for method parameters
+      3.support for SOAP protocol
+      4.support for http calls on add signalgoservice references (easy to call http services)
       read document examples here:
       https://github.com/SignalGo/SignalGo-full-net
 
@@ -63,7 +65,7 @@
     <RepositoryType>git</RepositoryType>
     <RootNamespace>SignalGo.Shared</RootNamespace>
     <AssemblyName>SignalGo.Shared</AssemblyName>
-    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <!--<NetStandardImplicitPackageVersion>1.6.1</NetStandardImplicitPackageVersion>-->
     <MinClientVersion>2.12</MinClientVersion>
   </PropertyGroup>

@@ -6,10 +6,10 @@
     <MinimumVisualStudioVersion>10.0</MinimumVisualStudioVersion>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <AssemblyVersion>4.2</AssemblyVersion>
-    <FileVersion>4.2</FileVersion>
+    <AssemblyVersion>4.3</AssemblyVersion>
+    <FileVersion>4.3</FileVersion>
     <!--<VersionPrefix>4.1</VersionPrefix>-->
-    <Version>4.2</Version>
+    <Version>4.3</Version>
     <!--<VersionSuffix>beta1</VersionSuffix>-->
     <Authors>Ali Yousefi</Authors>
     <Company></Company>
@@ -19,7 +19,7 @@
       SignalGo is a library for Cross-Platform developers that makes it incredibly simple to add real-time web functionality to your applications. What is "real-time web" functionality? It's the ability to have your server-side code push content to the connected clients as it happens, in real-time. like WCF and SignalR
       Features:
 
-      1.Send and receive any data like class,object,parameters,methods,return types
+      1.Send and receive any data like class,object,struct and complex object
 
       2.Send(upload) and receive(download) stream like file stream
 
@@ -33,14 +33,23 @@
 
       7.Using best security algoritm for send or receive data
 
-      8.call methods from http (GET and Post) protocol(like browser) with support upload files and manage Controllers like asp.net MVC
+      8.Call methods from http GET and POST protocol (like call from browser) or upload and download files and manage Controllers like asp.net MVC
 
-      9.support async await methods
+      9. full support async await methods
 
-      10.full logging systeam
+      10.Full logging systeam
 
-      11.manage data exchanger to customize model properties in send and receive data without create new class
-      and other features...
+      11.Manage data exchanger to customize model properties in send and receive data without create new class
+
+      12.Ip limitation for call methods
+
+      13.Easy to manage permissions with attribute you can customize your permissions before client call methods
+
+      14.Automatic handle object references and pointers in serialize and deserialize system
+
+      15.Add service reference with visual studio for client side NuGet
+
+      16.Support Owin to host on IIS
     </Description>
     <PackageLicenseUrl>https://github.com/SignalGo/SignalGo-full-net/blob/master/LICENSE</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/SignalGo/SignalGo-full-net</PackageProjectUrl>
@@ -49,12 +58,11 @@
     <AssemblyName>SignalGo.Server</AssemblyName>
     <PackageReleaseNotes>
       1.fix bugs and more improvement
-      2.support for tuples
-      3.rename InitializeService to RegisterServerService
-      rename RegisterClientServiceInterfaceWrapper to RegisterServerServiceInterfaceWrapper
+      2.added HttpKeyAttribute for method parameters
+      3.support for SOAP protocol
+      4.support for http calls on add signalgoservice references (easy to call http services)
       read document examples here:
       https://github.com/SignalGo/SignalGo-full-net
-
     </PackageReleaseNotes>
   </PropertyGroup>
 
@@ -64,9 +72,9 @@
     <!--<WarningsAsErrors />-->
   </PropertyGroup>
 
-  <!--<PropertyGroup>
+  <PropertyGroup>
     <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\SignalGo.Server.xml</DocumentationFile>
-  </PropertyGroup>-->
+  </PropertyGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net35'">
     <Reference Include="System" />
     <Reference Include="System.Core" />
