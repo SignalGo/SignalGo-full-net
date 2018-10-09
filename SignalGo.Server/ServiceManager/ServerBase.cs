@@ -29,6 +29,10 @@ namespace SignalGo.Server.ServiceManager
         }
 
         /// <summary>
+        /// validation rules manager
+        /// </summary>
+        internal ValidationRuleInfoManager ValidationRuleInfoManager { get; set; } = new ValidationRuleInfoManager();
+        /// <summary>
         /// server data provider communication between client and server
         /// </summary>
         public IServerDataProvider ServerDataProvider { get; private set; } = new ServerDataProviderV4();
@@ -113,6 +117,10 @@ namespace SignalGo.Server.ServiceManager
         /// object is your return value
         /// </summary>
         public Func<Exception, Type, MethodInfo, object> ErrorHandlingFunction { get; set; }
+        /// <summary>
+        /// if you don't want to trhow exception when method have error validation you can fill this function to customize your result for client
+        /// </summary>
+        public Func<List<ValidationRuleInfoAttribute>, object, MethodInfo, object> ValidationResultHandlingFunction { get; set; }
         /// <summary>
         /// Register server service
         /// </summary>

@@ -186,14 +186,14 @@ namespace System
 #endif
             //if (ContainsCachKey(type, inherit))
             //    return GetCachValues(type, inherit).Where(x => x.GetType() == attributeType).ToArray();
-            return TryAddCach(type, inherit).Where(x => x.GetType() == attributeType).ToArray();
+            return TryAddCach(type, inherit).Where(x => x.GetType() == attributeType || x.GetType().IsInstancedOfType(attributeType)).ToArray();
         }
 
         private static object[] GetCustomAttributes(FieldInfo type, Type attributeType, bool inherit)
         {
             //if (ContainsCachKey(type, inherit))
             //    return GetCachValues(type, inherit).Where(x => x.GetType() == attributeType).ToArray();
-            return TryAddCach(type, inherit).Where(x => x.GetType() == attributeType).ToArray();
+            return TryAddCach(type, inherit).Where(x => x.GetType() == attributeType || x.GetType().IsInstancedOfType(attributeType)).ToArray();
             //if (!inherit)
             //{
             //    object[] cach = null;
@@ -223,7 +223,7 @@ namespace System
         {
             //if (ContainsCachKey(type, inherit))
             //    return GetCachValues(type, inherit).Where(x => x.GetType() == attributeType).ToArray();
-            return TryAddCach(type, inherit).Where(x => x.GetType() == attributeType).ToArray();
+            return TryAddCach(type, inherit).Where(x => x.GetType() == attributeType || x.GetType().IsInstancedOfType(attributeType)).ToArray();
 
             //if (!inherit)
             //{
@@ -245,7 +245,7 @@ namespace System
 
         private static object[] GetCustomAttributes(PropertyInfo type, Type attributeType, bool inherit)
         {
-            return TryAddCach(type, inherit).Where(x => x.GetType() == attributeType).ToArray();
+            return TryAddCach(type, inherit).Where(x => x.GetType() == attributeType || x.GetType().IsInstancedOfType(attributeType)).ToArray();
         }
 
         public static ConcurrentDictionary<Type, List<Type>> CachedTypesOfAttribute = new ConcurrentDictionary<Type, List<Type>>();

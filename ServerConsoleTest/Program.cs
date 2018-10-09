@@ -3,6 +3,9 @@ using SignalGo.Server.Models;
 using SignalGo.Server.ServiceManager;
 using SignalGo.Shared.DataTypes;
 using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace ServerConsoleTest
@@ -98,10 +101,19 @@ namespace ServerConsoleTest
         public DateTime ExpireDateTime { get; set; }
     }
 
+    public class TestAttribute : Attribute
+    {
+        public string Name { get; set; }
+    }
+
+    public class AttribClassTest
+    {
+        [TestAttribute]
+        public int Age { get; set; }
+    }
 
     internal class Program
     {
-
         private static void Main(string[] args)
         {
             try

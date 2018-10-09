@@ -132,5 +132,15 @@ namespace SignalGoTest.Models
             else
                 return "not found";
         }
+
+        public ArticleInfo AddArticle(ArticleInfo articleInfo)
+        {
+            return articleInfo;
+        }
+
+        public MessageContract<ArticleInfo> AddArticleMessage(ArticleInfo articleInfo)
+        {
+            return new MessageContract<ArticleInfo>() { IsSuccess = true, Data = articleInfo };
+        }
     }
 }

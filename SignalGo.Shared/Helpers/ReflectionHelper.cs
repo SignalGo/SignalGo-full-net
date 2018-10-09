@@ -21,9 +21,9 @@ namespace SignalGo.Shared.Helpers
             }
         }
 
-        public static IEnumerable<Shared.Models.ParameterInfo> MethodToParameters(this Models.ServiceDetailsMethod methodInfo,List<Models.ServiceDetailsParameterInfo> parameters, Func<object, string> serialize)
+        public static IEnumerable<Shared.Models.ParameterInfo> MethodToParameters(this Models.ServiceDetailsMethod methodInfo, List<Models.ServiceDetailsParameterInfo> parameters, Func<object, string> serialize)
         {
-            foreach (var parameterInfo in parameters)
+            foreach (Models.ServiceDetailsParameterInfo parameterInfo in parameters)
             {
                 yield return new Shared.Models.ParameterInfo() { Name = parameterInfo.Name, Value = serialize(parameterInfo.Value) };
             }
@@ -219,7 +219,7 @@ namespace SignalGo.Shared.Helpers
 #if (NETSTANDARD || NETCOREAPP || PORTABLE)
                 .GetTypeInfo()
 #endif
-                .GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static).Where(x=>x.Name.ToLower() == name.ToLower()).FirstOrDefault();
+                .GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static).Where(x => x.Name.ToLower() == name.ToLower()).FirstOrDefault();
         }
         /// <summary>
         /// get method
@@ -446,11 +446,7 @@ namespace SignalGo.Shared.Helpers
         public static List<MethodInfo> GetListOfMethodsWithAllOfBases(this Type type)
         {
             List<MethodInfo> methods = new List<MethodInfo>();
-            foreach (Type item in type.GetListOfInterfaces())
-            {
-                methods.AddRange(item.GetListOfMethods());
-            }
-            foreach (Type item in type.GetListOfBaseTypes())
+            foreach (Type item in type.GetAllInheritances())
             {
                 methods.AddRange(item.GetListOfMethods());
             }
@@ -480,6 +476,45 @@ namespace SignalGo.Shared.Helpers
 #else
             return Delegate.CreateDelegate(type, method);
 #endif
+        }
+
+        /// <summary>
+        /// get all of interfaces and base classes
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public static IEnumerable<Type> GetAllInheritances(this Type type)
+        {
+            List<Type> result = new List<Type>();
+            foreach (Type item in type.GetListOfBaseTypes())
+            {
+                if (!result.Contains(item))
+                    result.Add(item);
+                foreach (Type face in item.GetListOfInterfaces())
+                {
+                    if (!result.Contains(face))
+                        result.Add(face);
+                }
+            }
+            List<MethodInfo> methods = new List<MethodInfo>();
+            foreach (Type item in type.GetListOfInterfaces())
+            {
+                if (!result.Contains(item))
+                    result.Add(item);
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// is inheritance of type
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="newType"></param>
+        /// <returns></returns>
+        public static bool IsInstancedOfType(this Type type, Type newType)
+        {
+            return type.GetAllInheritances().Contains(newType);
         }
     }
 }

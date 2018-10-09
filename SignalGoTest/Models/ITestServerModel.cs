@@ -1,8 +1,6 @@
 ﻿using SignalGo.Shared.DataTypes;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace SignalGoTest.Models
@@ -28,6 +26,8 @@ namespace SignalGoTest.Models
             [Bind(Includes = new string[] { "Id", "Username" })]UserInfoTest userInfoTest3);
         bool Login(UserInfoTest userInfoTest);
         Task<string> ServerAsyncMethod(string name);
+        ArticleInfo AddArticle(ArticleInfo articleInfo);
+        MessageContract<ArticleInfo> AddArticleMessage(ArticleInfo articleInfo);
     }
 
     [SignalGo.Shared.DataTypes.ServiceContract("TestServerModel", ServiceType.ClientService, InstanceType = SignalGo.Shared.DataTypes.InstanceType.SingleInstance)]

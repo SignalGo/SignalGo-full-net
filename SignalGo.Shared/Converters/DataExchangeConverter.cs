@@ -319,6 +319,7 @@ namespace SignalGo.Shared.Converters
     /// </summary>
     public class DataExchangeConverter : JsonConverter
     {
+        public int? CurrentTaskId { get; set; }
         /// <summary>
         /// log system for data exchanger
         /// </summary>
@@ -331,6 +332,13 @@ namespace SignalGo.Shared.Converters
         /// enable refrence serializing when duplicate list of objects detected
         /// </summary>
         public bool IsEnabledReferenceResolverForArray { get; set; } = true;
+        /// <summary>
+        /// validation manager of data exchanger
+        /// </summary>
+        public ValidationRuleInfoManager ValidationRuleInfoManager { get; set; }
+        /// <summary>
+        /// reference resolver for $id and $ref and $values
+        /// </summary>
         private DefaultReferenceResolver ReferenceResolver { get; set; } = new DefaultReferenceResolver();
         /// <summary>
         /// server of signalGo that called exchanger
@@ -722,6 +730,7 @@ namespace SignalGo.Shared.Converters
                     }
                     if (instance == null)
                         instance = CreateInstance(objectType, canIgnore);
+                    ValidationRuleInfoManager?.AddObjectPropertyAsChecked(CurrentTaskId, objectType, instance, null);
                     ReadNewProperty(instance, reader, objectType, existingValue, serializer, canIgnore);
                 }
                 else if (reader.TokenType == JsonToken.StartArray)
@@ -960,6 +969,21 @@ namespace SignalGo.Shared.Converters
 #endif
         }
 
+        private void AddPropertyValidationRuleInfoAttribute(PropertyInfo propertyInfo, object instance, object currentValue)
+        {
+            if (!CurrentTaskId.HasValue || ValidationRuleInfoManager == null)
+                return;
+            ValidationRuleInfoManager.AddObjectPropertyAsChecked(CurrentTaskId, instance.GetType(), instance, propertyInfo.Name);
+            foreach (ValidationRuleInfoAttribute item in propertyInfo.GetCustomAttributes(typeof(ValidationRuleInfoAttribute), true))
+            {
+                item.PropertyInfo = propertyInfo;
+                item.Object = instance;
+                item.CurrentValue = currentValue;
+                ValidationRuleInfoManager.AddRule(CurrentTaskId, item);
+            }
+        }
+
+
         private void ReadNewProperty(object instance, JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer, bool isIgnore)
         {
             //bool isDictionary= typeof(IDictionary).GetIsAssignableFrom(type);
@@ -992,6 +1016,7 @@ namespace SignalGo.Shared.Converters
                         object array = ReadNewArray(null, reader, property.PropertyType, existingValue, serializer, canIgnore);
                         if (!canIgnore)
                             property.SetValue(instance, array, null);
+                        AddPropertyValidationRuleInfoAttribute(property, instance, array);
                     }
                     else
                     {
@@ -1047,10 +1072,13 @@ namespace SignalGo.Shared.Converters
                                 if (!canIgnore)
                                 {
                                     if (property.CanWrite)
+                                    {
                                         property.SetValue(instance, value, null);
+                                    }
                                     else
                                         AutoLogger?.LogText($"property {property.Name} cannot write");
                                 }
+                                AddPropertyValidationRuleInfoAttribute(property, instance, value);
                             }
                             else
                             {
@@ -1060,11 +1088,14 @@ namespace SignalGo.Shared.Converters
                                     {
                                         object value = SerializeHelper.ConvertType(property.PropertyType, reader.Value);
                                         if (property.CanWrite)
+                                        {
                                             property.SetValue(instance, value, null);
+                                            AddPropertyValidationRuleInfoAttribute(property, instance, value);
+                                        }
                                         else
                                             AutoLogger?.LogText($"property {property.Name} cannot write");
+                                        AddPropertyValidationRuleInfoAttribute(property, instance, value);
                                     }
-
                                 }
                                 catch (Exception ex)
                                 {

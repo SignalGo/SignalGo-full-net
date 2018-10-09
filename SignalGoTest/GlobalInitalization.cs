@@ -1,20 +1,14 @@
 ﻿using SignalGo.Client;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using SignalGo.Shared;
-using System.Threading;
 using SignalGo.Server.ServiceManager;
-using SignalGo.Server.Models;
+using SignalGoTest.Models;
+using System.Collections.Generic;
 
 namespace SignalGoTest
 {
     public static class GlobalInitalization
     {
-        static ServerProvider server;
-        static ClientProvider client;
+        private static ServerProvider server;
+        private static ClientProvider client;
 
         public static void Initialize()
         {
@@ -26,13 +20,22 @@ namespace SignalGoTest
                 server.Start("http://localhost:1132/SignalGoTestService");
                 server.OnConnectedClientAction = (client) =>
                 {
-                    
+
                 };
                 server.OnDisconnectedClientAction = (client) =>
                 {
 
                 };
-                
+                server.ValidationResultHandlingFunction = (errors, service, method) =>
+                {
+                    List<Models.ValidationRule> result = new List<Models.ValidationRule>();
+                    foreach (BaseValidationRuleAttribute item in errors)
+                    {
+                        result.Add(new Models.ValidationRule() { Message = item.Message, Name = item.PropertyInfo?.Name });
+
+                    }
+                    return new MessageContract<ArticleInfo>() { IsSuccess = false, Errors = result };
+                };
                 ////your client connector that will be connect to your server
                 //ClientProvider provider = new ClientProvider();
                 ////connect to your server must have full address that your server is listen

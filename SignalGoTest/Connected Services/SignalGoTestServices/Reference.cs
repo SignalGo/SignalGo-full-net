@@ -12,8 +12,6 @@ namespace SignalGoTest2Services.ServerServices
     [ServiceContract("testservermodelserverservice",ServiceType.ServerService, InstanceType.SingleInstance)]
     public interface ITestServerModel
     {
-        System.Tuple<bool> Logout(string yourName);
-        Task<System.Tuple<bool>> LogoutAsync(string yourName);
         string HelloWorld(string yourName);
         Task<string> HelloWorldAsync(string yourName);
         System.Collections.Generic.List<SignalGoTest2.Models.UserInfoTest> GetListOfUsers();
@@ -30,6 +28,12 @@ namespace SignalGoTest2Services.ServerServices
         Task<bool> LoginAsync(SignalGoTest2.Models.UserInfoTest userInfoTest);
         string ServerAsyncMethod(string name);
         Task<string> ServerAsyncMethodAsync(string name);
+        SignalGoTest2.Models.ArticleInfo AddArticle(SignalGoTest2.Models.ArticleInfo articleInfo);
+        Task<SignalGoTest2.Models.ArticleInfo> AddArticleAsync(SignalGoTest2.Models.ArticleInfo articleInfo);
+        SignalGoTest2.Models.MessageContract<SignalGoTest2.Models.ArticleInfo> AddArticleMessage(SignalGoTest2.Models.ArticleInfo articleInfo);
+        Task<SignalGoTest2.Models.MessageContract<SignalGoTest2.Models.ArticleInfo>> AddArticleMessageAsync(SignalGoTest2.Models.ArticleInfo articleInfo);
+        System.Tuple<bool> Logout(string yourName);
+        Task<System.Tuple<bool>> LogoutAsync(string yourName);
     }
 }
 
@@ -55,14 +59,6 @@ namespace SignalGoTest2Services.OneWayServices
         {
             _signalGoServerAddress = signalGoServerAddress;
             _signalGoPortNumber = signalGoPortNumber;
-        }
-         public System.Tuple<bool> Logout(string yourName)
-        {
-                return SignalGo.Client.ClientProvider.SendOneWayMethod<System.Tuple<bool>>(_signalGoServerAddress, _signalGoPortNumber, "testservermodelonewayservice", "Logout", new SignalGo.Shared.Models.ParameterInfo() {  Name = "yourName", Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(yourName) });
-        }
-         public Task<System.Tuple<bool>> LogoutAsync(string yourName)
-        {
-                return SignalGo.Client.ClientProvider.SendOneWayMethodAsync<System.Tuple<bool>>(_signalGoServerAddress, _signalGoPortNumber, "testservermodelonewayservice", "Logout", new SignalGo.Shared.Models.ParameterInfo() {  Name = "yourName", Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(yourName) });
         }
          public string HelloWorld(string yourName)
         {
@@ -128,6 +124,30 @@ namespace SignalGoTest2Services.OneWayServices
         {
                 return SignalGo.Client.ClientProvider.SendOneWayMethodAsync<string>(_signalGoServerAddress, _signalGoPortNumber, "testservermodelonewayservice", "ServerAsyncMethod", new SignalGo.Shared.Models.ParameterInfo() {  Name = "name", Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(name) });
         }
+         public SignalGoTest2.Models.ArticleInfo AddArticle(SignalGoTest2.Models.ArticleInfo articleInfo)
+        {
+                return SignalGo.Client.ClientProvider.SendOneWayMethod<SignalGoTest2.Models.ArticleInfo>(_signalGoServerAddress, _signalGoPortNumber, "testservermodelonewayservice", "AddArticle", new SignalGo.Shared.Models.ParameterInfo() {  Name = "articleInfo", Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(articleInfo) });
+        }
+         public Task<SignalGoTest2.Models.ArticleInfo> AddArticleAsync(SignalGoTest2.Models.ArticleInfo articleInfo)
+        {
+                return SignalGo.Client.ClientProvider.SendOneWayMethodAsync<SignalGoTest2.Models.ArticleInfo>(_signalGoServerAddress, _signalGoPortNumber, "testservermodelonewayservice", "AddArticle", new SignalGo.Shared.Models.ParameterInfo() {  Name = "articleInfo", Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(articleInfo) });
+        }
+         public SignalGoTest2.Models.MessageContract<SignalGoTest2.Models.ArticleInfo> AddArticleMessage(SignalGoTest2.Models.ArticleInfo articleInfo)
+        {
+                return SignalGo.Client.ClientProvider.SendOneWayMethod<SignalGoTest2.Models.MessageContract<SignalGoTest2.Models.ArticleInfo>>(_signalGoServerAddress, _signalGoPortNumber, "testservermodelonewayservice", "AddArticleMessage", new SignalGo.Shared.Models.ParameterInfo() {  Name = "articleInfo", Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(articleInfo) });
+        }
+         public Task<SignalGoTest2.Models.MessageContract<SignalGoTest2.Models.ArticleInfo>> AddArticleMessageAsync(SignalGoTest2.Models.ArticleInfo articleInfo)
+        {
+                return SignalGo.Client.ClientProvider.SendOneWayMethodAsync<SignalGoTest2.Models.MessageContract<SignalGoTest2.Models.ArticleInfo>>(_signalGoServerAddress, _signalGoPortNumber, "testservermodelonewayservice", "AddArticleMessage", new SignalGo.Shared.Models.ParameterInfo() {  Name = "articleInfo", Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(articleInfo) });
+        }
+         public System.Tuple<bool> Logout(string yourName)
+        {
+                return SignalGo.Client.ClientProvider.SendOneWayMethod<System.Tuple<bool>>(_signalGoServerAddress, _signalGoPortNumber, "testservermodelonewayservice", "Logout", new SignalGo.Shared.Models.ParameterInfo() {  Name = "yourName", Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(yourName) });
+        }
+         public Task<System.Tuple<bool>> LogoutAsync(string yourName)
+        {
+                return SignalGo.Client.ClientProvider.SendOneWayMethodAsync<System.Tuple<bool>>(_signalGoServerAddress, _signalGoPortNumber, "testservermodelonewayservice", "Logout", new SignalGo.Shared.Models.ParameterInfo() {  Name = "yourName", Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(yourName) });
+        }
     }
 }
 
@@ -159,26 +179,6 @@ namespace SignalGoTest2Services.HttpServices
 
         public SignalGo.Shared.Http.WebHeaderCollection ResponseHeaders { get; set; }
         public System.Net.HttpStatusCode Status { get; set; }
-        public System.Tuple<bool> Logout(string yourName)
-        {
-                SignalGo.Client.HttpClientResponse result = _httpClient.Post(_serverUrl + (_serverUrl.EndsWith("/") ? "" : "/") + "testservermodel/Logout", new SignalGo.Shared.Models.ParameterInfo[]
-                {
-                         new  SignalGo.Shared.Models.ParameterInfo() { Name = nameof(yourName),Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(yourName) },
-                });
-                ResponseHeaders = result.ResponseHeaders;
-                Status = result.Status;
-                return SignalGo.Client.ClientSerializationHelper.DeserializeObject<System.Tuple<bool>>(result.Data);
-        }
-        public async Task<System.Tuple<bool>> LogoutAsync(string yourName)
-        {
-                SignalGo.Client.HttpClientResponse result = await _httpClient.PostAsync(_serverUrl + (_serverUrl.EndsWith("/") ? "" : "/") + "testservermodel/Logout", new SignalGo.Shared.Models.ParameterInfo[]
-                {
-                         new  SignalGo.Shared.Models.ParameterInfo() { Name = nameof(yourName),Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(yourName) },
-                });
-                ResponseHeaders = result.ResponseHeaders;
-                Status = result.Status;
-                return SignalGo.Client.ClientSerializationHelper.DeserializeObject<System.Tuple<bool>>(result.Data);
-        }
         public string HelloWorld(string yourName)
         {
                 SignalGo.Client.HttpClientResponse result = _httpClient.Post(_serverUrl + (_serverUrl.EndsWith("/") ? "" : "/") + "testservermodel/HelloWorld", new SignalGo.Shared.Models.ParameterInfo[]
@@ -338,6 +338,66 @@ namespace SignalGoTest2Services.HttpServices
                 ResponseHeaders = result.ResponseHeaders;
                 Status = result.Status;
                 return SignalGo.Client.ClientSerializationHelper.DeserializeObject<string>(result.Data);
+        }
+        public SignalGoTest2.Models.ArticleInfo AddArticle(SignalGoTest2.Models.ArticleInfo articleInfo)
+        {
+                SignalGo.Client.HttpClientResponse result = _httpClient.Post(_serverUrl + (_serverUrl.EndsWith("/") ? "" : "/") + "testservermodel/AddArticle", new SignalGo.Shared.Models.ParameterInfo[]
+                {
+                         new  SignalGo.Shared.Models.ParameterInfo() { Name = nameof(articleInfo),Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(articleInfo) },
+                });
+                ResponseHeaders = result.ResponseHeaders;
+                Status = result.Status;
+                return SignalGo.Client.ClientSerializationHelper.DeserializeObject<SignalGoTest2.Models.ArticleInfo>(result.Data);
+        }
+        public async Task<SignalGoTest2.Models.ArticleInfo> AddArticleAsync(SignalGoTest2.Models.ArticleInfo articleInfo)
+        {
+                SignalGo.Client.HttpClientResponse result = await _httpClient.PostAsync(_serverUrl + (_serverUrl.EndsWith("/") ? "" : "/") + "testservermodel/AddArticle", new SignalGo.Shared.Models.ParameterInfo[]
+                {
+                         new  SignalGo.Shared.Models.ParameterInfo() { Name = nameof(articleInfo),Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(articleInfo) },
+                });
+                ResponseHeaders = result.ResponseHeaders;
+                Status = result.Status;
+                return SignalGo.Client.ClientSerializationHelper.DeserializeObject<SignalGoTest2.Models.ArticleInfo>(result.Data);
+        }
+        public SignalGoTest2.Models.MessageContract<SignalGoTest2.Models.ArticleInfo> AddArticleMessage(SignalGoTest2.Models.ArticleInfo articleInfo)
+        {
+                SignalGo.Client.HttpClientResponse result = _httpClient.Post(_serverUrl + (_serverUrl.EndsWith("/") ? "" : "/") + "testservermodel/AddArticleMessage", new SignalGo.Shared.Models.ParameterInfo[]
+                {
+                         new  SignalGo.Shared.Models.ParameterInfo() { Name = nameof(articleInfo),Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(articleInfo) },
+                });
+                ResponseHeaders = result.ResponseHeaders;
+                Status = result.Status;
+                return SignalGo.Client.ClientSerializationHelper.DeserializeObject<SignalGoTest2.Models.MessageContract<SignalGoTest2.Models.ArticleInfo>>(result.Data);
+        }
+        public async Task<SignalGoTest2.Models.MessageContract<SignalGoTest2.Models.ArticleInfo>> AddArticleMessageAsync(SignalGoTest2.Models.ArticleInfo articleInfo)
+        {
+                SignalGo.Client.HttpClientResponse result = await _httpClient.PostAsync(_serverUrl + (_serverUrl.EndsWith("/") ? "" : "/") + "testservermodel/AddArticleMessage", new SignalGo.Shared.Models.ParameterInfo[]
+                {
+                         new  SignalGo.Shared.Models.ParameterInfo() { Name = nameof(articleInfo),Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(articleInfo) },
+                });
+                ResponseHeaders = result.ResponseHeaders;
+                Status = result.Status;
+                return SignalGo.Client.ClientSerializationHelper.DeserializeObject<SignalGoTest2.Models.MessageContract<SignalGoTest2.Models.ArticleInfo>>(result.Data);
+        }
+        public System.Tuple<bool> Logout(string yourName)
+        {
+                SignalGo.Client.HttpClientResponse result = _httpClient.Post(_serverUrl + (_serverUrl.EndsWith("/") ? "" : "/") + "testservermodel/Logout", new SignalGo.Shared.Models.ParameterInfo[]
+                {
+                         new  SignalGo.Shared.Models.ParameterInfo() { Name = nameof(yourName),Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(yourName) },
+                });
+                ResponseHeaders = result.ResponseHeaders;
+                Status = result.Status;
+                return SignalGo.Client.ClientSerializationHelper.DeserializeObject<System.Tuple<bool>>(result.Data);
+        }
+        public async Task<System.Tuple<bool>> LogoutAsync(string yourName)
+        {
+                SignalGo.Client.HttpClientResponse result = await _httpClient.PostAsync(_serverUrl + (_serverUrl.EndsWith("/") ? "" : "/") + "testservermodel/Logout", new SignalGo.Shared.Models.ParameterInfo[]
+                {
+                         new  SignalGo.Shared.Models.ParameterInfo() { Name = nameof(yourName),Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(yourName) },
+                });
+                ResponseHeaders = result.ResponseHeaders;
+                Status = result.Status;
+                return SignalGo.Client.ClientSerializationHelper.DeserializeObject<System.Tuple<bool>>(result.Data);
         }
     }
 }
@@ -569,6 +629,100 @@ namespace SignalGoTest2.Models
 
     }
 
+    public class ArticleInfo : SignalGo.Shared.Models.NotifyPropertyChangedBase
+    {
+        private string _Name;
+        public string Name
+        {
+                get
+                {
+                        return _Name;
+                }
+                set
+                {
+                        _Name = value;
+                        OnPropertyChanged(nameof(Name));
+                }
+        }
+
+        private string _Detail;
+        public string Detail
+        {
+                get
+                {
+                        return _Detail;
+                }
+                set
+                {
+                        _Detail = value;
+                        OnPropertyChanged(nameof(Detail));
+                }
+        }
+
+        private System.DateTime? _CreatedDateTime;
+        public System.DateTime? CreatedDateTime
+        {
+                get
+                {
+                        return _CreatedDateTime;
+                }
+                set
+                {
+                        _CreatedDateTime = value;
+                        OnPropertyChanged(nameof(CreatedDateTime));
+                }
+        }
+
+
+    }
+
+    public class MessageContract<T> : SignalGo.Shared.Models.NotifyPropertyChangedBase
+    {
+        private T _Data;
+        public T Data
+        {
+                get
+                {
+                        return _Data;
+                }
+                set
+                {
+                        _Data = value;
+                        OnPropertyChanged(nameof(Data));
+                }
+        }
+
+        private bool _IsSuccess;
+        public bool IsSuccess
+        {
+                get
+                {
+                        return _IsSuccess;
+                }
+                set
+                {
+                        _IsSuccess = value;
+                        OnPropertyChanged(nameof(IsSuccess));
+                }
+        }
+
+        private System.Collections.Generic.List<SignalGoTest2.Models.ValidationRule> _Errors;
+        public System.Collections.Generic.List<SignalGoTest2.Models.ValidationRule> Errors
+        {
+                get
+                {
+                        return _Errors;
+                }
+                set
+                {
+                        _Errors = value;
+                        OnPropertyChanged(nameof(Errors));
+                }
+        }
+
+
+    }
+
     public class RoleInfoTest : SignalGo.Shared.Models.NotifyPropertyChangedBase
     {
         private int _Id;
@@ -610,6 +764,39 @@ namespace SignalGoTest2.Models
                 {
                         _User = value;
                         OnPropertyChanged(nameof(User));
+                }
+        }
+
+
+    }
+
+    public class ValidationRule : SignalGo.Shared.Models.NotifyPropertyChangedBase
+    {
+        private string _Name;
+        public string Name
+        {
+                get
+                {
+                        return _Name;
+                }
+                set
+                {
+                        _Name = value;
+                        OnPropertyChanged(nameof(Name));
+                }
+        }
+
+        private string _Message;
+        public string Message
+        {
+                get
+                {
+                        return _Message;
+                }
+                set
+                {
+                        _Message = value;
+                        OnPropertyChanged(nameof(Message));
                 }
         }
 
