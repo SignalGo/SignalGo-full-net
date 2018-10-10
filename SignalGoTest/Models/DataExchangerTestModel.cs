@@ -47,14 +47,26 @@ namespace SignalGoTest.Models
 
     public class ArticleInfo
     {
+        /// <summary>
+        /// send error message to client when name is null or empty
+        /// </summary>
         [EmptyValidationRule(Message = "please fill the Name!")]
         public string Name { get; set; }
+        /// <summary>
+        /// send error message to client when details is empty
+        /// </summary>
         [EmptyValidationRule(Message = "please fill the Detail!")]
         public string Detail { get; set; }
+        /// <summary>
+        /// this attribute will change value to DateTime.Now before call 
+        /// </summary>
         [CreatedDateTime(TaskType = ValidationRuleInfoTaskType.ChangeValue)]
         public DateTime? CreatedDateTime { get; set; }
     }
-
+    /// <summary>
+    /// 
+    /// make your custom validation
+    /// </summary>
     public class EmptyValidationRuleAttribute : BaseValidationRuleAttribute
     {
         public override bool CheckIsValidate()

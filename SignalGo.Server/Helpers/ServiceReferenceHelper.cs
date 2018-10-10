@@ -63,6 +63,15 @@ namespace SignalGo.Server.Helpers
 
         internal bool CannotGenerateAssemblyTypes(Type type)
         {
+            if (type == typeof(Task))
+            {
+                return false;
+            }
+            else if (type.GetBaseType() == typeof(Task))
+            {
+                type = type.GetGenericArguments()[0];
+            }
+
 #if (NETSTANDARD1_6 || NETCOREAPP1_1)
             var assm = type.GetTypeInfo().Assembly;
 #else
@@ -241,6 +250,14 @@ namespace SignalGo.Server.Helpers
                 return;
             if (ModelsCodeGenerated.Contains(type) || CannotGenerateAssemblyTypes(type))
                 return;
+            if (type == typeof(Task))
+            {
+                return;
+            }
+            else if (type.GetBaseType() == typeof(Task))
+            {
+                type = type.GetGenericArguments()[0];
+            }
             bool isGeneric = type.GetIsGenericType();
             if (isGeneric && type.GetGenericTypeDefinition() != type)
             {
@@ -379,6 +396,10 @@ namespace SignalGo.Server.Helpers
             else if (type.GetBaseType() == typeof(Task))
             {
                 return GetFullNameOfType(type.GetGenericArguments()[0], withNameSpace);
+            }
+            if (type.GetBaseType() == typeof(Array))
+            {
+                return GetFullNameOfType(type.GetElementType(), withNameSpace) + "[]";
             }
             if (CannotGenerateAssemblyTypes(type))
                 AddUsingIfNotExist(type);
