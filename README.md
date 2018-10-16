@@ -43,6 +43,8 @@ Signalgo will make you a fast programmer
 
 14.Add service reference with visual studio for client side [![NuGet](https://img.shields.io/badge/github-wiki-brightgreen.svg)](https://github.com/SignalGo/SignalGo-full-net/wiki/Add-Service-Reference---Auto-generate-all-services-and-models-in-client-side)
 
+     14.1 Support for generate C# client , Angular , C# Blazor and SOAP Web services.
+
 15.Support Owin to host on IIS
 
 16.easy to manage and access clients very clean code in server side
