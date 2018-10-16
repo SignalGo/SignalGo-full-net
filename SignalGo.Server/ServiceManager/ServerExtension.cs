@@ -89,7 +89,7 @@ namespace SignalGo.Server.ServiceManager
         //    return null;
         //}
 
-        //internal static object SendDataWithCallClientServiceMethod(ServerBase serverBase,ClientInfo client,string serviceName, string methodName, params Shared.Models.ParameterInfo[] args)
+        //internal static object SendDataWithCallClientServiceMethod(ServerBase serverBase,ClientInfo client,string serviceName, string methodName, params Shared.Models.GoParameterInfo[] args)
         //{
         //    MethodCallInfo callInfo = new MethodCallInfo();
         //    callInfo.ServiceName = serviceName;
@@ -245,7 +245,7 @@ namespace SignalGo.Server.ServiceManager
         //            callInfo.MethodName = methodName;
         //            foreach (var item in values)
         //            {
-        //                callInfo.Parameters.Add(new Shared.Models.ParameterInfo() { Value = ServerSerializationHelper.SerializeObject(item, client.ServerBase), Type = item.GetType().FullName });
+        //                callInfo.Parameters.Add(new Shared.Models.GoParameterInfo() { Value = ServerSerializationHelper.SerializeObject(item, client.ServerBase), Type = item.GetType().FullName });
         //            }
         //            var guid = Guid.NewGuid().ToString();
         //            callInfo.Guid = guid;

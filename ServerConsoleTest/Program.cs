@@ -1,11 +1,8 @@
-﻿using SignalGo.Client;
+﻿using SignalGo.Http;
 using SignalGo.Server.Models;
 using SignalGo.Server.ServiceManager;
 using SignalGo.Shared.DataTypes;
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace ServerConsoleTest
@@ -118,6 +115,20 @@ namespace ServerConsoleTest
         {
             try
             {
+                
+                SignalGoBlazorHttpClient signalGoBlazorHttpClient = new SignalGoBlazorHttpClient();
+                SignalGo.Http.HttpClientResponse result = signalGoBlazorHttpClient.PostAsync("http://dev.atitec.ir:1747/Authentication/Login", new ParameterInfo[] {
+                    new ParameterInfo()
+                    {
+                         Name = "userName",
+                         Value="98test"
+                    } ,
+                    new ParameterInfo()
+                    {
+                         Name = "password",
+                         Value="d5e4aa21-6fe2-4fbc-9264-a14e14698564868385e8-2922-41c0-a4cf-29fb65203c28"
+                    }
+                }).GetAwaiter().GetResult();
                 //HttpClient tesClient = new HttpClient();
                 //tesClient.Post("http://panel.menno.ir/Authentication/Login", new SignalGo.Shared.Models.ParameterInfo[] {
                 //    new SignalGo.Shared.Models.ParameterInfo(){ Name = "username" , Value ="ali"},

@@ -95,7 +95,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     method = allMethods.FirstOrDefault();
                     if (method == null && !string.IsNullOrEmpty(jsonParameters))
                     {
-                        parameters = new Shared.Models.ParameterInfo[1] { new Shared.Models.ParameterInfo() { Name = "", Value = jsonParameters } };
+                        parameters = new Shared.Models.ParameterInfo[] { new Shared.Models.ParameterInfo() { Name = "", Value = jsonParameters } };
                         allMethods = GetMethods(client, methodName, parameters, serviceType, customDataExchanger, securityAttributes, clientLimitationAttribute, concurrentLockAttributes, canTakeMethod).ToList();
                         method = allMethods.FirstOrDefault();
                     }

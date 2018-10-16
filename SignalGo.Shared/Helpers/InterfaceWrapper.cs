@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Reflection;
 using System.Reflection.Emit;
 using System.Threading.Tasks;
 
@@ -37,7 +36,7 @@ namespace SignalGo.Shared.Helpers
                     break;
             }
         }
-        public static TService Wrap<TService>(Func<string, MethodInfo, Shared.Models.ParameterInfo[], object> CallMethodAction, Func<string, MethodInfo, Shared.Models.ParameterInfo[], object> CallMethodAsyncAction)
+        public static TService Wrap<TService>(Func<string, System.Reflection.MethodInfo, Shared.Models.ParameterInfo[], object> CallMethodAction, Func<string, System.Reflection.MethodInfo, Shared.Models.ParameterInfo[], object> CallMethodAsyncAction)
             where TService : class
         {
             return (TService)Wrap(typeof(TService), CallMethodAction, CallMethodAsyncAction);
@@ -57,15 +56,15 @@ namespace SignalGo.Shared.Helpers
             return result;
         }
 
-        internal static Object Wrap(Type serviceInterfaceType, Func<string, MethodInfo, Shared.Models.ParameterInfo[], object> CallMethodAction, Func<string, MethodInfo, Shared.Models.ParameterInfo[], object> CallMethodAsyncAction)
+        internal static object Wrap(Type serviceInterfaceType, Func<string, System.Reflection.MethodInfo, Shared.Models.ParameterInfo[], object> CallMethodAction, Func<string, System.Reflection.MethodInfo, Shared.Models.ParameterInfo[], object> CallMethodAsyncAction)
         {
             //this method load GetCurrentMethod for xamarin linked assembly
-            //var fix = System.Reflection.MethodInfo.GetCurrentMethod();
+            //System.Reflection.MethodBase fix = System.Reflection.MethodInfo.GetCurrentMethod();
 
-            AssemblyName assemblyName = new AssemblyName(String.Format("tmp_{0}", serviceInterfaceType.FullName));
-            String moduleName = String.Format("{0}.dll", assemblyName.Name);
-            String ns = serviceInterfaceType.Namespace;
-            if (!String.IsNullOrEmpty(ns))
+            System.Reflection.AssemblyName assemblyName = new System.Reflection.AssemblyName(string.Format("tmp_{0}", serviceInterfaceType.FullName));
+            string moduleName = string.Format("{0}.dll", assemblyName.Name);
+            string ns = serviceInterfaceType.Namespace;
+            if (!string.IsNullOrEmpty(ns))
                 ns += ".";
             ServiceContractAttribute attrib = serviceInterfaceType.GetCustomAttributes<ServiceContractAttribute>(true).Where(x => x.ServiceType == ServiceType.ServerService || x.ServiceType == ServiceType.ClientService || x.ServiceType == ServiceType.StreamService).FirstOrDefault();
 
@@ -80,42 +79,42 @@ namespace SignalGo.Shared.Helpers
                         AssemblyBuilderAccess.RunAndCollect);
 #endif
 #if (NETSTANDARD || NETCOREAPP || PORTABLE)
-            var module = assembly.DefineDynamicModule(moduleName);
+            ModuleBuilder module = assembly.DefineDynamicModule(moduleName);
 #else
             ModuleBuilder module = assembly.DefineDynamicModule(moduleName, false);
 #endif
-            TypeBuilder type = module.DefineType(String.Format("{0}InterfaceWrapper_{1}", ns, serviceInterfaceType.Name),
-                TypeAttributes.Class |
-                TypeAttributes.AnsiClass |
-                TypeAttributes.Sealed |
-                TypeAttributes.NotPublic);
+            TypeBuilder type = module.DefineType(string.Format("{0}InterfaceWrapper_{1}", ns, serviceInterfaceType.Name),
+                System.Reflection.TypeAttributes.Class |
+                System.Reflection.TypeAttributes.AnsiClass |
+                System.Reflection.TypeAttributes.Sealed |
+                System.Reflection.TypeAttributes.NotPublic);
             type.AddInterfaceImplementation(serviceInterfaceType);
 
             // Define _Service0..N-1 private service fields
             FieldBuilder[] fields = new FieldBuilder[2];
 #if (NETSTANDARD || NETCOREAPP)
-            var cab = new CustomAttributeBuilder(
-                typeof(DebuggerBrowsableAttribute).GetTypeInfo().GetConstructor(new Type[] { typeof(DebuggerBrowsableState) }),
-                new Object[] { DebuggerBrowsableState.Never });
+            CustomAttributeBuilder cab = new CustomAttributeBuilder(
+               System.Reflection.IntrospectionExtensions.GetTypeInfo(typeof(DebuggerBrowsableAttribute)).GetConstructor(new Type[] { typeof(DebuggerBrowsableState) }),
+                new object[] { DebuggerBrowsableState.Never });
 #else
             CustomAttributeBuilder cab = new CustomAttributeBuilder(
                 typeof(DebuggerBrowsableAttribute).GetConstructor(new Type[] { typeof(DebuggerBrowsableState) }),
-                new Object[] { DebuggerBrowsableState.Never });
+                new object[] { DebuggerBrowsableState.Never });
 #endif
 
-            fields[0] = type.DefineField(String.Format("_Service{0}", 0),
-                serviceInterfaceType, FieldAttributes.Public);
+            fields[0] = type.DefineField(string.Format("_Service{0}", 0),
+                serviceInterfaceType, System.Reflection.FieldAttributes.Public);
 
-            fields[1] = type.DefineField(String.Format("_Service{0}", 1),
-                serviceInterfaceType, FieldAttributes.Public);
+            fields[1] = type.DefineField(string.Format("_Service{0}", 1),
+                serviceInterfaceType, System.Reflection.FieldAttributes.Public);
 
             // Ensure the field don't show up in the debugger tooltips
             fields[0].SetCustomAttribute(cab);
             fields[1].SetCustomAttribute(cab);
 
             // Define a simple constructor that takes all our services as arguments
-            ConstructorBuilder ctor = type.DefineConstructor(MethodAttributes.Public,
-                CallingConventions.HasThis,
+            ConstructorBuilder ctor = type.DefineConstructor(System.Reflection.MethodAttributes.Public,
+                System.Reflection.CallingConventions.HasThis,
                 new Type[] { CallMethodAction.GetType(), CallMethodAsyncAction.GetType() });
             ILGenerator generator = ctor.GetILGenerator();
 
@@ -129,23 +128,22 @@ namespace SignalGo.Shared.Helpers
             foreach (Type serviceType in GetFullTypes(serviceInterfaceType))
             {
                 // Implement all the methods of the interface
-                foreach (MethodInfo method in serviceType.GetListOfMethods())
+                foreach (System.Reflection.MethodInfo method in serviceType.GetListOfMethods())
                 {
                     //generator.Emit(OpCodes.Pop);
-                    ParameterInfo[] args = method.GetParameters();
+                    System.Reflection.ParameterInfo[] args = method.GetParameters();
                     MethodBuilder methodImpl = type.DefineMethod(method.Name,
-                        MethodAttributes.Public | MethodAttributes.Virtual,
+                        System.Reflection.MethodAttributes.Public | System.Reflection.MethodAttributes.Virtual,
                         method.ReturnType, (from arg in args select arg.ParameterType).ToArray());
                     for (int i = 0; i < args.Length; i++)
                     {
-                        ParameterBuilder parameterBuilder = methodImpl.DefineParameter(i + 1, ParameterAttributes.None, args[i].Name);
-
+                        ParameterBuilder parameterBuilder = methodImpl.DefineParameter(i + 1, System.Reflection.ParameterAttributes.None, args[i].Name);
                     }
                     // Generate code to simply call down into each service object
                     // Any return values are discarded, except the last one, which is returned
                     generator = methodImpl.GetILGenerator();
 
-                    MethodInfo invoke = null;
+                    System.Reflection.MethodInfo invoke = null;
                     if (method.ReturnType.GetBaseType() == typeof(Task))
                     {
                         invoke = CallMethodAsyncAction.GetType().FindMethod("Invoke");
@@ -159,12 +157,12 @@ namespace SignalGo.Shared.Helpers
                         generator.Emit(OpCodes.Ldfld, fields[0]);//stack
                     }
 
-   
+
                     if (attrib == null)
                         throw new Exception("attrib not found");
                     //add name of service
                     generator.Emit(OpCodes.Ldstr, attrib.Name);
-                    MethodInfo getCurgntMethod = typeof(MethodBase).FindMethod("GetCurrentMethod");
+                    System.Reflection.MethodInfo getCurgntMethod = typeof(System.Reflection.MethodBase).FindMethod("GetCurrentMethod");
                     if (getCurgntMethod == null)
                         throw new Exception("GetCurrentMethod not found");
                     //add current method info
@@ -214,7 +212,7 @@ namespace SignalGo.Shared.Helpers
                 }
             }
 #if (NETSTANDARD || NETCOREAPP || PORTABLE)
-            var newType = type.CreateTypeInfo();
+            System.Reflection.TypeInfo newType = type.CreateTypeInfo();
             return Activator.CreateInstance(newType.AsType(), CallMethodAction, CallMethodAsyncAction);
 #else
             Type newType = type.CreateType();

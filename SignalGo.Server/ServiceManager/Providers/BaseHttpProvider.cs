@@ -324,7 +324,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                             }
                             //}
                             //else
-                            //values.Add(new Shared.Models.ParameterInfo() { Name = "", Value = parameters });
+                            //values.Add(new Shared.Models.GoParameterInfo() { Name = "", Value = parameters });
                         }
                         catch (Exception ex)
                         {

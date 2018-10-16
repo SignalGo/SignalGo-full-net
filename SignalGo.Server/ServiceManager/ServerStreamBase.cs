@@ -111,7 +111,7 @@
         //            string serviceName = null;
         //            string methodName = null;
         //            string jsonResult = null;
-        //            List<SignalGo.Shared.Models.ParameterInfo> values = null;
+        //            List<SignalGo.Shared.Models.GoParameterInfo> values = null;
         //            try
         //            {
         //                var bytes = GoStreamReader.ReadBlockToEnd(stream, CompressMode.None, ProviderSetting.MaximumReceiveStreamHeaderBlock, false);
@@ -200,7 +200,7 @@
         //            string serviceName = null;
         //            string methodName = null;
         //            string jsonResult = null;
-        //            List<SignalGo.Shared.Models.ParameterInfo> values = null;
+        //            List<SignalGo.Shared.Models.GoParameterInfo> values = null;
 
         //            try
         //            {
