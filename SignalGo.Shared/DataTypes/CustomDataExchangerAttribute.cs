@@ -130,6 +130,7 @@ namespace SignalGo.Shared.DataTypes
             List<string> result = new List<string>();
             foreach (Type serviceType in types)
             {
+                result.AddRange(serviceType.GetListOfProperties().Select(x => x.Name));
                 foreach (Type item in serviceType.GetListOfInterfaces())
                 {
                     result.AddRange(item.GetListOfProperties().Select(x => x.Name));
@@ -152,7 +153,7 @@ namespace SignalGo.Shared.DataTypes
 #endif
                 }
             }
-            return result;
+            return result.Distinct().ToList();
         }
 
         /// <summary>
