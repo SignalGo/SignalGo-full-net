@@ -149,10 +149,7 @@
     <!--<Reference Include="netstandard" />-->
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\SignalGo.Shared\SignalGo.Shared.csproj">
-      <Project>{78D8601B-E331-47B7-A4A8-46B7460D82A4}</Project>
-      <Name>SignalGo.Shared</Name>
-    </ProjectReference>
+    <ProjectReference Include="..\SignalGo.Shared\SignalGo.Shared.csproj" />
   </ItemGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
