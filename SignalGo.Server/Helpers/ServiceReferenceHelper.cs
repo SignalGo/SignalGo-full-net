@@ -246,7 +246,7 @@ namespace SignalGo.Server.Helpers
 
         private void GenerateModelClass(Type type)
         {
-            if (type == typeof(object) || type == null)
+            if (type == typeof(object) || type == null || type.GetAssembly() == typeof(string).GetAssembly())
                 return;
             if (ModelsCodeGenerated.Contains(type) || CannotGenerateAssemblyTypes(type))
                 return;
