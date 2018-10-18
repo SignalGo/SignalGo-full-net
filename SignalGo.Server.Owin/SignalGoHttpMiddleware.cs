@@ -39,7 +39,7 @@ namespace SignalGo.Server.Owin
             string uri = context.Request.Path.Value + context.Request.QueryString.ToString();
             string serviceName = uri.Split(new string[] { "/" }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
             bool isWebSocketd = context.Request.Headers.ContainsKey("Sec-WebSocket-Key");
-            if (!BaseProvider.ExistService(serviceName, CurrentServerBase) && !isWebSocketd && !context.Request.Headers.ContainsKey("signalgo-servicedetail"))
+            if (!BaseProvider.ExistService(serviceName, CurrentServerBase) && !isWebSocketd && !context.Request.Headers.ContainsKey("signalgo-servicedetail") && context.Request.Headers["content-type"] != "SignalGo Service Reference")
             {
                 await _next.Invoke(context);
                 return;
