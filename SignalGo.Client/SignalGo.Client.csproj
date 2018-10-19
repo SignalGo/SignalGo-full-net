@@ -10,10 +10,10 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>SignalGo.Client</RootNamespace>
     <AssemblyName>SignalGo.Client</AssemblyName>
-    <AssemblyVersion>4.3.1</AssemblyVersion>
-    <FileVersion>4.3.1</FileVersion>
+    <AssemblyVersion>4.3.2</AssemblyVersion>
+    <FileVersion>4.3.2</FileVersion>
     <!--<VersionPrefix>4.1</VersionPrefix>-->
-    <Version>4.3.1</Version>
+    <Version>4.3.2</Version>
     <DebugType>full</DebugType>
     <Copyright>Copyright © ali.visual.studio@gmail.com 2016</Copyright>
     <Description>
@@ -165,6 +165,9 @@
   <ItemGroup>
     <Folder Include="ClientManager\Providers\" />
     <Folder Include="Properties\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\SignalGo.Shared\SignalGo.Shared.csproj" />
   </ItemGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
