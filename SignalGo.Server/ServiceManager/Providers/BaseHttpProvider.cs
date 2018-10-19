@@ -209,7 +209,9 @@ namespace SignalGo.Server.ServiceManager.Providers
                 address = "";
             string parameters = "";
             Dictionary<string, string> multiPartParameter = new Dictionary<string, string>();
-            if (httpMethod == "GET")
+            bool isGet = httpMethod == "GET";
+            bool isPost = httpMethod == "POST";
+            if (isGet)
             {
                 if (methodName.Contains("?"))
                 {
@@ -218,7 +220,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     parameters = sp.Last();
                 }
             }
-            else if (httpMethod == "POST")
+            else if (isPost)
             {
                 int len = int.Parse(client.GetRequestHeaderValue("content-length"));
                 if (content.Length < len)
@@ -309,7 +311,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                             values.Add(new Shared.Models.ParameterInfo() { Name = item.Key, Value = item.Value });
                         }
                     }
-                    else if (client.GetRequestHeaderValue("content-type") == "application/json" || client.GetRequestHeaderValue("accept") == "application/json")
+                    else if (isPost && (client.GetRequestHeaderValue("content-type") == "application/json" || client.GetRequestHeaderValue("accept") == "application/json"))
                     {
                         try
                         {
