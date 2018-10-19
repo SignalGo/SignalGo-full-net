@@ -119,10 +119,5 @@ namespace SignalGo.Shared.Models
         ///  enable $ref 
         /// </summary>
         public bool IsEnabledReferenceResolverForArray { get; set; } = true;
-        /// <summary>
-        /// http attributes
-        /// </summary>
-        public List<HttpKeyAttribute> HttpKeyResponses { get; set; }
-
     }
 }

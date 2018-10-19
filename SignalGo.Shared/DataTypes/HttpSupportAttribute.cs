@@ -26,7 +26,6 @@ namespace SignalGo.Shared.DataTypes
     [AttributeUsage(AttributeTargets.Property, AllowMultiple = true)]
     public class HttpKeyAttribute : Attribute
     {
-        public Type SettingType { get; set; }
         /// <summary>
         /// name of header when client request
         /// </summary>

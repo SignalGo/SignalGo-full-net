@@ -450,15 +450,8 @@ namespace SignalGo.Server.ServiceManager.Providers
             {
                 AddOriginHeader(client, serverBase);
             }
-            HttpKeyAttribute httpKeyOnMethod = (HttpKeyAttribute)method.GetCustomAttributes(typeof(HttpKeyAttribute), true).FirstOrDefault();
-            if (httpKeyOnMethod != null)
-                result.HttpKeyAttributees.Add(httpKeyOnMethod);
-            if (serverBase.ProviderSetting.HttpKeyResponses != null)
-            {
-                result.HttpKeyAttributees.AddRange(serverBase.ProviderSetting.HttpKeyResponses);
-            }
 
-            FillReponseHeaders(client, result.HttpKeyAttributees, result.Context);
+            FillReponseHeaders(client, result.Context);
             if (result.FileActionResult != null)
                 await RunHttpActionResult(client, result.FileActionResult, client, serverBase);
             else if (result.CallbackInfo.Data == null)
@@ -961,28 +954,21 @@ namespace SignalGo.Server.ServiceManager.Providers
         }
 
 
-        private static void FillReponseHeaders(HttpClientInfo client, List<HttpKeyAttribute> httpKeyAttributes, OperationContext context)
+        private static void FillReponseHeaders(HttpClientInfo client, OperationContext context)
         {
-            foreach (HttpKeyAttribute item in httpKeyAttributes)
+            foreach (object contextResult in OperationContextBase.GetAllHttpKeySettings(context))
             {
-                if (item.SettingType == null)
-                    throw new Exception("you made HttpKeyAttribute top of your method but this have not fill SettingType property");
-                object contextResult = OperationContextBase.GetCurrentSetting(item.SettingType, context);
-
-                if (contextResult != null)
+                foreach (var property in contextResult.GetType().GetListOfProperties().Select(x => new { Info = x, Attribute = x.GetCustomAttributes<HttpKeyAttribute>().GroupBy(y => y.KeyType) }))
                 {
-                    foreach (var property in contextResult.GetType().GetListOfProperties().Select(x => new { Info = x, Attribute = x.GetCustomAttributes<HttpKeyAttribute>().GroupBy(y => y.KeyType) }))
+                    foreach (IGrouping<HttpKeyType, HttpKeyAttribute> group in property.Attribute)
                     {
-                        foreach (IGrouping<HttpKeyType, HttpKeyAttribute> group in property.Attribute)
+                        if (group.Key == HttpKeyType.Cookie)
                         {
-                            if (group.Key == HttpKeyType.Cookie)
+                            foreach (HttpKeyAttribute httpKey in group.ToList())
                             {
-                                foreach (HttpKeyAttribute httpKey in group.ToList())
+                                if (!client.ResponseHeaders.ContainsKey(httpKey.ResponseHeaderName))
                                 {
-                                    if (!client.ResponseHeaders.ContainsKey(httpKey.ResponseHeaderName))
-                                    {
-                                        client.ResponseHeaders[httpKey.ResponseHeaderName] = new string[] { OperationContextBase.IncludeValue((string)property.Info.GetValue(contextResult, null), httpKey.KeyName, httpKey.HeaderValueSeparate, httpKey.HeaderKeyValueSeparate) + httpKey.Perfix };
-                                    }
+                                    client.ResponseHeaders[httpKey.ResponseHeaderName] = new string[] { OperationContextBase.IncludeValue((string)property.Info.GetValue(contextResult, null), httpKey.KeyName, httpKey.HeaderValueSeparate, httpKey.HeaderKeyValueSeparate) + httpKey.Perfix };
                                 }
                             }
                         }

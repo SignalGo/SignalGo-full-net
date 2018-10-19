@@ -30,6 +30,9 @@ namespace SignalGo.Server.Models
             }
         }
 
+        /// <summary>
+        /// if return null: Task.CurrentId is null or empty! Do not call this property or method inside of another thread or task you have to call this inside of server methods not another thread
+        /// </summary>
         public static OperationContext Current
         {
             get
@@ -40,7 +43,7 @@ namespace SignalGo.Server.Models
                     if (currentServer.Clients.TryGetValue(clientId, out ClientInfo clientInfo))
                         return new OperationContext() { Client = clientInfo, ClientId = clientId, ServerBase = currentServer };
                 }
-                throw new Exception("Task.CurrentId is null or empty! Do not call this property or method inside of another thread or task you have to call this inside of server methods not another thread");
+                return null;
             }
         }
         /// <summary>
@@ -128,7 +131,7 @@ namespace SignalGo.Server.Models
         internal static object GetCurrentSetting(Type type, OperationContext context)
         {
             if (context == null)
-                throw new Exception("SynchronizationContext is null or empty! Do not call this property inside of another thread that do not have any synchronizationContext or you can call SynchronizationContext.SetSynchronizationContext(new SynchronizationContext()); and ServerBase.AllDispatchers must contine this");
+                throw new Exception("Context is null or empty! Do not call this property inside of another thread or after await or another task");
 
             if (context.Client is HttpClientInfo)
             {
@@ -216,6 +219,42 @@ namespace SignalGo.Server.Models
             return null;
         }
 
+        /// <summary>
+        /// return all of setting of current context
+        /// </summary>
+        /// <returns></returns>
+        public static IEnumerable<object> GetAllSettings()
+        {
+            OperationContext context = OperationContext.Current;
+            if (context == null)
+                throw new Exception("Context is null or empty! Do not call this property inside of another thread or after await or another task");
+            if (SavedSettings.TryGetValue(context.Client, out HashSet<object> result))
+            {
+                foreach (var item in result)
+                {
+                    yield return item;
+                }
+            }
+        }
+
+        /// <summary>
+        /// return all of settings that have http key attribute top of properties
+        /// </summary>
+        /// <returns></returns>
+        public static IEnumerable<object> GetAllHttpKeySettings(OperationContext context)
+        {
+            if (context != null)
+            {
+                if (SavedSettings.TryGetValue(context.Client, out HashSet<object> result))
+                {
+                    foreach (var item in result)
+                    {
+                        if (item.GetType().GetListOfProperties().Any(x => x.GetCustomAttribute(typeof(HttpKeyAttribute), true) != null))
+                            yield return item;
+                    }
+                }
+            }
+        }
 
         public static void SetCustomClientSetting(string customClientId, object setting)
         {
@@ -332,7 +371,7 @@ namespace SignalGo.Server.Models
             {
                 OperationContext context = OperationContext.Current;
                 if (context == null)
-                    throw new Exception("SynchronizationContext is null or empty! Do not call this property inside of another thread that do not have any synchronizationContext or you can call SynchronizationContext.SetSynchronizationContext(new SynchronizationContext()); and ServerBase.AllDispatchers must contine this");
+                    throw new Exception("Context is null or empty! Do not call this property inside of another thread or after await or another task");
 
                 SetSetting(value, context);
             }
@@ -347,8 +386,8 @@ namespace SignalGo.Server.Models
         public static IEnumerable<T> GetSettings()
         {
             OperationContext context = OperationContext.Current;
-            if (SynchronizationContext.Current == null)
-                throw new Exception("SynchronizationContext is null or empty! Do not call this property inside of another thread that do not have any synchronizationContext or you can call SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());");
+            if (context == null)
+                throw new Exception("Context is null or empty! Do not call this property inside of another thread or after await or another task");
             if (SavedSettings.TryGetValue(context.Client, out HashSet<object> result))
             {
                 return result.Where(x => x.GetType() == typeof(T)).Select(x => (T)x);
@@ -459,8 +498,8 @@ namespace SignalGo.Server.Models
         public static IEnumerable<object> GetAllSettings()
         {
             OperationContext context = OperationContext.Current;
-            if (SynchronizationContext.Current == null)
-                throw new Exception("SynchronizationContext is null or empty! Do not call this property inside of another thread that do not have any synchronizationContext or you can call SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());");
+            if (context == null)
+                throw new Exception("Context is null or empty! Do not call this property inside of another thread or after await or another task");
             if (SavedSettings.TryGetValue(context.Client, out HashSet<object> result))
             {
                 return result;

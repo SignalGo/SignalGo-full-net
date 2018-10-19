@@ -421,14 +421,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                                     if (taskResult.GetType() != typeof(Task))
                                         result = taskResult.GetType().GetProperty("Result").GetValue(taskResult);
                                 }
-
-                                List<HttpKeyAttribute> httpKeys = method.GetCustomAttributes(typeof(HttpKeyAttribute), true).Cast<HttpKeyAttribute>().ToList();
-                                httpKeyAttributes.AddRange(httpKeys);
-                                if (serverBase.ProviderSetting.HttpKeyResponses != null)
-                                {
-                                    httpKeyAttributes.AddRange(serverBase.ProviderSetting.HttpKeyResponses);
-                                }
-
+                                
                                 if (result != null && result.GetType() == typeof(Task))
                                 {
                                     await (Task)result;
