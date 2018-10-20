@@ -42,6 +42,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Microsoft.CSharp" />
     <Reference Include="Microsoft.VisualStudio.TestPlatform.TestFramework, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\packages\MSTest.TestFramework.1.3.2\lib\net45\Microsoft.VisualStudio.TestPlatform.TestFramework.dll</HintPath>
     </Reference>
@@ -80,15 +81,18 @@
     <Compile Include="AsyncAwaitCalls\AsyncAwaitTest.cs" />
     <Compile Include="Connected Services\SignalGoTestServices\Reference.cs" />
     <Compile Include="DataExhanger\DataExchangerTest.cs" />
+    <Compile Include="DataTypes\TestSecurityPermissionsAttribute.cs" />
     <Compile Include="Download\DownloadStreamTest.cs" />
     <Compile Include="Download\WebServiceTest.cs" />
     <Compile Include="GlobalInitalization.cs" />
+    <Compile Include="Models\CurrentUserInfo.cs" />
     <Compile Include="Models\DataExchangerTestModel.cs" />
     <Compile Include="Models\ITestServerModel.cs" />
     <Compile Include="Models\ITestServerStreamModel.cs" />
     <Compile Include="Models\TestServerModel.cs" />
     <Compile Include="Models\TestServerStreamModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SecurityPermissions\SecurityPermissionCheck.cs" />
     <Compile Include="Utilities\FactoryTest.cs" />
     <Compile Include="Validations\ValidationTest.cs" />
   </ItemGroup>
@@ -119,7 +123,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="MultiThreading\" />
-    <Folder Include="SecurityPermissions\" />
   </ItemGroup>
   <Import Project="$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets" Condition="Exists('$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets')" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

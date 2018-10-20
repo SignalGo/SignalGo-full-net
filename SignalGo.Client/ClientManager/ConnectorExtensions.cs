@@ -48,16 +48,56 @@ namespace SignalGo.Client.ClientManager
         /// </summary>
         /// <typeparam name="T">return type data</typeparam>
         /// <param name="client">client for send data</param>
-        /// <param name="callerName">method name</param>
+        /// <param name="serviceName">method name</param>
         /// <param name="args">argumants of method</param>
         /// <returns></returns>
-        internal static T SendData<T>(this OperationCalls client, string callerName, params Shared.Models.ParameterInfo[] args)
+        internal static T SendData<T>(this OperationCalls client, string serviceName, params Shared.Models.ParameterInfo[] args)
         {
-            object data = SendData(client, callerName, "", args);
+            object data = SendData(client, serviceName, "", args);
             if (data == null || data.ToString() == "")
                 return default(T);
             return ClientSerializationHelper.DeserializeObject<T>(data.ToString());
         }
+#if (!NET40 && !NET35)
+        /// <summary>
+        /// call method async
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="connector"></param>
+        /// <param name="serviceName"></param>
+        /// <param name="methodName"></param>
+        /// <param name="args"></param>
+        /// <returns></returns>
+        public static async Task<T> SendDataAsync<T>(this ConnectorBase connector, string serviceName,string methodName, params Shared.Models.ParameterInfo[] args)
+        {
+            string data = await SendDataAsync(connector,serviceName, methodName, args);
+            if (string.IsNullOrEmpty(data))
+                return default(T);
+            return ClientSerializationHelper.DeserializeObject<T>(data.ToString());
+        }
+#endif
+
+        /// <summary>
+        /// call method sync
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="connector"></param>
+        /// <param name="serviceName"></param>
+        /// <param name="methodName"></param>
+        /// <param name="args"></param>
+        /// <returns></returns>
+        public static T SendDataSync<T>(this ConnectorBase connector, string serviceName, string methodName, params Shared.Models.ParameterInfo[] args)
+        {
+#if (NET40 || NET35)
+            string data = SendData(connector, serviceName, methodName, args);
+#else
+            string data = SendDataAsync(connector, serviceName, methodName, args).GetAwaiter().GetResult();
+#endif
+            if (string.IsNullOrEmpty(data))
+                return default(T);
+            return ClientSerializationHelper.DeserializeObject<T>(data.ToString());
+        }
+
         /// <summary>
         /// send data to connector
         /// </summary>
@@ -83,45 +123,44 @@ namespace SignalGo.Client.ClientManager
         /// send data none return value
         /// </summary>
         /// <param name="client"></param>
-        /// <param name="callerName"></param>
+        /// <param name="serviceName"></param>
         /// <param name="args"></param>
-        internal static void SendDataInvoke(this OperationCalls client, string callerName, params Shared.Models.ParameterInfo[] args)
+        internal static void SendDataInvoke(this OperationCalls client, string serviceName, params Shared.Models.ParameterInfo[] args)
         {
-            SendData(client, callerName, "", args);
+            SendData(client, serviceName, "", args);
         }
 
         /// <summary>
         /// send data not use params by array object
         /// </summary>
         /// <param name="client"></param>
-        /// <param name="callerName"></param>
+        /// <param name="serviceName"></param>
         /// <param name="attibName"></param>
         /// <param name="args"></param>
         /// <returns></returns>
-        internal static object SendDataNoParam(this OperationCalls client, string callerName, string attibName, Shared.Models.ParameterInfo[] args)
+        internal static object SendDataNoParam(this OperationCalls client, string serviceName, string attibName, Shared.Models.ParameterInfo[] args)
         {
-            return SendData(client, callerName, attibName, args);
+            return SendData(client, serviceName, attibName, args);
         }
 
         /// <summary>
         /// send data to server
         /// </summary>
         /// <param name="client">client is sended</param>
-        /// <param name="callerName">methos name</param>
+        /// <param name="serviceName">methos name</param>
         /// <param name="attibName">service name</param>
         /// <param name="args">method parameters</param>
         /// <returns></returns>
-        internal static object SendData(this OperationCalls client, string callerName, string attibName, params Shared.Models.ParameterInfo[] args)
+        internal static object SendData(this OperationCalls client, string serviceName, string attibName, params Shared.Models.ParameterInfo[] args)
         {
-            string serviceName = "";
             if (string.IsNullOrEmpty(attibName))
                 serviceName = client.GetType().GetServerServiceName(false);
             else
                 serviceName = attibName;
 #if (NET40 || NET35)
-            return SendData(client.Connector, serviceName, callerName, args);
+            return SendData(client.Connector, serviceName, serviceName, args);
 #else
-            return SendDataAsync(client.Connector, serviceName, callerName, args);
+            return SendDataAsync(client.Connector, serviceName, serviceName, args);
 #endif
         }
 

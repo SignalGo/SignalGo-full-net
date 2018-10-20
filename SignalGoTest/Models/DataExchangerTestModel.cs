@@ -43,6 +43,24 @@ namespace SignalGoTest.Models
         public T Data { get; set; }
         public bool IsSuccess { get; set; }
         public List<ValidationRule> Errors { get; set; }
+        public string Message { get; set; }
+    }
+
+    public class MessageContract
+    {
+        public bool IsSuccess { get; set; }
+        public List<ValidationRule> Errors { get; set; }
+        public string Message { get; set; }
+    }
+
+    public class UserInfo
+    {
+        public int Id { get; set; }
+        public string FullName { get; set; }
+        public string UserName { get; set; }
+        public string Password { get; set; }
+        public bool IsAdmin { get; set; }
+        public bool IsUser { get; set; }
     }
 
     public class ArticleInfo

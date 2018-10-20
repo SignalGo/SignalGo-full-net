@@ -1,4 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using SignalGoTest2Services.Interfaces;
 using SignalGoTest2Services.ServerServices;
 using System.Threading.Tasks;
 

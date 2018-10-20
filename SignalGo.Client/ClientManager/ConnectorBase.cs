@@ -170,13 +170,13 @@ namespace SignalGo.Client.ClientManager
         /// </summary>
         /// <typeparam name="T">type of class for call server methods</typeparam>
         /// <returns>return instance class for call methods</returns>
-        public T RegisterServerService<T>()
+        public T RegisterServerService<T>(params object[] constructors)
         {
             if (IsDisposed)
                 throw new ObjectDisposedException("Connector");
             Type type = typeof(T);
             string name = type.GetServerServiceName(true);
-            object objectInstance = Activator.CreateInstance(type);
+            object objectInstance = Activator.CreateInstance(type, constructors);
             OperationCalls duplex = objectInstance as OperationCalls;
             if (duplex != null)
                 duplex.Connector = this;

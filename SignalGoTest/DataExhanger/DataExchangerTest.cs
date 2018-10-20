@@ -1,5 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SignalGoTest2.Models;
+using SignalGoTest2Services.Interfaces;
 using SignalGoTest2Services.ServerServices;
 using System.Threading.Tasks;
 
@@ -13,9 +14,9 @@ namespace SignalGoTest.DataExhanger
         {
             GlobalInitalization.Initialize();
             SignalGo.Client.ClientProvider client = GlobalInitalization.InitializeAndConnecteClient();
+            ITestServerModel service = client.RegisterServerServiceInterfaceWrapper<ITestServerModel>();
             //while (true)
             //    System.Threading.Thread.Sleep(100);
-            ITestServerModel service = client.RegisterServerServiceInterfaceWrapper<ITestServerModel>();
             UserInfoTest test = new UserInfoTest() { Age = 10, Id = 15, Username = "user name", LastPostInfo = new PostInfoTest() { }, Password = "pass", PostInfoes = new System.Collections.Generic.List<PostInfoTest>() { }, RoleInfoes = new System.Collections.Generic.List<RoleInfoTest>() { new RoleInfoTest() { } } };
             UserInfoTest test1 = new UserInfoTest() { Age = 10, Id = 15, Username = "user name", LastPostInfo = new PostInfoTest() { }, Password = "pass", PostInfoes = new System.Collections.Generic.List<PostInfoTest>() { }, RoleInfoes = new System.Collections.Generic.List<RoleInfoTest>() { new RoleInfoTest() { Id = 5 } } };
             UserInfoTest test2 = new UserInfoTest() { Age = 10, Id = 15, Username = "user name", LastPostInfo = new PostInfoTest() { }, Password = "pass", PostInfoes = new System.Collections.Generic.List<PostInfoTest>() { }, RoleInfoes = new System.Collections.Generic.List<RoleInfoTest>() { new RoleInfoTest() { } } };

@@ -66,7 +66,7 @@ namespace SignalGo.Shared.DataTypes
             Name = name;
             ServiceType = serviceType;
         }
-        
+
         /// <summary>
         /// 
         /// </summary>

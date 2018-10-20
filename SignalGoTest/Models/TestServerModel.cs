@@ -1,10 +1,10 @@
 ﻿using SignalGo.Server.Models;
 using SignalGo.Shared.Converters;
 using SignalGo.Shared.DataTypes;
+using SignalGoTest.DataTypes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace SignalGoTest.Models
@@ -12,6 +12,79 @@ namespace SignalGoTest.Models
     public class TestSetting
     {
         public string Name { get; set; }
+    }
+
+    [ServiceContract("Authentication", ServiceType.HttpService, InstanceType.SingleInstance)]
+    [ServiceContract("Authentication", ServiceType.OneWayService, InstanceType.SingleInstance)]
+    [ServiceContract("Authentication", ServiceType.ServerService, InstanceType.SingleInstance)]
+    public class AuthenticationService
+    {
+        public MessageContract<UserInfo> Login(string userName, string password)
+        {
+            if (userName == "admin" && password == "123")
+            {
+                UserInfo user = new UserInfo() { FullName = "admin user", IsAdmin = true, IsUser = true, Password = password, UserName = userName, Id = 1 };
+                OperationContext<CurrentUserInfo>.CurrentSetting = new CurrentUserInfo()
+                {
+                    ExpireDate = DateTime.Now.AddSeconds(5),
+                    UserInfo = user,
+                    Session = Guid.NewGuid().ToString()
+                };
+                return new MessageContract<UserInfo>()
+                {
+                    IsSuccess = true,
+                    Data = user
+                };
+            }
+            else if (userName == "user" && password == "321")
+            {
+                UserInfo user = new UserInfo() { FullName = "normal user", IsAdmin = false, IsUser = true, Password = password, UserName = userName, Id = 2 };
+                OperationContext<CurrentUserInfo>.CurrentSetting = new CurrentUserInfo()
+                {
+                    ExpireDate = DateTime.Now.AddSeconds(5),
+                    UserInfo = user,
+                    Session = Guid.NewGuid().ToString()
+                };
+                return new MessageContract<UserInfo>()
+                {
+                    IsSuccess = true,
+                    Data = user
+                };
+            }
+            return new MessageContract<UserInfo>() { IsSuccess = false, Message = "Username or Password Incorrect!" };
+        }
+
+        public string WhatIsMyName()
+        {
+            CurrentUserInfo current = OperationContext<CurrentUserInfo>.CurrentSetting;
+            if (current != null)
+                return current.UserInfo.FullName;
+            return "Gust";
+        }
+
+        [TestSecurityPermissions(IsAdmin = true)]
+        public MessageContract AdminAccess()
+        {
+            CurrentUserInfo current = OperationContext<CurrentUserInfo>.CurrentSetting;
+            if (current != null && current.UserInfo.IsAdmin)
+                return new MessageContract() { IsSuccess = true, Message = "admin success" };
+            return new MessageContract() { IsSuccess = false, Message = "wrong called signalgo bug is here" };
+
+        }
+
+        [TestSecurityPermissions(IsUser = true)]
+        public MessageContract UserAccess()
+        {
+            CurrentUserInfo current = OperationContext<CurrentUserInfo>.CurrentSetting;
+            if (current != null && current.UserInfo.IsUser)
+                return new MessageContract() { IsSuccess = true, Message = "user success" };
+            return new MessageContract() { IsSuccess = false, Message = "wrong called signalgo bug is here" };
+        }
+
+        public MessageContract GustAccess()
+        {
+            return new MessageContract() { IsSuccess = true, Message = "gust success" };
+        }
     }
 
     public class TestServerModel : ITestServerModel
