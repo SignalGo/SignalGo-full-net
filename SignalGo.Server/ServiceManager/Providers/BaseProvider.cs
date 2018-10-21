@@ -110,7 +110,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     {
                         StringBuilder exceptionResult = new StringBuilder();
                         exceptionResult.AppendLine("<Exception>");
-                        exceptionResult.AppendLine($"method {methodName} not found");
+                        exceptionResult.AppendLine($"method {methodName} not found from service {serviceName}");
                         exceptionResult.AppendLine("<Parameters>");
                         if (parameters != null)
                         {
@@ -459,7 +459,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 catch (Exception ex)
                 {
                     exception = ex;
-                    serverBase.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase CallMethod 2: {methodName}");
+                    serverBase.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase CallMethod 2: {methodName} serviceName: {serviceName}");
                     callback.IsException = true;
                     if (serverBase.ErrorHandlingFunction != null)
                     {
