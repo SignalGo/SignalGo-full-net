@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Reflection;
 
-namespace SignalGo.Shared.Models
+namespace SignalGo.Shared.DataTypes
 {
     /// <summary>
     /// type of your validation plan
