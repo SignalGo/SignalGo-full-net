@@ -406,6 +406,17 @@ namespace SignalGo.Server.ServiceManager.Providers
                                                 }
                                                 break;
                                             }
+                                        case ConcurrentLockType.PerSingleInstanceService:
+                                            {
+                                                lock (service)
+                                                {
+                                                    if (IsTask(method))
+                                                        taskResult = (Task)method.Invoke(service, parametersValues.ToArray());
+                                                    else
+                                                        result = method.Invoke(service, parametersValues.ToArray());
+                                                }
+                                                break;
+                                            }
                                     }
                                 }
                                 else

@@ -22,7 +22,11 @@ namespace SignalGo.Server.DataTypes
         /// <summary>
         /// lock per method,multipe users cannot call one method concurrent
         /// </summary>
-        PerMethod = 4
+        PerMethod = 4,
+        /// <summary>
+        /// lock per signle instance service,users cannot call methods of service concurrent
+        /// </summary>
+        PerSingleInstanceService = 5
     }
     /// <summary>
     /// lock method when multipe clients are calling
