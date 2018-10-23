@@ -249,7 +249,7 @@ namespace SignalGo.Server.Models
                 {
                     foreach (var item in result)
                     {
-                        if (item.GetType().GetListOfProperties().Any(x => x.GetCustomAttribute(typeof(HttpKeyAttribute), true) != null))
+                        if (item.GetType().GetListOfProperties().Any(x => x.GetCustomAttributes(typeof(HttpKeyAttribute), true).Count() > 0))
                             yield return item;
                     }
                 }
