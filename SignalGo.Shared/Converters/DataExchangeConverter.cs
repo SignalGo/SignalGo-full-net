@@ -730,7 +730,7 @@ namespace SignalGo.Shared.Converters
                     }
                     if (instance == null)
                         instance = CreateInstance(objectType, canIgnore);
-                    ValidationRuleInfoManager?.AddObjectPropertyAsChecked(CurrentTaskId, objectType, instance, null);
+                    ValidationRuleInfoManager?.AddObjectPropertyAsChecked(CurrentTaskId, objectType, instance, null, null, null);
                     ReadNewProperty(instance, reader, objectType, existingValue, serializer, canIgnore);
                 }
                 else if (reader.TokenType == JsonToken.StartArray)
@@ -968,12 +968,17 @@ namespace SignalGo.Shared.Converters
             return false;
 #endif
         }
-
+        /// <summary>
+        /// add property validation rules to check system
+        /// </summary>
+        /// <param name="propertyInfo"></param>
+        /// <param name="instance"></param>
+        /// <param name="currentValue"></param>
         private void AddPropertyValidationRuleInfoAttribute(PropertyInfo propertyInfo, object instance, object currentValue)
         {
             if (!CurrentTaskId.HasValue || ValidationRuleInfoManager == null)
                 return;
-            ValidationRuleInfoManager.AddObjectPropertyAsChecked(CurrentTaskId, instance.GetType(), instance, propertyInfo.Name);
+            ValidationRuleInfoManager.AddObjectPropertyAsChecked(CurrentTaskId, instance.GetType(), instance, propertyInfo.Name, propertyInfo, currentValue);
             foreach (ValidationRuleInfoAttribute item in propertyInfo.GetCustomAttributes(typeof(ValidationRuleInfoAttribute), true))
             {
                 item.PropertyInfo = propertyInfo;
@@ -1090,7 +1095,6 @@ namespace SignalGo.Shared.Converters
                                         if (property.CanWrite)
                                         {
                                             property.SetValue(instance, value, null);
-                                            AddPropertyValidationRuleInfoAttribute(property, instance, value);
                                         }
                                         else
                                             AutoLogger?.LogText($"property {property.Name} cannot write");

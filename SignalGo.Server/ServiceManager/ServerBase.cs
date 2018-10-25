@@ -18,7 +18,7 @@ namespace SignalGo.Server.ServiceManager
     /// <summary>
     /// base of server
     /// </summary>
-    public abstract class ServerBase : IDisposable
+    public abstract class ServerBase : IDisposable, IValidationRuleInfo
     {
         /// <summary>
         /// default constructor
@@ -31,7 +31,7 @@ namespace SignalGo.Server.ServiceManager
         /// <summary>
         /// validation rules manager
         /// </summary>
-        internal ValidationRuleInfoManager ValidationRuleInfoManager { get; set; } = new ValidationRuleInfoManager();
+        public ValidationRuleInfoManager ValidationRuleInfoManager { get; set; } = new ValidationRuleInfoManager();
         /// <summary>
         /// server data provider communication between client and server
         /// </summary>
@@ -232,7 +232,9 @@ namespace SignalGo.Server.ServiceManager
             DataExchanger.Clear(TaskId);
             TaskOfClientInfoes.Remove(TaskId);
             OperationContext.CurrentTaskServerTasks.Remove(TaskId);
+            ValidationRuleInfoManager.RemoveTask(TaskId);
         }
+
         internal void AddTask(int TaskId, string clientId)
         {
             DataExchanger.Clear(TaskId);

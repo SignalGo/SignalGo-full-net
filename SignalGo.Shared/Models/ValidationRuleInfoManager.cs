@@ -5,6 +5,7 @@ using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace SignalGo.Shared.Models
@@ -22,20 +23,74 @@ namespace SignalGo.Shared.Models
         /// <returns></returns>
         private static void Add<T>(ValidationBuilder validationBuilder, string property)
         {
-            Add(validationBuilder, typeof(T), property);
+            AddValidation(validationBuilder, typeof(T), property);
         }
 
-        private static void Add(ValidationBuilder validationBuilder, Type type, string property)
+        private static void AddValidation(ValidationBuilder validationBuilder, object typeOrInstance, string property)
         {
-            if (!validationBuilder.PropertiesValidations.ContainsKey(property))
-                validationBuilder.PropertiesValidations[property] = new List<Type>();
+            if (typeOrInstance == null)
+                throw new Exception($"your object cannot be null to add as attribute");
+            else if (typeOrInstance is Type type && !type.GetAllInheritances().Contains(typeof(ValidationRuleInfoAttribute)))
+                throw new Exception($"Type of T is not a ValidationRuleInfoAttribute Type T is {type.FullName}");
 
-            if (!validationBuilder.PropertiesValidations[property].Contains(type))
-                validationBuilder.PropertiesValidations[property].Add(type);
+            if (!validationBuilder.PropertiesValidations.ContainsKey(property))
+                validationBuilder.PropertiesValidations[property] = new List<object>();
+
+            if (!validationBuilder.PropertiesValidations[property].Contains(typeOrInstance))
+                validationBuilder.PropertiesValidations[property].Add(typeOrInstance);
         }
 
         /// <summary>
-        /// add validation
+        /// add validation by instance
+        /// </summary>
+        /// <param name="validationBuilder"></param>
+        /// <param name="validation"></param>
+        /// <param name="properties"></param>
+        /// <returns></returns>
+        public static ValidationBuilder Add(this ValidationBuilder validationBuilder, ValidationRuleInfoAttribute validation, params string[] properties)
+        {
+            foreach (string item in properties)
+            {
+                AddValidation(validationBuilder, validation, item);
+            }
+            return validationBuilder;
+        }
+
+        public static ValidationBuilder Add(this ValidationBuilder validationBuilder, ValidationRuleInfoAttribute validation1, ValidationRuleInfoAttribute validation2, params string[] properties)
+        {
+            foreach (string item in properties)
+            {
+                AddValidation(validationBuilder, validation1, item);
+                AddValidation(validationBuilder, validation2, item);
+            }
+            return validationBuilder;
+        }
+
+        public static ValidationBuilder Add(this ValidationBuilder validationBuilder, ValidationRuleInfoAttribute validation1, ValidationRuleInfoAttribute validation2, ValidationRuleInfoAttribute validation3, params string[] properties)
+        {
+            foreach (string item in properties)
+            {
+                AddValidation(validationBuilder, validation1, item);
+                AddValidation(validationBuilder, validation2, item);
+                AddValidation(validationBuilder, validation3, item);
+            }
+            return validationBuilder;
+        }
+
+        public static ValidationBuilder Add(this ValidationBuilder validationBuilder, ValidationRuleInfoAttribute[] validations, params string[] properties)
+        {
+            foreach (string item in properties)
+            {
+                foreach (var validation in validations)
+                {
+                    AddValidation(validationBuilder, validation, item);
+                }
+            }
+            return validationBuilder;
+        }
+
+        /// <summary>
+        /// add validation by type
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="validationBuilder"></param>
@@ -43,8 +98,6 @@ namespace SignalGo.Shared.Models
         /// <returns></returns>
         public static ValidationBuilder Add<T>(this ValidationBuilder validationBuilder, params string[] properties)
         {
-            if (!typeof(T).GetAllInheritances().Contains(typeof(ValidationRuleInfoAttribute)))
-                throw new Exception($"Type of T is not a ValidationRuleInfoAttribute Type T is {typeof(T).FullName}");
             foreach (string item in properties)
             {
                 Add<T>(validationBuilder, item);
@@ -141,18 +194,24 @@ namespace SignalGo.Shared.Models
             return validationBuilder;
         }
 
-        public static ValidationBuilder Validation(this Type type)
+        /// <summary>
+        /// add your rules to your server provider
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="provider"></param>
+        /// <returns></returns>
+        public static ValidationBuilder Validation(this Type type, IValidationRuleInfo provider)
         {
-            return new ValidationBuilder(type);
+            return new ValidationBuilder(type, provider);
         }
 
         public static ValidationBuilder Add(this ValidationBuilder validationBuilder, List<Type> types, params string[] properties)
         {
             foreach (Type type in types)
             {
-                foreach (var property in properties)
+                foreach (string property in properties)
                 {
-                    Add(validationBuilder, type, property);
+                    AddValidation(validationBuilder, type, property);
                 }
             }
             return validationBuilder;
@@ -164,7 +223,26 @@ namespace SignalGo.Shared.Models
         /// <param name="validationBuilder"></param>
         public static void Build(this ValidationBuilder validationBuilder)
         {
+            ValidationRuleInfoManager manager = validationBuilder.Provider.ValidationRuleInfoManager;
+            if (!manager.FluentValidationRules.TryGetValue(validationBuilder.Type, out Dictionary<string, List<object>> properties))
+            {
+                properties = new Dictionary<string, List<object>>();
+                manager.FluentValidationRules.TryAdd(validationBuilder.Type, properties);
+            }
+            foreach (KeyValuePair<string, List<object>> property in validationBuilder.PropertiesValidations)
+            {
+                if (!properties.TryGetValue(property.Key, out List<object> attributes))
+                {
+                    attributes = new List<object>();
+                    properties.Add(property.Key, attributes);
+                }
 
+                foreach (object attribe in property.Value)
+                {
+                    if (!attributes.Contains(attribe))
+                        attributes.Add(attribe);
+                }
+            }
         }
     }
 
@@ -173,8 +251,13 @@ namespace SignalGo.Shared.Models
     /// </summary>
     public class ValidationBuilder
     {
-        internal ValidationBuilder(Type type)
+        /// <summary>
+        /// server provider object
+        /// </summary>
+        public IValidationRuleInfo Provider { get; set; }
+        internal ValidationBuilder(Type type, IValidationRuleInfo provider)
         {
+            Provider = provider;
             Type = type;
         }
         /// <summary>
@@ -184,10 +267,19 @@ namespace SignalGo.Shared.Models
         /// <summary>
         /// list of rules support
         /// </summary>
-        public Dictionary<string, List<Type>> PropertiesValidations { get; internal set; } = new Dictionary<string, List<Type>>();
+        public Dictionary<string, List<object>> PropertiesValidations { get; internal set; } = new Dictionary<string, List<object>>();
 
     }
-
+    /// <summary>
+    /// validation rule infoes
+    /// </summary>
+    public interface IValidationRuleInfo
+    {
+        /// <summary>
+        /// validation rules manager
+        /// </summary>
+        ValidationRuleInfoManager ValidationRuleInfoManager { get; set; }
+    }
     /// <summary>
     /// manage validation rules add,remove etc
     /// </summary>
@@ -195,6 +287,7 @@ namespace SignalGo.Shared.Models
     {
         private ConcurrentDictionary<int, ConcurrentDictionary<Type, ConcurrentDictionary<object, List<string>>>> CurrentDetectedObjects { get; set; } = new ConcurrentDictionary<int, ConcurrentDictionary<Type, ConcurrentDictionary<object, List<string>>>>();
         private ConcurrentDictionary<int, List<ValidationRuleInfoAttribute>> CurrentValidationRules { get; set; } = new ConcurrentDictionary<int, List<ValidationRuleInfoAttribute>>();
+        internal ConcurrentDictionary<Type, Dictionary<string, List<object>>> FluentValidationRules { get; set; } = new ConcurrentDictionary<Type, Dictionary<string, List<object>>>();
         /// <summary>
         /// add role to current task
         /// </summary>
@@ -226,7 +319,8 @@ namespace SignalGo.Shared.Models
         /// <param name="type"></param>
         /// <param name="instance"></param>
         /// <param name="propertyName"></param>
-        public void AddObjectPropertyAsChecked(int? currentTaskId, Type type, object instance, string propertyName)
+        /// <param name="propertyInfo"></param>
+        public void AddObjectPropertyAsChecked(int? currentTaskId, Type type, object instance, string propertyName, PropertyInfo propertyInfo, object currentValue)
         {
             if (!currentTaskId.HasValue || instance == null)
                 return;
@@ -268,6 +362,37 @@ namespace SignalGo.Shared.Models
                 objects.TryAdd(instance, properties);
                 types.TryAdd(type, objects);
                 CurrentDetectedObjects.TryAdd(currentId, types);
+            }
+
+            if (propertyName != null && FluentValidationRules.TryGetValue(type, out Dictionary<string, List<object>> validations))
+            {
+                if (validations.TryGetValue(propertyName, out List<object> attributes))
+                {
+                    foreach (object attribute in attributes)
+                    {
+                        ValidationRuleInfoAttribute attributeInstance = null;
+                        if (attribute is Type attributeType)
+                        {
+                            try
+                            {
+                                attributeInstance = (ValidationRuleInfoAttribute)Activator.CreateInstance(attributeType);
+                            }
+                            catch (Exception ex)
+                            {
+                                throw new Exception($"I went to create instance of your attribute by type {attributeType.FullName} but it had Exception, are you made constructor for that? see the inner exception for more details", ex);
+                            }
+                        }
+                        else
+                        {
+                            attributeInstance = (ValidationRuleInfoAttribute)attribute;
+                        }
+
+                        attributeInstance.PropertyInfo = propertyInfo;
+                        attributeInstance.Object = instance;
+                        attributeInstance.CurrentValue = currentValue;
+                        AddRule(currentTaskId, attributeInstance);
+                    }
+                }
             }
         }
         /// <summary>
@@ -319,6 +444,7 @@ namespace SignalGo.Shared.Models
                         throw new NotSupportedException();
                 }
             }
+
             if (CurrentDetectedObjects.TryGetValue(currentId, out ConcurrentDictionary<Type, ConcurrentDictionary<object, List<string>>> types))
             {
                 foreach (KeyValuePair<Type, ConcurrentDictionary<object, List<string>>> tkv in types)
@@ -408,14 +534,14 @@ namespace SignalGo.Shared.Models
             }
         }
 
-        public static ValidationBuilder Add(Type type)
+        /// <summary>
+        /// remove tasks from memory
+        /// </summary>
+        /// <param name="TaskId"></param>
+        public void RemoveTask(int TaskId)
         {
-            return new ValidationBuilder(type);
-        }
-
-        public static ValidationBuilder Add<T>()
-        {
-            return Add(typeof(T));
+            CurrentDetectedObjects.Remove(TaskId);
+            CurrentValidationRules.Remove(TaskId);
         }
     }
 }

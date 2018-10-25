@@ -221,14 +221,18 @@ namespace SignalGo.Server.ServiceManager.Providers
                         }
 
                         hasNoNameParameter = parametersKeyValues.Any(x => x.Key.StartsWith("."));
+                        //get list of validation errors of calls
                         validationErrors = serverBase.ValidationRuleInfoManager.CalculateValidationsOfTask((parameterName, newValue) =>
                         {
+                            //change property value, get value from validation and change it to property
                             if (parametersKeyValues.Any(x => x.Key.Equals(parameterName, StringComparison.OrdinalIgnoreCase)))
                                 parametersKeyValues[parameterName] = newValue;
                         }, (validation) =>
                         {
+                            //initialize validations service method and parameters
                             validation.Initialize(service, method, parametersKeyValues);
                         }).ToList();
+
                         //order
                         if (hasNoNameParameter)
                         {
