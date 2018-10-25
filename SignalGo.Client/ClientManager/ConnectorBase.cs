@@ -1301,6 +1301,9 @@ namespace SignalGo.Client.ClientManager
             return ServiceDetailEventTaskResult.Task.Result;
 #else
             await StreamHelper.WriteToStreamAsync(_clientStream, data.ToArray());
+            bool isReceived = await Task.WhenAny(ServiceDetailEventTaskResult.Task, Task.Delay(new TimeSpan(0, 0, 15))) == ServiceDetailEventTaskResult.Task;
+            if (!isReceived)
+                throw new TimeoutException();
             return await ServiceDetailEventTaskResult.Task;
 #endif
         }
@@ -1387,7 +1390,7 @@ namespace SignalGo.Client.ClientManager
                 item.Value.TrySetCanceled();
             }
             ConnectorExtensions.WaitedMethodsForResponse.Clear();
-           
+
             OnConnectionChanged?.Invoke(ConnectionStatus.Disconnected);
 
             //if (!IsAutoReconnecting)
