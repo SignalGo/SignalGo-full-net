@@ -46,6 +46,11 @@ namespace SignalGo.Server.Owin
             }
 
             OwinClientInfo owinClientInfo = new OwinClientInfo();
+            owinClientInfo.ChangeStatusAction = (code) =>
+            {
+                context.Response.StatusCode = code;
+            };
+
             owinClientInfo.ConnectedDateTime = DateTime.Now;
             owinClientInfo.IPAddress = context.Connection.RemoteIpAddress.ToString();
             owinClientInfo.ClientId = Guid.NewGuid().ToString() + "-" + Guid.NewGuid().ToString();

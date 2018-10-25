@@ -71,6 +71,7 @@ namespace SignalGo.Server.Models
         public bool IsWebSocket { get; set; }
 
         public ClientProtocolType ProtocolType { get; set; } = ClientProtocolType.None;
+      
     }
 
     /// <summary>
@@ -115,6 +116,14 @@ namespace SignalGo.Server.Models
             return ((WebHeaderCollection)RequestHeaders)[header];
         }
 
+        /// <summary>
+        /// change status code before send data as headers etc
+        /// </summary>
+        /// <param name="statusCode"></param>
+        public virtual void ChangeStatusCode(System.Net.HttpStatusCode statusCode)
+        {
+
+        }
 
     }
 

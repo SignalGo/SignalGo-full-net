@@ -995,8 +995,9 @@ namespace SignalGo.Server.ServiceManager.Providers
             {
 
             }
-            if (client.IsOwinClient)
+            if (client.IsOwinClient && client is HttpClientInfo httpClient)
             {
+                httpClient.ChangeStatusCode(httpClient.Status);
                 return;
             }
             StringBuilder builder = new StringBuilder();
