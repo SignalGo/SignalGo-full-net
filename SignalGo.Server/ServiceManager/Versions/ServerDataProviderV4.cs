@@ -269,5 +269,14 @@ namespace SignalGo.Server.ServiceManager.Versions
             }
             return stringBuilder.ToString();
         }
+        
+        /// <summary>
+        /// count of connected
+        /// </summary>
+        /// <returns></returns>
+        public int GetConnectedCount()
+        {
+            return _ConnectedCount;
+        }
     }
 }
