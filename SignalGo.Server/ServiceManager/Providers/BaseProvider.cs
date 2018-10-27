@@ -231,17 +231,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                         }
 
                         hasNoNameParameter = parametersKeyValues.Any(x => x.Key.StartsWith("."));
-                        //get list of validation errors of calls
-                        validationErrors = serverBase.ValidationRuleInfoManager.CalculateValidationsOfTask((parameterName, newValue) =>
-                        {
-                            //change property value, get value from validation and change it to property
-                            if (parametersKeyValues.Any(x => x.Key.Equals(parameterName, StringComparison.OrdinalIgnoreCase)))
-                                parametersKeyValues[parameterName] = newValue;
-                        }, (validation) =>
-                        {
-                            //initialize validations service method and parameters
-                            validation.Initialize(service, method, parametersKeyValues);
-                        }).ToList();
+
 
                         //order
                         if (hasNoNameParameter)
@@ -272,6 +262,31 @@ namespace SignalGo.Server.ServiceManager.Providers
                             parametersKeyValues = parametersKeyValues.Where(x => prms.Any(y => y.Name.Equals(x.Key, StringComparison.OrdinalIgnoreCase))).ToDictionary(x => x.Key, x => x.Value);
                             parametersValues = parametersKeyValues.OrderBy(x => prms.IndexOf(prms.FirstOrDefault(y => y.Name.Equals(x.Key, StringComparison.OrdinalIgnoreCase)))).Select(x => x.Value).ToList();
                         }
+
+
+                        for (int i = 0; i < prms.Length; i++)
+                        {
+                            var parameter = prms[i];
+                            var parameterValue = parametersValues[i];
+                            var rules = parameter.GetCustomAttributes<ValidationRuleInfoAttribute>(true);
+                            foreach (var rule in rules)
+                            {
+                                rule.Initialize(service, method, parametersKeyValues, null, parameter, parameterValue);
+                                serverBase.ValidationRuleInfoManager.AddRule(taskId, rule);
+                            }
+                        }
+                        //get list of validation errors of calls
+                        validationErrors = serverBase.ValidationRuleInfoManager.CalculateValidationsOfTask((parameterName, newValue) =>
+                        {
+                            //change property value, get value from validation and change it to property
+                            if (parametersKeyValues.Any(x => x.Key.Equals(parameterName, StringComparison.OrdinalIgnoreCase)))
+                                parametersKeyValues[parameterName] = newValue;
+                        }, (validation) =>
+                        {
+                            //initialize validations service method and parameters
+                            validation.Initialize(service, method, parametersKeyValues, null, null, null);
+                        }).ToList();
+
                     }
                     else
                         parametersValues = new List<object>();
