@@ -209,7 +209,7 @@ namespace SignalGo.Shared.Converters
     /// <typeparam>The object type to convert.</typeparam>
     public class CustomICollectionCreationConverter : JsonConverter
     {
-        public AutoLogger AutoLogger { get; set; } = new AutoLogger() { FileName = "DataExchanger Logs.log" };
+        public static AutoLogger AutoLogger { get; set; } = new AutoLogger() { FileName = "DataExchanger Logs.log" };
 
         private Type BaseType { get; set; }
 
