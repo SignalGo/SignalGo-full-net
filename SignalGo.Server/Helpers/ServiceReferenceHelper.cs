@@ -246,7 +246,7 @@ namespace SignalGo.Server.Helpers
 
         private void GenerateModelClass(Type type)
         {
-            if (type == typeof(object) || type == null || type.GetAssembly() == typeof(string).GetAssembly())
+            if (type == null)
                 return;
             if (ModelsCodeGenerated.Contains(type) || CannotGenerateAssemblyTypes(type))
                 return;
@@ -258,6 +258,13 @@ namespace SignalGo.Server.Helpers
             {
                 type = type.GetGenericArguments()[0];
             }
+            if (type.IsArray)
+            {
+                type = type.GetElementType();
+            }
+
+            if (type == typeof(object) || type.GetAssembly() == typeof(string).GetAssembly())
+                return;
             bool isGeneric = type.GetIsGenericType();
             if (isGeneric && type.GetGenericTypeDefinition() != type)
             {
