@@ -73,7 +73,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     if (!serverBase.RegisteredServiceTypes.TryGetValue(serviceName, out serviceType))
                         throw new Exception($"{client.IPAddress} {client.ClientId} Service {serviceName} not found");
 
-                    service = GetInstanceOfService(client, serviceName, serviceType, serverBase);
+                    service =await GetInstanceOfService(client, serviceName, serviceType, serverBase);
                     if (service == null)
                         throw new Exception($"{client.IPAddress} {client.ClientId} service {serviceName} not found");
 
@@ -93,7 +93,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     List<ClientLimitationAttribute> clientLimitationAttribute = new List<ClientLimitationAttribute>();
                     List<ConcurrentLockAttribute> concurrentLockAttributes = new List<ConcurrentLockAttribute>();
 
-                    List<MethodInfo> allMethods = GetMethods(client, methodName, parameters, serviceType, customDataExchanger, securityAttributes, clientLimitationAttribute, concurrentLockAttributes, canTakeMethod).ToList();
+                   var allMethods = GetMethods(client, methodName, parameters, serviceType, customDataExchanger, securityAttributes, clientLimitationAttribute, concurrentLockAttributes, canTakeMethod);
                     method = allMethods.FirstOrDefault();
                     if (method == null && !string.IsNullOrEmpty(jsonParameters))
                     {
@@ -266,12 +266,12 @@ namespace SignalGo.Server.ServiceManager.Providers
 
                         for (int i = 0; i < prms.Length; i++)
                         {
-                            var parameter = prms[i];
-                            var parameterValue = parametersValues[i];
-                            var rules = parameter.GetCustomAttributes<ValidationRuleInfoAttribute>(true);
-                            foreach (var rule in rules)
+                            System.Reflection.ParameterInfo parameter = prms[i];
+                            object parameterValue = parametersValues[i];
+                            IEnumerable<ValidationRuleInfoAttribute> rules = parameter.GetCustomAttributes<ValidationRuleInfoAttribute>(true);
+                            foreach (ValidationRuleInfoAttribute rule in rules)
                             {
-                                rule.Initialize(service, method, parametersKeyValues, null, parameter, parameterValue);
+                                rule.Initialize(service, method, parametersKeyValues, null, parameter, null, parameterValue);
                                 serverBase.ValidationRuleInfoManager.AddRule(taskId, rule);
                             }
                         }
@@ -284,7 +284,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                         }, (validation) =>
                         {
                             //initialize validations service method and parameters
-                            validation.Initialize(service, method, parametersKeyValues, null, null, null);
+                            validation.Initialize(service, method, parametersKeyValues, null, null, null, null);
                         }).ToList();
 
                     }
@@ -393,23 +393,33 @@ namespace SignalGo.Server.ServiceManager.Providers
                                     {
                                         case ConcurrentLockType.Full:
                                             {
-                                                lock (serverBase)
+                                                try
                                                 {
+                                                    await serverBase.LockWaitToRead.WaitAsync();
                                                     if (IsTask(method))
                                                         taskResult = (Task)method.Invoke(service, parametersValues.ToArray());
                                                     else
                                                         result = method.Invoke(service, parametersValues.ToArray());
                                                 }
+                                                finally
+                                                {
+                                                    serverBase.LockWaitToRead.Release();
+                                                }
                                                 break;
                                             }
                                         case ConcurrentLockType.PerClient:
                                             {
-                                                lock (client)
+                                                try
                                                 {
+                                                    await client.LockWaitToRead.WaitAsync();
                                                     if (IsTask(method))
                                                         taskResult = (Task)method.Invoke(service, parametersValues.ToArray());
                                                     else
                                                         result = method.Invoke(service, parametersValues.ToArray());
+                                                }
+                                                finally
+                                                {
+                                                    client.LockWaitToRead.Release();
                                                 }
                                                 break;
                                             }
@@ -531,7 +541,7 @@ namespace SignalGo.Server.ServiceManager.Providers
             });
         }
 
-        private static object GetInstanceOfService(ClientInfo client, string serviceName, Type serviceType, ServerBase serverBase)
+        private static async Task<object> GetInstanceOfService(ClientInfo client, string serviceName, Type serviceType, ServerBase serverBase)
         {
             ServiceContractAttribute attribute = serviceType.GetServerServiceAttribute(serviceName, false);
 
@@ -547,8 +557,9 @@ namespace SignalGo.Server.ServiceManager.Providers
             }
             else
             {
-                lock (client)
+                try
                 {
+                    await client.LockWaitToRead.WaitAsync();
                     //finx service from multi instance services
                     if (serverBase.MultipleInstanceServices.TryGetValue(attribute.Name, out ConcurrentDictionary<string, object> result))
                     {
@@ -571,6 +582,10 @@ namespace SignalGo.Server.ServiceManager.Providers
                         result.TryAdd(client.ClientId, service);
                         return service;
                     }
+                }
+                finally
+                {
+                    client.LockWaitToRead.Release();
                 }
             }
         }

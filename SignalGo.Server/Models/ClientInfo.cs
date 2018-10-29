@@ -5,6 +5,7 @@ using SignalGo.Shared.Models;
 using System;
 using System.Collections.Generic;
 using System.Net.Sockets;
+using System.Threading;
 
 namespace SignalGo.Server.Models
 {
@@ -71,7 +72,11 @@ namespace SignalGo.Server.Models
         public bool IsWebSocket { get; set; }
 
         public ClientProtocolType ProtocolType { get; set; } = ClientProtocolType.None;
-      
+        /// <summary>
+        /// lock for this client
+        /// </summary>
+        public SemaphoreSlim LockWaitToRead { get; set; } = new SemaphoreSlim(1, 1);
+
     }
 
     /// <summary>

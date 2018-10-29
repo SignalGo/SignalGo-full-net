@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SignalGo.Shared.IO
@@ -43,8 +44,7 @@ namespace SignalGo.Shared.IO
 #endif
         private bool IsWaitToRead { get; set; } = false;
 
-        private readonly object lockWaitToRead = new object();
-
+        private readonly SemaphoreSlim lockWaitToRead = new SemaphoreSlim(1, 1);
 #if (NET35 || NET40)
         private void ReadBuffer()
 #else
@@ -53,11 +53,20 @@ namespace SignalGo.Shared.IO
         {
             try
             {
-                lock (lockWaitToRead)
+                try
                 {
+#if (NET35 || NET40)
+                    lockWaitToRead.Wait();
+#else
+                    await lockWaitToRead.WaitAsync();
+#endif
                     if (IsWaitToRead || IsClosed)
                         return;
                     IsWaitToRead = true;
+                }
+                finally
+                {
+                    lockWaitToRead.Release();
                 }
                 byte[] buffer = new byte[BufferToRead];
 

@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
 using System.Reflection;
+using System.Threading;
 
 namespace SignalGo.Server.ServiceManager
 {
@@ -27,7 +28,10 @@ namespace SignalGo.Server.ServiceManager
         {
             JsonSettingHelper.Initialize();
         }
-
+        /// <summary>
+        /// lock for this server
+        /// </summary>
+        public SemaphoreSlim LockWaitToRead { get; set; } = new SemaphoreSlim(1, 1);
         /// <summary>
         /// validation rules manager
         /// </summary>

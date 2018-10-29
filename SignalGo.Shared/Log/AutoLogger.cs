@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Text;
+using System.Threading;
 
 namespace SignalGo.Shared.Log
 {
@@ -107,56 +108,63 @@ namespace SignalGo.Shared.Log
             builder.AppendLine("<------------------------------StackTrace One End------------------------------>");
         }
 #endif
-        private readonly object _lockOBJ = new object();
+        private readonly SemaphoreSlim lockWaitToRead = new SemaphoreSlim(1, 1);
         /// <summary>
         /// log text message
         /// </summary>
         /// <param name="text">text to log</param>
         /// <param name="stacktrace">log stacktrace</param>
+#if (NET35 || NET40)
         public void LogText(string text, bool stacktrace = false)
+#else
+        public async void LogText(string text, bool stacktrace = false)
+#endif
         {
             if (string.IsNullOrEmpty(DirectoryLocation) || !IsEnabled)
             {
                 return;
             }
-            AsyncActions.Run(() =>
+            StringBuilder str = new StringBuilder();
+            str.AppendLine("<Text Log Start>");
+            str.AppendLine(text);
+            if (stacktrace)
             {
-                StringBuilder str = new StringBuilder();
-                str.AppendLine("<Text Log Start>");
-                str.AppendLine(text);
-                if (stacktrace)
-                {
-                    str.AppendLine("<StackTrace>");
-                    StringBuilder builder = new StringBuilder();
+                str.AppendLine("<StackTrace>");
+                StringBuilder builder = new StringBuilder();
 #if (NETSTANDARD || NETCOREAPP)
                     GetOneStackTraceText(new StackTrace(new Exception(text), true), builder);
 #else
-                    GetOneStackTraceText(new StackTrace(true), builder);
+                GetOneStackTraceText(new StackTrace(true), builder);
 #endif
-                    str.AppendLine(builder.ToString());
+                str.AppendLine(builder.ToString());
 
-                    str.AppendLine("</StackTrace>");
-                }
-                str.AppendLine("<Text Log End>");
+                str.AppendLine("</StackTrace>");
+            }
+            str.AppendLine("<Text Log End>");
 
-                string fileName = SavePath;
-                try
+            string fileName = SavePath;
+            try
+            {
+#if (NET35 || NET40)
+                lockWaitToRead.Wait();
+#else
+                await lockWaitToRead.WaitAsync();
+#endif
+                using (FileStream stream = new FileStream(fileName, FileMode.OpenOrCreate, FileAccess.ReadWrite))
                 {
-                    lock (_lockOBJ)
-                    {
-                        using (FileStream stream = new FileStream(fileName, FileMode.OpenOrCreate, FileAccess.ReadWrite))
-                        {
-                            stream.Seek(0, SeekOrigin.End);
-                            byte[] bytes = Encoding.UTF8.GetBytes(System.Environment.NewLine + str.ToString());
-                            stream.Write(bytes, 0, bytes.Length);
-                        }
-                    }
+                    stream.Seek(0, SeekOrigin.End);
+                    byte[] bytes = Encoding.UTF8.GetBytes(System.Environment.NewLine + str.ToString());
+                    stream.Write(bytes, 0, bytes.Length);
                 }
-                catch
-                {
+            }
+            catch
+            {
 
-                }
-            });
+            }
+            finally
+            {
+                lockWaitToRead.Release();
+            }
         }
 
 
@@ -165,48 +173,51 @@ namespace SignalGo.Shared.Log
         /// </summary>
         /// <param name="e">exception of log</param>
         /// <param name="title">title of log</param>
+#if (NET35 || NET40)
         public void LogError(Exception e, string title)
+#else
+        public async void LogError(Exception e, string title)
+#endif
         {
             if (string.IsNullOrEmpty(DirectoryLocation) || !IsEnabled)
                 return;
-#if (NET35 || NET40)
-            AsyncActions.Run(() =>
-#else
-            AsyncActions.Run(() =>
-#endif
+            try
             {
+                StringBuilder str = new StringBuilder();
+                str.AppendLine(title);
+                str.AppendLine(e.ToString());
+                str.AppendLine("Time : " + DateTime.Now.ToLocalTime().ToString());
+                str.AppendLine("--------------------------------------------------------------------------------------------------");
+                str.AppendLine("--------------------------------------------------------------------------------------------------");
+                string fileName = SavePath;
+
                 try
                 {
-                    StringBuilder str = new StringBuilder();
-                    str.AppendLine(title);
-                    str.AppendLine(e.ToString());
-                    str.AppendLine("Time : " + DateTime.Now.ToLocalTime().ToString());
-                    str.AppendLine("--------------------------------------------------------------------------------------------------");
-                    str.AppendLine("--------------------------------------------------------------------------------------------------");
-                    string fileName = SavePath;
-
-                    try
+#if (NET35 || NET40)
+                    lockWaitToRead.Wait();
+#else
+                    await lockWaitToRead.WaitAsync();
+#endif
+                    using (FileStream stream = new FileStream(fileName, FileMode.OpenOrCreate, FileAccess.ReadWrite))
                     {
-                        lock (_lockOBJ)
-                        {
-                            using (FileStream stream = new FileStream(fileName, FileMode.OpenOrCreate, FileAccess.ReadWrite))
-                            {
-                                stream.Seek(0, SeekOrigin.End);
-                                byte[] bytes = Encoding.UTF8.GetBytes(System.Environment.NewLine + str.ToString());
-                                stream.Write(bytes, 0, bytes.Length);
-                            }
-                        }
-                    }
-                    catch
-                    {
-
+                        stream.Seek(0, SeekOrigin.End);
+                        byte[] bytes = Encoding.UTF8.GetBytes(System.Environment.NewLine + str.ToString());
+                        stream.Write(bytes, 0, bytes.Length);
                     }
                 }
                 catch
                 {
 
                 }
-            });
+                finally
+                {
+                    lockWaitToRead.Release();
+                }
+            }
+            catch
+            {
+
+            }
         }
     }
 }
