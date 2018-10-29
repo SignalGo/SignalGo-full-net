@@ -50,21 +50,21 @@ namespace SignalGo.Server.ServiceManager.Versions
                     {
                         try
                         {
-                            IsWaitForClient = true;
+                            //IsWaitForClient = true;
 #if (NETSTANDARD1_6)
                             TcpClient client = _server.AcceptTcpClientAsync().GetAwaiter().GetResult();
 #else
                             TcpClient client = _server.AcceptTcpClient();
 
 #endif
-                            IsWaitForClient = false;
+                            _ConnectedCount++;
+                            //IsWaitForClient = false;
                             InitializeClient(client);
                         }
                         catch (Exception ex)
                         {
                             Console.WriteLine(ex);
                         }
-                        _ConnectedCount++;
                     }
                 }
                 catch (Exception ex)
@@ -95,17 +95,15 @@ namespace SignalGo.Server.ServiceManager.Versions
             {
                 try
                 {
-                    int timeout = (int)_serverBase.ProviderSetting.ReceiveDataTimeout.TotalMilliseconds;
                     tcpClient.GetStream().ReadTimeout = 5000;
                     tcpClient.GetStream().WriteTimeout = 5000;
-                    PipeNetworkStream stream = new PipeNetworkStream(new NormalStream(await tcpClient.GetTcpStream(_serverBase)), timeout);
+                    PipeNetworkStream stream = new PipeNetworkStream(new NormalStream(await tcpClient.GetTcpStream(_serverBase)), (int)_serverBase.ProviderSetting.ReceiveDataTimeout.TotalMilliseconds);
                     ExchangeClient(stream, tcpClient);
                 }
                 catch (Exception)
                 {
 #if (NETSTANDARD)
                     tcpClient.Dispose();
-
 #else
                     tcpClient.Close();
 #endif
@@ -118,6 +116,7 @@ namespace SignalGo.Server.ServiceManager.Versions
         /// </summary>
         /// <param name="isHttp"></param>
         /// <param name="tcpClient"></param>
+        /// <param name="stream"></param>
         /// <returns></returns>
         public ClientInfo CreateClientInfo(bool isHttp, TcpClient tcpClient, PipeNetworkStream stream)
         {
@@ -129,7 +128,7 @@ namespace SignalGo.Server.ServiceManager.Versions
             client.ConnectedDateTime = DateTime.Now;
             client.TcpClient = tcpClient;
             client.IPAddress = ((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address.ToString().Replace("::ffff:", "");
-            client.ClientId = Guid.NewGuid().ToString() + "-" + Guid.NewGuid().ToString();
+            client.ClientId = Guid.NewGuid().ToString();
             _serverBase.Clients.TryAdd(client.ClientId, client);
             client.ClientStream = stream;
             return client;
@@ -138,8 +137,7 @@ namespace SignalGo.Server.ServiceManager.Versions
         /// <summary>
         /// Exchange data from client and server 
         /// </summary>
-        /// <param name="firstLineString"></param>
-        /// <param name="firstLineBytes"></param>
+        /// <param name="reader"></param>
         /// <param name="tcpClient"></param>
         public async void ExchangeClient(PipeNetworkStream reader, TcpClient tcpClient)
         {
@@ -147,7 +145,6 @@ namespace SignalGo.Server.ServiceManager.Versions
             ClientInfo client = null;
             try
             {
-                _WaitingToReadFirstLineCount++;
                 if (_serverBase.ProviderSetting.IsEnabledToUseTimeout)
                 {
                     tcpClient.GetStream().ReadTimeout = (int)_serverBase.ProviderSetting.ReceiveDataTimeout.TotalMilliseconds;
@@ -204,7 +201,7 @@ namespace SignalGo.Server.ServiceManager.Versions
                         tcpClient.GetStream().ReadTimeout = (int)_serverBase.ProviderSetting.HttpSetting.ReceiveDataTimeout.TotalMilliseconds;
                         tcpClient.GetStream().WriteTimeout = (int)_serverBase.ProviderSetting.HttpSetting.SendDataTimeout.TotalMilliseconds;
                     }
-                    await HttpProvider.StartToReadingClientData(tcpClient, _serverBase, reader, firstLineString);
+                    await HttpProvider.StartToReadingClientData(tcpClient, _serverBase, reader, new StringBuilder(firstLineString));
                 }
                 else
                 {

@@ -976,7 +976,7 @@ namespace SignalGo.Shared.Converters
         /// <param name="currentValue"></param>
         private void AddPropertyValidationRuleInfoAttribute(PropertyInfo propertyInfo, object instance, object currentValue)
         {
-            if (!CurrentTaskId.HasValue || ValidationRuleInfoManager == null)
+            if (!CurrentTaskId.HasValue || ValidationRuleInfoManager == null || instance == null || propertyInfo == null)
                 return;
             ValidationRuleInfoManager.AddObjectPropertyAsChecked(CurrentTaskId, instance.GetType(), instance, propertyInfo.Name, propertyInfo, currentValue);
             foreach (ValidationRuleInfoAttribute item in propertyInfo.GetCustomAttributes(typeof(ValidationRuleInfoAttribute), true))

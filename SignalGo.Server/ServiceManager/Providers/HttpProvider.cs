@@ -71,7 +71,7 @@ namespace SignalGo.Server.ServiceManager.Providers
         }
 
 
-        public static async Task StartToReadingClientData(TcpClient tcpClient, ServerBase serverBase, PipeNetworkStream reader, string requestHeaders)
+        public static async Task StartToReadingClientData(TcpClient tcpClient, ServerBase serverBase, PipeNetworkStream reader, StringBuilder builder)
         {
             //Console.WriteLine($"Http Client Connected: {((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address.ToString().Replace("::ffff:", "")}");
             ClientInfo client = null;
@@ -80,11 +80,11 @@ namespace SignalGo.Server.ServiceManager.Providers
                 while (true)
                 {
                     string line = await reader.ReadLineAsync();
-                    requestHeaders += line;
+                    builder.Append(line);
                     if (line == "\r\n")
                         break;
                 }
-
+                var requestHeaders = builder.ToString();
                 if (requestHeaders.Contains("Sec-WebSocket-Key"))
                 {
                     tcpClient.ReceiveTimeout = -1;

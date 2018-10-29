@@ -82,7 +82,7 @@ namespace SignalGo.Shared.DataTypes
         /// <param name="propertyInfo"></param>
         /// <param name="parameterInfo"></param>
         /// <param name="obj"></param>
-        public void Initialize(object service, MethodInfo methodInfo, Dictionary<string, object> parametersValue, PropertyInfo propertyInfo, ParameterInfo parameterInfo, object obj)
+        public void Initialize(object service, MethodInfo methodInfo, Dictionary<string, object> parametersValue, PropertyInfo propertyInfo, ParameterInfo parameterInfo, object obj, object currentValue)
         {
             Service = service;
             MethodInfo = methodInfo;
@@ -93,6 +93,8 @@ namespace SignalGo.Shared.DataTypes
                 PropertyInfo = propertyInfo;
             if (parameterInfo != null)
                 ParameterInfo = parameterInfo;
+            if (currentValue != null)
+                CurrentValue = currentValue;
         }
     }
 }
