@@ -138,7 +138,7 @@ namespace SignalGo.Server.Models
                 bool isFindSessionProperty = false;
                 List<string> keys = new List<string>();
                 var properties = type.GetListOfProperties().Select(x => new { Info = x, Attribute = x.GetCustomAttributes<HttpKeyAttribute>().GroupBy(y => y.KeyType) });
-
+                bool hasExpireField = false;
                 foreach (var property in properties)
                 {
                     foreach (IGrouping<HttpKeyType, HttpKeyAttribute> group in property.Attribute)
@@ -176,13 +176,43 @@ namespace SignalGo.Server.Models
 
                             }
                         }
+                        else if (group.Key == HttpKeyType.ExpireField)
+                        {
+                            hasExpireField = true;
+                        }
                     }
                 }
                 foreach (var property in properties)
                 {
                     foreach (IGrouping<HttpKeyType, HttpKeyAttribute> group in property.Attribute)
                     {
-                        if (group.Key == HttpKeyType.ExpireField)
+                        if (hasExpireField)
+                        {
+                            if (group.Key == HttpKeyType.ExpireField)
+                            {
+                                foreach (HttpKeyAttribute httpKey in group.ToList())
+                                {
+                                    foreach (var key in keys)
+                                    {
+                                        if (CustomClientSavedSettings.TryGetValue(key, out HashSet<object> result))
+                                        {
+                                            object obj = result.FirstOrDefault(x => x.GetType() == type);
+                                            if (obj == null)
+                                                continue;
+                                            if (httpKey.CheckIsExpired(obj.GetType().GetProperty(property.Info.Name).GetValue(obj, null)))
+                                            {
+                                                result.Remove(obj);
+                                                if (result.Count == 0)
+                                                    CustomClientSavedSettings.TryRemove(key, out result);
+                                                continue;
+                                            }
+                                            return obj;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        else if (group.Key == HttpKeyType.Cookie)
                         {
                             foreach (HttpKeyAttribute httpKey in group.ToList())
                             {
@@ -193,13 +223,6 @@ namespace SignalGo.Server.Models
                                         object obj = result.FirstOrDefault(x => x.GetType() == type);
                                         if (obj == null)
                                             continue;
-                                        if (property != null && obj != null && httpKey.CheckIsExpired(obj.GetType().GetProperty(property.Info.Name).GetValue(obj, null)))
-                                        {
-                                            result.Remove(obj);
-                                            if (result.Count == 0)
-                                                CustomClientSavedSettings.TryRemove(key, out result);
-                                            continue;
-                                        }
                                         return obj;
                                     }
                                 }
