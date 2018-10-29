@@ -2,9 +2,9 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <AssemblyVersion>4.3.2</AssemblyVersion>
-    <FileVersion>4.3.2</FileVersion>
-    <Version>4.3.2</Version>
+    <AssemblyVersion>4.4</AssemblyVersion>
+    <FileVersion>4.4</FileVersion>
+    <Version>4.4</Version>
     <Authors>Ali Yousefi</Authors>
     <Company></Company>
     <DebugType>full</DebugType>
