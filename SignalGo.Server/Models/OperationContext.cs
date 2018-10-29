@@ -212,7 +212,7 @@ namespace SignalGo.Server.Models
                                 }
                             }
                         }
-                        else if (group.Key == HttpKeyType.Cookie)
+                        else
                         {
                             foreach (HttpKeyAttribute httpKey in group.ToList())
                             {
