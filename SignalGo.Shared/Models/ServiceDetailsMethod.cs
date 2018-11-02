@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 
 namespace SignalGo.Shared.Models
 {
@@ -58,7 +59,7 @@ namespace SignalGo.Shared.Models
 #endif
     }
 
-    public class ServiceDetailsRequestInfo
+    public class ServiceDetailsRequestInfo : INotifyPropertyChanged
     {
         public bool IsSelected { get; set; }
         public string Name { get; set; }
@@ -66,6 +67,26 @@ namespace SignalGo.Shared.Models
         /// list of parameters
         /// </summary>
         public List<ServiceDetailsParameterInfo> Parameters { get; set; }
+
+        private string _Response;
+
+        /// <summary>
+        /// response of request
+        /// </summary>
+        public string Response
+        {
+            get
+            {
+                return _Response;
+            }
+            set
+            {
+                _Response = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Response)));
+            }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
 
         public ServiceDetailsRequestInfo Clone()
         {
