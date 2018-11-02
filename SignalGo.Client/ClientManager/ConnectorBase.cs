@@ -142,19 +142,19 @@ namespace SignalGo.Client.ClientManager
             _address = address;
             _port = port;
 #if (NET35 || NET40)
-                _client = new TcpClient();
-                _client.NoDelay = true;
-                IAsyncResult result = _client.BeginConnect(address, port, null, null);
+            _client = new TcpClient();
+            _client.NoDelay = true;
+            IAsyncResult result = _client.BeginConnect(address, port, null, null);
 
-                bool success = result.AsyncWaitHandle.WaitOne(TimeSpan.FromSeconds(5));
+            bool success = result.AsyncWaitHandle.WaitOne(TimeSpan.FromSeconds(5));
 
-                if (!success)
-                {
-                    throw new Exception("Failed to connect.");
-                }
+            if (!success)
+            {
+                throw new Exception("Failed to connect.");
+            }
 
-                // we have connected
-                _client.EndConnect(result);
+            // we have connected
+            _client.EndConnect(result);
 #else
             _client = new TcpClient();
             await _client.ConnectAsync(address, port);
@@ -244,7 +244,7 @@ namespace SignalGo.Client.ClientManager
                             await Task.Delay(ProviderSetting.PriorityFunctionDelayTime);
 #endif
 #if (NET35 || NET40)
-                        priorityAction = function().Result;
+                            priorityAction = function().Result;
 #else
                             priorityAction = await function();
 #endif
@@ -254,7 +254,7 @@ namespace SignalGo.Client.ClientManager
                             {
                                 HoldAllPrioritiesTaskResult = new TaskCompletionSource<object>();
 #if (NET35 || NET40)
-                            var result = HoldAllPrioritiesTaskResult.Task.Result;
+                                object result = HoldAllPrioritiesTaskResult.Task.Result;
 #else
                                 await HoldAllPrioritiesTaskResult.Task;
 #endif
@@ -588,12 +588,22 @@ namespace SignalGo.Client.ClientManager
 #else
                         byte[] data = await StreamHelper.ReadBlockToEndAsync(stream, firstData.Value, ProviderSetting.MaximumReceiveStreamHeaderBlock);
 #endif
-                        return BitConverter.ToInt32(data, 0);
+                        return BitConverter.ToInt64(data, 0);
                     }
                     return -1;
                 };
+                if (iStream.WriteManually != null && iStream.WriteManuallyAsync != null)
+                    throw new Exception("don't set both of WriteManually and WriteManuallyAsync");
                 if (iStream.WriteManually != null)
                     iStream.WriteManually(stream);
+                else if (iStream.WriteManuallyAsync != null)
+                {
+#if (NET40 || NET35)
+                    iStream.WriteManuallyAsync(stream).Wait();
+#else
+                    await iStream.WriteManuallyAsync(stream);
+#endif
+                }
                 else
                 {
                     long length = iStream.Length;
