@@ -73,7 +73,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     if (!serverBase.RegisteredServiceTypes.TryGetValue(serviceName, out serviceType))
                         throw new Exception($"{client.IPAddress} {client.ClientId} Service {serviceName} not found");
 
-                    service =await GetInstanceOfService(client, serviceName, serviceType, serverBase);
+                    service = await GetInstanceOfService(client, serviceName, serviceType, serverBase);
                     if (service == null)
                         throw new Exception($"{client.IPAddress} {client.ClientId} service {serviceName} not found");
 
@@ -93,7 +93,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     List<ClientLimitationAttribute> clientLimitationAttribute = new List<ClientLimitationAttribute>();
                     List<ConcurrentLockAttribute> concurrentLockAttributes = new List<ConcurrentLockAttribute>();
 
-                   var allMethods = GetMethods(client, methodName, parameters, serviceType, customDataExchanger, securityAttributes, clientLimitationAttribute, concurrentLockAttributes, canTakeMethod);
+                    IEnumerable<MethodInfo> allMethods = GetMethods(client, methodName, parameters, serviceType, customDataExchanger, securityAttributes, clientLimitationAttribute, concurrentLockAttributes, canTakeMethod);
                     method = allMethods.FirstOrDefault();
                     if (method == null && !string.IsNullOrEmpty(jsonParameters))
                     {
@@ -267,7 +267,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                         for (int i = 0; i < prms.Length; i++)
                         {
                             System.Reflection.ParameterInfo parameter = prms[i];
-                            object parameterValue = parametersValues[i];
+                            object parameterValue = i >= parametersValues.Count ? null : parametersValues[i];
                             IEnumerable<ValidationRuleInfoAttribute> rules = parameter.GetCustomAttributes<ValidationRuleInfoAttribute>(true);
                             foreach (ValidationRuleInfoAttribute rule in rules)
                             {
@@ -768,12 +768,13 @@ namespace SignalGo.Server.ServiceManager.Providers
 
         private static string GenerateMethodKey(Type serviceType, string methodName, Shared.Models.ParameterInfo[] parameters)
         {
-            if (parameters == null)
-                return "";
             string name = serviceType.FullName + methodName;
-            foreach (Shared.Models.ParameterInfo item in parameters)
+            if (parameters != null)
             {
-                name += " " + item.Name + " ";
+                foreach (Shared.Models.ParameterInfo item in parameters)
+                {
+                    name += " " + item.Name + " ";
+                }
             }
             return name;
         }
