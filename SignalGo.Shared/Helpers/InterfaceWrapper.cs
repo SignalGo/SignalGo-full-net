@@ -160,8 +160,11 @@ namespace SignalGo.Shared.Helpers
 
                     if (attrib == null)
                         throw new Exception("attrib not found");
+                    string serviceName = attrib.Name;
+                    if (attrib.ServiceType == ServiceType.ClientService)
+                        serviceName = attrib.GetServiceName(false);
                     //add name of service
-                    generator.Emit(OpCodes.Ldstr, attrib.Name);
+                    generator.Emit(OpCodes.Ldstr, serviceName);
                     System.Reflection.MethodInfo getCurgntMethod = typeof(System.Reflection.MethodBase).FindMethod("GetCurrentMethod");
                     if (getCurgntMethod == null)
                         throw new Exception("GetCurrentMethod not found");
