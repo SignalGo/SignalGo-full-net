@@ -1,4 +1,5 @@
-﻿using SignalGo.Server.DataTypes;
+﻿using Newtonsoft.Json.Linq;
+using SignalGo.Server.DataTypes;
 using SignalGo.Server.Helpers;
 using SignalGo.Server.Models;
 using SignalGo.Shared.Converters;
@@ -13,6 +14,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace SignalGo.Server.ServiceManager.Providers
@@ -320,6 +322,24 @@ namespace SignalGo.Server.ServiceManager.Providers
                         if (OperationContextBase.SavedKeyParametersNameSettings.Count > 0 && client is HttpClientInfo httpClient)
                         {
                             Shared.Models.ParameterInfo find = parameters.FirstOrDefault(x => OperationContextBase.SavedKeyParametersNameSettings.ContainsKey(x.Name.ToLower()));
+                            if (find == null && !string.IsNullOrEmpty(jsonParameters))
+                            {
+                                try
+                                {
+                                    var token = JToken.Parse(jsonParameters);
+                                    httpClient.HttpKeyParameterValue = token["key"].ToString();
+                                }
+                                catch (Exception ex)
+                                {
+                                    var decode = Uri.UnescapeDataString(jsonParameters);
+                                    if (decode.ToLower().Contains("key="))
+                                    {
+                                        var split = Regex.Split(decode, "key=", RegexOptions.IgnoreCase);
+                                        var data = split.LastOrDefault().TrimStart('"').TrimEnd('"');
+                                        httpClient.HttpKeyParameterValue = data;
+                                    }
+                                }
+                            }
                             if (find != null)
                                 httpClient.HttpKeyParameterValue = find.Value;
                         }
