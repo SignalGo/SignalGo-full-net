@@ -29,6 +29,7 @@ namespace SignalGo.Shared.Models
         /// wrtie manually to stream
         /// </summary>
         Action<PipeNetworkStream> WriteManually { get; set; }
+        Func<PipeNetworkStream, Task> WriteManuallyAsync { get; set; }
         /// <summary>
         /// get position of flush stream
         /// </summary>
@@ -66,6 +67,8 @@ namespace SignalGo.Shared.Models
         /// </summary>
         [JsonIgnore()]
         public Action<PipeNetworkStream> WriteManually { get; set; }
+        [JsonIgnore()]
+        public Func<PipeNetworkStream, Task> WriteManuallyAsync { get; set; }
 
         /// <summary>
         /// client id 
@@ -155,7 +158,7 @@ namespace SignalGo.Shared.Models
             SignalGoStreamBase.CurrentBase.WriteBlockToStream(Stream, data);
         }
 #else
-        public async Task SetPositionFlush(long position)
+        public async Task SetPositionFlushAsync(long position)
         {
             DataType dataType = DataType.FlushStream;
             CompressMode compressMode = CompressMode.None;
