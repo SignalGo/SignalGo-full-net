@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json.Linq;
-using SignalGo.Server.DataTypes;
+﻿using SignalGo.Server.DataTypes;
 using SignalGo.Server.Helpers;
 using SignalGo.Server.Models;
 using SignalGo.Shared.Converters;
@@ -14,7 +13,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace SignalGo.Server.ServiceManager.Providers
@@ -97,12 +95,12 @@ namespace SignalGo.Server.ServiceManager.Providers
 
                     IEnumerable<MethodInfo> allMethods = GetMethods(client, methodName, parameters, serviceType, customDataExchanger, securityAttributes, clientLimitationAttribute, concurrentLockAttributes, canTakeMethod);
                     method = allMethods.FirstOrDefault();
-                    if (method == null && !string.IsNullOrEmpty(jsonParameters))
-                    {
-                        parameters = new Shared.Models.ParameterInfo[] { new Shared.Models.ParameterInfo() { Name = "", Value = jsonParameters } };
-                        allMethods = GetMethods(client, methodName, parameters, serviceType, customDataExchanger, securityAttributes, clientLimitationAttribute, concurrentLockAttributes, canTakeMethod).ToList();
-                        method = allMethods.FirstOrDefault();
-                    }
+                    //if (method == null && !string.IsNullOrEmpty(jsonParameters))
+                    //{
+                    //    parameters = new Shared.Models.ParameterInfo[] { new Shared.Models.ParameterInfo() { Name = "", Value = jsonParameters } };
+                    //    allMethods = GetMethods(client, methodName, parameters, serviceType, customDataExchanger, securityAttributes, clientLimitationAttribute, concurrentLockAttributes, canTakeMethod).ToList();
+                    //    method = allMethods.FirstOrDefault();
+                    //}
 
                     if (method == null)
                     {
@@ -138,160 +136,9 @@ namespace SignalGo.Server.ServiceManager.Providers
                         isEnabledReferenceResolverForArray = referenceAttribute.IsEnabledReferenceResolverForArray;
                     }
 
-                    //generate dataexchanger and attributes from service class when service type is different
-                    //if (service.GetType() != method.DeclaringType)
-                    //    GetMethods(client, methodName, parameters, service.GetType(), customDataExchanger, securityAttributes, clientLimitationAttribute, concurrentLockAttributes, canTakeMethod).ToList();
-                    List<object> parametersValues = null;
-                    List<ValidationRuleInfoAttribute> validationErrors = null;
-                    Dictionary<string, object> parametersKeyValues = new Dictionary<string, object>();
 
-                    bool hasNoNameParameter = parameters == null ? false : parameters.Any(x => string.IsNullOrEmpty(x.Name));
-
-                    if (parameters != null)
-                    {
-                        int index = 0;
-                        System.Reflection.ParameterInfo[] prms = method.GetParameters();
-                        foreach (Shared.Models.ParameterInfo item in parameters)
-                        {
-                            System.Reflection.ParameterInfo find = prms.FirstOrDefault(x => x.Name.Equals(item.Name, StringComparison.OrdinalIgnoreCase));
-                            if (find == null && (!hasNoNameParameter || index >= prms.Length || !string.IsNullOrEmpty(item.Name)))
-                                continue;
-                            else if (find == null)
-                                find = prms[index];
-                            string name = string.IsNullOrEmpty(item.Name) ? $".{index}" : item.Name;
-                            if (item.Value == null)
-                                parametersKeyValues[name] = DataExchangeConverter.GetDefault(find.ParameterType);
-                            else
-                            {
-                                List<CustomDataExchangerAttribute> parameterDataExchanger = customDataExchanger.ToList();
-                                parameterDataExchanger.AddRange(GetMethodParameterBinds(index, allMethods.ToArray()).Where(x => x.GetExchangerByUserCustomization(client)));
-                                if (SerializeHelper.GetTypeCodeOfObject(find.ParameterType) != SerializeObjectType.Object && !item.Value.StartsWith("\""))
-                                    item.Value = "\"" + item.Value + "\"";
-                                object resultJson = ServerSerializationHelper.Deserialize(item.Value, find.ParameterType, serverBase, customDataExchanger: parameterDataExchanger.ToArray(), client: client);
-
-                                if (resultJson == null)
-                                {
-                                    if (string.IsNullOrEmpty(item.Value) || item.Value == "\"\"")
-                                        parametersKeyValues[name] = null;
-                                    else
-                                        parametersKeyValues[name] = item.Value;
-                                }
-                                else
-                                {
-                                    parametersKeyValues[name] = resultJson;
-                                    if (resultJson is IStreamInfo _streamInfo)
-                                        _streamInfo.Stream = client.ClientStream;
-                                }
-                            }
-                            index++;
-                        }
-                        if (parameters.Length != prms.Length)
-                        {
-                            if (hasNoNameParameter)
-                            {
-                                //for no name parameters
-                                for (int i = 0; i < prms.Length; i++)
-                                {
-                                    if (parametersKeyValues.Count == prms.Length)
-                                        break;
-                                    if (parameters.Length <= i || !parameters.Any(x => x.Name.Equals(prms[i].Name, StringComparison.OrdinalIgnoreCase)))
-                                    {
-                                        if (!prms[i].HasDefaultValue)
-                                            continue;
-#if (!NETSTANDARD1_6)
-                                        if (Convert.IsDBNull(prms[i].DefaultValue))
-                                            parametersKeyValues[prms[i].Name] = DataExchangeConverter.GetDefault(prms[i].ParameterType);
-                                        else
-#endif
-                                            parametersKeyValues[prms[i].Name] = prms[i].DefaultValue;
-                                    }
-                                }
-
-                                while (parametersKeyValues.Count > prms.Length)
-                                {
-                                    if (!parametersKeyValues.Any(x => x.Key.StartsWith(".")))
-                                        break;
-                                    parametersKeyValues.Remove(parametersKeyValues.FirstOrDefault(x => x.Key.StartsWith(".")).Key);
-                                }
-
-                            }
-                            else
-                            {
-                                for (int i = 0; i < prms.Length; i++)
-                                {
-                                    if (!parameters.Any(x => x.Name.Equals(prms[i].Name, StringComparison.OrdinalIgnoreCase)))
-                                    {
-#if (!NETSTANDARD1_6)
-                                        if (Convert.IsDBNull(prms[i].DefaultValue))
-                                            parametersKeyValues[prms[i].Name] = DataExchangeConverter.GetDefault(prms[i].ParameterType);
-                                        else
-#endif
-                                            parametersKeyValues[prms[i].Name] = prms[i].DefaultValue;
-                                    }
-                                }
-                            }
-                        }
-
-                        hasNoNameParameter = parametersKeyValues.Any(x => x.Key.StartsWith("."));
-
-
-                        //order
-                        if (hasNoNameParameter)
-                        {
-                            //has named parameter with no name
-                            if (parametersKeyValues.Any(x => !x.Key.StartsWith(".")))
-                            {
-                                IEnumerable<KeyValuePair<string, object>> noNames = parametersKeyValues.Where(x => x.Key.StartsWith("."));
-                                IEnumerable<KeyValuePair<string, object>> names = parametersKeyValues.Where(x => !x.Key.StartsWith("."));
-                                List<KeyValuePair<string, object>> items = new List<KeyValuePair<string, object>>();
-                                items.AddRange(noNames);
-                                items.AddRange(names.Select(x => new KeyValuePair<string, object>(".emptyName", null)));
-                                foreach (KeyValuePair<string, object> item in names)
-                                {
-                                    System.Reflection.ParameterInfo find = prms.FirstOrDefault(x => x.Name.Equals(item.Key, StringComparison.OrdinalIgnoreCase));
-                                    index = prms.IndexOf(find);
-                                    items.Remove(items.FirstOrDefault(x => x.Key == ".emptyName"));
-                                    items.Insert(index, new KeyValuePair<string, object>(find.Name, item.Value));
-                                }
-
-                                parametersValues = items.Select(x => x.Value).ToList();
-                            }
-                            else
-                                parametersValues = parametersKeyValues.Values.ToList();
-                        }
-                        else
-                        {
-                            parametersKeyValues = parametersKeyValues.Where(x => prms.Any(y => y.Name.Equals(x.Key, StringComparison.OrdinalIgnoreCase))).ToDictionary(x => x.Key, x => x.Value);
-                            parametersValues = parametersKeyValues.OrderBy(x => prms.IndexOf(prms.FirstOrDefault(y => y.Name.Equals(x.Key, StringComparison.OrdinalIgnoreCase)))).Select(x => x.Value).ToList();
-                        }
-
-
-                        for (int i = 0; i < prms.Length; i++)
-                        {
-                            System.Reflection.ParameterInfo parameter = prms[i];
-                            object parameterValue = i >= parametersValues.Count ? null : parametersValues[i];
-                            IEnumerable<ValidationRuleInfoAttribute> rules = parameter.GetCustomAttributes<ValidationRuleInfoAttribute>(true);
-                            foreach (ValidationRuleInfoAttribute rule in rules)
-                            {
-                                rule.Initialize(service, method, parametersKeyValues, null, parameter, null, parameterValue);
-                                serverBase.ValidationRuleInfoManager.AddRule(taskId, rule);
-                            }
-                        }
-                        //get list of validation errors of calls
-                        validationErrors = serverBase.ValidationRuleInfoManager.CalculateValidationsOfTask((parameterName, newValue) =>
-                        {
-                            //change property value, get value from validation and change it to property
-                            if (parametersKeyValues.Any(x => x.Key.Equals(parameterName, StringComparison.OrdinalIgnoreCase)))
-                                parametersKeyValues[parameterName] = newValue;
-                        }, (validation) =>
-                        {
-                            //initialize validations service method and parameters
-                            validation.Initialize(service, method, parametersKeyValues, null, null, null, null);
-                        }).ToList();
-
-                    }
-                    else
-                        parametersValues = new List<object>();
+                    string keyParameterValue = null;
+                    List<object> parametersValues = FixParametersCount(taskId, service, method, parameters.ToList(), serverBase, client, allMethods, customDataExchanger, jsonParameters, out List<ValidationRuleInfoAttribute> validationErrors, ref keyParameterValue);
 
                     if (validationErrors != null && validationErrors.Count > 0)
                     {
@@ -317,31 +164,30 @@ namespace SignalGo.Server.ServiceManager.Providers
                     }
                     else
                     {
-                        //List<object> parameterValues = new List<object>();
-
                         if (OperationContextBase.SavedKeyParametersNameSettings.Count > 0 && client is HttpClientInfo httpClient)
                         {
-                            Shared.Models.ParameterInfo find = parameters.FirstOrDefault(x => OperationContextBase.SavedKeyParametersNameSettings.ContainsKey(x.Name.ToLower()));
-                            if (find == null && !string.IsNullOrEmpty(jsonParameters))
-                            {
-                                try
-                                {
-                                    var token = JToken.Parse(jsonParameters);
-                                    httpClient.HttpKeyParameterValue = token["key"].ToString();
-                                }
-                                catch (Exception ex)
-                                {
-                                    var decode = Uri.UnescapeDataString(jsonParameters);
-                                    if (decode.ToLower().Contains("key="))
-                                    {
-                                        var split = Regex.Split(decode, "key=", RegexOptions.IgnoreCase);
-                                        var data = split.LastOrDefault().TrimStart('"').TrimEnd('"');
-                                        httpClient.HttpKeyParameterValue = data;
-                                    }
-                                }
-                            }
-                            if (find != null)
-                                httpClient.HttpKeyParameterValue = find.Value;
+                            //Shared.Models.ParameterInfo find = parameters.FirstOrDefault(x => OperationContextBase.SavedKeyParametersNameSettings.ContainsKey(x.Name.ToLower()));
+                            //if (find == null && !string.IsNullOrEmpty(jsonParameters))
+                            //{
+                            //    try
+                            //    {
+                            //        JToken token = JToken.Parse(jsonParameters);
+                            //        httpClient.HttpKeyParameterValue = token["key"].ToString();
+                            //    }
+                            //    catch (Exception ex)
+                            //    {
+                            //        string decode = Uri.UnescapeDataString(jsonParameters);
+                            //        if (decode.ToLower().Contains("key="))
+                            //        {
+                            //            string[] split = Regex.Split(decode, "key=", RegexOptions.IgnoreCase);
+                            //            string data = split.LastOrDefault().TrimStart('"').TrimEnd('"');
+                            //            httpClient.HttpKeyParameterValue = data;
+                            //        }
+                            //    }
+                            //}
+                            //if (find != null)
+                            //httpClient.HttpKeyParameterValue = find.Value;
+                            httpClient.HttpKeyParameterValue = keyParameterValue;
                         }
 
 
@@ -559,6 +405,140 @@ namespace SignalGo.Server.ServiceManager.Providers
                 DataExchanger.Clear();
                 return new CallMethodResultInfo<OperationContext>(callback, streamInfo, httpKeyAttributes, serviceType, method, service, fileActionResult, context);
             });
+        }
+
+        /// <summary>
+        /// deserialize parameter data from a json value
+        /// </summary>
+        /// <param name="methodParameter"></param>
+        /// <param name="userParameterInfo"></param>
+        /// <param name="parameterIndex"></param>
+        /// <param name="customDataExchanger"></param>
+        /// <param name="allMethods"></param>
+        /// <param name="serverBase"></param>
+        /// <param name="client"></param>
+        /// <returns></returns>
+        private static object DeserializeParameterValue(System.Reflection.ParameterInfo methodParameter, SignalGo.Shared.Models.ParameterInfo userParameterInfo, int parameterIndex, List<CustomDataExchangerAttribute> customDataExchanger, IEnumerable<MethodInfo> allMethods, ServerBase serverBase, ClientInfo client)
+        {
+            List<CustomDataExchangerAttribute> parameterDataExchanger = customDataExchanger.ToList();
+            parameterDataExchanger.AddRange(GetMethodParameterBinds(parameterIndex, allMethods.ToArray()).Where(x => x.GetExchangerByUserCustomization(client)));
+            //fix for deserialize from json
+            if (SerializeHelper.GetTypeCodeOfObject(methodParameter.ParameterType) != SerializeObjectType.Object && !userParameterInfo.Value.StartsWith("\""))
+                userParameterInfo.Value = "\"" + userParameterInfo.Value + "\"";
+
+            return ServerSerializationHelper.Deserialize(userParameterInfo.Value, methodParameter.ParameterType, serverBase, customDataExchanger: parameterDataExchanger.ToArray(), client: client);
+        }
+
+        /// <summary>
+        /// get default value of method parameter
+        /// </summary>
+        /// <param name="methodParameter"></param>
+        /// <returns></returns>
+        private static object GetDefaultValueOfParameter(System.Reflection.ParameterInfo methodParameter)
+        {
+            if (!methodParameter.HasDefaultValue)
+                return null;
+#if (!NETSTANDARD1_6)
+            if (Convert.IsDBNull(methodParameter.DefaultValue))
+                return DataExchangeConverter.GetDefault(methodParameter.ParameterType);
+            else
+#endif
+                return methodParameter.DefaultValue;
+        }
+        /// <summary>
+        /// fix mistake parameters to call server method
+        /// </summary>
+        /// <param name="taskId"></param>
+        /// <param name="service"></param>
+        /// <param name="method"></param>
+        /// <param name="parameters"></param>
+        /// <param name="serverBase"></param>
+        /// <param name="client"></param>
+        /// <param name="allMethods"></param>
+        /// <param name="customDataExchanger"></param>
+        /// <param name="validationErrors"></param>
+        /// <returns></returns>
+        private static List<object> FixParametersCount(int taskId, object service, MethodInfo method, List<SignalGo.Shared.Models.ParameterInfo> parameters, ServerBase serverBase, ClientInfo client, IEnumerable<MethodInfo> allMethods, List<CustomDataExchangerAttribute> customDataExchanger, string jsonParameters, out List<ValidationRuleInfoAttribute> validationErrors, ref string keyParameterValue)
+        {
+            List<object> parametersValues = new List<object>();
+            System.Reflection.ParameterInfo[] methodParameters = method.GetParameters();
+            Dictionary<string, object> parametersKeyValues = new Dictionary<string, object>();
+            if (OperationContextBase.SavedKeyParametersNameSettings.Count > 0 && string.IsNullOrEmpty(keyParameterValue))
+            {
+                Shared.Models.ParameterInfo findKeyParameter = parameters.FirstOrDefault(x => x.Name != null && OperationContextBase.SavedKeyParametersNameSettings.ContainsKey(x.Name.ToLower()));
+                if (findKeyParameter != null)
+                {
+                    parameters.Remove(findKeyParameter);
+                    keyParameterValue = findKeyParameter.Value.TrimStart('"').TrimEnd('"');
+                }
+            }
+
+            if (!string.IsNullOrEmpty(jsonParameters) && methodParameters.Length == 1 && (parameters.Count == 0 || parameters.Any(x => !methodParameters.Any(y => x.Name.Equals(y.Name, StringComparison.OrdinalIgnoreCase)))))
+            {
+                parameters.Clear();
+                parameters.Add(new Shared.Models.ParameterInfo() { Value = jsonParameters });
+                return FixParametersCount(taskId, service, method, parameters, serverBase, client, allMethods, customDataExchanger, null, out validationErrors, ref keyParameterValue);
+            }
+
+            //for stop finding noname to make faster
+            bool hasNoName = true;
+
+            for (int i = 0; i < methodParameters.Length; i++)
+            {
+                //method parameter of server service
+                System.Reflection.ParameterInfo methodParameter = methodParameters[i];
+                string methodParameterName = methodParameter.Name.ToLower();
+
+                //parameter came from client side
+                Shared.Models.ParameterInfo userParameterInfo = parameters.FirstOrDefault(x => x.Name != null && x.Name.ToLower() == methodParameterName);
+                if (userParameterInfo != null)
+                {
+                    object deserializedItem = DeserializeParameterValue(methodParameter, userParameterInfo, i, customDataExchanger, allMethods, serverBase, client);
+                    parametersValues.Add(deserializedItem);
+                    parametersKeyValues[methodParameterName] = deserializedItem;
+                }
+                else if (hasNoName)
+                {
+                    Shared.Models.ParameterInfo findNoNameParameter = parameters.FirstOrDefault(x => string.IsNullOrEmpty(x.Name));
+                    if (findNoNameParameter != null)
+                    {
+                        parameters.Remove(findNoNameParameter);
+                        object deserializedItem = DeserializeParameterValue(methodParameter, findNoNameParameter, i, customDataExchanger, allMethods, serverBase, client);
+                        parametersValues.Add(deserializedItem);
+                        parametersKeyValues[methodParameterName] = deserializedItem;
+                    }
+                    else if (!string.IsNullOrEmpty(jsonParameters))
+                    {
+                        hasNoName = false;
+                        object deserializedItem = DeserializeParameterValue(methodParameter, new Shared.Models.ParameterInfo() { Value = jsonParameters }, i, customDataExchanger, allMethods, serverBase, client);
+                        parametersValues.Add(deserializedItem);
+                        parametersKeyValues[methodParameterName] = deserializedItem;
+                        jsonParameters = null;
+                    }
+                    else
+                    {
+                        hasNoName = false;
+                        parametersValues.Add(GetDefaultValueOfParameter(methodParameter));
+                    }
+                }
+                else
+                {
+                    parametersValues.Add(GetDefaultValueOfParameter(methodParameter));
+                }
+            }
+            //get list of validation errors of calls
+            validationErrors = serverBase.ValidationRuleInfoManager.CalculateValidationsOfTask((parameterName, newValue) =>
+            {
+                parameterName = parameterName.ToLower();
+                //change property value, get value from validation and change it to property
+                if (parametersKeyValues.ContainsKey(parameterName))
+                    parametersKeyValues[parameterName] = newValue;
+            }, (validation) =>
+            {
+                //initialize validations service method and parameters
+                validation.Initialize(service, method, parametersKeyValues, null, null, null, null);
+            }).ToList();
+            return parametersValues;
         }
 
         private static async Task<object> GetInstanceOfService(ClientInfo client, string serviceName, Type serviceType, ServerBase serverBase)

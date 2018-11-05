@@ -1,4 +1,4 @@
-﻿using SignalGo.Http;
+﻿using Newtonsoft.Json;
 using SignalGo.Server.Models;
 using SignalGo.Server.ServiceManager;
 using SignalGo.Shared.DataTypes;
@@ -109,26 +109,51 @@ namespace ServerConsoleTest
         public int Age { get; set; }
     }
 
+    public class SimpleObject
+    {
+        public string Text { get; set; }
+    }
+
+    public class SimpleResultObject
+    {
+        public string Name { get; set; }
+        public int Age { get; set; }
+        public SimpleObject Data { get; set; }
+    }
+
+    [ServiceContract("TestService", ServiceType.HttpService, InstanceType = InstanceType.SingleInstance)]
+    public class FullHttpSupportService
+    {
+        public SimpleResultObject TestMethod(string name, int age, SimpleObject data)
+        {
+            return new SimpleResultObject() { Age = age, Name = name, Data = data };
+        }
+
+    }
+
     internal class Program
     {
         private static void Main(string[] args)
         {
             try
             {
-                
-                SignalGoBlazorHttpClient signalGoBlazorHttpClient = new SignalGoBlazorHttpClient();
-                SignalGo.Http.HttpClientResponse result = signalGoBlazorHttpClient.PostAsync("http://dev.atitec.ir:1747/Authentication/Login", new ParameterInfo[] {
-                    new ParameterInfo()
-                    {
-                         Name = "userName",
-                         Value="98test"
-                    } ,
-                    new ParameterInfo()
-                    {
-                         Name = "password",
-                         Value="d5e4aa21-6fe2-4fbc-9264-a14e14698564868385e8-2922-41c0-a4cf-29fb65203c28"
-                    }
-                }).GetAwaiter().GetResult();
+                ServerProvider serverProvider = new ServerProvider();
+                serverProvider.RegisterServerService<FullHttpSupportService>();
+                serverProvider.Start("http://localhost:8080/TestService/any");
+
+                //SignalGoBlazorHttpClient signalGoBlazorHttpClient = new SignalGoBlazorHttpClient();
+                //SignalGo.Http.HttpClientResponse result = signalGoBlazorHttpClient.PostAsync("http://dev.atitec.ir:1747/Authentication/Login", new ParameterInfo[] {
+                //    new ParameterInfo()
+                //    {
+                //         Name = "userName",
+                //         Value="98test"
+                //    } ,
+                //    new ParameterInfo()
+                //    {
+                //         Name = "password",
+                //         Value="d5e4aa21-6fe2-4fbc-9264-a14e14698564868385e8-2922-41c0-a4cf-29fb65203c28"
+                //    }
+                //}).GetAwaiter().GetResult();
                 //HttpClient tesClient = new HttpClient();
                 //tesClient.Post("http://panel.menno.ir/Authentication/Login", new SignalGo.Shared.Models.ParameterInfo[] {
                 //    new SignalGo.Shared.Models.ParameterInfo(){ Name = "username" , Value ="ali"},
@@ -136,10 +161,10 @@ namespace ServerConsoleTest
                 //});
                 //PipeNetworkStream pipeNetworkStream = new PipeNetworkStream(null);
                 //byte[] result = pipeNetworkStream.Read(100, out int readCount);
-                ServerProvider serverProvider = new ServerProvider();
-                serverProvider.RegisterServerService(typeof(TestService));
-                serverProvider.RegisterClientService(typeof(ITestClientService));
-                serverProvider.Start("http://localhost:9752/SignalGoTestService");
+                //ServerProvider serverProvider = new ServerProvider();
+                //serverProvider.RegisterServerService(typeof(TestService));
+                //serverProvider.RegisterClientService(typeof(ITestClientService));
+                //serverProvider.Start("http://localhost:9752/SignalGoTestService");
                 //Thread.Sleep(2000);
                 //Thread thread2 = new Thread(() =>
                 //{
@@ -157,7 +182,7 @@ namespace ServerConsoleTest
                 //var result3 = service2.HelloWorld("reza123", "passee");
                 //var result4 = service2.Test();
                 //result2 = service.Test();
-                ClientAutoReconnectTest();
+                //ClientAutoReconnectTest();
                 Console.WriteLine("seerver started");
             }
             catch (Exception ex)

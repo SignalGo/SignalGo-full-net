@@ -208,9 +208,11 @@ namespace SignalGo.Server.ServiceManager.Providers
             if (methodName == address)
                 address = "";
             string parameters = "";
+            string jsonParameters = null;
             Dictionary<string, string> multiPartParameter = new Dictionary<string, string>();
             bool isGet = httpMethod == "GET";
             bool isPost = httpMethod == "POST";
+            List<Shared.Models.ParameterInfo> values = new List<Shared.Models.ParameterInfo>();
             if (isGet)
             {
                 if (methodName.Contains("?"))
@@ -247,11 +249,16 @@ namespace SignalGo.Server.ServiceManager.Providers
 
                 methodName = lines.Last();
                 parameters = content;
+                jsonParameters = content;
                 if (methodName.Contains("?"))
                 {
                     string[] sp = methodName.Split(new[] { '?' }, 2);
                     methodName = sp.First();
                     parameters = sp.Last();
+                    //if (!string.IsNullOrEmpty(content))
+                    //{
+                    //    values.Add(new Shared.Models.ParameterInfo() { Value = content });
+                    //}
                 }
                 else if (parameters.StartsWith("----") && parameters.ToLower().Contains("content-disposition"))
                 {
@@ -300,10 +307,8 @@ namespace SignalGo.Server.ServiceManager.Providers
             MethodInfo method = null;
             try
             {
-                string jsonParameters = null;
                 if (!string.IsNullOrEmpty(address) && serverBase.RegisteredServiceTypes.ContainsKey(address))
                 {
-                    List<Shared.Models.ParameterInfo> values = new List<Shared.Models.ParameterInfo>();
                     if (multiPartParameter.Count > 0)
                     {
                         foreach (KeyValuePair<string, string> item in multiPartParameter)
@@ -313,24 +318,28 @@ namespace SignalGo.Server.ServiceManager.Providers
                     }
                     else if (isPost && (client.GetRequestHeaderValue("content-type") == "application/json" || client.GetRequestHeaderValue("accept") == "application/json"))
                     {
+                        bool hasException = false;
                         try
                         {
-                            jsonParameters = parameters;
-                            JObject des = JObject.Parse(parameters);
-                            //if (IsMethodInfoOfJsonParameters(methods, des.Properties().Select(x => x.Name).ToList()))
-                            //{
-                            foreach (JProperty item in des.Properties())
+                            if (!string.IsNullOrEmpty(content))
                             {
-                                JToken value = des.GetValue(item.Name);
-                                values.Add(new Shared.Models.ParameterInfo() { Name = item.Name, Value = value.ToString() });
+                                JObject des = JObject.Parse(content);
+                                foreach (JProperty item in des.Properties())
+                                {
+                                    JToken value = des.GetValue(item.Name);
+                                    values.Add(new Shared.Models.ParameterInfo() { Name = item.Name, Value = value.ToString() });
+                                }
                             }
-                            //}
-                            //else
-                            //values.Add(new Shared.Models.GoParameterInfo() { Name = "", Value = parameters });
                         }
                         catch (Exception ex)
                         {
+                            hasException = true;
                             serverBase.AutoLogger.LogError(ex, $"Parse json exception: {parameters}");
+                        }
+                        finally
+                        {
+                            if (hasException || parameters != content)
+                                values.AddRange(GetParametersFromGETMethod(parameters));
                         }
                     }
                     else
@@ -343,6 +352,22 @@ namespace SignalGo.Server.ServiceManager.Providers
                                 string[] keyValue = item.Split(new[] { '=' }, 2);
                                 values.Add(new Shared.Models.ParameterInfo() { Name = keyValue.Length == 2 ? keyValue[0] : "", Value = Uri.UnescapeDataString(keyValue.Last()) });
                             }
+                        }
+                        try
+                        {
+                            if (!string.IsNullOrEmpty(content))
+                            {
+                                JObject des = JObject.Parse(content);
+                                foreach (JProperty item in des.Properties())
+                                {
+                                    JToken value = des.GetValue(item.Name);
+                                    values.Add(new Shared.Models.ParameterInfo() { Name = item.Name, Value = value.ToString() });
+                                }
+                            }
+                        }
+                        catch
+                        {
+
                         }
                     }
 
@@ -376,6 +401,19 @@ namespace SignalGo.Server.ServiceManager.Providers
             {
                 //ClientConnectedCallingCount--;
                 //MethodsCallHandler.EndHttpMethodCallAction?.Invoke(client, callGuid, address, method, valueitems, result, exception);
+            }
+        }
+
+        private static IEnumerable<Shared.Models.ParameterInfo> GetParametersFromGETMethod(string parameters)
+        {
+            parameters = parameters.Trim('&');
+            if (!string.IsNullOrEmpty(parameters))
+            {
+                foreach (string item in parameters.Split(new[] { '&' }))
+                {
+                    string[] keyValue = item.Split(new[] { '=' }, 2);
+                    yield return new Shared.Models.ParameterInfo() { Name = keyValue.Length == 2 ? keyValue[0] : "", Value = Uri.UnescapeDataString(keyValue.Last()) };
+                }
             }
         }
 
