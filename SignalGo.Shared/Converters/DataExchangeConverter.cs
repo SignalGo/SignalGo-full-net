@@ -1014,7 +1014,7 @@ namespace SignalGo.Shared.Converters
                 }
                 else if (reader.TokenType == JsonToken.StartArray)
                 {
-                    PropertyInfo property = objectType.GetPropertyInfo(propertyName);
+                    PropertyInfo property = FindProperty(objectType, propertyName);
                     if (property != null)
                     {
                         canIgnore = canIgnore ? true : CanIgnoreCustomDataExchanger(objectType, property, instance);
@@ -1025,7 +1025,7 @@ namespace SignalGo.Shared.Converters
                     }
                     else
                     {
-                        FieldInfo field = objectType.GetFieldInfo(propertyName);
+                        FieldInfo field = FindField(objectType, propertyName);
                         if (field != null)
                         {
                             canIgnore = canIgnore ? true : CanIgnoreCustomDataExchanger(objectType, field, instance);
@@ -1044,7 +1044,7 @@ namespace SignalGo.Shared.Converters
                 {
                     if (IsTupleType(objectType))
                     {
-                        FieldInfo field = objectType.GetFieldInfo("m_" + propertyName);
+                        FieldInfo field = objectType.GetFieldInfo(propertyName);
                         if (field != null)
                         {
                             canIgnore = canIgnore ? true : CanIgnoreCustomDataExchanger(objectType, field, instance);
@@ -1067,7 +1067,7 @@ namespace SignalGo.Shared.Converters
                     }
                     else
                     {
-                        PropertyInfo property = objectType.GetPropertyInfo(propertyName);
+                        PropertyInfo property = FindProperty(objectType, propertyName);
                         if (property != null)
                         {
                             canIgnore = canIgnore ? true : CanIgnoreCustomDataExchanger(objectType, property, instance);
@@ -1109,7 +1109,7 @@ namespace SignalGo.Shared.Converters
                         }
                         else
                         {
-                            FieldInfo field = objectType.GetFieldInfo(propertyName);
+                            FieldInfo field = FindField(objectType, propertyName);
                             if (field != null)
                             {
                                 canIgnore = canIgnore ? true : CanIgnoreCustomDataExchanger(objectType, field, instance);
@@ -1131,6 +1131,32 @@ namespace SignalGo.Shared.Converters
                     }
                 }
             }
+        }
+
+        private static PropertyInfo FindProperty(Type objectType, string propertyName)
+        {
+            PropertyInfo property = objectType.GetPropertyInfo(propertyName);
+            if (property == null)
+            {
+                var find = objectType.GetProperties().Select(x => new { Property = x, Attributes = x.GetCustomAttributes<JsonPropertyAttribute>() }).Where(x => x.Attributes.Length > 0)
+                    .FirstOrDefault(x => x.Attributes.Any(y => y.PropertyName == propertyName));
+                if (find != null)
+                    property = find.Property;
+            }
+            return property;
+        }
+
+        private static FieldInfo FindField(Type objectType, string fieldName)
+        {
+            FieldInfo field = objectType.GetFieldInfo(fieldName);
+            if (field == null)
+            {
+                var find = objectType.GetListOfFields().Select(x => new { Field = x, Attributes = x.GetCustomAttributes<JsonPropertyAttribute>() }).Where(x => x.Attributes.Length > 0)
+                    .FirstOrDefault(x => x.Attributes.Any(y => y.PropertyName == fieldName));
+                if (find != null)
+                    field = find.Field;
+            }
+            return field;
         }
 
         //void MergeExchangeTypes(Type type, LimitExchangeType limitExchangeType)
