@@ -422,6 +422,8 @@ namespace SignalGo.Server.ServiceManager.Providers
         {
             List<CustomDataExchangerAttribute> parameterDataExchanger = customDataExchanger.ToList();
             parameterDataExchanger.AddRange(GetMethodParameterBinds(parameterIndex, allMethods.ToArray()).Where(x => x.GetExchangerByUserCustomization(client)));
+            if (userParameterInfo.Value == null)
+                return GetDefaultValueOfParameter(methodParameter);
             //fix for deserialize from json
             if (SerializeHelper.GetTypeCodeOfObject(methodParameter.ParameterType) != SerializeObjectType.Object && !userParameterInfo.Value.StartsWith("\""))
                 userParameterInfo.Value = "\"" + userParameterInfo.Value + "\"";
@@ -437,7 +439,7 @@ namespace SignalGo.Server.ServiceManager.Providers
         private static object GetDefaultValueOfParameter(System.Reflection.ParameterInfo methodParameter)
         {
             if (!methodParameter.HasDefaultValue)
-                return null;
+                return DataExchangeConverter.GetDefault(methodParameter.ParameterType);
 #if (!NETSTANDARD1_6)
             if (Convert.IsDBNull(methodParameter.DefaultValue))
                 return DataExchangeConverter.GetDefault(methodParameter.ParameterType);
