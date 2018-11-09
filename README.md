@@ -7,41 +7,39 @@ SignalGo is a library for Cross-Platform developers that makes it incredibly sim
 
 ## Features:
 
-1.Send and receive any data like class,object,struct and complex object
+1. Send and receive any data like class, object, struct and complex objects
 
-2.Send(upload) and receive(download) stream like file stream
+2. Send (upload) and receive (download) file streams (audio, video, binary data etc.)
 
-3.Send and receive data with UDP connection for sound and video streamming
+3. Send and receive data with UDP connection for sound and video streamming
 
-4.Return data from a method (client and server)
+4. Return data from a method (both client and server)
 
-5.Linq query to Clients for send or receive data
+5. Linq query to clients to send or receive data
 
-6.Setting for maximum and minimum and timeout data transport
+6. Setting the maximum and minimum byte size for data transport and connection timeout too.
 
-7.Using best security algoritm for send or receive data
+7. Using the best security algorithm to send and receive data
 
-8.Call methods from http GET and POST protocol (like call from browser) or upload and download files and manage Controllers like asp.net MVC
+8. Call methods from http GET and POST protocol (like browser's call) or upload and download files and manage controllers like asp.net MVC
 
-9.Support async await methods
+9. Full support for "async... await" methods
      
-10.Full logging systeam
-     
-11.Manage data exchanger to customize model properties in send and receive data without create new class
+10. Manage data exchanger to customize model properties to send and receive data without create new classes
 
-12.Ip limitation for call methods
+11. Ip limitations for call methods
 
-13.Easy to manage permissions with attribute you can customize your permissions before client call methods
+12. Easy to manage permissions with attributes. This way you can customize your permissions before client call methods
 
-14.Automatic handle object references and pointers in serialize and deserialize system
+13. Automatic handle object references and pointers for the serialize - deserialize system
 
-and other fetures...
+and other features...
 
 ## Simple Usage:
 
-After you learn it [ServiceContractAttribute](https://github.com/SignalGo/SignalGo-full-net/wiki/ServiceContract-(Attribute)) you can create your simple Service with this attribute.
+After you learn this lesson: [ServiceContractAttribute](https://github.com/SignalGo/SignalGo-full-net/wiki/ServiceContract-(Attribute)) you can create your simple service with this attribute.
 
-for example we have an interface that is our sevice level methods.
+For example we have an interface that is our service level methods.
 
 ```csharp
     [SignalGo.Shared.DataTypes.ServiceContract("TestServerModel")]
@@ -59,47 +57,47 @@ for example we have an interface that is our sevice level methods.
     }
 ```
 
-# How to start  my service?
+# How to start my service?
 
-After create your service classes you must start your service listener in your Main method console project or your windows service project or ...
+After you created your service class you must start your service listener in your Main method console project or your windows service project or web project ...
 
-for example:
+For example:
 
 ```csharp
 static void Main(string[] args)
         {
-            // create instance of your server listener
+            //Create an instance of your server listener
             SignalGo.Server.ServiceManager.ServerProvider server = new SignalGo.Server.ServiceManager.ServerProvider();
-            //register your service class that have implemented methods (not interfaces)
+            //Register your service class where you have implemented the methods (not interfaces)
             server.InitializeService<TestServerModel>();
-            //start your server provider (your server address is important for client to connect)
+            //Start your server provider (server address is mandatory for client to connect)
             server.Start("http://localhost:1132/SignalGoTestService");
-            //this code hold windows close and don't let him to close after read one line this will be close.
+            //This code handles windows console app to close after you press a key
             Console.ReadLine();
         }
 ```
 
 ## Client Providers (Client Side Example)
 
-After create your [server side project](Service-Providers-(Server-Side-Example)) you must create your client side project for connect to your server.
+After you create your [server side project](Service-Providers-(Server-Side-Example)) you must create your client side project to connect to your server.
 
-In the client side you just need your interface service not your service class that have implemented methods.
-So I think this is better for you if your service interface project be separated from your service class projects because you dont need create your service interfaces again for your client side this will make easy way for you to manage your services when you just add reference from service interface project to your client project.
+Client side you only need your interface service, not your service class where you have implemented methods.
+Having your service interface separated from your service class projects is better. In fact you dont need create your service interfaces again for your client. This is a very easy way to manage your services because in the client you only need to reference the interface project.
 
 ```csharp
-                //your client connector that will be connect to your server
+                //The client connector that will connect to your server
                 ClientProvider provider = new ClientProvider();
-                //connect to your server must have full address that your server is listen
+                //Connect to server to a valid address where server is listening on
                 provider.Connect("http://localhost:1132/SignalGoTestService");
-                //register your service interfacce for client
+                //Register the service interface in the client
                 var testServerModel = provider.RegisterClientServiceInterfaceWrapper<ITestServerModel>();
-                //call server method and return value from your server to client
+                //Call server method and return the result value to the client
                 var result = testServerModel.HelloWorld("ali");
-                //print your result to console
+                //Print the result on the client console
                 Console.WriteLine(result.Item1);
 ```
 
-SignalGo have another way to register your service interface like:
+SignalGo has another way to register your service interface too:
 
 ```csharp
 var testServerModel = provider.RegisterClientServiceDynamic<ITestServerModel>();
@@ -112,7 +110,7 @@ var testServerModel = provider.RegisterClientServiceDynamic("TestServerModel");
 ### [C# sample source project](https://github.com/SignalGo/csharp-sample)
 
 
-## How to use security setting (just C# .net version is currently available)?
+## How to use security settings? (Please consider that only C# .net version is currently available)
 
 ```csharp
             ClientProvider connector = new ClientProvider();
@@ -143,7 +141,7 @@ var testServerModel = provider.RegisterClientServiceDynamic("TestServerModel");
         connector.SendUdpData(new byte[] { 1, 2, 3, 40 });
 ```
 
-## How to usage http calls and manage controllers (download or upload files and methods)?
+## How to manage http calls and manage controllers (methods and download-upload files)?
 
 
 #### server-side:
@@ -193,7 +191,7 @@ var testServerModel = provider.RegisterClientServiceDynamic("TestServerModel");
     }
 ```
 
-after create your controller class you must register that in to your server after start like:
+After you created your controller class you must register service interface like this:
 
 ```csharp
     class Program
@@ -209,7 +207,7 @@ after create your controller class you must register that in to your server afte
     }
 ```
 
-after that you can call your methods from this addresses:
+Then you can call your methods from this addresses like the following example:
 
 http://localhost:1199/AddressTest/DownloadImage?ali&12
 
@@ -229,7 +227,7 @@ Install-Package SignalGo.Net.Client
 Install-Package SignalGo.JavaScript.Client
 
 # Pull Requests
-I welcome all pull requests from you guys.Here are 3 basic rules of your request:
+I welcome all pull requests from you guys! PLease folow these 3 basic rules:
   1. Match coding style (braces, spacing, etc.)
   2. If its a feature, bugfix, or anything please only change code to what you specify.
   3. Please keep PR titles easy to read and descriptive of changes, this will make them easier to merge :)
