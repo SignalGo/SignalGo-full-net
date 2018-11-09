@@ -58,6 +58,8 @@ Is in continuous development with always new cool features you can suggest us to
 
 16. Support for duplex client-server service providers
 
+17. Fully customizable data handlers for custom datatypes
+
 
 ...and other features!
 
