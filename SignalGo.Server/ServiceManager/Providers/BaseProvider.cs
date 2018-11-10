@@ -493,11 +493,12 @@ namespace SignalGo.Server.ServiceManager.Providers
 
                 //parameter came from client side
                 Shared.Models.ParameterInfo userParameterInfo = parameters.FirstOrDefault(x => x.Name != null && x.Name.ToLower() == methodParameterName);
+                object value = null;
                 if (userParameterInfo != null)
                 {
-                    object deserializedItem = DeserializeParameterValue(methodParameter, userParameterInfo, i, customDataExchanger, allMethods, serverBase, client);
-                    parametersValues.Add(deserializedItem);
-                    parametersKeyValues[methodParameterName] = deserializedItem;
+                    value = DeserializeParameterValue(methodParameter, userParameterInfo, i, customDataExchanger, allMethods, serverBase, client);
+                    parametersValues.Add(value);
+                    parametersKeyValues[methodParameterName] = value;
                 }
                 else if (hasNoName)
                 {
@@ -505,27 +506,35 @@ namespace SignalGo.Server.ServiceManager.Providers
                     if (findNoNameParameter != null)
                     {
                         parameters.Remove(findNoNameParameter);
-                        object deserializedItem = DeserializeParameterValue(methodParameter, findNoNameParameter, i, customDataExchanger, allMethods, serverBase, client);
-                        parametersValues.Add(deserializedItem);
-                        parametersKeyValues[methodParameterName] = deserializedItem;
+                        value = DeserializeParameterValue(methodParameter, findNoNameParameter, i, customDataExchanger, allMethods, serverBase, client);
+                        parametersValues.Add(value);
+                        parametersKeyValues[methodParameterName] = value;
                     }
                     else if (!string.IsNullOrEmpty(jsonParameters))
                     {
                         hasNoName = false;
-                        object deserializedItem = DeserializeParameterValue(methodParameter, new Shared.Models.ParameterInfo() { Value = jsonParameters }, i, customDataExchanger, allMethods, serverBase, client);
-                        parametersValues.Add(deserializedItem);
-                        parametersKeyValues[methodParameterName] = deserializedItem;
+                        value = DeserializeParameterValue(methodParameter, new Shared.Models.ParameterInfo() { Value = jsonParameters }, i, customDataExchanger, allMethods, serverBase, client);
+                        parametersValues.Add(value);
+                        parametersKeyValues[methodParameterName] = value;
                         jsonParameters = null;
                     }
                     else
                     {
                         hasNoName = false;
-                        parametersValues.Add(GetDefaultValueOfParameter(methodParameter));
+                        value = GetDefaultValueOfParameter(methodParameter);
+                        parametersValues.Add(value);
                     }
                 }
                 else
                 {
-                    parametersValues.Add(GetDefaultValueOfParameter(methodParameter));
+                    value = GetDefaultValueOfParameter(methodParameter);
+                    parametersValues.Add(value);
+                }
+
+                foreach (ValidationRuleInfoAttribute item in methodParameter.GetCustomAttributes<ValidationRuleInfoAttribute>(true))
+                {
+                    item.Initialize(service, method, parametersKeyValues, null, methodParameter, null, value);
+                    serverBase.ValidationRuleInfoManager.AddRule(taskId, item);
                 }
             }
             //get list of validation errors of calls
