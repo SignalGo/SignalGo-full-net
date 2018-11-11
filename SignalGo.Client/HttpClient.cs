@@ -42,7 +42,8 @@ namespace SignalGo.Client
         /// request post data headers
         /// </summary>
         public SignalGo.Shared.Http.WebHeaderCollection RequestHeaders { get; set; } = new Shared.Http.WebHeaderCollection();
-
+        public string KeyParameterName { get; set; }
+        public string KeyParameterValue { get; set; }
         /// <summary>
         /// post a data to server
         /// </summary>
@@ -59,6 +60,12 @@ namespace SignalGo.Client
             TcpClient tcpClient = new TcpClient(uri.Host, uri.Port);
             try
             {
+                if (!string.IsNullOrEmpty(KeyParameterName))
+                {
+                    var list = parameterInfoes.ToList();
+                    list.Add(new SignalGo.Shared.Models.ParameterInfo() { Name = KeyParameterName, Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(KeyParameterValue) });
+                    parameterInfoes = list.ToArray();
+                }
                 string boundary = "----------------------------" + DateTime.Now.Ticks.ToString("x");
                 string headData = $"POST {uri.AbsolutePath} HTTP/1.1" + newLine + $"Host: {uri.Host}" + newLine + $"Content-Type: multipart/form-data; boundary={boundary}" + newLine;
                 if (RequestHeaders != null && RequestHeaders.Count > 0)
@@ -69,7 +76,7 @@ namespace SignalGo.Client
                         {
                             if (item.Value == null || item.Value.Length == 0)
                                 continue;
-                            headData += item.Key + ": " + string.Join(",", item.Value);
+                            headData += item.Key + ": " + string.Join(",", item.Value) + newLine;
                         }
                     }
                 }
