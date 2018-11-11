@@ -168,6 +168,15 @@ namespace SignalGo.Server.ServiceManager
             }
         }
 
+        /// <summary>
+        /// GetListOfRegistredTypes
+        /// </summary>
+        /// <returns></returns>
+        public IEnumerable<Type> GetListOfRegistredTypes()
+        {
+            return RegisteredServiceTypes.Values.Distinct();
+        }
+
         public void AddAssemblyToSkipServiceReferences(Assembly assembly)
         {
             ModellingReferencesAssemblies.Add(assembly);
