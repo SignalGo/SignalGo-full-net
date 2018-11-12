@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SignalGo.Shared.DataTypes;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -515,6 +516,17 @@ namespace SignalGo.Shared.Helpers
         public static bool IsInstancedOfType(this Type type, Type newType)
         {
             return type.GetAllInheritances().Contains(newType);
+        }
+
+        /// <summary>
+        /// get all of methods that client can access to them
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public static IEnumerable<MethodInfo> GetFullServiceLevelMethods(this Type type)
+        {
+            return type.GetAllInheritances().Where(x => x.GetCustomAttributes<ServiceContractAttribute>().Length > 0).SelectMany(x => x.GetListOfDeclaredMethods()).Distinct()
+                  .Where(x => !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_"))));
         }
     }
 }
