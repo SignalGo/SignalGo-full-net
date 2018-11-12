@@ -53,7 +53,7 @@ namespace SignalGo.Server.Owin
 
             owinClientInfo.ConnectedDateTime = DateTime.Now;
             owinClientInfo.IPAddress = context.Connection.RemoteIpAddress.ToString();
-            owinClientInfo.ClientId = Guid.NewGuid().ToString() + "-" + Guid.NewGuid().ToString();
+            owinClientInfo.ClientId = Guid.NewGuid().ToString();
             CurrentServerBase.Clients.TryAdd(owinClientInfo.ClientId, owinClientInfo);
 
             //owinClientInfo.OwinContext = context;
