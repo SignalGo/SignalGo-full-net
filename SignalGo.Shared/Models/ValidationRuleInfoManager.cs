@@ -30,8 +30,8 @@ namespace SignalGo.Shared.Models
         {
             if (typeOrInstance == null)
                 throw new Exception($"your object cannot be null to add as attribute");
-            else if (typeOrInstance is Type type && !type.GetAllInheritances().Contains(typeof(ValidationRuleInfoAttribute)))
-                throw new Exception($"Type of T is not a ValidationRuleInfoAttribute Type T is {type.FullName}");
+            else if (typeOrInstance is Type type && !type.GetAllInheritances().Contains(typeof(BaseValidationRuleInfoAttribute)))
+                throw new Exception($"Type of T is not a BaseValidationRuleInfoAttribute Type T is {type.FullName}");
 
             if (!validationBuilder.PropertiesValidations.ContainsKey(property))
                 validationBuilder.PropertiesValidations[property] = new List<object>();
@@ -47,7 +47,7 @@ namespace SignalGo.Shared.Models
         /// <param name="validation"></param>
         /// <param name="properties"></param>
         /// <returns></returns>
-        public static ValidationBuilder Add(this ValidationBuilder validationBuilder, ValidationRuleInfoAttribute validation, params string[] properties)
+        public static ValidationBuilder Add(this ValidationBuilder validationBuilder, BaseValidationRuleInfoAttribute validation, params string[] properties)
         {
             foreach (string item in properties)
             {
@@ -56,7 +56,7 @@ namespace SignalGo.Shared.Models
             return validationBuilder;
         }
 
-        public static ValidationBuilder Add(this ValidationBuilder validationBuilder, ValidationRuleInfoAttribute validation1, ValidationRuleInfoAttribute validation2, params string[] properties)
+        public static ValidationBuilder Add(this ValidationBuilder validationBuilder, BaseValidationRuleInfoAttribute validation1, BaseValidationRuleInfoAttribute validation2, params string[] properties)
         {
             foreach (string item in properties)
             {
@@ -66,7 +66,7 @@ namespace SignalGo.Shared.Models
             return validationBuilder;
         }
 
-        public static ValidationBuilder Add(this ValidationBuilder validationBuilder, ValidationRuleInfoAttribute validation1, ValidationRuleInfoAttribute validation2, ValidationRuleInfoAttribute validation3, params string[] properties)
+        public static ValidationBuilder Add(this ValidationBuilder validationBuilder, BaseValidationRuleInfoAttribute validation1, BaseValidationRuleInfoAttribute validation2, BaseValidationRuleInfoAttribute validation3, params string[] properties)
         {
             foreach (string item in properties)
             {
@@ -77,7 +77,7 @@ namespace SignalGo.Shared.Models
             return validationBuilder;
         }
 
-        public static ValidationBuilder Add(this ValidationBuilder validationBuilder, ValidationRuleInfoAttribute[] validations, params string[] properties)
+        public static ValidationBuilder Add(this ValidationBuilder validationBuilder, BaseValidationRuleInfoAttribute[] validations, params string[] properties)
         {
             foreach (string item in properties)
             {
@@ -286,25 +286,25 @@ namespace SignalGo.Shared.Models
     public class ValidationRuleInfoManager
     {
         private ConcurrentDictionary<int, ConcurrentDictionary<Type, ConcurrentDictionary<object, List<string>>>> CurrentDetectedObjects { get; set; } = new ConcurrentDictionary<int, ConcurrentDictionary<Type, ConcurrentDictionary<object, List<string>>>>();
-        private ConcurrentDictionary<int, List<ValidationRuleInfoAttribute>> CurrentValidationRules { get; set; } = new ConcurrentDictionary<int, List<ValidationRuleInfoAttribute>>();
+        private ConcurrentDictionary<int, List<BaseValidationRuleInfoAttribute>> CurrentValidationRules { get; set; } = new ConcurrentDictionary<int, List<BaseValidationRuleInfoAttribute>>();
         internal ConcurrentDictionary<Type, Dictionary<string, List<object>>> FluentValidationRules { get; set; } = new ConcurrentDictionary<Type, Dictionary<string, List<object>>>();
         /// <summary>
         /// add role to current task
         /// </summary>
         /// <param name="currentTaskId"></param>
         /// <param name="validationRuleInfo"></param>
-        public void AddRule(int? currentTaskId, ValidationRuleInfoAttribute validationRuleInfo)
+        public void AddRule(int? currentTaskId, BaseValidationRuleInfoAttribute validationRuleInfo)
         {
             if (!currentTaskId.HasValue)
                 return;
             int currentId = currentTaskId.GetValueOrDefault();
-            if (CurrentValidationRules.TryGetValue(currentId, out List<ValidationRuleInfoAttribute> items))
+            if (CurrentValidationRules.TryGetValue(currentId, out List<BaseValidationRuleInfoAttribute> items))
             {
                 items.Add(validationRuleInfo);
             }
             else
             {
-                items = new List<ValidationRuleInfoAttribute>
+                items = new List<BaseValidationRuleInfoAttribute>
                 {
                     validationRuleInfo
                 };
@@ -370,12 +370,12 @@ namespace SignalGo.Shared.Models
                 {
                     foreach (object attribute in attributes)
                     {
-                        ValidationRuleInfoAttribute attributeInstance = null;
+                        BaseValidationRuleInfoAttribute attributeInstance = null;
                         if (attribute is Type attributeType)
                         {
                             try
                             {
-                                attributeInstance = (ValidationRuleInfoAttribute)Activator.CreateInstance(attributeType);
+                                attributeInstance = (BaseValidationRuleInfoAttribute)Activator.CreateInstance(attributeType);
                             }
                             catch (Exception ex)
                             {
@@ -384,7 +384,7 @@ namespace SignalGo.Shared.Models
                         }
                         else
                         {
-                            attributeInstance = (ValidationRuleInfoAttribute)attribute;
+                            attributeInstance = (BaseValidationRuleInfoAttribute)attribute;
                         }
 
                         attributeInstance.PropertyInfo = propertyInfo;
@@ -409,26 +409,26 @@ namespace SignalGo.Shared.Models
         /// calculate all validations
         /// </summary>
         /// <returns>return list of validation errors</returns>
-        public IEnumerable<ValidationRuleInfoAttribute> CalculateValidationsOfTask(Action<string, object> changeParameterValueAction, Action<ValidationRuleInfoAttribute> fillValidationParameterAction)
+        public IEnumerable<BaseValidationRuleInfoAttribute> CalculateValidationsOfTask(Action<string, object> changeParameterValueAction, Action<BaseValidationRuleInfoAttribute> fillValidationParameterAction)
         {
             if (!Task.CurrentId.HasValue)
                 throw new Exception("cannot calculate rules without any task!");
             int currentId = Task.CurrentId.GetValueOrDefault();
-            if (CurrentValidationRules.TryGetValue(currentId, out List<ValidationRuleInfoAttribute> validationRuleInfoAttributes))
+            if (CurrentValidationRules.TryGetValue(currentId, out List<BaseValidationRuleInfoAttribute> validationRuleInfoAttributes))
             {
-                foreach (ValidationRuleInfoAttribute validation in validationRuleInfoAttributes)
+                foreach (BaseValidationRuleInfoAttribute validation in validationRuleInfoAttributes)
                 {
                     fillValidationParameterAction(validation);
                     if (validation.TaskType == ValidationRuleInfoTaskType.Error)
                     {
-                        if (!validation.CheckIsValidate())
+                        if (!BaseValidationRuleInfoAttribute.CheckIsValidate(validation))
                             yield return validation;
                     }
                     else if (validation.TaskType == ValidationRuleInfoTaskType.ChangeValue)
                     {
-                        if (!validation.CheckIsValidate())
+                        if (!BaseValidationRuleInfoAttribute.CheckIsValidate(validation))
                         {
-                            object changedValue = validation.GetChangedValue();
+                            object changedValue = BaseValidationRuleInfoAttribute.GetChangedValue(validation);
                             if (validation.PropertyInfo != null)
                             {
                                 System.Reflection.PropertyInfo findProperty = validation.Object.GetType().GetPropertyInfo(validation.PropertyInfo.Name);
@@ -456,7 +456,7 @@ namespace SignalGo.Shared.Models
                         {
                             if (objects.TryGetValue(okv.Key, out List<string> properties))
                             {
-                                foreach (ValidationRuleInfoAttribute item in CalculateArrays(okv.Key, properties))
+                                foreach (BaseValidationRuleInfoAttribute item in CalculateArrays(okv.Key, properties))
                                 {
                                     yield return item;
                                 }
@@ -468,7 +468,7 @@ namespace SignalGo.Shared.Models
             }
         }
 
-        private static IEnumerable<ValidationRuleInfoAttribute> CalculateArrays(object instance, List<string> properties)
+        private static IEnumerable<BaseValidationRuleInfoAttribute> CalculateArrays(object instance, List<string> properties)
         {
             bool isArray = typeof(IEnumerable).GetIsAssignableFrom(instance.GetType()) && !(instance is string);
             bool isDictionary = typeof(IDictionary).GetIsAssignableFrom(instance.GetType());
@@ -476,7 +476,7 @@ namespace SignalGo.Shared.Models
             {
                 foreach (object item in (IEnumerable)instance)
                 {
-                    if (CalculateArrays(item, properties) is ValidationRuleInfoAttribute validation)
+                    if (CalculateArrays(item, properties) is BaseValidationRuleInfoAttribute validation)
                         yield return validation;
                 }
             }
@@ -484,33 +484,33 @@ namespace SignalGo.Shared.Models
             {
                 foreach (DictionaryEntry item in (IDictionary)instance)
                 {
-                    if (CalculateArrays(item.Key, properties) is ValidationRuleInfoAttribute validation)
+                    if (CalculateArrays(item.Key, properties) is BaseValidationRuleInfoAttribute validation)
                         yield return validation;
-                    if (CalculateArrays(item.Value, properties) is ValidationRuleInfoAttribute validation2)
+                    if (CalculateArrays(item.Value, properties) is BaseValidationRuleInfoAttribute validation2)
                         yield return validation2;
                 }
             }
             else
             {
-                foreach (ValidationRuleInfoAttribute validation in CalculateObject(instance, properties))
+                foreach (BaseValidationRuleInfoAttribute validation in CalculateObject(instance, properties))
                 {
                     yield return validation;
                 }
             }
         }
 
-        private static IEnumerable<ValidationRuleInfoAttribute> CalculateObject(object instance, List<string> properties)
+        private static IEnumerable<BaseValidationRuleInfoAttribute> CalculateObject(object instance, List<string> properties)
         {
             foreach (System.Reflection.PropertyInfo property in instance.GetType().GetListOfProperties())
             {
                 if (properties.Contains(property.Name))
                     continue;
                 object currentValue = property.GetValue(instance, null);
-                foreach (ValidationRuleInfoAttribute validation in property.GetCustomAttributes<ValidationRuleInfoAttribute>(true))
+                foreach (BaseValidationRuleInfoAttribute validation in property.GetCustomAttributes<BaseValidationRuleInfoAttribute>(true))
                 {
                     if (validation.TaskType == ValidationRuleInfoTaskType.Error)
                     {
-                        if (!validation.CheckIsValidate())
+                        if (!BaseValidationRuleInfoAttribute.CheckIsValidate(validation))
                         {
                             validation.PropertyInfo = property;
                             validation.Object = instance;
@@ -520,16 +520,15 @@ namespace SignalGo.Shared.Models
                     }
                     else if (validation.TaskType == ValidationRuleInfoTaskType.ChangeValue)
                     {
-                        if (!validation.CheckIsValidate())
+                        if (!BaseValidationRuleInfoAttribute.CheckIsValidate(validation))
                         {
-                            object changedValue = validation.GetChangedValue();
+                            object changedValue = BaseValidationRuleInfoAttribute.GetChangedValue(validation);
                             System.Reflection.PropertyInfo findProperty = instance.GetType().GetPropertyInfo(property.Name);
                             findProperty.SetValue(instance, changedValue, null);
                         }
                     }
                     else
                         throw new NotSupportedException();
-
                 }
             }
         }

@@ -979,7 +979,7 @@ namespace SignalGo.Shared.Converters
             if (!CurrentTaskId.HasValue || ValidationRuleInfoManager == null || instance == null || propertyInfo == null)
                 return;
             ValidationRuleInfoManager.AddObjectPropertyAsChecked(CurrentTaskId, instance.GetType(), instance, propertyInfo.Name, propertyInfo, currentValue);
-            foreach (ValidationRuleInfoAttribute item in propertyInfo.GetCustomAttributes(typeof(ValidationRuleInfoAttribute), true))
+            foreach (BaseValidationRuleInfoAttribute item in propertyInfo.GetCustomAttributes(typeof(BaseValidationRuleInfoAttribute), true))
             {
                 item.PropertyInfo = propertyInfo;
                 item.Object = instance;

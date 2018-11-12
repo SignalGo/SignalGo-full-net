@@ -124,7 +124,7 @@ namespace SignalGo.Server.ServiceManager
         /// <summary>
         /// if you don't want to trhow exception when method have error validation you can fill this function to customize your result for client
         /// </summary>
-        public Func<List<ValidationRuleInfoAttribute>, object, MethodInfo, object> ValidationResultHandlingFunction { get; set; }
+        public Func<List<BaseValidationRuleInfoAttribute>, object, MethodInfo, object> ValidationResultHandlingFunction { get; set; }
         /// <summary>
         /// Register server service
         /// </summary>
