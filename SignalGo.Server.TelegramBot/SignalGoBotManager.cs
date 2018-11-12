@@ -306,6 +306,8 @@ namespace SignalGo.Server.TelegramBot
                 columns.Add(item.GetCustomAttribute<ServiceContractAttribute>().Name);
                 columnIndex++;
             }
+            if (rows.Count == 0)
+                rows.Add(columns);
             ServicesButtons = rows;
             return rows;
         }
