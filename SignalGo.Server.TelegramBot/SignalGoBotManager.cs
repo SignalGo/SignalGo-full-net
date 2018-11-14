@@ -27,7 +27,7 @@ namespace SignalGo.Server.TelegramBot
         private Dictionary<string, Type> Services { get; set; } = new Dictionary<string, Type>();
         private List<List<KeyboardButton>> ServicesButtons { get; set; }
         private ConcurrentDictionary<int, TelegramClientInfo> ConnectedClients { get; set; } = new ConcurrentDictionary<int, TelegramClientInfo>();
-        public async void Start(string token, ServerBase serverBase,System.Net.Http.HttpClient httpClient = null)
+        public async Task Start(string token, ServerBase serverBase, System.Net.Http.HttpClient httpClient = null)
         {
             _serverBase = serverBase;
             _botClient = new TelegramBotClient(token, httpClient);
@@ -149,7 +149,7 @@ namespace SignalGo.Server.TelegramBot
             };
             if (callMethodResultInfo.CallbackInfo.Data.Length > 4000)
             {
-                using (var stream = new MemoryStream(Encoding.UTF8.GetBytes(callMethodResultInfo.CallbackInfo.Data)))
+                using (MemoryStream stream = new MemoryStream(Encoding.UTF8.GetBytes(callMethodResultInfo.CallbackInfo.Data)))
                 {
                     stream.Seek(0, SeekOrigin.Begin);
                     InputOnlineFile inputOnlineFile = new InputOnlineFile(stream);
