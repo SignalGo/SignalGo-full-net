@@ -62,7 +62,7 @@ Is in continuous development with always new cool features you can suggest us to
 
 ## Simple Server Usage:
 
-* [[Signalgo Server HelloWorld|Signalgo-server-HelloWorld]]
+https://github.com/SignalGo/SignalGo-full-net/wiki/Signalgo-server-HelloWorld
 
 
 ## Simple Client Usage:
