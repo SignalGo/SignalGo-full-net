@@ -80,7 +80,7 @@ namespace SignalGo.Shared.DataTypes
         /// <summary>
         /// limitation mode in incoming call or outgoingCall or both
         /// </summary>
-        public LimitExchangeType LimitationMode { get; set; } = LimitExchangeType.Both;
+        public virtual LimitExchangeType LimitationMode { get; set; } = LimitExchangeType.Both;
         /// <summary>
         /// type of your class to ignore or take properties for serialize
         /// </summary>
