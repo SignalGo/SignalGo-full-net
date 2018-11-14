@@ -490,7 +490,6 @@ namespace SignalGo.Server.ServiceManager.Providers
                 //method parameter of server service
                 System.Reflection.ParameterInfo methodParameter = methodParameters[i];
                 string methodParameterName = methodParameter.Name.ToLower();
-
                 //parameter came from client side
                 Shared.Models.ParameterInfo userParameterInfo = parameters.FirstOrDefault(x => x.Name != null && x.Name.ToLower() == methodParameterName);
                 object value = null;
@@ -536,6 +535,8 @@ namespace SignalGo.Server.ServiceManager.Providers
                     item.Initialize(service, method, parametersKeyValues, null, methodParameter, null, value);
                     serverBase.ValidationRuleInfoManager.AddRule(taskId, item);
                 }
+                if (SerializeHelper.GetTypeCodeOfObject(methodParameter.ParameterType) == SerializeObjectType.Object)
+                    serverBase.ValidationRuleInfoManager.AddObjectPropertyAsChecked(taskId, methodParameter.ParameterType, value, null, null, null);
             }
             //get list of validation errors of calls
             validationErrors = serverBase.ValidationRuleInfoManager.CalculateValidationsOfTask((parameterName, newValue) =>
