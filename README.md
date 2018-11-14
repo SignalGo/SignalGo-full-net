@@ -86,7 +86,7 @@ Install-Package SignalGo.Net.Client
 
 Install-Package SignalGo.JavaScript.Client
 
-# Wana make SignalGo better? or you wanna new features etc?
+# Wanna make SignalGo better? or you wanna new features etc?
 Just create new issues I will help you fast.
 
 Call me on Telegram:
