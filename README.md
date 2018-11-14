@@ -72,11 +72,11 @@ https://github.com/SignalGo/signalgo-samples/tree/master/CSharp%20Client%20Sampl
 
 ### [You can read more Wiki by click here](https://github.com/SignalGo/SignalGo-full-net/wiki)
 
-### [C# sample source project](https://github.com/SignalGo/csharp-sample)
+### [examples](https://github.com/SignalGo/csharp-sample)
 
-## [SignalGo-Test Methods (like wcf test)](https://github.com/SignalGo/SignalGoTest)
+## [SignalGo fully test your server services with a test client in windows, linux and mac](https://github.com/SignalGo/SignalGoTest)
 
-![ScreenShot](https://github.com/SignalGo/SignalGoTest/blob/master/image2.png "signal go test image")
+![ScreenShot](https://raw.githubusercontent.com/SignalGo/SignalGoTest/version4/image3.png "signal go test image")
 
 ## Install package from nuget:
 
