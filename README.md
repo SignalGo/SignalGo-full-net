@@ -54,7 +54,7 @@ Is in continuous development with always new cool features you can suggest us to
 
 15. Support for duplex client-server service providers
 
-16. with one life of code make your server as a telegram.bot without any changes
+16. with two line of code make your server as a telegram.bot without any changes
 
 
 ...and other features!
