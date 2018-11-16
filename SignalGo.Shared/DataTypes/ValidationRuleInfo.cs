@@ -24,7 +24,7 @@ namespace SignalGo.Shared.DataTypes
     /// <summary>
     /// validation rule to check or change properties before call server methods
     /// </summary>
-    [AttributeUsage(AttributeTargets.Property | AttributeTargets.Parameter, AllowMultiple = true)]
+    [AttributeUsage(AttributeTargets.Property | AttributeTargets.Parameter | AttributeTargets.Method, AllowMultiple = true)]
     public class BaseValidationRuleInfoAttribute : Attribute
     {
         /// <summary>

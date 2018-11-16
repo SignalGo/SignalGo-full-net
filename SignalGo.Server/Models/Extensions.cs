@@ -8,5 +8,10 @@ namespace SignalGo.Server.Models
         {
             headers.Add(key, value.Split(','));
         }
+
+        public static void Add(this IDictionary<string, string[]> headers, string key, long value)
+        {
+            headers.Add(key, value.ToString().Split(','));
+        }
     }
 }

@@ -482,6 +482,13 @@ namespace SignalGo.Server.ServiceManager.Providers
                 return FixParametersCount(taskId, service, method, parameters, serverBase, client, allMethods, customDataExchanger, null, out validationErrors, ref keyParameterValue);
             }
 
+            //validation of methods
+            foreach (BaseValidationRuleInfoAttribute item in method.GetCustomAttributes<BaseValidationRuleInfoAttribute>(true))
+            {
+                item.Initialize(service, method, parametersKeyValues, null, null, null, null);
+                serverBase.ValidationRuleInfoManager.AddRule(taskId, item);
+            }
+
             //for stop finding noname to make faster
             bool hasNoName = true;
 
@@ -529,7 +536,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     value = GetDefaultValueOfParameter(methodParameter);
                     parametersValues.Add(value);
                 }
-
+                //validation of parameters
                 foreach (BaseValidationRuleInfoAttribute item in methodParameter.GetCustomAttributes<BaseValidationRuleInfoAttribute>(true))
                 {
                     item.Initialize(service, method, parametersKeyValues, null, methodParameter, null, value);
