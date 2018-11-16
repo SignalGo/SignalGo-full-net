@@ -38,7 +38,7 @@ Is in continuous development with always new cool features you can suggest us to
 
 8. Full support for "async... await" methods
      
-9. Manage data exchanger to customize model properties to send and receive data without create new classes better and easier than GraphQL
+9. Manage data exchanger to customize model properties to send and receive data without create new classes better and easier than GraphQL and OData
 
 10. Ip limitations for call methods
 
