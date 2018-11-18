@@ -13,6 +13,10 @@ namespace SignalGo.DataExchanger.Compilers
     public class SelectCompiler
     {
         /// <summary>
+        /// to skip generated objects for stackoverflow exception
+        /// </summary>
+        public HashSet<object> GeneratedObjects { get; set; } = new HashSet<object>();
+        /// <summary>
         /// select nodes after compile will generates
         /// </summary>
         public List<SelectNode> CompilerSelectNodes { get; set; }
@@ -133,26 +137,41 @@ namespace SignalGo.DataExchanger.Compilers
         /// <returns></returns>
         public object Run(object data)
         {
-            return GenerateObject(data, CompilerSelectNodes.FirstOrDefault());
+            try
+            {
+                return GenerateObject(data, CompilerSelectNodes.FirstOrDefault());
+            }
+            finally
+            {
+                GeneratedObjects.Clear();
+            }
         }
 
+        /// <summary>
+        /// generate object this will ignore properties is not in select nodes
+        /// </summary>
+        /// <param name="currentData"></param>
+        /// <param name="selectNode"></param>
+        /// <returns></returns>
         private object GenerateObject(object currentData, SelectNode selectNode)
         {
-            if (selectNode == null || currentData == null)
+            if (selectNode == null || currentData == null || GeneratedObjects.Contains(currentData))
                 return currentData;
             else if (currentData is IEnumerable)
                 return GenerateArrayObject(currentData, selectNode);
-            var type = currentData.GetType();
-            var properties = type.GetProperties();
+            GeneratedObjects.Add(currentData);
+            Type type = currentData.GetType();
+            System.Reflection.PropertyInfo[] properties = type.GetProperties();
+            //get list of properties and set default value if that is not in select node
             for (int i = 0; i < properties.Length; i++)
             {
-                var property = properties[i];
-                var propertyName = property.Name.ToLower();
+                System.Reflection.PropertyInfo property = properties[i];
+                string propertyName = property.Name.ToLower();
                 if (selectNode.Properties.TryGetValue(propertyName, out List<SelectNode> nodes))
                 {
                     if (nodes == null || nodes.Count == 0)
                         continue;
-                    var value = property.GetValue(currentData);
+                    object value = property.GetValue(currentData);
                     GenerateObject(value, nodes.FirstOrDefault());
                 }
                 else
@@ -163,9 +182,19 @@ namespace SignalGo.DataExchanger.Compilers
             return currentData;
         }
 
+        /// <summary>
+        /// generate object that is in list
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="selectNode"></param>
+        /// <returns></returns>
         private object GenerateArrayObject(object data, SelectNode selectNode)
         {
-            foreach (var item in (IEnumerable)data)
+            if (GeneratedObjects.Contains(data))
+                return data;
+            GeneratedObjects.Add(data);
+
+            foreach (object item in (IEnumerable)data)
             {
                 GenerateObject(item, selectNode);
             }

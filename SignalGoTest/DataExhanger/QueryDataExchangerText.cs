@@ -80,7 +80,7 @@ var user
 	where user.id > 10 and user.name = ""reza"" and count(user.posts) > 0 skip 10 take 20
 	post in user.posts
 	{
-		where post.id > 20 and contians(post.title,""hello"")
+		where post.id > 20 and contains(post.title,""hello"")
  		or count(var x from post.articles where x.author = ""ali"") > 5 order by post.id desc
 	}
 }
@@ -90,18 +90,20 @@ var user
 	where user.id > 10 and user.name = ""reza"" and count(user.posts) > 0 skip 10 take 20
 	post in user.posts
 	{
-		where post.id > 20 and contians(post.title,""hello"")
+		where post.id > 20 and contains(post.title,""hello"")
  		or count(var x from post.articles where x.author = ""ali"") > 5 order by post.id desc
 	}
 }
 ";
-                    string query3 = @"select{name posts{title articles{author}date news{newsName}} files{id name}}";
+                    string query3 = @"select{name posts{title articles{author}date news{newsName}} files{id name}} var user {where user.name = ""ali""}";
                     SelectCompiler selectCompiler = new SelectCompiler();
                     string anotherResult = selectCompiler.Compile(query3);
-                    var main = GetUsersEx();
-                    var toComiple = GetUsersEx();
+                    ConditionsCompiler conditionsCompiler = new ConditionsCompiler();
+                    conditionsCompiler.Compile(anotherResult);
+                    //var main = GetUsersEx();
+                    //var toComiple = GetUsersEx();
 
-                    object result = selectCompiler.Run(toComiple);
+                    //object result = selectCompiler.Run(toComiple);
                 }
                 catch (System.Exception ex)
                 {

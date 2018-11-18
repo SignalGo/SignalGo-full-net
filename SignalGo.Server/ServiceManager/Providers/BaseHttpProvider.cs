@@ -334,7 +334,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                         catch (Exception ex)
                         {
                             hasException = true;
-                            serverBase.AutoLogger.LogError(ex, $"Parse json exception: {parameters}");
+                            serverBase.AutoLogger.LogError(ex, $"Parse json exception: {parameters} content-Lenth: {client.GetRequestHeaderValue("content-length")} content: {content}");
                         }
                         finally
                         {
