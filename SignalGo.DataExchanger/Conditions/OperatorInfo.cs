@@ -48,17 +48,21 @@ namespace SignalGo.DataExchanger.Conditions
     /// </summary>
     public class OperatorInfo : IRunnable, IAddConditionSides
     {
+        public IAddConditionSides Parent { get; set; }
         public Dictionary<string, object> PublicVariables { get; set; }
         /// <summary>
         /// this is complete runnable left side and right side is full
         /// </summary>
         public bool IsComplete { get; set; }
-
+        public static char[] OperatorStartChars { get; set; } = new char[] { '=', '>', '<', '!', '&', '|' };
         public static Dictionary<string, OperatorType> SupportedOperators { get; set; } = new Dictionary<string, OperatorType>()
         {
             {"=", OperatorType.Equal },
+            {"==", OperatorType.Equal },
             {"and", OperatorType.And },
+            {"&&", OperatorType.And },
             {"or", OperatorType.Or },
+            {"||", OperatorType.Or },
             {">", OperatorType.GreaterThan },
             {">=", OperatorType.GreaterThanEqual },
             {"<", OperatorType.LessThan },
@@ -93,7 +97,7 @@ namespace SignalGo.DataExchanger.Conditions
         {
             //if that was first condition
             if (leftSide == null)
-                return (bool)rightSide.Run(newPoint);
+                return true;// (bool)rightSide.Run(newPoint);
             switch (operatorType)
             {
                 //check 'and' condition
@@ -141,7 +145,7 @@ namespace SignalGo.DataExchanger.Conditions
             }
         }
 
-        public void Add(IRunnable runnable)
+        public IAddConditionSides Add(IRunnable runnable)
         {
             if (IsComplete)
                 throw new Exception("I found a problem, a condition is completed from right and left side but you are adding another side to this condition, check your query please");
@@ -151,7 +155,9 @@ namespace SignalGo.DataExchanger.Conditions
             {
                 RightSideCondition = runnable;
                 IsComplete = true;
+                return Parent;
             }
+            return this;
         }
 
         public void ChangeOperatorType(OperatorType operatorType)

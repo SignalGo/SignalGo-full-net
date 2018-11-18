@@ -24,7 +24,9 @@ namespace SignalGo.DataExchanger.Conditions
         /// <returns></returns>
         public object Run(object newPoint)
         {
-            throw new NotSupportedException();
+            var first = PublicVariables.First();
+            PublicVariables[first.Key] = newPoint;
+            return WhereInfo.Run(newPoint);
         }
     }
 }

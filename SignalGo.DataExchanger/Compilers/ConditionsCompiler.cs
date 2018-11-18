@@ -1,7 +1,9 @@
 ﻿using SignalGo.DataExchanger.Conditions;
 using SignalGo.DataExchanger.Helpers;
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace SignalGo.DataExchanger.Compilers
 {
@@ -41,9 +43,35 @@ namespace SignalGo.DataExchanger.Compilers
 
         public object Run(object obj)
         {
-            return VariableInfo.Run(obj);
+            if (obj is IEnumerable)
+                return GenerateArrayObject(obj);
+            else
+                return VariableInfo.Run(obj);
         }
 
+        public object Run<T>(object obj)
+        {
+            if (obj is IEnumerable)
+                return GenerateArrayObject((IEnumerable<T>)obj);
+            else
+                return (T)VariableInfo.Run(obj);
+        }
+
+        /// <summary>
+        /// generate object that is in list
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="selectNode"></param>
+        /// <returns></returns>
+        private object GenerateArrayObject(object data)
+        {
+            return ((IEnumerable)data).Cast<object>().Where(x => (bool)VariableInfo.Run(x));
+        }
+
+        private IEnumerable<T> GenerateArrayObject<T>(IEnumerable<T> data)
+        {
+            return data.Where(x => (bool)VariableInfo.Run(x));
+        }
         /// <summary>
         /// extract full 'var'
         /// </summary>
@@ -150,17 +178,21 @@ namespace SignalGo.DataExchanger.Compilers
                     if (currentChar == '"')
                     {
                         index = i;
-                        ExtractString(selectQuery, ref index, parent);
+                        parent = ExtractString(selectQuery, ref index, parent);
                         i = index;
+                        foundVariableStep = 2;
+                        concat = "";
                     }
                     else
-                        CheckVariable(currentChar);
+                        CheckVariable(currentChar, ref i);
                 }
                 //find operator
                 else if (foundVariableStep == 2)
                 {
-                    if (OperatorInfo.SupportedOperators.TryGetValue(concat.ToLower(), out OperatorType currentOperator))
+                    if (OperatorInfo.SupportedOperators.TryGetValue(concat.Trim().ToLower(), out OperatorType currentOperator))
                     {
+                        if (OperatorInfo.OperatorStartChars.Contains(selectQuery[i + 1]))
+                            continue;
                         parent.ChangeOperatorType(currentOperator);
                         //OperatorKey findEmpty = parent.WhereInfo.Operators.FirstOrDefault(x => x.OperatorType == OperatorType.None);
                         foundVariableStep = 1;
@@ -178,23 +210,32 @@ namespace SignalGo.DataExchanger.Compilers
                 }
             }
 
-            void CheckVariable(char currentChar)
+            void CheckVariable(char currentChar, ref int i)
             {
                 string trim = concat.Trim();
                 //step 1 of left side complete
                 if (trim.Length > 0)
                 {
-                    if (StringHelper.IsWhiteSpaceCharacter(currentChar))
+                    bool isFindingOperator = OperatorInfo.OperatorStartChars.Contains(currentChar);
+                    if (StringHelper.IsWhiteSpaceCharacter(currentChar) || isFindingOperator)
                     {
                         variableName = trim;
                         concat = "";
                         canSkip = true;
+                        //if there was no space this will fix that
+                        //example user.name="ali" there is no space like user.name = "ali"
+                        if (isFindingOperator)
+                        {
+                            variableName = variableName.Trim(OperatorInfo.OperatorStartChars);
+                            i--;
+                        }
                         if (foundVariableStep == 1)
                         {
                             //calculate left side
-                            CalculateSide(variableName, parent);
+                            parent = CalculateSide(variableName, parent);
                             foundVariableStep++;
                         }
+                        
                     }
                     //variable is method
                     //that is method so find method name and data
@@ -209,7 +250,14 @@ namespace SignalGo.DataExchanger.Compilers
             }
         }
 
-        private void ExtractString(string selectQuery, ref int index, IAddConditionSides parent)
+        /// <summary>
+        /// extract string between two '"'
+        /// </summary>
+        /// <param name="selectQuery"></param>
+        /// <param name="index"></param>
+        /// <param name="parent"></param>
+        /// <returns></returns>
+        private IAddConditionSides ExtractString(string selectQuery, ref int index, IAddConditionSides parent)
         {
             bool isStart = false;
             bool isAfterQuote = false;
@@ -250,7 +298,7 @@ namespace SignalGo.DataExchanger.Compilers
                 }
             }
             index = i;
-            CalculateSide(concat, parent, true);
+            return CalculateSide(concat, parent, true);
         }
         /// <summary>
         /// after finished to read a side need to calculate
@@ -259,7 +307,7 @@ namespace SignalGo.DataExchanger.Compilers
         /// <param name="data"></param>
         /// <param name="parent"></param>
         /// <param name="isString"></param>
-        private void CalculateSide(string data, IAddConditionSides parent, bool isString = false)
+        private IAddConditionSides CalculateSide(string data, IAddConditionSides parent, bool isString = false)
         {
             IRunnable sideValue = null;
             if (isString)
@@ -268,7 +316,7 @@ namespace SignalGo.DataExchanger.Compilers
             {
                 sideValue = new PropertyInfo() { PropertyPath = data, PublicVariables = parent.PublicVariables };
             }
-            parent.Add(sideValue);
+            return parent.Add(sideValue);
         }
     }
 }
