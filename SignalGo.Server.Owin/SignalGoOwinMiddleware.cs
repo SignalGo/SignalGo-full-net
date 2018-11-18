@@ -1,4 +1,5 @@
-﻿using Microsoft.Owin;
+﻿#if (!NETSTANDARD)
+using Microsoft.Owin;
 using SignalGo.Server.ServiceManager;
 using SignalGo.Server.ServiceManager.Providers;
 using SignalGo.Shared.IO;
@@ -93,3 +94,4 @@ namespace SignalGo.Server.Owin
         }
     }
 }
+#endif

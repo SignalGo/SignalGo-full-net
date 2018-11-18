@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿#if (NETSTANDARD)
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;
 using SignalGo.Server.ServiceManager;
 using SignalGo.Server.ServiceManager.Providers;
@@ -11,12 +12,12 @@ using System.Threading.Tasks;
 
 namespace SignalGo.Server.Owin
 {
-    public class SignalGoHttpMiddleware
+    public class SignalGoNetCoreMiddleware
     {
         private ServerBase CurrentServerBase { get; set; }
         private readonly RequestDelegate _next;
 
-        public SignalGoHttpMiddleware(ServerBase serverBase, RequestDelegate next)
+        public SignalGoNetCoreMiddleware(ServerBase serverBase, RequestDelegate next)
         {
             CurrentServerBase = serverBase;
             _next = next;
@@ -196,3 +197,4 @@ namespace SignalGo.Server.Owin
         }
     }
 }
+#endif

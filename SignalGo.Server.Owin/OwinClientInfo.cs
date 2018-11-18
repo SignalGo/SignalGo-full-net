@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+#if (!NETSTANDARD)
 using Microsoft.Owin;
+#endif
 using SignalGo.Server.Models;
 
 namespace SignalGo.Server.Owin
@@ -18,9 +20,9 @@ namespace SignalGo.Server.Owin
                 return true;
             }
         }
-
+#if (!NETSTANDARD)
         public IOwinContext OwinContext { get; set; }
-
+#endif
         public override IDictionary<string, string[]> ResponseHeaders { get; set; }
         public override IDictionary<string, string[]> RequestHeaders { get; set; }
 
