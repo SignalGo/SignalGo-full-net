@@ -244,6 +244,7 @@ namespace SignalGo.DataExchanger.Compilers
                             parent = CalculateSide(variableName, parent);
                             foundVariableStep++;
                             canSkip = true;
+                            variableName = "";
                         }
 
                     }
