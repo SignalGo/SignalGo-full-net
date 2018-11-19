@@ -12,7 +12,7 @@ namespace SignalGo.DataExchanger.Conditions
     public class ValueInfo : IRunnable
     {
         public Dictionary<string, object> PublicVariables { get; set; }
-        public string Value { get; set; }
+        public object Value { get; set; }
         public object Run(object newPoint)
         {
             return Value;

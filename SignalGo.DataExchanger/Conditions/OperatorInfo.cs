@@ -98,51 +98,73 @@ namespace SignalGo.DataExchanger.Conditions
             //if that was first condition
             if (leftSide == null)
                 return true;// (bool)rightSide.Run(newPoint);
-            switch (operatorType)
+            return Compare(newPoint, leftSide.Run(newPoint), rightSide, operatorType);
+        }
+
+        public static bool Compare(object newPoint, object lastCheckValue, IRunnable rightSide, OperatorType operatorType)
+        {
+            try
             {
-                //check 'and' condition
-                case OperatorType.And:
-                    {
-                        return (bool)leftSide.Run(newPoint) && (bool)rightSide.Run(newPoint);
-                    }
-                //check 'or' condition
-                case OperatorType.Or:
-                    {
-                        return (bool)leftSide.Run(newPoint) || (bool)rightSide.Run(newPoint);
-                    }
-                case OperatorType.Equal:
-                    {
-                        return Equals(leftSide.Run(newPoint), rightSide.Run(newPoint));
-                    }
-                case OperatorType.NotEqual:
-                    {
-                        return !Equals(leftSide.Run(newPoint), rightSide.Run(newPoint));
-                    }
-                case OperatorType.GreaterThan:
-                    {
-                        IComparable leftSideCompare = (IComparable)leftSide.Run(newPoint);
-                        return leftSideCompare.CompareTo(rightSide.Run(newPoint)) == -1;
-                    }
-                case OperatorType.LessThan:
-                    {
-                        IComparable leftSideCompare = (IComparable)leftSide.Run(newPoint);
-                        return leftSideCompare.CompareTo(rightSide.Run(newPoint)) == 1;
-                    }
-                case OperatorType.GreaterThanEqual:
-                    {
-                        IComparable leftSideCompare = (IComparable)leftSide.Run(newPoint);
-                        int result = leftSideCompare.CompareTo(rightSide.Run(newPoint));
-                        return result <= 0;
-                    }
-                case OperatorType.LessThanEqual:
-                    {
-                        IComparable leftSideCompare = (IComparable)leftSide.Run(newPoint);
-                        int result = leftSideCompare.CompareTo(rightSide.Run(newPoint));
-                        return result >= 0;
-                    }
-                default:
-                    throw new Exception($"I cannot support {operatorType} operator");
+                //if that was first condition
+                if (lastCheckValue == null)
+                    return true;// (bool)rightSide.Run(newPoint);
+                switch (operatorType)
+                {
+                    //check 'and' condition
+                    case OperatorType.And:
+                        {
+                            return (bool)lastCheckValue && (bool)rightSide.Run(newPoint);
+                        }
+                    //check 'or' condition
+                    case OperatorType.Or:
+                        {
+                            return (bool)lastCheckValue || (bool)rightSide.Run(newPoint);
+                        }
+                    case OperatorType.Equal:
+                        {
+                            return Equals(lastCheckValue, ConvertType(lastCheckValue.GetType(), rightSide.Run(newPoint)));
+                        }
+                    case OperatorType.NotEqual:
+                        {
+                            return !Equals(lastCheckValue, ConvertType(lastCheckValue.GetType(), rightSide.Run(newPoint)));
+                        }
+                    case OperatorType.GreaterThan:
+                        {
+                            IComparable leftSideCompare = (IComparable)lastCheckValue;
+                            return leftSideCompare.CompareTo(ConvertType(lastCheckValue.GetType(), rightSide.Run(newPoint))) == 1;
+                        }
+                    case OperatorType.LessThan:
+                        {
+                            IComparable leftSideCompare = (IComparable)lastCheckValue;
+                            return leftSideCompare.CompareTo(ConvertType(lastCheckValue.GetType(), rightSide.Run(newPoint))) == -1;
+                        }
+                    case OperatorType.GreaterThanEqual:
+                        {
+                            IComparable leftSideCompare = (IComparable)lastCheckValue;
+                            int result = leftSideCompare.CompareTo(ConvertType(lastCheckValue.GetType(), rightSide.Run(newPoint)));
+                            return result >= 0;
+                        }
+                    case OperatorType.LessThanEqual:
+                        {
+                            IComparable leftSideCompare = (IComparable)lastCheckValue;
+                            int result = leftSideCompare.CompareTo(ConvertType(lastCheckValue.GetType(), rightSide.Run(newPoint)));
+                            return result <= 0;
+                        }
+                    default:
+                        throw new Exception($"I cannot support {operatorType} operator");
+                }
             }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        static object ConvertType(Type type, object newValue)
+        {
+            if (newValue.GetType() != type)
+                return  Convert.ChangeType(newValue, type);
+            return newValue;
         }
 
         public IAddConditionSides Add(IRunnable runnable)
@@ -158,6 +180,11 @@ namespace SignalGo.DataExchanger.Conditions
                 return Parent;
             }
             return this;
+        }
+
+        public IAddConditionSides Add()
+        {
+            throw new NotSupportedException();
         }
 
         public void ChangeOperatorType(OperatorType operatorType)

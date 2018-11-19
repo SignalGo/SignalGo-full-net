@@ -71,7 +71,16 @@ namespace SignalGo.Server.ServiceManager.Providers
                         Guid = guid
                     };
                     if (!serverBase.RegisteredServiceTypes.TryGetValue(serviceName, out serviceType))
-                        throw new Exception($"{client.IPAddress} {client.ClientId} Service {serviceName} not found");
+                    {
+                        if (!serverBase.RegisteredServiceTypes.TryGetValue("", out serviceType))
+                            throw new Exception($"{client.IPAddress} {client.ClientId} Service {serviceName} not found");
+                        else
+                        {
+                            parameters = new Shared.Models.ParameterInfo[] { new Shared.Models.ParameterInfo() { Value=methodName } };
+                            methodName = serviceName;
+                            serviceName = "";
+                        }
+                    }
 
                     service = await GetInstanceOfService(client, serviceName, serviceType, serverBase);
                     if (service == null)

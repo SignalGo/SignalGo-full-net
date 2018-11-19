@@ -112,7 +112,7 @@ namespace SignalGo.DataExchanger.Compilers
                         VariableInfo.PublicVariables.Add(variableName, null);
                         concat = "";
                         index = i + 1;
-                        ExtractWhere(selectQuery, ref index, parent);
+                        ExtractInside(selectQuery, "where", '{', '}', ref index, parent);
                         break;
                     }
                 }
@@ -147,10 +147,12 @@ namespace SignalGo.DataExchanger.Compilers
         /// <param name="selectQuery"></param>
         /// <param name="index"></param>
         /// <param name="parent"></param>
-        private void ExtractWhere(string selectQuery, ref int index, IAddConditionSides parent)
+        private void ExtractInside(string selectQuery, string breakString, char startChar, char breakChar, ref int index, IAddConditionSides parent)
         {
             //find variable with 'var' word
             byte foundVariableStep = 0;
+            if (string.IsNullOrEmpty(breakString))
+                foundVariableStep = 1;
             bool canSkip = true;
             //variable name that found after 'var'
             string variableName = "";
@@ -170,9 +172,14 @@ namespace SignalGo.DataExchanger.Compilers
                         canSkip = false;
                 }
                 concat += currentChar;
-                if (currentChar == '}')
+                if (currentChar == breakChar)
+                {
+                    concat = concat.Trim('}');
+                    CheckVariable(currentChar, ref i, ref index);
+                    index = i;
                     break;
-                //find left side
+                }
+                //find a side
                 if (foundVariableStep == 1)
                 {
                     if (currentChar == '"')
@@ -182,9 +189,11 @@ namespace SignalGo.DataExchanger.Compilers
                         i = index;
                         foundVariableStep = 2;
                         concat = "";
+                        variableName = "";
+                        canSkip = true;
                     }
                     else
-                        CheckVariable(currentChar, ref i);
+                        CheckVariable(currentChar, ref i, ref index);
                 }
                 //find operator
                 else if (foundVariableStep == 2)
@@ -202,7 +211,7 @@ namespace SignalGo.DataExchanger.Compilers
                     else if (concat.Length > 3)
                         throw new Exception($"I cannot found operator,I try but found '{concat}' are you sure you don't missed?");
                 }
-                else if (concat.Equals("where", StringComparison.OrdinalIgnoreCase))
+                else if (concat.Equals(breakString, StringComparison.OrdinalIgnoreCase))
                 {
                     concat = "";
                     canSkip = true;
@@ -210,16 +219,16 @@ namespace SignalGo.DataExchanger.Compilers
                 }
             }
 
-            void CheckVariable(char currentChar, ref int i)
+            void CheckVariable(char currentChar, ref int i, ref int index2)
             {
                 string trim = concat.Trim();
                 //step 1 of left side complete
                 if (trim.Length > 0)
                 {
                     bool isFindingOperator = OperatorInfo.OperatorStartChars.Contains(currentChar);
-                    if (StringHelper.IsWhiteSpaceCharacter(currentChar) || isFindingOperator)
+                    if (StringHelper.IsWhiteSpaceCharacter(currentChar) || isFindingOperator || currentChar == breakChar)
                     {
-                        variableName = trim;
+                        variableName = trim.Trim(breakChar);
                         concat = "";
                         canSkip = true;
                         //if there was no space this will fix that
@@ -234,17 +243,30 @@ namespace SignalGo.DataExchanger.Compilers
                             //calculate left side
                             parent = CalculateSide(variableName, parent);
                             foundVariableStep++;
+                            canSkip = true;
                         }
-                        
+
                     }
                     //variable is method
                     //that is method so find method name and data
                     else if (currentChar == '(')
                     {
-                        //method name
-                        variableName = trim.Trim('(').ToLower();
-                        if (!SupportedMethods.ContainsKey(variableName))
-                            throw new Exception($"I cannot find method '{variableName}' are you sure you wrote true?");
+                        if (string.IsNullOrEmpty(variableName))
+                        {
+                            concat = "";
+                            index2 = i + 1;
+                            ExtractInside(selectQuery, "", '(', ')', ref index2, parent.Add());
+                            i = index2;
+                            foundVariableStep = 2;
+                            canSkip = true;
+                        }
+                        else
+                        {
+                            //method name
+                            variableName = trim.Trim('(').ToLower();
+                            if (!SupportedMethods.ContainsKey(variableName))
+                                throw new Exception($"I cannot find method '{variableName}' are you sure you wrote true?");
+                        }
                     }
                 }
             }
@@ -300,6 +322,50 @@ namespace SignalGo.DataExchanger.Compilers
             index = i;
             return CalculateSide(concat, parent, true);
         }
+
+        //private void ExtractParentheses(string selectQuery, ref int index, IAddConditionSides parent)
+        //{
+        //    bool isStart = false;
+        //    bool isAfterQuote = false;
+        //    string concat = "";
+        //    //calculate all of char after select query
+        //    int i = index;
+        //    for (; i < selectQuery.Length; i++)
+        //    {
+        //        //current char
+        //        char currentChar = selectQuery[i];
+        //        if (isStart)
+        //        {
+        //            if (currentChar == '"')
+        //            {
+        //                //before this was '"'
+        //                if (isAfterQuote)
+        //                {
+        //                    isAfterQuote = false;
+        //                    concat += currentChar;
+        //                }
+        //                //is '"' after '"'
+        //                else if (selectQuery[i + 1] == '"')
+        //                {//}
+        //                    isAfterQuote = true;
+        //                    concat += currentChar;
+        //                }
+        //                else
+        //                    break;
+        //            }
+        //            else
+        //            {
+        //                concat += currentChar;
+        //            }
+        //        }
+        //        else if (currentChar == '"')
+        //        {
+        //            isStart = true;
+        //        }
+        //    }
+        //    index = i;
+
+
         /// <summary>
         /// after finished to read a side need to calculate
         /// sides are left and right of an operator like '=' '>' '>=' etc
@@ -310,7 +376,7 @@ namespace SignalGo.DataExchanger.Compilers
         private IAddConditionSides CalculateSide(string data, IAddConditionSides parent, bool isString = false)
         {
             IRunnable sideValue = null;
-            if (isString)
+            if (isString || double.TryParse(data, out double newData))
                 sideValue = new ValueInfo() { Value = data, PublicVariables = parent.PublicVariables };
             else
             {

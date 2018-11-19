@@ -96,15 +96,16 @@ var user
 	}
 }
 ";
-                    string query3 = @"select{name family posts{title articles{author}date news{newsName}}files{id name}} var user { where user.name = ""ali"" and user.family = ""yousefi"" }";
+                    string query3 = @"select{name family posts{title articles{author}date news{newsName}}files{id name}}var user{where user.name=""ali"" and(user.family=""yousefi""and user.name=""reza"")or user.posts.count>1}";
+                    string query4 = @"select{name family posts{title articles{author}date news{newsName}}files{id name}}var user{where user.name=""ali""and (user.posts.count<=1)}";
                     SelectCompiler selectCompiler = new SelectCompiler();
-                    string anotherResult = selectCompiler.Compile(query3);
+                    string anotherResult = selectCompiler.Compile(query4);
                     ConditionsCompiler conditionsCompiler = new ConditionsCompiler();
                     conditionsCompiler.Compile(anotherResult);
                     var main = GetUsersEx();
                     var toComiple = GetUsersEx();
 
-                    object result = selectCompiler.Run(toComiple);
+                    object result = selectCompiler.Run(toComiple); 
                     IEnumerable<UserEx> resultWheres = (IEnumerable<UserEx>)conditionsCompiler.Run<UserEx>(toComiple);
                     var realData = resultWheres.ToList();
                 }
