@@ -76,12 +76,17 @@ namespace SignalGo.Server.ServiceManager.Providers
                             throw new Exception($"{client.IPAddress} {client.ClientId} Service {serviceName} not found");
                         else
                         {
-                            parameters = new Shared.Models.ParameterInfo[] { new Shared.Models.ParameterInfo() { Value=methodName } };
+                            if (parameters == null || parameters.Length == 0)
+                                parameters = new Shared.Models.ParameterInfo[] { new Shared.Models.ParameterInfo() { Value = methodName } };
                             methodName = serviceName;
                             serviceName = "";
+                            methodName = methodName.Split('.').FirstOrDefault();
                         }
                     }
-
+                    else if (string.IsNullOrEmpty(serviceName))
+                    {
+                        methodName = methodName.Split('.').FirstOrDefault();
+                    }
                     service = await GetInstanceOfService(client, serviceName, serviceType, serverBase);
                     if (service == null)
                         throw new Exception($"{client.IPAddress} {client.ClientId} service {serviceName} not found");
@@ -147,6 +152,8 @@ namespace SignalGo.Server.ServiceManager.Providers
 
 
                     string keyParameterValue = null;
+                    if (parameters == null)
+                        parameters = new Shared.Models.ParameterInfo[0];
                     List<object> parametersValues = FixParametersCount(taskId, service, method, parameters.ToList(), serverBase, client, allMethods, customDataExchanger, jsonParameters, out List<BaseValidationRuleInfoAttribute> validationErrors, ref keyParameterValue);
 
                     if (validationErrors != null && validationErrors.Count > 0)
@@ -471,6 +478,7 @@ namespace SignalGo.Server.ServiceManager.Providers
         /// <returns></returns>
         private static List<object> FixParametersCount(int taskId, object service, MethodInfo method, List<SignalGo.Shared.Models.ParameterInfo> parameters, ServerBase serverBase, ClientInfo client, IEnumerable<MethodInfo> allMethods, List<CustomDataExchangerAttribute> customDataExchanger, string jsonParameters, out List<BaseValidationRuleInfoAttribute> validationErrors, ref string keyParameterValue)
         {
+
             List<object> parametersValues = new List<object>();
             System.Reflection.ParameterInfo[] methodParameters = method.GetParameters();
             Dictionary<string, object> parametersKeyValues = new Dictionary<string, object>();
