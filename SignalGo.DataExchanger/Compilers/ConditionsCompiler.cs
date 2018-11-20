@@ -1,5 +1,6 @@
 ﻿using SignalGo.DataExchanger.Conditions;
 using SignalGo.DataExchanger.Helpers;
+using SignalGo.DataExchanger.Methods.Query;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -15,7 +16,10 @@ namespace SignalGo.DataExchanger.Compilers
         /// <summary>
         /// all of supported methods like 'count' 'sum' etc
         /// </summary>
-        private Dictionary<string, IRunnable> SupportedMethods { get; set; } = new Dictionary<string, IRunnable>();
+        private Dictionary<string, IAddConditionSides> SupportedMethods { get; set; } = new Dictionary<string, IAddConditionSides>()
+        {
+            { "count" , new CountMethodInfo() }
+        };
         /// <summary>
         /// base variable on compiler 
         /// </summary>
@@ -166,7 +170,7 @@ namespace SignalGo.DataExchanger.Compilers
                 if (canSkip)
                 {
                     //skip white space chars
-                    if (isWhiteSpaceChar || (foundVariableStep == 0 && currentChar == '{'))
+                    if (isWhiteSpaceChar || (foundVariableStep == 0 && currentChar == startChar))
                         continue;
                     else
                         canSkip = false;
@@ -198,7 +202,9 @@ namespace SignalGo.DataExchanger.Compilers
                 //find operator
                 else if (foundVariableStep == 2)
                 {
-                    if (OperatorInfo.SupportedOperators.TryGetValue(concat.Trim().ToLower(), out OperatorType currentOperator))
+                    string trim = concat.Trim().ToLower();
+                    //now this is a method
+                    if (OperatorInfo.SupportedOperators.TryGetValue(trim, out OperatorType currentOperator))
                     {
                         if (OperatorInfo.OperatorStartChars.Contains(selectQuery[i + 1]))
                             continue;
@@ -226,9 +232,44 @@ namespace SignalGo.DataExchanger.Compilers
                 if (trim.Length > 0)
                 {
                     bool isFindingOperator = OperatorInfo.OperatorStartChars.Contains(currentChar);
-                    if (StringHelper.IsWhiteSpaceCharacter(currentChar) || isFindingOperator || currentChar == breakChar)
+                    int findNextP = CheckFirstCharacterNoWitheSpace(selectQuery, i + 1, '(');
+                    if (currentChar == '(' || findNextP >= 0)
                     {
-                        variableName = trim.Trim(breakChar);
+                        if (string.IsNullOrEmpty(variableName))
+                        {
+                            IAddConditionSides addParent = null;
+                            //check if variable name is nuot null so its a method
+                            //else its just Parentheses
+                            if (!string.IsNullOrEmpty(trim.Trim('(')))
+                            {
+                                //method name
+                                variableName = trim.Trim('(').ToLower();
+                                if (!SupportedMethods.TryGetValue(variableName, out IAddConditionSides addConditionSides))
+                                    throw new Exception($"I cannot find method '{variableName}' are you sure you wrote true?");
+                                else
+                                {
+                                    Tuple<IAddConditionSides, IAddConditionSides> value = addConditionSides.AddDouble(parent);
+                                    parent = value.Item1;
+                                    addParent = value.Item2;
+                                }
+                                variableName = "";
+                            }
+                            else
+                                addParent = parent.Add();
+                            concat = "";
+                            if (findNextP >= 0)
+                                index2 = findNextP + 1;
+                            else
+                                index2 = i + 1;
+                            ExtractInside(selectQuery, null, '(', ')', ref index2, addParent);
+                            i = index2;
+                            foundVariableStep = 2;
+                            canSkip = true;
+                        }
+                    }
+                    else if (StringHelper.IsWhiteSpaceCharacter(currentChar) || isFindingOperator || currentChar == breakChar)
+                    {
+                        variableName = trim.Trim().Trim(breakChar).Trim();
                         concat = "";
                         canSkip = true;
                         //if there was no space this will fix that
@@ -246,31 +287,36 @@ namespace SignalGo.DataExchanger.Compilers
                             canSkip = true;
                             variableName = "";
                         }
-
                     }
                     //variable is method
                     //that is method so find method name and data
-                    else if (currentChar == '(')
-                    {
-                        if (string.IsNullOrEmpty(variableName))
-                        {
-                            concat = "";
-                            index2 = i + 1;
-                            ExtractInside(selectQuery, "", '(', ')', ref index2, parent.Add());
-                            i = index2;
-                            foundVariableStep = 2;
-                            canSkip = true;
-                        }
-                        else
-                        {
-                            //method name
-                            variableName = trim.Trim('(').ToLower();
-                            if (!SupportedMethods.ContainsKey(variableName))
-                                throw new Exception($"I cannot find method '{variableName}' are you sure you wrote true?");
-                        }
-                    }
+                    //or is just inside of Parentheses
+
                 }
             }
+        }
+        /// <summary>
+        /// check a character after you want to check
+        /// for example we have this 'count      ('  i have to find last real char after ' ' to check if that is '(' because that will be a method
+        /// </summary>
+        /// <param name="query"></param>
+        /// <param name="index"></param>
+        /// <param name="check"></param>
+        /// <returns></returns>
+        private int CheckFirstCharacterNoWitheSpace(string query, int index, char check)
+        {
+            for (int i = index; i < query.Length; i++)
+            {
+                char currentChar = query[i];
+                bool isWhiteSpaceChar = StringHelper.IsWhiteSpaceCharacter(currentChar);
+                if (isWhiteSpaceChar)
+                    continue;
+                else if (currentChar == check)
+                    return i;
+                else
+                    return -1;
+            }
+            return -1;
         }
 
         /// <summary>
@@ -323,48 +369,6 @@ namespace SignalGo.DataExchanger.Compilers
             index = i;
             return CalculateSide(concat, parent, true);
         }
-
-        //private void ExtractParentheses(string selectQuery, ref int index, IAddConditionSides parent)
-        //{
-        //    bool isStart = false;
-        //    bool isAfterQuote = false;
-        //    string concat = "";
-        //    //calculate all of char after select query
-        //    int i = index;
-        //    for (; i < selectQuery.Length; i++)
-        //    {
-        //        //current char
-        //        char currentChar = selectQuery[i];
-        //        if (isStart)
-        //        {
-        //            if (currentChar == '"')
-        //            {
-        //                //before this was '"'
-        //                if (isAfterQuote)
-        //                {
-        //                    isAfterQuote = false;
-        //                    concat += currentChar;
-        //                }
-        //                //is '"' after '"'
-        //                else if (selectQuery[i + 1] == '"')
-        //                {//}
-        //                    isAfterQuote = true;
-        //                    concat += currentChar;
-        //                }
-        //                else
-        //                    break;
-        //            }
-        //            else
-        //            {
-        //                concat += currentChar;
-        //            }
-        //        }
-        //        else if (currentChar == '"')
-        //        {
-        //            isStart = true;
-        //        }
-        //    }
-        //    index = i;
 
 
         /// <summary>

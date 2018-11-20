@@ -105,49 +105,55 @@ namespace SignalGo.DataExchanger.Conditions
         {
             try
             {
+                if (rightSide == null)
+                    throw new Exception("I cannot found right side of condition please check if you are using empty parentheses just remove them");
                 //if that was first condition
-                if (lastCheckValue == null)
-                    return true;// (bool)rightSide.Run(newPoint);
+                //if (lastCheckValue == null)
+                //    return true;// (bool)rightSide.Run(newPoint);
+                object rightValue = rightSide.Run(newPoint);
+                Type leftType = null;
+                if (lastCheckValue != null)
+                    leftType = lastCheckValue.GetType();
                 switch (operatorType)
                 {
                     //check 'and' condition
                     case OperatorType.And:
                         {
-                            return (bool)lastCheckValue && (bool)rightSide.Run(newPoint);
+                            return (bool)lastCheckValue && (bool)rightValue;
                         }
                     //check 'or' condition
                     case OperatorType.Or:
                         {
-                            return (bool)lastCheckValue || (bool)rightSide.Run(newPoint);
+                            return (bool)lastCheckValue || (bool)rightValue;
                         }
                     case OperatorType.Equal:
                         {
-                            return Equals(lastCheckValue, ConvertType(lastCheckValue.GetType(), rightSide.Run(newPoint)));
+                            return Equals(lastCheckValue, ConvertType(leftType, rightValue));
                         }
                     case OperatorType.NotEqual:
                         {
-                            return !Equals(lastCheckValue, ConvertType(lastCheckValue.GetType(), rightSide.Run(newPoint)));
+                            return !Equals(lastCheckValue, ConvertType(leftType, rightValue));
                         }
                     case OperatorType.GreaterThan:
                         {
                             IComparable leftSideCompare = (IComparable)lastCheckValue;
-                            return leftSideCompare.CompareTo(ConvertType(lastCheckValue.GetType(), rightSide.Run(newPoint))) == 1;
+                            return leftSideCompare.CompareTo(ConvertType(leftType, rightValue)) == 1;
                         }
                     case OperatorType.LessThan:
                         {
                             IComparable leftSideCompare = (IComparable)lastCheckValue;
-                            return leftSideCompare.CompareTo(ConvertType(lastCheckValue.GetType(), rightSide.Run(newPoint))) == -1;
+                            return leftSideCompare.CompareTo(ConvertType(leftType, rightValue)) == -1;
                         }
                     case OperatorType.GreaterThanEqual:
                         {
                             IComparable leftSideCompare = (IComparable)lastCheckValue;
-                            int result = leftSideCompare.CompareTo(ConvertType(lastCheckValue.GetType(), rightSide.Run(newPoint)));
+                            int result = leftSideCompare.CompareTo(ConvertType(leftType, rightValue));
                             return result >= 0;
                         }
                     case OperatorType.LessThanEqual:
                         {
                             IComparable leftSideCompare = (IComparable)lastCheckValue;
-                            int result = leftSideCompare.CompareTo(ConvertType(lastCheckValue.GetType(), rightSide.Run(newPoint)));
+                            int result = leftSideCompare.CompareTo(ConvertType(leftType, rightValue));
                             return result <= 0;
                         }
                     default:
@@ -160,13 +166,24 @@ namespace SignalGo.DataExchanger.Conditions
             }
         }
 
-        static object ConvertType(Type type, object newValue)
+        /// <summary>
+        /// convert a type to new type for compare
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="newValue"></param>
+        /// <returns></returns>
+        private static object ConvertType(Type type, object newValue)
         {
-            if (newValue.GetType() != type)
-                return  Convert.ChangeType(newValue, type);
+            if (type != null && newValue.GetType() != type)
+                return Convert.ChangeType(newValue, type);
             return newValue;
         }
 
+        /// <summary>
+        /// add side to operator
+        /// </summary>
+        /// <param name="runnable"></param>
+        /// <returns></returns>
         public IAddConditionSides Add(IRunnable runnable)
         {
             if (IsComplete)
@@ -187,9 +204,23 @@ namespace SignalGo.DataExchanger.Conditions
             throw new NotSupportedException();
         }
 
+        /// <summary>
+        /// change the operator type
+        /// </summary>
+        /// <param name="operatorType"></param>
         public void ChangeOperatorType(OperatorType operatorType)
         {
             Type = operatorType;
+        }
+
+        public IAddConditionSides Add(IAddConditionSides runnable)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Tuple<IAddConditionSides, IAddConditionSides> AddDouble(IAddConditionSides runnable)
+        {
+            throw new NotImplementedException();
         }
     }
 

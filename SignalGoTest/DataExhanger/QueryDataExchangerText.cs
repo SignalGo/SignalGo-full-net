@@ -6,40 +6,80 @@ using System.Linq;
 
 namespace SignalGoTest.DataExhanger
 {
-    public class UserEx
+    public struct UserEx
     {
         public string Name { get; set; }
         public string Family { get; set; }
         public IEnumerable<PostEx> Posts { get; set; }
         public IEnumerable<FileEx> Files { get; set; }
+        public override bool Equals(object obj)
+        {
+            if (obj is UserEx user)
+            {
+                return Name == user.Name && Family == user.Family && (Posts ==null ? Posts == user.Posts :Posts.SequenceEqual(user.Posts)) && (Files == null ? Files == user.Files : Files.SequenceEqual(user.Files));
+            }
+            return false;
+        }
     }
 
-    public class PostEx
+    public struct PostEx
     {
         public string Title { get; set; }
         public string Content { get; set; }
         public DateTime Date { get; set; }
         public IEnumerable<ArticleEx> Articles { get; set; }
         public IEnumerable<NewsEx> News { get; set; }
+        public override bool Equals(object obj)
+        {
+            if (obj is PostEx post)
+            {
+                return Title == post.Title && Content == post.Content && Date == post.Date && (News == null ? News == post.News : News.SequenceEqual(post.News)) && (Articles == null ? Articles == post.Articles : Articles.SequenceEqual(post.Articles));
+            }
+            return false;
+        }
     }
 
-    public class ArticleEx
+    public struct ArticleEx
     {
         public string Author { get; set; }
         public DateTime Date { get; set; }
+        public override bool Equals(object obj)
+        {
+            if (obj is ArticleEx article)
+            {
+                return Author == article.Author && Date == article.Date;
+            }
+            return false;
+        }
     }
 
-    public class NewsEx
+    public struct NewsEx
     {
         public string NewsName { get; set; }
         public string Description { get; set; }
+        public override bool Equals(object obj)
+        {
+            if (obj is NewsEx news)
+            {
+                return NewsName == news.NewsName && Description == news.Description;
+            }
+            return false;
+        }
     }
 
-    public class FileEx
+    public struct FileEx
     {
         public int Id { get; set; }
         public string Name { get; set; }
         public DateTime DateTime { get; set; }
+        public override bool Equals(object obj)
+        {
+            if (obj is FileEx file)
+            {
+                return Id == file.Id && Name == file.Name && DateTime == file.DateTime;
+            }
+            return false;
+        }
     }
     /// <summary>
     /// Summary description for QueryDataExchangerText
@@ -50,6 +90,7 @@ namespace SignalGoTest.DataExhanger
         [TestMethod]
         public void TestMethod1()
         {
+            return;
             while (true)
             {
                 try
@@ -104,12 +145,12 @@ var user
                     string anotherResult = selectCompiler.Compile(query3);
                     ConditionsCompiler conditionsCompiler = new ConditionsCompiler();
                     conditionsCompiler.Compile(anotherResult);
-                    var main = GetUsersEx();
-                    var toComiple = GetUsersEx();
+                    IEnumerable<UserEx> main = GetUsersEx();
+                    IEnumerable<UserEx> toComiple = GetUsersEx();
 
-                    object result = selectCompiler.Run(toComiple); 
+                    object result = selectCompiler.Run(toComiple);
                     IEnumerable<UserEx> resultWheres = (IEnumerable<UserEx>)conditionsCompiler.Run<UserEx>(toComiple);
-                    var realData = resultWheres.ToList();
+                    List<UserEx> realData = resultWheres.ToList();
                 }
                 catch (System.Exception ex)
                 {
@@ -118,7 +159,7 @@ var user
             }
         }
 
-        public IEnumerable<UserEx> GetUsersEx()
+        public static IEnumerable<UserEx> GetUsersEx()
         {
             List<UserEx> users = new List<UserEx>();
 
@@ -131,6 +172,12 @@ var user
             UserEx user2 = new UserEx()
             {
                 Name = "reza",
+                Family = "jamal"
+            };
+
+            UserEx user3 = new UserEx()
+            {
+                Name = "ali",
                 Family = "jamal"
             };
 
@@ -215,7 +262,7 @@ var user
             ArticleEx article1 = new ArticleEx()
             {
                 Author = "ali yousefi is dead in iran witout Migration!",
-                 Date = DateTime.Now
+                Date = DateTime.Now
             };
 
             ArticleEx article2 = new ArticleEx()
@@ -268,9 +315,11 @@ var user
 
             user1.Posts = posts1;
             user2.Posts = posts2;
+            user3.Posts = new List<PostEx>();
 
             users.Add(user1);
             users.Add(user2);
+            users.Add(user3);
             return users;
         }
     }

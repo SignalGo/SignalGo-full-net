@@ -81,6 +81,7 @@
     <Compile Include="AsyncAwaitCalls\AsyncAwaitTest.cs" />
     <Compile Include="Connected Services\SignalGoTestServices\Reference.cs" />
     <Compile Include="DataExhanger\DataExchangerTest.cs" />
+    <Compile Include="DataExhanger\QueryDataExchangerAllTests.cs" />
     <Compile Include="DataExhanger\QueryDataExchangerText.cs" />
     <Compile Include="DataTypes\TestSecurityPermissionsAttribute.cs" />
     <Compile Include="Download\DownloadStreamTest.cs" />

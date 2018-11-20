@@ -63,6 +63,16 @@ namespace SignalGo.DataExchanger.Conditions
             return whereInfo;
         }
 
+        public virtual IAddConditionSides Add(IAddConditionSides runnable)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Tuple<IAddConditionSides, IAddConditionSides> AddDouble(IAddConditionSides runnable)
+        {
+            throw new NotImplementedException();
+        }
+
         public void ChangeOperatorType(OperatorType operatorType)
         {
             OperatorKey findEmpty = Operators.FirstOrDefault(x => x.OperatorType == OperatorType.None);
@@ -71,7 +81,7 @@ namespace SignalGo.DataExchanger.Conditions
             findEmpty.OperatorType = operatorType;
         }
 
-        public object Run(object newPoint)
+        public virtual object Run(object newPoint)
         {
             //periority check of opertators,
             //near will be check first
@@ -85,7 +95,7 @@ namespace SignalGo.DataExchanger.Conditions
                 OperatorType.NotEqual,
                 OperatorType.And,
                 OperatorType.Or,
-                 OperatorType.None
+                OperatorType.None
             };
             List<OperatorKey> operators = Operators.ToList();
             object value = null;

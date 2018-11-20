@@ -9,4 +9,8 @@
     <ProjectReference Include="..\SignalGo.Shared\SignalGo.Shared.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Methods\Math\" />
+  </ItemGroup>
+
 </Project>
