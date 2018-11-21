@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace SignalGo.DataExchanger.Conditions
 {
@@ -41,6 +42,10 @@ namespace SignalGo.DataExchanger.Conditions
         /// <= operator
         /// </summary>
         LessThanEqual = 8,
+        /// <summary>
+        /// sum operator
+        /// </summary>
+        Sum = 9,
     }
 
     /// <summary>
@@ -93,7 +98,7 @@ namespace SignalGo.DataExchanger.Conditions
             return Compare(newPoint, LeftSideCondition, RightSideCondition, Type);
         }
 
-        public static bool Compare(object newPoint, IRunnable leftSide, IRunnable rightSide, OperatorType operatorType)
+        public static object Compare(object newPoint, IRunnable leftSide, IRunnable rightSide, OperatorType operatorType)
         {
             //if that was first condition
             if (leftSide == null)
@@ -101,7 +106,7 @@ namespace SignalGo.DataExchanger.Conditions
             return Compare(newPoint, leftSide.Run(newPoint), rightSide, operatorType);
         }
 
-        public static bool Compare(object newPoint, object lastCheckValue, IRunnable rightSide, OperatorType operatorType)
+        public static object Compare(object newPoint, object lastCheckValue, IRunnable rightSide, OperatorType operatorType)
         {
             try
             {
@@ -172,7 +177,7 @@ namespace SignalGo.DataExchanger.Conditions
         /// <param name="type"></param>
         /// <param name="newValue"></param>
         /// <returns></returns>
-        private static object ConvertType(Type type, object newValue)
+        public static object ConvertType(Type type, object newValue)
         {
             if (type != null && newValue.GetType() != type)
                 return Convert.ChangeType(newValue, type);

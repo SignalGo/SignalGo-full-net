@@ -18,7 +18,8 @@ namespace SignalGo.DataExchanger.Compilers
         /// </summary>
         private Dictionary<string, IAddConditionSides> SupportedMethods { get; set; } = new Dictionary<string, IAddConditionSides>()
         {
-            { "count" , new CountMethodInfo() }
+            { "count" , new CountMethodInfo() },
+            { "sum" , new SumMethodInfo() },
         };
         /// <summary>
         /// base variable on compiler 
@@ -199,23 +200,35 @@ namespace SignalGo.DataExchanger.Compilers
                     else
                         CheckVariable(currentChar, ref i, ref index);
                 }
-                //find operator
+                //find operator and parameter
                 else if (foundVariableStep == 2)
                 {
-                    string trim = concat.Trim().ToLower();
-                    //now this is a method
-                    if (OperatorInfo.SupportedOperators.TryGetValue(trim, out OperatorType currentOperator))
+                    //find next parameter of method
+                    if (currentChar == ',')
                     {
-                        if (OperatorInfo.OperatorStartChars.Contains(selectQuery[i + 1]))
-                            continue;
-                        parent.ChangeOperatorType(currentOperator);
-                        //OperatorKey findEmpty = parent.WhereInfo.Operators.FirstOrDefault(x => x.OperatorType == OperatorType.None);
                         foundVariableStep = 1;
-                        concat = "";
+                        concat = concat.Trim().Trim(',').Trim();
                         canSkip = true;
+                        continue;
                     }
-                    else if (concat.Length > 3)
-                        throw new Exception($"I cannot found operator,I try but found '{concat}' are you sure you don't missed?");
+                    //find operator
+                    else
+                    {
+                        string trim = concat.Trim().ToLower();
+                        //now this is a method
+                        if (OperatorInfo.SupportedOperators.TryGetValue(trim, out OperatorType currentOperator))
+                        {
+                            if (OperatorInfo.OperatorStartChars.Contains(selectQuery[i + 1]))
+                                continue;
+                            parent.ChangeOperatorType(currentOperator);
+                            //OperatorKey findEmpty = parent.WhereInfo.Operators.FirstOrDefault(x => x.OperatorType == OperatorType.None);
+                            foundVariableStep = 1;
+                            concat = "";
+                            canSkip = true;
+                        }
+                        else if (concat.Length > 3)
+                            throw new Exception($"I cannot found operator,I try but found '{concat}' are you sure you don't missed?");
+                    }
                 }
                 else if (concat.Equals(breakString, StringComparison.OrdinalIgnoreCase))
                 {
@@ -269,7 +282,7 @@ namespace SignalGo.DataExchanger.Compilers
                     }
                     else if (StringHelper.IsWhiteSpaceCharacter(currentChar) || isFindingOperator || currentChar == breakChar)
                     {
-                        variableName = trim.Trim().Trim(breakChar).Trim();
+                        variableName = trim.Trim().Trim(breakChar).Trim(')').Trim(',').Trim();
                         concat = "";
                         canSkip = true;
                         //if there was no space this will fix that
@@ -286,6 +299,25 @@ namespace SignalGo.DataExchanger.Compilers
                             foundVariableStep++;
                             canSkip = true;
                             variableName = "";
+                        }
+                    }
+                    else if (currentChar == ',')
+                    {
+                        variableName = trim.Trim().Trim(',').Trim();
+                        if (!string.IsNullOrEmpty(variableName))
+                        {
+                            if (foundVariableStep == 1)
+                            {
+                                //calculate left side
+                                parent = CalculateSide(variableName, parent);
+                                foundVariableStep++;
+                                canSkip = true;
+                                variableName = "";
+                                concat = "";
+                            }
+                            index2 = i;
+                            ExtractInside(selectQuery, null, ',', ')', ref index2, parent);
+                            i = index2 - 1;
                         }
                     }
                     //variable is method
