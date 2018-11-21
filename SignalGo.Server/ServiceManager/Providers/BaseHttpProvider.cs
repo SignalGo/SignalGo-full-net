@@ -307,79 +307,79 @@ namespace SignalGo.Server.ServiceManager.Providers
             MethodInfo method = null;
             try
             {
-                if (!string.IsNullOrEmpty(address) && serverBase.RegisteredServiceTypes.ContainsKey(address))
+                //if (!string.IsNullOrEmpty(address) && serverBase.RegisteredServiceTypes.ContainsKey(address))
+                //{
+                if (multiPartParameter.Count > 0)
                 {
-                    if (multiPartParameter.Count > 0)
+                    foreach (KeyValuePair<string, string> item in multiPartParameter)
                     {
-                        foreach (KeyValuePair<string, string> item in multiPartParameter)
-                        {
-                            values.Add(new Shared.Models.ParameterInfo() { Name = item.Key, Value = item.Value });
-                        }
+                        values.Add(new Shared.Models.ParameterInfo() { Name = item.Key, Value = item.Value });
                     }
-                    else if (isPost && (client.GetRequestHeaderValue("content-type") == "application/json" || client.GetRequestHeaderValue("accept") == "application/json"))
+                }
+                else if (isPost && (client.GetRequestHeaderValue("content-type") == "application/json" || client.GetRequestHeaderValue("accept") == "application/json"))
+                {
+                    bool hasException = false;
+                    try
                     {
-                        bool hasException = false;
-                        try
+                        if (!string.IsNullOrEmpty(content))
                         {
-                            if (!string.IsNullOrEmpty(content))
+                            JObject des = JObject.Parse(content);
+                            foreach (JProperty item in des.Properties())
                             {
-                                JObject des = JObject.Parse(content);
-                                foreach (JProperty item in des.Properties())
-                                {
-                                    JToken value = des.GetValue(item.Name);
-                                    values.Add(new Shared.Models.ParameterInfo() { Name = item.Name, Value = value.ToString() });
-                                }
+                                JToken value = des.GetValue(item.Name);
+                                values.Add(new Shared.Models.ParameterInfo() { Name = item.Name, Value = value.ToString() });
                             }
                         }
-                        catch (Exception ex)
-                        {
-                            hasException = true;
-                            serverBase.AutoLogger.LogError(ex, $"Parse json exception: {parameters} content-Lenth: {client.GetRequestHeaderValue("content-length")} content: {content}");
-                        }
-                        finally
-                        {
-                            if (hasException || parameters != content)
-                                values.AddRange(GetParametersFromGETMethod(parameters));
-                        }
                     }
-                    else
+                    catch (Exception ex)
                     {
-                        parameters = parameters.Trim('&');
-                        if (!string.IsNullOrEmpty(parameters))
-                        {
-                            foreach (string item in parameters.Split(new[] { '&' }))
-                            {
-                                string[] keyValue = item.Split(new[] { '=' }, 2);
-                                values.Add(new Shared.Models.ParameterInfo() { Name = keyValue.Length == 2 ? keyValue[0] : "", Value = Uri.UnescapeDataString(keyValue.Last()) });
-                            }
-                        }
-                        try
-                        {
-                            if (!string.IsNullOrEmpty(content))
-                            {
-                                JObject des = JObject.Parse(content);
-                                foreach (JProperty item in des.Properties())
-                                {
-                                    JToken value = des.GetValue(item.Name);
-                                    values.Add(new Shared.Models.ParameterInfo() { Name = item.Name, Value = value.ToString() });
-                                }
-                            }
-                        }
-                        catch
-                        {
-
-                        }
+                        hasException = true;
+                        serverBase.AutoLogger.LogError(ex, $"Parse json exception: {parameters} content-Lenth: {client.GetRequestHeaderValue("content-length")} content: {content}");
                     }
-
-                    CallMethodResultInfo<OperationContext> result = await CallHttpMethod(client, address, methodName, values, jsonParameters, serverBase, method, data, newLine, null, null);
-                    serviceType = result.ServiceType;
-
+                    finally
+                    {
+                        if (hasException || parameters != content)
+                            values.AddRange(GetParametersFromGETMethod(parameters));
+                    }
                 }
                 else
                 {
-                    CallMethodResultInfo<OperationContext> result = await CallHttpMethod(client, address, methodName, null, null, serverBase, method, data, newLine, null, null);
-                    serviceType = result.ServiceType;
+                    parameters = parameters.Trim('&');
+                    if (!string.IsNullOrEmpty(parameters))
+                    {
+                        foreach (string item in parameters.Split(new[] { '&' }))
+                        {
+                            string[] keyValue = item.Split(new[] { '=' }, 2);
+                            values.Add(new Shared.Models.ParameterInfo() { Name = keyValue.Length == 2 ? keyValue[0] : "", Value = Uri.UnescapeDataString(keyValue.Last()) });
+                        }
+                    }
+                    try
+                    {
+                        if (!string.IsNullOrEmpty(content))
+                        {
+                            JObject des = JObject.Parse(content);
+                            foreach (JProperty item in des.Properties())
+                            {
+                                JToken value = des.GetValue(item.Name);
+                                values.Add(new Shared.Models.ParameterInfo() { Name = item.Name, Value = value.ToString() });
+                            }
+                        }
+                    }
+                    catch
+                    {
+
+                    }
                 }
+
+                CallMethodResultInfo<OperationContext> result = await CallHttpMethod(client, address, methodName, values, jsonParameters, serverBase, method, data, newLine, null, null);
+                serviceType = result.ServiceType;
+
+                //}
+                //else
+                //{
+                //    CallMethodResultInfo<OperationContext> result = await CallHttpMethod(client, address, methodName, null, null, serverBase, method, data, newLine, null, null);
+                //    serviceType = result.ServiceType;
+                //}
             }
             catch (Exception ex)
             {
@@ -606,249 +606,249 @@ namespace SignalGo.Server.ServiceManager.Providers
             string fullAddress = address;
             address = address.Trim('/');
             List<string> lines = address.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries).ToList();
-            if (lines.Count <= 1)
+            //if (lines.Count <= 1)
+            //{
+            //    string msg = newLine + "SignalGo Error: method not found from address: " + address + newLine;
+            //    await SendInternalErrorMessage(msg, serverBase, client, newLine, HttpStatusCode.InternalServerError);
+            //    serverBase.AutoLogger.LogText(msg);
+            //}
+            //else
+            //{
+            string methodName = lines.Last();
+            string parameters = "";
+            if (methodName.Contains("?"))
             {
-                string msg = newLine + "SignalGo Error: method not found from address: " + address + newLine;
-                await SendInternalErrorMessage(msg, serverBase, client, newLine, HttpStatusCode.InternalServerError);
-                serverBase.AutoLogger.LogText(msg);
+                string[] sp = methodName.Split(new[] { '?' }, 2);
+                methodName = sp.First();
+                parameters = sp.Last();
             }
-            else
+            Dictionary<string, string> multiPartParameter = new Dictionary<string, string>();
+
+            int len = int.Parse(client.GetRequestHeaderValue("content-length"));
+            HttpPostedFileInfo fileInfo = null;
+            if (content.Length < len)
             {
-                string methodName = lines.Last();
-                string parameters = "";
-                if (methodName.Contains("?"))
-                {
-                    string[] sp = methodName.Split(new[] { '?' }, 2);
-                    methodName = sp.First();
-                    parameters = sp.Last();
-                }
-                Dictionary<string, string> multiPartParameter = new Dictionary<string, string>();
+                string boundary = client.GetRequestHeaderValue("content-type").Split('=').Last();
+                if (!boundary.Contains("--"))
+                    boundary = null;
+                int fileHeaderCount = 0;
+                Tuple<int, string, string> res = await GetHttpFileFileHeader(client.ClientStream, boundary, len);
+                fileHeaderCount = res.Item1;
+                boundary = res.Item2;
+                string response = res.Item3;
 
-                int len = int.Parse(client.GetRequestHeaderValue("content-length"));
-                HttpPostedFileInfo fileInfo = null;
-                if (content.Length < len)
+                //boundary = boundary.TrimStart('-');
+                string contentType = "";
+                string fileName = "";
+                string name = "";
+                bool findFile = false;
+                string[] lineBreaks = new string[] { boundary.Replace("\"", ""), boundary.Replace("\"", "") + "--", "--" + boundary.Replace("\"", ""), "--" + boundary.Replace("\"", "") + "--" };
+                foreach (string httpData in response.Split(lineBreaks, StringSplitOptions.RemoveEmptyEntries))
                 {
-                    string boundary = client.GetRequestHeaderValue("content-type").Split('=').Last();
-                    if (!boundary.Contains("--"))
-                        boundary = null;
-                    int fileHeaderCount = 0;
-                    Tuple<int, string, string> res = await GetHttpFileFileHeader(client.ClientStream, boundary, len);
-                    fileHeaderCount = res.Item1;
-                    boundary = res.Item2;
-                    string response = res.Item3;
-
-                    //boundary = boundary.TrimStart('-');
-                    string contentType = "";
-                    string fileName = "";
-                    string name = "";
-                    bool findFile = false;
-                    string[] lineBreaks = new string[] { boundary.Replace("\"", ""), boundary.Replace("\"", "") + "--", "--" + boundary.Replace("\"", ""), "--" + boundary.Replace("\"", "") + "--" };
-                    foreach (string httpData in response.Split(lineBreaks, StringSplitOptions.RemoveEmptyEntries))
+                    if (httpData.ToLower().Contains("content-disposition"))
                     {
-                        if (httpData.ToLower().Contains("content-disposition"))
+                        if (httpData.Replace(" ", "").Contains(";filename="))
                         {
-                            if (httpData.Replace(" ", "").Contains(";filename="))
+                            foreach (string header in httpData.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries))
                             {
-                                foreach (string header in httpData.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries))
+                                int index = header.ToLower().IndexOf("content-type: ");
+                                if (index == 0)
                                 {
-                                    int index = header.ToLower().IndexOf("content-type: ");
-                                    if (index == 0)
-                                    {
-                                        int ctypeLen = "content-type: ".Length;
-                                        contentType = header.Substring(ctypeLen, header.Length - ctypeLen);
-                                    }
-                                    else if (header.ToLower().IndexOf("content-disposition:") == 0)
-                                    {
-                                        CustomContentDisposition disp = new CustomContentDisposition(header);
-                                        if (disp.Parameters.ContainsKey("filename"))
-                                            fileName = disp.Parameters["filename"];
-                                        if (disp.Parameters.ContainsKey("name"))
-                                            name = disp.Parameters["name"];
-                                    }
-                                    findFile = true;
+                                    int ctypeLen = "content-type: ".Length;
+                                    contentType = header.Substring(ctypeLen, header.Length - ctypeLen);
                                 }
-                                break;
+                                else if (header.ToLower().IndexOf("content-disposition:") == 0)
+                                {
+                                    CustomContentDisposition disp = new CustomContentDisposition(header);
+                                    if (disp.Parameters.ContainsKey("filename"))
+                                        fileName = disp.Parameters["filename"];
+                                    if (disp.Parameters.ContainsKey("name"))
+                                        name = disp.Parameters["name"];
+                                }
+                                findFile = true;
                             }
-                            else if (httpData.ToLower().Contains("content-disposition"))
+                            break;
+                        }
+                        else if (httpData.ToLower().Contains("content-disposition"))
+                        {
+                            if (httpData.Replace(" ", "").Contains(";name="))
                             {
-                                if (httpData.Replace(" ", "").Contains(";name="))
+                                string[] sp = httpData.Split(new string[] { "\r\n\r\n" }, StringSplitOptions.RemoveEmptyEntries);
+                                string contentHeaders = sp.FirstOrDefault();
+                                string datas = sp.LastOrDefault();
+                                int index = contentHeaders.ToLower().IndexOf("content-disposition");
+                                string header = contentHeaders.Substring(index);
+                                int headLen = httpData.IndexOf("\r\n");
+                                //var headLen = data.IndexOf("\r\n\r\n");
+                                //header = sp.Length > 1 ? datas : data.Substring(index, headLen);
+                                //var byteData = GoStreamReader.ReadBlockSize(client.TcpClient.GetStream(), (ulong)(len - content.Length - fileHeaderCount));
+                                string newData = sp.Length > 1 ? datas : httpData.Substring(headLen + 4);//+ 4 Encoding.UTF8.GetString(byteData);
+                                newData = newData.Trim(Environment.NewLine.ToCharArray());
+                                //var newData = text.Substring(0, text.IndexOf(boundary) - 4);
+                                if (header.ToLower().IndexOf("content-disposition:") == 0)
                                 {
-                                    string[] sp = httpData.Split(new string[] { "\r\n\r\n" }, StringSplitOptions.RemoveEmptyEntries);
-                                    string contentHeaders = sp.FirstOrDefault();
-                                    string datas = sp.LastOrDefault();
-                                    int index = contentHeaders.ToLower().IndexOf("content-disposition");
-                                    string header = contentHeaders.Substring(index);
-                                    int headLen = httpData.IndexOf("\r\n");
-                                    //var headLen = data.IndexOf("\r\n\r\n");
-                                    //header = sp.Length > 1 ? datas : data.Substring(index, headLen);
-                                    //var byteData = GoStreamReader.ReadBlockSize(client.TcpClient.GetStream(), (ulong)(len - content.Length - fileHeaderCount));
-                                    string newData = sp.Length > 1 ? datas : httpData.Substring(headLen + 4);//+ 4 Encoding.UTF8.GetString(byteData);
-                                    newData = newData.Trim(Environment.NewLine.ToCharArray());
-                                    //var newData = text.Substring(0, text.IndexOf(boundary) - 4);
-                                    if (header.ToLower().IndexOf("content-disposition:") == 0)
-                                    {
-                                        CustomContentDisposition disp = new CustomContentDisposition(header.Trim().Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault());
-                                        if (disp.Parameters.ContainsKey("name"))
-                                            name = disp.Parameters["name"];
-                                        //StringBuilder build = new StringBuilder();
-                                        //using (var reader = new StringReader(newData))
-                                        //{
-                                        //    while (true)
-                                        //    {
-                                        //        var line = reader.ReadLine();
-                                        //        if (line == null)
-                                        //            break;
-                                        //        else if (lineBreaks.Contains(line))
-                                        //            continue;
-                                        //        build.AppendLine(line);
-                                        //    }
-                                        //}
-                                        multiPartParameter.Add(name, newData);
-                                    }
+                                    CustomContentDisposition disp = new CustomContentDisposition(header.Trim().Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault());
+                                    if (disp.Parameters.ContainsKey("name"))
+                                        name = disp.Parameters["name"];
+                                    //StringBuilder build = new StringBuilder();
+                                    //using (var reader = new StringReader(newData))
+                                    //{
+                                    //    while (true)
+                                    //    {
+                                    //        var line = reader.ReadLine();
+                                    //        if (line == null)
+                                    //            break;
+                                    //        else if (lineBreaks.Contains(line))
+                                    //            continue;
+                                    //        build.AppendLine(line);
+                                    //    }
+                                    //}
+                                    multiPartParameter.Add(name, newData);
                                 }
-                            }
-                            string[] keyValue = httpData.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
-                            if (keyValue.Length == 2)
-                            {
-                                if (!string.IsNullOrEmpty(parameters))
-                                {
-                                    parameters += "&";
-                                }
-                                CustomContentDisposition disp = new CustomContentDisposition(keyValue[0]);
-                                foreach (KeyValuePair<string, string> prm in disp.Parameters)
-                                {
-                                    parameters += prm.Key;
-                                    parameters += "=" + prm.Value;
-                                }
-
                             }
                         }
-                    }
-                    if (findFile)
-                    {
-                        StreamGo stream = new StreamGo(client.ClientStream);
-                        stream.SetOfStreamLength(len - content.Length - fileHeaderCount, boundary.Length + 12 - 6);// + 6 ; -6 ezafe shode
-                        fileInfo = new HttpPostedFileInfo()
+                        string[] keyValue = httpData.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
+                        if (keyValue.Length == 2)
                         {
-                            Name = name,
-                            ContentLength = stream.Length,
-                            ContentType = contentType,
-                            FileName = fileName,
-                            InputStream = stream
-                        };
+                            if (!string.IsNullOrEmpty(parameters))
+                            {
+                                parameters += "&";
+                            }
+                            CustomContentDisposition disp = new CustomContentDisposition(keyValue[0]);
+                            foreach (KeyValuePair<string, string> prm in disp.Parameters)
+                            {
+                                parameters += prm.Key;
+                                parameters += "=" + prm.Value;
+                            }
+
+                        }
                     }
-
-
-                    //byte[] buffer = new byte[len * 5];
-                    //var readCount = client.TcpClient.Client.Receive(buffer);
-                    //// I dont know why 44 bytes(overplus) always sent
-                    //var postResponse = Encoding.UTF8.GetString(buffer.ToList().GetRange(0, readCount).ToArray());
-                    //content = postResponse;
                 }
-
-
-
-
-                methodName = methodName.ToLower();
-                lines.RemoveAt(lines.Count - 1);
-                address = "";
-                foreach (string item in lines)
+                if (findFile)
                 {
-                    address += item + "/";
+                    StreamGo stream = new StreamGo(client.ClientStream);
+                    stream.SetOfStreamLength(len - content.Length - fileHeaderCount, boundary.Length + 12 - 6);// + 6 ; -6 ezafe shode
+                    fileInfo = new HttpPostedFileInfo()
+                    {
+                        Name = name,
+                        ContentLength = stream.Length,
+                        ContentType = contentType,
+                        FileName = fileName,
+                        InputStream = stream
+                    };
                 }
-                address = address.TrimEnd('/').ToLower();
-                //if (RegisteredHttpServiceTypes.ContainsKey(address))
+
+
+                //byte[] buffer = new byte[len * 5];
+                //var readCount = client.TcpClient.Client.Receive(buffer);
+                //// I dont know why 44 bytes(overplus) always sent
+                //var postResponse = Encoding.UTF8.GetString(buffer.ToList().GetRange(0, readCount).ToArray());
+                //content = postResponse;
+            }
+
+
+
+
+            methodName = methodName.ToLower();
+            lines.RemoveAt(lines.Count - 1);
+            address = "";
+            foreach (string item in lines)
+            {
+                address += item + "/";
+            }
+            address = address.TrimEnd('/').ToLower();
+            //if (RegisteredHttpServiceTypes.ContainsKey(address))
+            //{
+            MethodInfo method = null;
+            string callGuid = Guid.NewGuid().ToString();
+            object serviceInstance = null;
+            Type serviceType = null;
+            string data = null;
+            try
+            {
+                List<Shared.Models.ParameterInfo> values = new List<Shared.Models.ParameterInfo>();
+                string jsonParameters = "";
+                //var methods = (from x in RegisteredHttpServiceTypes[address].GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance) where x.Name.ToLower() == methodName && x.IsPublic && !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_"))) select x).ToList();
+                //if (methods.Count == 0)
                 //{
-                MethodInfo method = null;
-                string callGuid = Guid.NewGuid().ToString();
-                object serviceInstance = null;
-                Type serviceType = null;
-                string data = null;
-                try
-                {
-                    List<Shared.Models.ParameterInfo> values = new List<Shared.Models.ParameterInfo>();
-                    string jsonParameters = "";
-                    //var methods = (from x in RegisteredHttpServiceTypes[address].GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance) where x.Name.ToLower() == methodName && x.IsPublic && !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_"))) select x).ToList();
-                    //if (methods.Count == 0)
-                    //{
-                    //    string data = newLine + "SignalGo Error: Method name not found in method list: " + methodName + newLine;
-                    //    sendInternalErrorMessage(data);
-                    //    serverBase.AutoLogger.LogText(data);
-                    //    return;
-                    //}
-
-                    //List<Tuple<string, string>> values = new List<Tuple<string, string>>();
-                    if (multiPartParameter.Count > 0)
-                    {
-                        foreach (KeyValuePair<string, string> item in multiPartParameter)
-                        {
-                            values.Add(new Shared.Models.ParameterInfo() { Name = item.Key, Value = item.Value });
-                        }
-                    }
-                    else if (client.GetRequestHeaderValue("content-type") == "application/json")
-                    {
-                        jsonParameters = parameters;
-                        JObject des = JObject.Parse(parameters);
-                        foreach (JProperty item in des.Properties())
-                        {
-                            JToken value = des.GetValue(item.Name);
-                            //values.Add(new Tuple<string, string>(item.Name, Uri.UnescapeDataString(value.Value<string>())));
-                            values.Add(new Shared.Models.ParameterInfo() { Name = item.Name, Value = value.ToString() });
-                        }
-                    }
-                    else
-                    {
-                        parameters = parameters.Trim('&');
-                        if (!string.IsNullOrEmpty(parameters))
-                        {
-                            foreach (string item in parameters.Split(new[] { '&' }))
-                            {
-                                string[] keyValue = item.Split(new[] { '=' }, 2);
-                                values.Add(new Shared.Models.ParameterInfo() { Name = keyValue.Length == 2 ? keyValue[0] : "", Value = Uri.UnescapeDataString(keyValue.Last()) });
-                            }
-                        }
-                    }
-
-
-
-                    CallMethodResultInfo<OperationContext> result = await CallHttpMethod(client, address, methodName, values, jsonParameters, serverBase, method, data, newLine, fileInfo, null);
-
-                    serviceType = result.ServiceType;
-                    serviceInstance = result.ServiceInstance;
-                    //valueitems = values.Select(x => x.Item2).ToList();
-                    //MethodsCallHandler.BeginHttpMethodCallAction?.Invoke(client, callGuid, address, method, valueitems);
-
-
-                }
-                catch (Exception ex)
-                {
-                    // exception = ex;
-                    if (serverBase.ErrorHandlingFunction != null)
-                    {
-                        ActionResult result = serverBase.ErrorHandlingFunction(ex, serviceType, method).ToActionResult();
-                        await RunHttpActionResult(client, result, client, serverBase);
-                    }
-                    else
-                    {
-                        data = newLine + ex.ToString() + address + newLine;
-                        await SendInternalErrorMessage(data, serverBase, client, newLine, HttpStatusCode.InternalServerError);
-                    }
-                    if (!(ex is SocketException))
-                        serverBase.AutoLogger.LogError(ex, "RunPostHttpRequestFile");
-                }
-                finally
-                {
-                    //ClientConnectedCallingCount--;
-                    //MethodsCallHandler.EndHttpMethodCallAction?.Invoke(client, callGuid, address, method, valueitems, result, exception);
-                }
-                //}
-                //else
-                //{
-                //    string data = newLine + "SignalGo Error: address not found in signalGo services: " + address + newLine;
+                //    string data = newLine + "SignalGo Error: Method name not found in method list: " + methodName + newLine;
                 //    sendInternalErrorMessage(data);
-                //    AutoLogger.LogText(data);
+                //    serverBase.AutoLogger.LogText(data);
+                //    return;
                 //}
+
+                //List<Tuple<string, string>> values = new List<Tuple<string, string>>();
+                if (multiPartParameter.Count > 0)
+                {
+                    foreach (KeyValuePair<string, string> item in multiPartParameter)
+                    {
+                        values.Add(new Shared.Models.ParameterInfo() { Name = item.Key, Value = item.Value });
+                    }
+                }
+                else if (client.GetRequestHeaderValue("content-type") == "application/json")
+                {
+                    jsonParameters = parameters;
+                    JObject des = JObject.Parse(parameters);
+                    foreach (JProperty item in des.Properties())
+                    {
+                        JToken value = des.GetValue(item.Name);
+                        //values.Add(new Tuple<string, string>(item.Name, Uri.UnescapeDataString(value.Value<string>())));
+                        values.Add(new Shared.Models.ParameterInfo() { Name = item.Name, Value = value.ToString() });
+                    }
+                }
+                else
+                {
+                    parameters = parameters.Trim('&');
+                    if (!string.IsNullOrEmpty(parameters))
+                    {
+                        foreach (string item in parameters.Split(new[] { '&' }))
+                        {
+                            string[] keyValue = item.Split(new[] { '=' }, 2);
+                            values.Add(new Shared.Models.ParameterInfo() { Name = keyValue.Length == 2 ? keyValue[0] : "", Value = Uri.UnescapeDataString(keyValue.Last()) });
+                        }
+                    }
+                }
+
+
+
+                CallMethodResultInfo<OperationContext> result = await CallHttpMethod(client, address, methodName, values, jsonParameters, serverBase, method, data, newLine, fileInfo, null);
+
+                serviceType = result.ServiceType;
+                serviceInstance = result.ServiceInstance;
+                //valueitems = values.Select(x => x.Item2).ToList();
+                //MethodsCallHandler.BeginHttpMethodCallAction?.Invoke(client, callGuid, address, method, valueitems);
+
+
             }
+            catch (Exception ex)
+            {
+                // exception = ex;
+                if (serverBase.ErrorHandlingFunction != null)
+                {
+                    ActionResult result = serverBase.ErrorHandlingFunction(ex, serviceType, method).ToActionResult();
+                    await RunHttpActionResult(client, result, client, serverBase);
+                }
+                else
+                {
+                    data = newLine + ex.ToString() + address + newLine;
+                    await SendInternalErrorMessage(data, serverBase, client, newLine, HttpStatusCode.InternalServerError);
+                }
+                if (!(ex is SocketException))
+                    serverBase.AutoLogger.LogError(ex, "RunPostHttpRequestFile");
+            }
+            finally
+            {
+                //ClientConnectedCallingCount--;
+                //MethodsCallHandler.EndHttpMethodCallAction?.Invoke(client, callGuid, address, method, valueitems, result, exception);
+            }
+            //}
+            //else
+            //{
+            //    string data = newLine + "SignalGo Error: address not found in signalGo services: " + address + newLine;
+            //    sendInternalErrorMessage(data);
+            //    AutoLogger.LogText(data);
+            //}
+            //}
         }
 
 
