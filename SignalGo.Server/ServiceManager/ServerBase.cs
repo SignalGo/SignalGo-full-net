@@ -131,21 +131,46 @@ namespace SignalGo.Server.ServiceManager
         /// <param name="serviceType"></param>
         public void RegisterServerService<T>()
         {
-            RegisterServerService(typeof(T));
+            RegisterServerService(typeof(T), null);
         }
+
+        /// <summary>
+        /// register server sevice with name
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="name"></param>
+        public void RegisterServerService<T>(string name)
+        {
+            name = name.ToLower();
+            RegisterServerService(typeof(T), name);
+        }
+
         /// <summary>
         /// Register server service
         /// </summary>
         /// <param name="serviceType"></param>
-        public void RegisterServerService(Type serviceType)
+        /// <param name="name">custom service name when servie hasn't attribute</param>
+        public void RegisterServerService(Type serviceType, string name = null)
         {
-            ServiceContractAttribute[] services = serviceType.GetServiceContractAttributes();
-            foreach (ServiceContractAttribute service in services)
+            if (serviceType.HasServiceAttribute())
             {
-                string name = service.GetServiceName(false).ToLower();
+                ServiceContractAttribute[] services = serviceType.GetServiceContractAttributes();
+                foreach (ServiceContractAttribute service in services)
+                {
+                    name = service.GetServiceName(false).ToLower();
+                    if (!RegisteredServiceTypes.ContainsKey(name))
+                        RegisteredServiceTypes.TryAdd(name, serviceType);
+                }
+            }
+            else if (!string.IsNullOrEmpty(name))
+            {
                 if (!RegisteredServiceTypes.ContainsKey(name))
                     RegisteredServiceTypes.TryAdd(name, serviceType);
+                else
+                    throw new Exception($"service name {name} exist!");
             }
+            else
+                throw new Exception("service name is null or empty!");
         }
 
         public void RegisterClientService<T>()

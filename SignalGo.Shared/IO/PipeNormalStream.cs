@@ -18,7 +18,7 @@ namespace SignalGo.Shared.IO
         {
             get
             {
-                throw new NotImplementedException();
+                return true;
             }
         }
 
@@ -26,7 +26,7 @@ namespace SignalGo.Shared.IO
         {
             get
             {
-                throw new NotImplementedException();
+                return false;
             }
         }
 
@@ -34,7 +34,7 @@ namespace SignalGo.Shared.IO
         {
             get
             {
-                throw new NotImplementedException();
+                return true;
             }
         }
 

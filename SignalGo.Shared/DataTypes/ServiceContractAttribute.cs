@@ -149,6 +149,11 @@ namespace SignalGo.Shared.DataTypes
             return type.GetCustomAttributes<ServiceContractAttribute>(true).Any(x => x.ServiceType == ServiceType.ServerService);
         }
 
+        public static bool HasServiceAttribute(this Type type)
+        {
+            return type.GetCustomAttributes<ServiceContractAttribute>(true).Count() > 0;
+        }
+
         /// <summary>
         /// check if type is client service
         /// </summary>
@@ -166,7 +171,9 @@ namespace SignalGo.Shared.DataTypes
         /// <returns></returns>
         public static bool IsHttpService(this Type type)
         {
-            return type.GetCustomAttributes<ServiceContractAttribute>(true).Any(x => x.ServiceType == ServiceType.HttpService);
+            var attributes = type.GetCustomAttributes<ServiceContractAttribute>(true);
+            //if attributes.length == 0 that is rest api service
+            return attributes.Any(x => x.ServiceType == ServiceType.HttpService) || attributes.Length == 0;
         }
 
         /// <summary>

@@ -46,8 +46,7 @@ namespace SignalGo.Server.Helpers
                     };
                     result.Services.Add(serviceDetail);
                     List<Type> types = new List<Type>();
-                    if (service.Value.GetCustomAttributes<ServiceContractAttribute>(false).Length > 0)
-                        types.Add(service.Value);
+                    types.Add(service.Value);
                     foreach (Type item in CSCodeInjection.GetListOfTypes(service.Value))
                     {
                         if (item.GetCustomAttributes<ServiceContractAttribute>(false).Length > 0 && !types.Contains(item))
@@ -176,8 +175,7 @@ namespace SignalGo.Server.Helpers
 
                     result.Callbacks.Add(serviceDetail);
                     List<Type> types = new List<Type>();
-                    if (service.Value.GetCustomAttributes<ServiceContractAttribute>(false).Length > 0)
-                        types.Add(service.Value);
+                    types.Add(service.Value);
                     foreach (Type item in CSCodeInjection.GetListOfTypes(service.Value))
                     {
                         if (item.GetCustomAttributes<ServiceContractAttribute>(false).Length > 0 && !types.Contains(item))
@@ -283,7 +281,7 @@ namespace SignalGo.Server.Helpers
                     HttpControllerDetailsInfo controller = new HttpControllerDetailsInfo()
                     {
                         Id = id,
-                        Url = httpServiceType.Value.GetCustomAttributes<ServiceContractAttribute>(true)[0].Name,
+                        Url = httpServiceType.Value.GetCustomAttributes<ServiceContractAttribute>(true).Length > 0 ? httpServiceType.Value.GetCustomAttributes<ServiceContractAttribute>(true)[0].Name : httpServiceType.Key,
                     };
                     id++;
                     result.WebApiDetailsInfo.Id = id;

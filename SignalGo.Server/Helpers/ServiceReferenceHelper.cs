@@ -99,7 +99,11 @@ namespace SignalGo.Server.Helpers
             List<string> generatedServices = new List<string>();
             foreach (KeyValuePair<string, Type> serviceInfo in serverBase.RegisteredServiceTypes)
             {
-                ServiceContractAttribute[] attributes = serviceInfo.Value.GetServiceContractAttributes();
+                ServiceContractAttribute[] attributes = null;
+                if (serviceInfo.Value.HasServiceAttribute())
+                    attributes = serviceInfo.Value.GetServiceContractAttributes();
+                else
+                    attributes = new ServiceContractAttribute[0];
                 if (!generatedServices.Contains(serviceInfo.Key) && attributes.Any(x => x.ServiceType == ServiceType.ServerService && x.GetServiceName(false) == serviceInfo.Key))
                 {
                     generatedServices.Add(serviceInfo.Key);
@@ -120,7 +124,7 @@ namespace SignalGo.Server.Helpers
                     generatedServices.Add(serviceInfo.Key);
                     GenerateServiceClass(serviceInfo.Key, serviceInfo.Value, ClassReferenceType.OneWayLevel, ServiceType.OneWayService);
                 }
-                if (!generatedServices.Contains(serviceInfo.Key) && attributes.Any(x => x.ServiceType == ServiceType.HttpService && x.GetServiceName(false) == serviceInfo.Key))
+                if (!generatedServices.Contains(serviceInfo.Key) && (attributes.Any(x => x.ServiceType == ServiceType.HttpService && x.GetServiceName(false) == serviceInfo.Key) || attributes.Length == 0))
                 {
                     generatedServices.Add(serviceInfo.Key);
                     GenerateServiceClass(serviceInfo.Key, serviceInfo.Value, ClassReferenceType.HttpServiceLevel, ServiceType.HttpService);
@@ -157,6 +161,8 @@ namespace SignalGo.Server.Helpers
             {
                 if (find.GetIsClass())
                     GenerateModelClass(find);
+                else if (find.GetIsInterface())
+                    GenerateModelInterface(find);
                 else if (find.GetIsEnum())
                     GenerateModelEnum(find);
 
@@ -184,11 +190,23 @@ namespace SignalGo.Server.Helpers
                 Type = classReferenceType,
                 NameSpace = type.Namespace
             };
+            List<Type> services = type.GetTypesByAttribute<ServiceContractAttribute>(x => x.ServiceType == serviceTypeEnum).ToList();
+            bool justDeclared = false;
+            if (serviceTypeEnum == ServiceType.HttpService && services.Count == 0)
+            {
+                services = new List<Type>() { type };
+                justDeclared = true;
+            }
 
-            foreach (Type serviceType in type.GetTypesByAttribute<ServiceContractAttribute>(x => x.ServiceType == serviceTypeEnum).ToList())
+            foreach (Type serviceType in services)
             {
                 typeGenerated.Add(serviceType);
-                foreach (MethodInfo methodInfo in serviceType.GetListOfMethodsWithAllOfBases().Where(x => !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_"))) && !x.IsStatic))
+                List<MethodInfo> methods = null; ;
+                if (justDeclared)
+                    methods = serviceType.GetListOfDeclaredMethods().ToList();
+                else
+                    methods = serviceType.GetListOfMethodsWithAllOfBases();
+                foreach (MethodInfo methodInfo in methods.Where(x => !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_"))) && !x.IsStatic))
                 {
                     GenerateMethod(methodInfo, classReferenceInfo);
                     methodGenerated.Add(methodInfo);
@@ -207,8 +225,11 @@ namespace SignalGo.Server.Helpers
                 Type = ClassReferenceType.HttpServiceLevel,
                 NameSpace = type.Namespace
             };
+            List<Type> services = type.GetTypesByAttribute<ServiceContractAttribute>(x => x.ServiceType == ServiceType.HttpService).ToList();
+            if (services.Count == 0)
+                services = new List<Type>() { type };
 
-            foreach (Type serviceType in type.GetTypesByAttribute<ServiceContractAttribute>(x => x.ServiceType == ServiceType.HttpService).ToList())
+            foreach (Type serviceType in services)
             {
                 typeGenerated.Add(serviceType);
                 foreach (MethodInfo methodInfo in serviceType.GetListOfDeclaredMethods().Where(x => !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_"))) && !x.IsStatic))
@@ -239,7 +260,8 @@ namespace SignalGo.Server.Helpers
                 string value = "";
                 if (res != null)
                     value = res.ToString();
-                enumReferenceInfo.KeyValues.Add(new KeyValue<string, string>(name.ToString(), value));
+                if (!enumReferenceInfo.KeyValues.Any(x => x.Key == name.ToString()))
+                    enumReferenceInfo.KeyValues.Add(new KeyValue<string, string>(name.ToString(), value));
             }
             NamespaceReferenceInfo.Enums.Add(enumReferenceInfo);
         }
@@ -248,8 +270,7 @@ namespace SignalGo.Server.Helpers
         {
             if (type == null)
                 return;
-            if (ModelsCodeGenerated.Contains(type) || CannotGenerateAssemblyTypes(type))
-                return;
+
             if (type == typeof(Task))
             {
                 return;
@@ -262,7 +283,8 @@ namespace SignalGo.Server.Helpers
             {
                 type = type.GetElementType();
             }
-
+            if (ModelsCodeGenerated.Contains(type) || CannotGenerateAssemblyTypes(type))
+                return;
             if (type == typeof(object) || type.GetAssembly() == typeof(string).GetAssembly())
                 return;
             bool isGeneric = type.GetIsGenericType();
@@ -294,6 +316,59 @@ namespace SignalGo.Server.Helpers
                 GenerateProperty(propertyInfo, classReferenceInfo);
             }
             GenerateModelClass(type.GetBaseType());
+            NamespaceReferenceInfo.Classes.Add(classReferenceInfo);
+        }
+
+        private void GenerateModelInterface(Type type)
+        {
+            if (type == null)
+                return;
+
+            if (type == typeof(Task))
+            {
+                return;
+            }
+            else if (type.GetBaseType() == typeof(Task))
+            {
+                type = type.GetGenericArguments()[0];
+            }
+            if (type.IsArray)
+            {
+                type = type.GetElementType();
+            }
+            if (ModelsCodeGenerated.Contains(type) || CannotGenerateAssemblyTypes(type))
+                return;
+            if (type == typeof(object) || type.GetAssembly() == typeof(string).GetAssembly())
+                return;
+            bool isGeneric = type.GetIsGenericType();
+            if (isGeneric && type.GetGenericTypeDefinition() != type)
+            {
+                GenerateModelClass(type.GetGenericTypeDefinition());
+                return;
+            }
+            ClassReferenceInfo classReferenceInfo = new ClassReferenceInfo
+            {
+                Type = ClassReferenceType.InterfaceLevel,
+                NameSpace = type.Namespace
+            };
+
+            Type baseType = type.GetBaseType();
+            if (baseType != typeof(object) && baseType != null)
+            {
+                classReferenceInfo.BaseClassName = GetFullNameOfType(baseType, true);
+            }
+            else
+                classReferenceInfo.BaseClassName = GetFullNameOfType(typeof(NotifyPropertyChangedBase), true);
+
+            classReferenceInfo.Name = GetFullNameOfType(type, false);
+
+            ModelsCodeGenerated.Add(type);
+
+            foreach (PropertyInfo propertyInfo in type.GetListOfDeclaredProperties())
+            {
+                GenerateProperty(propertyInfo, classReferenceInfo);
+            }
+            GenerateModelInterface(type.GetBaseType());
             NamespaceReferenceInfo.Classes.Add(classReferenceInfo);
         }
 
