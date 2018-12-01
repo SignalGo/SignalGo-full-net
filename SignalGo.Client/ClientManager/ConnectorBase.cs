@@ -922,7 +922,7 @@ namespace SignalGo.Client.ClientManager
 #if (NET35 || NET40)
             Task.Factory.StartNew(() =>
 #else
-            await Task.Run(async () =>
+            await Task.Factory.StartNew(async () =>
 #endif
             {
                 try

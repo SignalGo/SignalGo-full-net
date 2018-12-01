@@ -238,9 +238,9 @@ namespace SignalGo.Client.ClientManager
 
 
 #if (NET40 || NET35)
-                var result = WaitedMethodsForResponse[callInfo.Guid].Task.Result;
+                var result = valueData.Task.Result;
 #else
-                var result = await WaitedMethodsForResponse[callInfo.Guid].Task;
+                var result = await valueData.Task;
 #endif
                 //if (!seted)
                 //{
