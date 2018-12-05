@@ -11,14 +11,14 @@ SignalGo is a library for Cross-Platform developers that makes it incredibly sim
 SignalGo has a lot of features but it's very easy to use. For example, SignalGo has a visual studio extension to generate all you need client side: you don't need to write 1 line of code! No need to create create models, enums, services, methods,etc... everything is automatically done for you!
 SignalGo has its own very fast json-based protocol and supports also http and https protocols. We prepared a SignalGo test application (with WPF UI) to let you test your server side methods without writing any code client side.
 SignalGo is designed as a RAD tool (rapid application development) keeping always in mind these simple goals:
-1. Easy of use
+1. Ease of use
 2. Minimal code to write to set up a full working server-client platform
 3. Speed 
 4. Completeness: exchange almost everything (methods, complex objects, streamings, files etc.)
 3. Reliability and scalability
 4. Security
 
-Is in continuous development with always new cool features you can suggest us too!
+SignalGo is in continuous development with always new cool features. Please feel free to suggest your onwn!
 
 ## Features:
 
@@ -256,9 +256,9 @@ Install-Package SignalGo.Net.Client
 Install-Package SignalGo.JavaScript.Client
 
 # Pull Requests
-I welcome all pull requests from you guys! PLease folow these 3 basic rules:
+I welcome all pull requests from you guys! Please follow these 3 basic rules:
   1. Match coding style (braces, spacing, etc.)
-  2. If its a feature, bugfix, or anything please only change code to what you specify.
+  2. If it's a feature, bugfix, or anything please only change code to what you specify.
   3. Please keep PR titles easy to read and descriptive of changes, this will make them easier to merge :)
 
   
