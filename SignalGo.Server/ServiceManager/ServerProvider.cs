@@ -11,7 +11,7 @@ namespace SignalGo.Server.ServiceManager
     /// </summary>
     public class ServerProvider : UdpServiceBase
     {
-
+        public static ServerProvider CurrentServerProvider { get; set; }
         /// <summary>
         /// strat the server
         /// </summary>
