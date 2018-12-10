@@ -7,7 +7,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace SignalGo.Server.Models
@@ -192,7 +191,7 @@ namespace SignalGo.Server.Models
                             {
                                 foreach (HttpKeyAttribute httpKey in group.ToList())
                                 {
-                                    foreach (var key in keys)
+                                    foreach (string key in keys)
                                     {
                                         if (CustomClientSavedSettings.TryGetValue(key, out HashSet<object> result))
                                         {
@@ -216,7 +215,7 @@ namespace SignalGo.Server.Models
                         {
                             foreach (HttpKeyAttribute httpKey in group.ToList())
                             {
-                                foreach (var key in keys)
+                                foreach (string key in keys)
                                 {
                                     if (CustomClientSavedSettings.TryGetValue(key, out HashSet<object> result))
                                     {
@@ -253,7 +252,7 @@ namespace SignalGo.Server.Models
                 throw new Exception("Context is null or empty! Do not call this property inside of another thread or after await or another task");
             if (SavedSettings.TryGetValue(context.Client, out HashSet<object> result))
             {
-                foreach (var item in result)
+                foreach (object item in result)
                 {
                     yield return item;
                 }
@@ -270,7 +269,7 @@ namespace SignalGo.Server.Models
             {
                 if (SavedSettings.TryGetValue(context.Client, out HashSet<object> result))
                 {
-                    foreach (var item in result)
+                    foreach (object item in result)
                     {
                         if (item.GetType().GetListOfProperties().Any(x => x.GetCustomAttributes(typeof(HttpKeyAttribute), true).Count() > 0))
                             yield return item;
@@ -287,8 +286,8 @@ namespace SignalGo.Server.Models
                 throw new Exception("customClientId is null or empty! please fill all parameters on headers or etc");
             else if (!CustomClientSavedSettings.TryAdd(customClientId, new HashSet<object>() { setting }) && CustomClientSavedSettings.TryGetValue(customClientId, out HashSet<object> result) && !result.Contains(setting))
                 result.Add(setting);
-            var httpKeys = setting.GetType().GetListOfProperties().SelectMany(x => x.GetCustomAttributes(typeof(HttpKeyAttribute), true).Cast<HttpKeyAttribute>()).Where(x => x.KeyType == HttpKeyType.ParameterName).Select(x => x.KeyParameterName).ToList();
-            foreach (var item in httpKeys)
+            List<string> httpKeys = setting.GetType().GetListOfProperties().SelectMany(x => x.GetCustomAttributes(typeof(HttpKeyAttribute), true).Cast<HttpKeyAttribute>()).Where(x => x.KeyType == HttpKeyType.ParameterName).Select(x => x.KeyParameterName).ToList();
+            foreach (string item in httpKeys)
             {
                 SavedKeyParametersNameSettings.TryAdd(item.ToLower(), item);
             }

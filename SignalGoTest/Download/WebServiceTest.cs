@@ -63,10 +63,10 @@ namespace SignalGoTest.Download
         [TestMethod]
         public void TestMethod1()
         {
-            HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create("https://www.zarinpal.com/pg/services/WebGate/wsdl");
-            var response = webRequest.GetResponse();
-            var stream = new StreamReader(response.GetResponseStream());
-            var data = stream.ReadToEnd();
+            //HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create("https://www.zarinpal.com/pg/services/WebGate/wsdl");
+            //var response = webRequest.GetResponse();
+            //var stream = new StreamReader(response.GetResponseStream());
+            //var data = stream.ReadToEnd();
         }
     }
 }

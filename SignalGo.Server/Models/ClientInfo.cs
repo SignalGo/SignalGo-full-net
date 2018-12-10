@@ -9,13 +9,34 @@ using System.Threading;
 
 namespace SignalGo.Server.Models
 {
+    /// <summary>
+    /// client protocol
+    /// </summary>
     public enum ClientProtocolType : byte
     {
+        /// <summary>
+        /// unknown
+        /// </summary>
         None = 0,
+        /// <summary>
+        /// http protocol
+        /// </summary>
         Http = 1,
+        /// <summary>
+        /// signalgo duplex
+        /// </summary>
         SignalGoDuplex = 2,
+        /// <summary>
+        /// one way protocol of signalgo
+        /// </summary>
         SignalGoOneWay = 3,
+        /// <summary>
+        /// stream protocol
+        /// </summary>
         SignalGoStream = 4,
+        /// <summary>
+        /// web socket protocol
+        /// </summary>
         WebSocket = 5,
     }
 
@@ -61,6 +82,9 @@ namespace SignalGo.Server.Models
         /// </summary>
         public ISignalGoStream StreamHelper { get; set; } = null;
 
+        /// <summary>
+        /// is client of owin client
+        /// </summary>
         public virtual bool IsOwinClient
         {
             get
@@ -68,9 +92,13 @@ namespace SignalGo.Server.Models
                 return false;
             }
         }
-
+        /// <summary>
+        /// is websocket client
+        /// </summary>
         public bool IsWebSocket { get; set; }
-
+        /// <summary>
+        /// type of client protocol
+        /// </summary>
         public ClientProtocolType ProtocolType { get; set; } = ClientProtocolType.None;
         /// <summary>
         /// lock for this client

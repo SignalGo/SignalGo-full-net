@@ -155,6 +155,11 @@
     <!--<Reference Include="netstandard" />-->
   </ItemGroup>
   <ItemGroup>
+    <Compile Remove="%24tf\**" />
+    <EmbeddedResource Remove="%24tf\**" />
+    <None Remove="%24tf\**" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\SignalGo.Shared\SignalGo.Shared.csproj" />
   </ItemGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

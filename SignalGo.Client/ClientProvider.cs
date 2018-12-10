@@ -162,34 +162,36 @@ namespace SignalGo.Client
             });
         }
 #else
-        public async void ConnectAsyncAutoReconnect(string url, Action<bool> connectedAction)
+        public void ConnectAsyncAutoReconnect(string url, Action<bool> connectedAction)
         {
-            ProviderSetting.AutoReconnect = true;
-            try
+            Task.Run(async () =>
             {
-                await ConnectAsync(url);
-                connectedAction(true);
-                await AutoReconnectWaitToDisconnectTaskResult.Task;
-                await Task.Delay(1000);
-                AutoReconnectWaitToDisconnectTaskResult = new TaskCompletionSource<object>();
-                ConnectAsyncAutoReconnect(url, connectedAction);
-            }
-            catch (Exception ex)
-            {
+                ProviderSetting.AutoReconnect = true;
                 try
                 {
-                    connectedAction(false);
+                    await ConnectAsync(url);
+                    connectedAction(true);
+                    await AutoReconnectWaitToDisconnectTaskResult.Task;
+                    await Task.Delay(1000);
+                    AutoReconnectWaitToDisconnectTaskResult = new TaskCompletionSource<object>();
+                    ConnectAsyncAutoReconnect(url, connectedAction);
                 }
-                catch
+                catch (Exception ex)
                 {
+                    try
+                    {
+                        connectedAction(false);
+                    }
+                    catch
+                    {
 
+                    }
+                    Disconnect();
+                    await Task.Delay(1000);
+                    AutoReconnectWaitToDisconnectTaskResult = new TaskCompletionSource<object>();
+                    ConnectAsyncAutoReconnect(url, connectedAction);
                 }
-                Disconnect();
-                await Task.Delay(1000);
-                AutoReconnectWaitToDisconnectTaskResult = new TaskCompletionSource<object>();
-                ConnectAsyncAutoReconnect(url, connectedAction);
-            }
-
+            });
         }
 #endif
 
