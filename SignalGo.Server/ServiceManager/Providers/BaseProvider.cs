@@ -384,7 +384,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                             catch (Exception ex)
                             {
                                 if (serverBase.ErrorHandlingFunction != null)
-                                    result = serverBase.ErrorHandlingFunction(ex, serviceType, method);
+                                    result = serverBase.ErrorHandlingFunction(ex, serviceType, method, client);
                                 exception = ex;
                                 serverBase.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase CallMethod: {methodName}");
                                 callback.IsException = true;
@@ -400,7 +400,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     callback.IsException = true;
                     if (serverBase.ErrorHandlingFunction != null)
                     {
-                        callback.Data = ServerSerializationHelper.SerializeObject(serverBase.ErrorHandlingFunction(ex, serviceType, method));
+                        callback.Data = ServerSerializationHelper.SerializeObject(serverBase.ErrorHandlingFunction(ex, serviceType, method, client));
                     }
                     else
                         callback.Data = ServerSerializationHelper.SerializeObject(ex.ToString(), serverBase);

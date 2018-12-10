@@ -118,9 +118,10 @@ namespace SignalGo.Server.ServiceManager
         /// exception is exception trow
         /// Type is service Type
         /// MethodInfo method of service
+        /// client is the calling client
         /// object is your return value
         /// </summary>
-        public Func<Exception, Type, MethodInfo, object> ErrorHandlingFunction { get; set; }
+        public Func<Exception, Type, MethodInfo, ClientInfo, object> ErrorHandlingFunction { get; set; }
         /// <summary>
         /// if you don't want to trhow exception when method have error validation you can fill this function to customize your result for client
         /// </summary>

@@ -386,7 +386,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 // exception = ex;
                 if (serverBase.ErrorHandlingFunction != null)
                 {
-                    ActionResult result = serverBase.ErrorHandlingFunction(ex, serviceType, method).ToActionResult();
+                    ActionResult result = serverBase.ErrorHandlingFunction(ex, serviceType, method,client).ToActionResult();
                     await RunHttpActionResult(client, result.Data, client, serverBase);
                 }
                 else
@@ -435,7 +435,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 // exception = ex;
                 if (serverBase.ErrorHandlingFunction != null)
                 {
-                    ActionResult result = serverBase.ErrorHandlingFunction(ex, serviceType, method).ToActionResult();
+                    ActionResult result = serverBase.ErrorHandlingFunction(ex, serviceType, method, client).ToActionResult();
                     await RunHttpActionResult(client, result, client, serverBase);
                 }
                 else
@@ -467,14 +467,18 @@ namespace SignalGo.Server.ServiceManager.Providers
 
             method = result.Method;
 
-            if (result.CallbackInfo.IsException || result.CallbackInfo.IsAccessDenied)
+            if (result.CallbackInfo.IsException)
             {
                 //data = newLine + result.CallbackInfo.Data + newLine;
                 await SendInternalErrorMessage(new Exception(result.CallbackInfo.Data), address, result.ServiceType, method, serverBase, client, newLine, (result.CallbackInfo.IsAccessDenied ? serverBase.ProviderSetting.HttpSetting.DefaultAccessDenidHttpStatusCode : HttpStatusCode.InternalServerError));
                 serverBase.AutoLogger.LogText(data);
                 return result;
             }
-
+            //else if (result.CallbackInfo.IsAccessDenied)
+            //{
+            //    //data = newLine + result.CallbackInfo.Data + newLine;
+            //    await RunHttpActionResult(client, result.CallbackInfo.Data, client, serverBase);
+            //}
             //MethodsCallHandler.BeginHttpMethodCallAction?.Invoke(client, callGuid, address, method, valueitems);
             //service = Activator.CreateInstance(RegisteredHttpServiceTypes[address]);
             if (result.ServiceInstance is IHttpClientInfo)
@@ -824,7 +828,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 // exception = ex;
                 if (serverBase.ErrorHandlingFunction != null)
                 {
-                    ActionResult result = serverBase.ErrorHandlingFunction(ex, serviceType, method).ToActionResult();
+                    ActionResult result = serverBase.ErrorHandlingFunction(ex, serviceType, method, client).ToActionResult();
                     await RunHttpActionResult(client, result, client, serverBase);
                 }
                 else
@@ -978,7 +982,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 client.ResponseHeaders.Add("Connection", "Close");
                 if (serverBase.ErrorHandlingFunction != null)
                 {
-                    message = newLine + $"{serverBase.ErrorHandlingFunction(exception, srviceType, methodInfo).SerializeObject(serverBase)}" + newLine;
+                    message = newLine + $"{serverBase.ErrorHandlingFunction(exception, srviceType, methodInfo, client).SerializeObject(serverBase)}" + newLine;
                 }
                 else
                 {
