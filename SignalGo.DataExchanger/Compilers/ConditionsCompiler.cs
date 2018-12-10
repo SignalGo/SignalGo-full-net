@@ -226,6 +226,10 @@ namespace SignalGo.DataExchanger.Compilers
                             concat = "";
                             canSkip = true;
                         }
+                        else if (concat.Equals("var", StringComparison.OrdinalIgnoreCase))
+                        {
+
+                        }
                         else if (concat.Length > 3)
                             throw new Exception($"I cannot found operator,I try but found '{concat}' are you sure you don't missed?");
                     }

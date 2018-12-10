@@ -2,7 +2,6 @@
 using SignalGo.DataExchanger.Compilers;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 
 namespace SignalGoTest.DataExhanger
 {
@@ -192,7 +191,7 @@ namespace SignalGoTest.DataExhanger
             List<UserEx> linqList = toComiple.Where(x => x.Family == "yousefi" || (x.Name == "ali" && x.Posts.Count() > 0)).ToList();
             bool equal = resultData.SequenceEqual(linqList);
             Assert.IsTrue(equal);
-            
+
         }
 
         [TestMethod]
@@ -208,7 +207,7 @@ namespace SignalGoTest.DataExhanger
             object result = selectCompiler.Run(toComiple);
             IEnumerable<UserEx> resultWheres = (IEnumerable<UserEx>)conditionsCompiler.Run<UserEx>(toComiple);
             List<UserEx> resultData = resultWheres.ToList();
-            List<UserEx> linqList = toComiple.Where(x => x.Family == "yousefi" || (x.Name == "ali" && x.Posts.Count() > 0)).ToList();
+            List<UserEx> linqList = toComiple.Where(x => x.Family == "yousefi" && 5 + 1 + 4 == 10).ToList();
             bool equal = resultData.SequenceEqual(linqList);
             Assert.IsTrue(equal);
 
@@ -227,7 +226,7 @@ namespace SignalGoTest.DataExhanger
             object result = selectCompiler.Run(toComiple);
             IEnumerable<UserEx> resultWheres = (IEnumerable<UserEx>)conditionsCompiler.Run<UserEx>(toComiple);
             List<UserEx> resultData = resultWheres.ToList();
-            List<UserEx> linqList = toComiple.Where(x => x.Family == "yousefi" || (x.Name == "ali" && x.Posts.Count() > 0)).ToList();
+            List<UserEx> linqList = toComiple.Where(x => x.Family == "yousefi" && 5 + 1 + 4 == 10).ToList();
             bool equal = resultData.SequenceEqual(linqList);
             Assert.IsTrue(equal);
 
@@ -246,7 +245,7 @@ namespace SignalGoTest.DataExhanger
             object result = selectCompiler.Run(toComiple);
             IEnumerable<UserEx> resultWheres = (IEnumerable<UserEx>)conditionsCompiler.Run<UserEx>(toComiple);
             List<UserEx> resultData = resultWheres.ToList();
-            List<UserEx> linqList = toComiple.Where(x => x.Family == "yousefi" || (x.Name == "ali" && x.Posts.Count() > 0)).ToList();
+            List<UserEx> linqList = toComiple.Where(x => (x.Posts.Count() + x.Posts.Count() + x.Posts.Count()) == 6).ToList();
             bool equal = resultData.SequenceEqual(linqList);
             Assert.IsTrue(equal);
         }
@@ -264,7 +263,33 @@ namespace SignalGoTest.DataExhanger
             object result = selectCompiler.Run(toComiple);
             IEnumerable<UserEx> resultWheres = (IEnumerable<UserEx>)conditionsCompiler.Run<UserEx>(toComiple);
             List<UserEx> resultData = resultWheres.ToList();
-            List<UserEx> linqList = toComiple.Where(x => x.Family == "yousefi" || (x.Name == "ali" && x.Posts.Count() > 0)).ToList();
+            List<UserEx> linqList = toComiple.Where(x => ((x.Posts.Count() + x.Posts.Count()) + x.Posts.Count()) == 6).ToList();
+            bool equal = resultData.SequenceEqual(linqList);
+            Assert.IsTrue(equal);
+        }
+
+        [TestMethod]
+        public void Example15()
+        {
+            string query = @"select{name family posts{title articles{author}date news{newsName}}files{id name}}
+                                    var user
+                                    {
+                                        where sum(sum(count(user.posts),count(user.posts)),count(user.posts))==6)
+                                        var post in user.posts
+	                                    {
+		                                    where post.Title = ""ali""
+	                                    }
+                                    }";
+            SelectCompiler selectCompiler = new SelectCompiler();
+            string anotherResult = selectCompiler.Compile(query);
+            ConditionsCompiler conditionsCompiler = new ConditionsCompiler();
+            conditionsCompiler.Compile(anotherResult);
+            IEnumerable<UserEx> toComiple = QueryDataExchangerText.GetUsersEx();
+
+            object result = selectCompiler.Run(toComiple);
+            IEnumerable<UserEx> resultWheres = (IEnumerable<UserEx>)conditionsCompiler.Run<UserEx>(toComiple);
+            List<UserEx> resultData = resultWheres.ToList();
+            List<UserEx> linqList = toComiple.Where(x => ((x.Posts.Count() + x.Posts.Count()) + x.Posts.Count()) == 6).ToList();
             bool equal = resultData.SequenceEqual(linqList);
             Assert.IsTrue(equal);
         }
