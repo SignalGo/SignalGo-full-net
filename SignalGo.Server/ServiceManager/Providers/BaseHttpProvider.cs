@@ -391,8 +391,8 @@ namespace SignalGo.Server.ServiceManager.Providers
                 }
                 else
                 {
-                    data = newLine + ex.ToString() + address + newLine;
-                    await SendInternalErrorMessage(data, serverBase, client, newLine, HttpStatusCode.InternalServerError);
+                    //data = newLine + ex.ToString() + address + newLine;
+                    await SendInternalErrorMessage(ex, address, serviceType, method, serverBase, client, newLine, HttpStatusCode.InternalServerError);
                 }
                 if (!(ex is SocketException))
                     serverBase.AutoLogger.LogError(ex, "RunHttpRequest");
@@ -440,8 +440,8 @@ namespace SignalGo.Server.ServiceManager.Providers
                 }
                 else
                 {
-                    string data = newLine + ex.ToString() + "" + newLine;
-                    await SendInternalErrorMessage(data, serverBase, client, newLine, HttpStatusCode.InternalServerError);
+                    //string data = newLine + ex.ToString() + "" + newLine;
+                    await SendInternalErrorMessage(ex, "", serviceType, method, serverBase, client, newLine, HttpStatusCode.InternalServerError);
                 }
                 if (!(ex is SocketException))
                     serverBase.AutoLogger.LogError(ex, "RunPostHttpRequestFile");
@@ -469,9 +469,8 @@ namespace SignalGo.Server.ServiceManager.Providers
 
             if (result.CallbackInfo.IsException || result.CallbackInfo.IsAccessDenied)
             {
-                data = newLine + result.CallbackInfo.Data + newLine;
-
-                await SendInternalErrorMessage(data, serverBase, client, newLine, (result.CallbackInfo.IsAccessDenied ? serverBase.ProviderSetting.HttpSetting.DefaultAccessDenidHttpStatusCode : HttpStatusCode.InternalServerError));
+                //data = newLine + result.CallbackInfo.Data + newLine;
+                await SendInternalErrorMessage(new Exception(result.CallbackInfo.Data), address, result.ServiceType, method, serverBase, client, newLine, (result.CallbackInfo.IsAccessDenied ? serverBase.ProviderSetting.HttpSetting.DefaultAccessDenidHttpStatusCode : HttpStatusCode.InternalServerError));
                 serverBase.AutoLogger.LogText(data);
                 return result;
             }
@@ -494,8 +493,8 @@ namespace SignalGo.Server.ServiceManager.Providers
                 await RunHttpActionResult(client, result.FileActionResult, client, serverBase);
             else if (result.CallbackInfo.Data == null)
             {
-                data = newLine + $"result from method invoke {methodName}, is null " + address + newLine;
-                await SendInternalErrorMessage(data, serverBase, client, newLine, HttpStatusCode.InternalServerError);
+                //data = newLine + $"result from method invoke {methodName}, is null " + address + newLine;
+                await SendInternalErrorMessage(new Exception($"result from method invoke {methodName} , is null"), address, result.ServiceType, method, serverBase, client, newLine, HttpStatusCode.InternalServerError);
                 serverBase.AutoLogger.LogText("RunHttpGETRequest : " + data);
             }
             else
@@ -830,8 +829,8 @@ namespace SignalGo.Server.ServiceManager.Providers
                 }
                 else
                 {
-                    data = newLine + ex.ToString() + address + newLine;
-                    await SendInternalErrorMessage(data, serverBase, client, newLine, HttpStatusCode.InternalServerError);
+                    //data = newLine + ex.ToString() + address + newLine;
+                    await SendInternalErrorMessage(ex, address, serviceType, method, serverBase, client, newLine, HttpStatusCode.InternalServerError);
                 }
                 if (!(ex is SocketException))
                     serverBase.AutoLogger.LogError(ex, "RunPostHttpRequestFile");
@@ -962,7 +961,7 @@ namespace SignalGo.Server.ServiceManager.Providers
             return new Tuple<int, string, string>(bytes.Count, boundary, response);
         }
 
-        internal static async Task SendInternalErrorMessage(string msg, ServerBase serverBase, HttpClientInfo client, string newLine, HttpStatusCode httpStatusCode)
+        internal static async Task SendInternalErrorMessage(Exception exception, string address, Type srviceType, MethodInfo methodInfo, ServerBase serverBase, HttpClientInfo client, string newLine, HttpStatusCode httpStatusCode)
         {
             try
             {
@@ -971,12 +970,20 @@ namespace SignalGo.Server.ServiceManager.Providers
                 {
                     AddOriginHeader(client, serverBase);
                 }
-                string message = newLine + $"{msg}" + newLine;
+                //string message = newLine + $"{msg}" + newLine;
+                string message = "";
 
                 client.ResponseHeaders.Add("Content-Type", "text/html; charset=utf-8");
                 //responseHeaders.Add("Content-Length", (message.Length - 2).ToString());
                 client.ResponseHeaders.Add("Connection", "Close");
-
+                if (serverBase.ErrorHandlingFunction != null)
+                {
+                    message = newLine + $"{serverBase.ErrorHandlingFunction(exception, srviceType, methodInfo).SerializeObject(serverBase)}" + newLine;
+                }
+                else
+                {
+                    message = newLine + $"{address + ":" + exception.ToString()}" + newLine;
+                }
                 byte[] dataBytes = Encoding.UTF8.GetBytes(message);
                 await SendResponseHeadersToClient(httpStatusCode, client.ResponseHeaders, client, dataBytes.Length);
                 await SendResponseDataToClient(dataBytes, client);
