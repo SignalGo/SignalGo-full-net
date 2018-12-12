@@ -20,7 +20,7 @@ namespace SignalGoTest
                 server.RegisterServerService<Models.AuthenticationService>();
 
                 server.Start("http://localhost:1132/SignalGoTestService");
-                server.ErrorHandlingFunction = (ex, serviceType, client, method) =>
+                server.ErrorHandlingFunction = (ex, serviceType, method, client) =>
                 {
                     return new MessageContract() { IsSuccess = false, Message = ex.ToString() };
                 };
