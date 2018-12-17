@@ -614,6 +614,8 @@ namespace SignalGo.Client.ClientManager
 
                         if (position + blockOfRead > length)
                             blockOfRead = (int)(length - position);
+                        if (bytes.Length < blockOfRead)
+                            bytes = new byte[blockOfRead];
 #if (NET40 || NET35)
                         int readCount = iStream.Stream.Read(bytes, blockOfRead);
 #else

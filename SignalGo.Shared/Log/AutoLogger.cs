@@ -38,10 +38,17 @@ namespace SignalGo.Shared.Log
                     dir = DirectoryLocation;
                 else
                     dir = Path.Combine(DirectoryLocation, DirectoryName);
+                try
+                {
 #if (!PORTABLE)
-                if (!Directory.Exists(dir))
-                    Directory.CreateDirectory(dir);
+                    if (!Directory.Exists(dir))
+                        Directory.CreateDirectory(dir);
 #endif
+                }
+                catch
+                {
+
+                }
                 return Path.Combine(dir, FileName);
             }
         }

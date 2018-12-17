@@ -75,7 +75,6 @@ namespace SignalGo.Shared.IO
 #else
                 int readCount = await Stream.ReadAsync(buffer, 0, buffer.Length);
 #endif
-
                 if (readCount <= 0)
                 {
                     IsClosed = true;
@@ -131,6 +130,8 @@ namespace SignalGo.Shared.IO
         {
             if (IsClosed && QueueBuffers.IsEmpty && BlockBuffers.Count == 0)
                 throw new Exception("read zero buffer! client disconnected");
+            if (bytes != null && bytes.Length < count)
+                throw new Exception("count size is greater than bytes.length");
             BufferSegment result = null;
             if (QueueBuffers.IsEmpty)
             {

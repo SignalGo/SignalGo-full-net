@@ -219,7 +219,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                                     serverBase.AutoLogger.LogText(msg);
                                     callback.IsException = true;
                                     callback.Data = msg;
-                                    return new CallMethodResultInfo<OperationContext>(callback, streamInfo, httpKeyAttributes, serviceType, method, service, fileActionResult, context);
+                                    return new CallMethodResultInfo<OperationContext>(callback, streamInfo, httpKeyAttributes, serviceType, method, service, fileActionResult, context, null);
                                 }
                             }
                             else
@@ -234,7 +234,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                                         callback.IsException = true;
                                         callback.Data = msg;
                                         serverBase.AutoLogger.LogText(msg);
-                                        return new CallMethodResultInfo<OperationContext>(callback, streamInfo, httpKeyAttributes, serviceType, method, service, fileActionResult, context);
+                                        return new CallMethodResultInfo<OperationContext>(callback, streamInfo, httpKeyAttributes, serviceType, method, service, fileActionResult, context, null);
                                     }
                                 }
                             }
@@ -260,6 +260,13 @@ namespace SignalGo.Server.ServiceManager.Providers
                                     callback.Data = data == null ? null : ServerSerializationHelper.SerializeObject(data, serverBase, customDataExchanger: customDataExchanger.ToArray(), client: client, isEnabledReferenceResolver: isEnabledReferenceResolver, isEnabledReferenceResolverForArray: isEnabledReferenceResolverForArray);
                                 }
                                 break;
+                            }
+                        }
+                        foreach (var item in parametersValues)
+                        {
+                            if (item is BaseStreamInfo stream)
+                            {
+                                stream.Stream = client.ClientStream;
                             }
                         }
                         //var data = (IStreamInfo)parametersValues.FirstOrDefault(x => x.GetType() == typeof(StreamInfo) || (x.GetType().GetIsGenericType() && x.GetType().GetGenericTypeDefinition() == typeof(StreamInfo<>)));
@@ -419,7 +426,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     }
                 }
                 DataExchanger.Clear();
-                return new CallMethodResultInfo<OperationContext>(callback, streamInfo, httpKeyAttributes, serviceType, method, service, fileActionResult, context);
+                return new CallMethodResultInfo<OperationContext>(callback, streamInfo, httpKeyAttributes, serviceType, method, service, fileActionResult, context, result);
             });
         }
 
