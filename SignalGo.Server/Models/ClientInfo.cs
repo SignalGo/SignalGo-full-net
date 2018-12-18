@@ -1,4 +1,5 @@
-﻿using SignalGo.Shared.DataTypes;
+﻿using SignalGo.Server.ServiceManager;
+using SignalGo.Shared.DataTypes;
 using SignalGo.Shared.Http;
 using SignalGo.Shared.IO;
 using SignalGo.Shared.Models;
@@ -45,6 +46,18 @@ namespace SignalGo.Server.Models
     /// </summary>
     public class ClientInfo
     {
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="serverBase"></param>
+        public ClientInfo(ServerBase serverBase)
+        {
+            CurrentClientServer = serverBase;
+        }
+        /// <summary>
+        /// current client server
+        /// </summary>
+        public ServerBase CurrentClientServer { get; set; }
         /// <summary>
         /// client id
         /// </summary>
@@ -112,6 +125,13 @@ namespace SignalGo.Server.Models
     /// </summary>
     public class HttpClientInfo : ClientInfo, IHttpClientInfo
     {
+        /// <summary>
+        /// current server base
+        /// </summary>
+        /// <param name="serverBase"></param>
+        public HttpClientInfo(ServerBase serverBase) : base(serverBase)
+        {
+        }
         /// <summary>
         /// status of response for client
         /// </summary>

@@ -122,9 +122,9 @@ namespace SignalGo.Server.ServiceManager.Versions
         {
             ClientInfo client = null;
             if (isHttp)
-                client = new HttpClientInfo();
+                client = new HttpClientInfo(_serverBase);
             else
-                client = new ClientInfo();
+                client = new ClientInfo(_serverBase);
             client.ConnectedDateTime = DateTime.Now;
             client.TcpClient = tcpClient;
             client.IPAddress = ((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address.ToString().Replace("::ffff:", "");

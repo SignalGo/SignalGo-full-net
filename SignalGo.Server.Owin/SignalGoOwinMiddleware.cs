@@ -40,7 +40,7 @@ namespace SignalGo.Server.Owin
             if (!BaseProvider.ExistService(serviceName, CurrentServerBase) && !isWebSocketd)
                 return Next.Invoke(context);
 
-            OwinClientInfo owinClientInfo = new OwinClientInfo();
+            OwinClientInfo owinClientInfo = new OwinClientInfo(CurrentServerBase);
             owinClientInfo.ConnectedDateTime = DateTime.Now;
             owinClientInfo.IPAddress = context.Request.RemoteIpAddress;
             owinClientInfo.ClientId = Guid.NewGuid().ToString();

@@ -6,11 +6,16 @@ using System.Net;
 using Microsoft.Owin;
 #endif
 using SignalGo.Server.Models;
+using SignalGo.Server.ServiceManager;
 
 namespace SignalGo.Server.Owin
 {
     public class OwinClientInfo : HttpClientInfo
     {
+        public OwinClientInfo(ServerBase serverBase) : base(serverBase)
+        {
+
+        }
         public Action<int> ChangeStatusAction { get; set; }
 
         public override bool IsOwinClient

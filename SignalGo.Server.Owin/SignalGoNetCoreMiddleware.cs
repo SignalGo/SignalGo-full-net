@@ -46,7 +46,7 @@ namespace SignalGo.Server.Owin
                 return;
             }
 
-            OwinClientInfo owinClientInfo = new OwinClientInfo();
+            OwinClientInfo owinClientInfo = new OwinClientInfo(CurrentServerBase);
             owinClientInfo.ChangeStatusAction = (code) =>
             {
                 context.Response.StatusCode = code;

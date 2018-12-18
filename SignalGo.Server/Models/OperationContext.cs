@@ -45,6 +45,16 @@ namespace SignalGo.Server.Models
                 return null;
             }
         }
+
+        /// <summary>
+        /// get operationcontext by client
+        /// </summary>
+        /// <param name="clientInfo"></param>
+        /// <returns></returns>
+        public static OperationContext GetCurrentByClient(ClientInfo clientInfo)
+        {
+            return new OperationContext() { Client = clientInfo, ClientId = clientInfo.ClientId, ServerBase = clientInfo.CurrentClientServer };
+        }
         /// <summary>
         /// server provider
         /// </summary>
@@ -317,7 +327,10 @@ namespace SignalGo.Server.Models
             if (!SavedSettings.ContainsKey(context.Client))
                 SavedSettings.TryAdd(context.Client, new HashSet<object>() { setting });
             else if (SavedSettings.TryGetValue(context.Client, out HashSet<object> result) && !result.Contains(setting))
+            {
+                result.RemoveWhere(x => x.GetType() == setting.GetType());
                 result.Add(setting);
+            }
         }
 
         public static object GetSetting(ClientInfo client, Type type)
