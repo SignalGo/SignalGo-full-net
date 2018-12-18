@@ -1,4 +1,5 @@
-﻿using SignalGo.Shared.IO;
+﻿using SignalGo.Shared.Helpers;
+using SignalGo.Shared.IO;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -100,7 +101,7 @@ namespace SignalGo.Server.IO
                 //Console.WriteLine(endBuffer.Length + "&" + (endBuffer.Length - needRead) + " & " + needRead);
                 string text = Encoding.UTF8.GetString(endBuffer.ToList().GetRange(endBuffer.Length - needRead, needRead).ToArray());
                 int lineLen = 0;
-                if (!text.StartsWith("\r\n"))
+                if (!text.StartsWith(TextHelper.NewLine))
                 {
                     lineLen = 2;
                     _Length -= 2;

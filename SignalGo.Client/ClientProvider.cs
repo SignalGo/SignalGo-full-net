@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using SignalGo.Client.ClientManager;
 using SignalGo.Shared;
+using SignalGo.Shared.Helpers;
 using SignalGo.Shared.Models;
 using SignalGo.Shared.Security;
 using System;
@@ -236,7 +237,7 @@ namespace SignalGo.Client
         private Task SendFirstLineData()
 #endif
         {
-            byte[] firstBytes = Encoding.UTF8.GetBytes($"SignalGo/4.0 {_address}:{_port}" + "\r\n");
+            byte[] firstBytes = Encoding.UTF8.GetBytes($"SignalGo/4.0 {_address}:{_port}" + TextHelper.NewLine);
 #if (NET40 || NET35)
             _client.GetStream().Write(firstBytes, 0, firstBytes.Length);
 #else

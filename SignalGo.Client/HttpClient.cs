@@ -1,4 +1,5 @@
-﻿using SignalGo.Shared.IO;
+﻿using SignalGo.Shared.Helpers;
+using SignalGo.Shared.IO;
 using SignalGo.Shared.Models;
 using System;
 using System.Collections.Generic;
@@ -55,14 +56,14 @@ namespace SignalGo.Client
 #if (NETSTANDARD1_6)
             throw new NotSupportedException();
 #else
-            string newLine = Environment.NewLine;
+            string newLine = TextHelper.NewLine;
             Uri uri = new Uri(url);
             TcpClient tcpClient = new TcpClient(uri.Host, uri.Port);
             try
             {
                 if (!string.IsNullOrEmpty(KeyParameterName))
                 {
-                    var list = parameterInfoes.ToList();
+                    List<ParameterInfo> list = parameterInfoes.ToList();
                     list.Add(new SignalGo.Shared.Models.ParameterInfo() { Name = KeyParameterName, Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(KeyParameterValue) });
                     parameterInfoes = list.ToArray();
                 }
@@ -85,7 +86,7 @@ namespace SignalGo.Client
                 if (parameterInfoes != null)
                 {
                     string formdataTemplate = "Content-Disposition: form-data; name=\"{0}\"\r\n\r\n{1}";
-                    string boundaryinsert = "\r\n--" + boundary + "\r\n";
+                    string boundaryinsert = TextHelper.NewLine + "--" + boundary + TextHelper.NewLine;
                     foreach (ParameterInfo item in parameterInfoes)
                     {
                         valueData.AppendLine(boundaryinsert);
@@ -163,7 +164,7 @@ namespace SignalGo.Client
         /// <returns></returns>
         public async Task<HttpClientResponse> PostAsync(string url, ParameterInfo[] parameterInfoes)
         {
-            string newLine = Environment.NewLine;
+            string newLine = TextHelper.NewLine;
             Uri uri = new Uri(url);
             TcpClient tcpClient = new TcpClient(uri.Host, uri.Port);
             try
@@ -186,7 +187,7 @@ namespace SignalGo.Client
                 if (parameterInfoes != null)
                 {
                     string formdataTemplate = "Content-Disposition: form-data; name=\"{0}\"\r\n\r\n{1}";
-                    string boundaryinsert = "\r\n--" + boundary + "\r\n";
+                    string boundaryinsert = TextHelper.NewLine+ "--" + boundary + TextHelper.NewLine;
                     foreach (ParameterInfo item in parameterInfoes)
                     {
                         valueData.AppendLine(boundaryinsert);

@@ -514,7 +514,7 @@ namespace SignalGo.Client.ClientManager
             PipeNetworkStream stream = new PipeNetworkStream(new NormalStream(_newClient.GetStream()));
             //var json = JsonConvert.SerializeObject(Data);
             //var jsonBytes = Encoding.UTF8.GetBytes(json);
-            string header = "SignalGo-Stream/4.0\r\n";
+            string header = "SignalGo-Stream/4.0"+ TextHelper.NewLine;
             byte[] bytes = Encoding.UTF8.GetBytes(header);
 #if (NET40 || NET35)
             stream.Write(bytes, 0, bytes.Length);
@@ -748,7 +748,7 @@ namespace SignalGo.Client.ClientManager
             string json = ClientSerializationHelper.SerializeObject(callInfo);
             byte[] jsonBytes = Encoding.UTF8.GetBytes(json);
 
-            string line = "SignalGo-OneWay/4.0" + "\r\n";
+            string line = "SignalGo-OneWay/4.0" + TextHelper.NewLine;
             byte[] lineBytes = Encoding.UTF8.GetBytes(line);
             SignalGoStreamBase streamHelper = new SignalGoStreamBase();
 #if (NET40 || NET35)
