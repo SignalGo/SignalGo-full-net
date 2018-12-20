@@ -56,7 +56,8 @@ Is in continuous development with always new cool features you can suggest us to
 
 16. with two line of code make your server as a telegram.bot without any changes
 
-17.support validation rule system easy and powerful
+17. support validation rule system easy and powerful
+
 ...and other features!
 
 
