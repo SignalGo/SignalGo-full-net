@@ -48,7 +48,7 @@ Is in continuous development with always new cool features you can suggest us to
 
 13. Add service reference and generate models etc. client side directly with the visual studio add-in  [![NuGet](https://img.shields.io/badge/github-wiki-brightgreen.svg)](https://github.com/SignalGo/SignalGo-full-net/wiki/Add-Service-Reference---Auto-generate-all-services-and-models-in-client-side)
 
-     13.1 Support to generate C# client , Angular , C# Blazor and SOAP Web services.
+     13.1 Support to generate C# client , Angular , C# Blazor , Java , Swift and SOAP Web services.
 
 14. Hosted fully in IIS via Owin
 
