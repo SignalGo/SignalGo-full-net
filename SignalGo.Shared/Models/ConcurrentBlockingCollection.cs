@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -29,21 +27,14 @@ namespace SignalGo.Shared.Models
             }
         }
 
-#if (NET35 || NET40)
-        public void AddAsync(T item)
-#else
+#if (!NET35 && !NET40)
         public async Task AddAsync(T item)
-#endif
         {
             try
             {
                 if (_IsCanceled)
                     return;
-#if (NET35 || NET40)
-                _addLock.Wait();
-#else
                 await _addLock.WaitAsync();
-#endif
                 _items.Add(item);
                 //Console.WriteLine("added" + item);
                 if (_taskCompletionSource.Task.Status == TaskStatus.WaitingForActivation)
@@ -60,7 +51,30 @@ namespace SignalGo.Shared.Models
                 _addLock.Release();
             }
         }
-
+#endif
+        public void Add(T item)
+        {
+            try
+            {
+                if (_IsCanceled)
+                    return;
+                _addLock.Wait();
+                _items.Add(item);
+                //Console.WriteLine("added" + item);
+                if (_taskCompletionSource.Task.Status == TaskStatus.WaitingForActivation)
+                {
+                    CompleteTask();
+                }
+                else
+                {
+                    //Console.WriteLine("wrong status 2 : " + _taskCompletionSource.Task.Status);
+                }
+            }
+            finally
+            {
+                _addLock.Release();
+            }
+        }
 
         private TaskCompletionSource<T> CreateNewTask()
         {
@@ -107,19 +121,27 @@ namespace SignalGo.Shared.Models
         }
 
         private bool _IsCanceled = false;
-#if (NET35 || NET40)
-        public void CancelAsync()
-#else
+#if (!NET35 && !NET40)
         public async Task CancelAsync()
-#endif
         {
             try
             {
-#if (NET35 || NET40)
-                _addLock.Wait();
-#else
                 await _addLock.WaitAsync();
+                _IsCanceled = true;
+                object find = _items.DefaultIfEmpty(null).FirstOrDefault();
+                _taskCompletionSource.TrySetResult((T)find);
+            }
+            finally
+            {
+                _addLock.Release();
+            }
+        }
 #endif
+        public void Cancel()
+        {
+            try
+            {
+                _addLock.Wait();
                 _IsCanceled = true;
                 object find = _items.DefaultIfEmpty(null).FirstOrDefault();
                 _taskCompletionSource.TrySetResult((T)find);
@@ -130,19 +152,13 @@ namespace SignalGo.Shared.Models
             }
         }
 
-#if (NET35 || NET40)
-        public T TakeAsync()
-#else
+#if (!NET35 && !NET40)
         public async Task<T> TakeAsync()
-#endif
         {
             try
             {
-#if (NET35 || NET40)
-                _addLock.Wait();
-#else
                 await _addLock.WaitAsync();
-#endif
+
                 CompleteTask();
             }
             finally
@@ -152,18 +168,10 @@ namespace SignalGo.Shared.Models
 
             try
             {
-#if (NET35 || NET40)
-                _takeLock.Wait();
-#else
                 await _takeLock.WaitAsync();
-#endif
                 Task<T> result = _taskCompletionSource.Task;
                 _isTakeTaskResult = true;
-#if (NET35 || NET40)
-                return result.Result;
-#else
                 return await result;
-#endif
             }
             finally
             {
@@ -173,8 +181,32 @@ namespace SignalGo.Shared.Models
 
             //CompleteTask();
         }
+#endif
 
+        public T Take()
+        {
+            try
+            {
+                _addLock.Wait();
+                CompleteTask();
+            }
+            finally
+            {
+                _addLock.Release();
+            }
 
+            try
+            {
+                _takeLock.Wait();
+                Task<T> result = _taskCompletionSource.Task;
+                _isTakeTaskResult = true;
+                return result.Result;
+            }
+            finally
+            {
+                _takeLock.Release();
+            }
+        }
 
         public void Dispose()
         {

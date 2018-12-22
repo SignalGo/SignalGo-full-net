@@ -103,6 +103,7 @@ namespace SignalGo.Client
                 {
                     stream.Write(headBytes, 0, headBytes.Length);
                     stream.Write(dataBytes, 0, dataBytes.Length);
+                    
 
                     using (PipeNetworkStream pipelineReader = new PipeNetworkStream(new NormalStream(stream), 30000))
                     {
@@ -112,11 +113,7 @@ namespace SignalGo.Client
                         {
                             if (line != null)
                                 lines.Add(line);
-#if (NET35 || NET40)
                             line = pipelineReader.ReadLine();
-#else
-                            line = pipelineReader.ReadLineAsync().GetAwaiter().GetResult();
-#endif
                         }
                         while (line != newLine);
                         HttpClientResponse httpClientResponse = new HttpClientResponse
@@ -131,11 +128,8 @@ namespace SignalGo.Client
                         {
                             byte[] bytes = new byte[512];
                             int readedCount = 0;
-#if (NET35 || NET40)
                             readedCount = pipelineReader.Read(bytes, bytes.Length);
-#else
-                            readedCount = pipelineReader.ReadAsync(bytes, bytes.Length).GetAwaiter().GetResult();
-#endif
+
                             for (int i = 0; i < readedCount; i++)
                             {
                                 result[i + readCount] = bytes[i];

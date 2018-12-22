@@ -125,11 +125,8 @@ namespace SignalGo.Client.ClientManager
         /// </summary>
         /// <param name="address">server address</param>
         /// <param name="port">server port</param>
-#if (NET35 || NET40)
-        internal void Connect(string address, int port)
-#else
-        internal async Task Connect(string address, int port)
-#endif
+#if (!NET35 && !NET40)
+        internal async Task ConnectAsync(string address, int port)
         {
             if (IsConnected)
                 throw new Exception("client is connected!");
@@ -141,28 +138,35 @@ namespace SignalGo.Client.ClientManager
                 StreamHelper = SignalGoStreamBase.CurrentBase;
             _address = address;
             _port = port;
-#if (NET35 || NET40)
-            _client = new TcpClient();
-            _client.NoDelay = true;
-            IAsyncResult result = _client.BeginConnect(address, port, null, null);
-
-            bool success = result.AsyncWaitHandle.WaitOne(TimeSpan.FromSeconds(5));
-
-            if (!success)
-            {
-                throw new Exception("Failed to connect.");
-            }
-
-            // we have connected
-            _client.EndConnect(result);
-#else
             _client = new TcpClient();
             await _client.ConnectAsync(address, port);
-#endif
             _clientStream = new PipeNetworkStream(new NormalStream(_client.GetStream()));
 
         }
+#endif
 
+
+        internal void Connect(string address, int port)
+        {
+            if (IsConnected)
+                throw new Exception("client is connected!");
+            if (IsDisposed)
+                throw new ObjectDisposedException("Connector");
+            if (IsWebSocket)
+                StreamHelper = SignalGoStreamWebSocket.CurrentWebSocket;
+            else
+                StreamHelper = SignalGoStreamBase.CurrentBase;
+            _address = address;
+            _port = port;
+
+            _client = new TcpClient();
+#if (NETSTANDARD1_6)
+            _client.ConnectAsync(address, port).GetAwaiter().GetResult();
+#else
+            _client.Connect(address, port);
+#endif
+            _clientStream = new PipeNetworkStream(new NormalStream(_client.GetStream()));
+        }
         /// <summary>
         /// This registers service on server and methods that the client can call
         /// T type must inherited OprationCalls interface
@@ -194,11 +198,8 @@ namespace SignalGo.Client.ClientManager
             return GetType().GetMethod("GetDefaultGeneric").MakeGenericMethod(t).Invoke(this, null);
         }
 
-#if (NET35 || NET40)
-        internal void RunPriorities()
-#else
-        internal async Task RunPriorities()
-#endif
+#if (!NET35 && !NET40)
+        internal async Task RunPrioritiesAsync()
         {
             if (!IsPriorityEnabled)
                 return;
@@ -238,26 +239,77 @@ namespace SignalGo.Client.ClientManager
                         {
                             if (!IsConnected)
                                 break;
-#if (NET35 || NET40)
-                            Thread.Sleep(ProviderSetting.PriorityFunctionDelayTime);
-#else
                             await Task.Delay(ProviderSetting.PriorityFunctionDelayTime);
-#endif
-#if (NET35 || NET40)
-                            priorityAction = function().Result;
-#else
                             priorityAction = await function();
-#endif
                             if (priorityAction == PriorityAction.BreakAll)
                                 break;
                             else if (priorityAction == PriorityAction.HoldAll)
                             {
                                 HoldAllPrioritiesTaskResult = new TaskCompletionSource<object>();
-#if (NET35 || NET40)
-                                object result = HoldAllPrioritiesTaskResult.Task.Result;
-#else
                                 await HoldAllPrioritiesTaskResult.Task;
+                            }
+                        }
+                        while (IsPriorityEnabled && priorityAction == PriorityAction.TryAgain);
+                        if (priorityAction == PriorityAction.BreakAll)
+                            break;
+                    }
+                }
+                catch (Exception ex)
+                {
+
+                }
+            }
+        }
 #endif
+        internal void RunPriorities()
+        {
+            if (!IsPriorityEnabled)
+                return;
+            foreach (Delegate item in PriorityActionsAfterConnected)
+            {
+                try
+                {
+                    if (!IsPriorityEnabled || !IsConnected)
+                        break;
+                    if (item is Action action)
+                        action();
+                    else if (item is Func<PriorityAction>)
+                    {
+                        PriorityAction priorityAction = PriorityAction.TryAgain;
+                        do
+                        {
+                            if (!IsConnected)
+                                break;
+                            Thread.Sleep(ProviderSetting.PriorityFunctionDelayTime);
+                            priorityAction = ((Func<PriorityAction>)item)();
+                            if (priorityAction == PriorityAction.BreakAll)
+                                break;
+                            else if (priorityAction == PriorityAction.HoldAll)
+                            {
+                                HoldAllPrioritiesResetEvent.Reset();
+                                HoldAllPrioritiesResetEvent.WaitOne();
+                            }
+                        }
+                        while (IsPriorityEnabled && priorityAction == PriorityAction.TryAgain);
+                        if (priorityAction == PriorityAction.BreakAll)
+                            break;
+                    }
+                    else if (item is Func<Task<PriorityAction>> function)
+                    {
+                        PriorityAction priorityAction = PriorityAction.TryAgain;
+                        do
+                        {
+                            if (!IsConnected)
+                                break;
+                            Thread.Sleep(ProviderSetting.PriorityFunctionDelayTime);
+
+                            priorityAction = function().Result;
+                            if (priorityAction == PriorityAction.BreakAll)
+                                break;
+                            else if (priorityAction == PriorityAction.HoldAll)
+                            {
+                                HoldAllPrioritiesTaskResult = new TaskCompletionSource<object>();
+                                object result = HoldAllPrioritiesTaskResult.Task.Result;
                             }
                         }
                         while (IsPriorityEnabled && priorityAction == PriorityAction.TryAgain);
@@ -498,7 +550,7 @@ namespace SignalGo.Client.ClientManager
             if (port == null || port.Value == 0)
                 port = _port;
 #if (NETSTANDARD1_6 || NETCOREAPP1_1)
-            var _newClient = new TcpClient();
+            TcpClient _newClient = new TcpClient();
             bool isSuccess = _newClient.ConnectAsync(serverAddress, port.Value).Wait(new TimeSpan(0, 0, 10));
             if (!isSuccess)
                 throw new TimeoutException();
@@ -514,7 +566,7 @@ namespace SignalGo.Client.ClientManager
             PipeNetworkStream stream = new PipeNetworkStream(new NormalStream(_newClient.GetStream()));
             //var json = JsonConvert.SerializeObject(Data);
             //var jsonBytes = Encoding.UTF8.GetBytes(json);
-            string header = "SignalGo-Stream/4.0"+ TextHelper.NewLine;
+            string header = "SignalGo-Stream/4.0" + TextHelper.NewLine;
             byte[] bytes = Encoding.UTF8.GetBytes(header);
 #if (NET40 || NET35)
             stream.Write(bytes, 0, bytes.Length);
@@ -721,7 +773,7 @@ namespace SignalGo.Client.ClientManager
             //    port = _port;
 
 #if (NETSTANDARD1_6 || NETCOREAPP1_1)
-            var _newClient = new TcpClient();
+            TcpClient _newClient = new TcpClient();
             bool isSuccess = _newClient.ConnectAsync(serverAddress, port).Wait(new TimeSpan(0, 0, 10));
             if (!isSuccess)
                 throw new TimeoutException();
@@ -1054,25 +1106,31 @@ namespace SignalGo.Client.ClientManager
         }
 
         private ManualResetEvent PingAndWaitForPong = new ManualResetEvent(true);
-#if (NET40 || NET35)
-        public bool SendPingAndWaitToReceive()
-#else
-        public async Task<bool> SendPingAndWaitToReceive()
-#endif
+#if (!NET40 && !NET35)
+        public async Task<bool> SendPingAndWaitToReceiveAsync()
         {
             try
             {
                 PingAndWaitForPong.Reset();
-#if (PORTABLE)
-                var stream = _client.WriteStream;
-#else
                 NetworkStream stream = _client.GetStream();
-#endif
-#if (NET40 || NET35)
-                StreamHelper.WriteToStream(_clientStream, new byte[] { (byte)DataType.PingPong });
-#else
                 await StreamHelper.WriteToStreamAsync(_clientStream, new byte[] { (byte)DataType.PingPong });
+                return PingAndWaitForPong.WaitOne(new TimeSpan(0, 0, 3));
+            }
+            catch (Exception ex)
+            {
+                AutoLogger.LogError(ex, "ConnectorBase SendData");
+                return false;
+            }
+        }
 #endif
+
+        public bool SendPingAndWaitToReceive()
+        {
+            try
+            {
+                PingAndWaitForPong.Reset();
+                NetworkStream stream = _client.GetStream();
+                StreamHelper.WriteToStream(_clientStream, new byte[] { (byte)DataType.PingPong });
                 return PingAndWaitForPong.WaitOne(new TimeSpan(0, 0, 3));
             }
             catch (Exception ex)

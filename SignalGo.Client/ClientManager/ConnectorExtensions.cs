@@ -88,11 +88,7 @@ namespace SignalGo.Client.ClientManager
         /// <returns></returns>
         public static T SendDataSync<T>(this ConnectorBase connector, string serviceName, string methodName, params Shared.Models.ParameterInfo[] args)
         {
-#if (NET40 || NET35)
             string data = SendData(connector, serviceName, methodName, args);
-#else
-            string data = SendDataAsync(connector, serviceName, methodName, args).GetAwaiter().GetResult();
-#endif
             if (string.IsNullOrEmpty(data))
                 return default(T);
             return ClientSerializationHelper.DeserializeObject<T>(data.ToString());
@@ -168,11 +164,8 @@ namespace SignalGo.Client.ClientManager
         /// send data to server
         /// </summary>
         /// <returns></returns>
-#if (NET40 || NET35)
-        public static string SendData(ConnectorBase connector, string serviceName, string methodName, params Shared.Models.ParameterInfo[] args)
-#else
+#if (!NET40 && !NET35)
         public static Task<string> SendDataAsync(ConnectorBase connector, string serviceName, string methodName, params Shared.Models.ParameterInfo[] args)
-#endif
         {
             MethodCallInfo callInfo = new MethodCallInfo();
             callInfo.ServiceName = serviceName;
@@ -185,11 +178,24 @@ namespace SignalGo.Client.ClientManager
             //}
             string guid = Guid.NewGuid().ToString();
             callInfo.Guid = guid;
-#if (NET40 || NET35)
-            return SendData(connector, callInfo);
-#else
             return SendDataAsync(connector, callInfo);
+        }
 #endif
+
+        public static string SendData(ConnectorBase connector, string serviceName, string methodName, params Shared.Models.ParameterInfo[] args)
+        {
+            MethodCallInfo callInfo = new MethodCallInfo();
+            callInfo.ServiceName = serviceName;
+
+            callInfo.MethodName = methodName;
+            callInfo.Parameters = args;
+            //foreach (var item in args)
+            //{
+            //    callInfo.Parameters.Add(new Shared.Models.ParameterInfo() { Value = ClientSerializationHelper.SerializeObject(item), Name = item?.GetType().FullName });
+            //}
+            string guid = Guid.NewGuid().ToString();
+            callInfo.Guid = guid;
+            return SendData(connector, callInfo);
         }
 
         internal static Task<T> SendDataTaskAsync<T>(ConnectorBase connector, string serviceName, string methodName, MethodInfo method, params object[] args)
@@ -206,22 +212,15 @@ namespace SignalGo.Client.ClientManager
             return SendDataAsync<T>(connector, method, callInfo, args);
         }
 
-#if (NET40 || NET35)
-        private static string SendData(this ConnectorBase connector, MethodCallInfo callInfo)
-#else
+#if (!NET40 && !NET35)
         private static async Task<string> SendDataAsync(this ConnectorBase connector, MethodCallInfo callInfo)
-#endif
         {
             //TryAgain:
             bool isIgnorePriority = false;
             try
             {
                 TaskCompletionSource<MethodCallbackInfo> valueData = new TaskCompletionSource<MethodCallbackInfo>();
-#if (NET40 || NET35)
-                CancellationTokenSource ct = new CancellationTokenSource();
-#else
                 CancellationTokenSource ct = new CancellationTokenSource((int)connector.ProviderSetting.ServerServiceSetting.SendDataTimeout.TotalMilliseconds);
-#endif
                 ct.Token.Register(() => valueData.TrySetCanceled(), useSynchronizationContext: false);
 
                 bool added = WaitedMethodsForResponse.TryAdd(callInfo.Guid, valueData);
@@ -237,21 +236,7 @@ namespace SignalGo.Client.ClientManager
                 connector.SendData(callInfo);
 
 
-#if (NET40 || NET35)
-                var result = valueData.Task.Result;
-#else
                 var result = await valueData.Task;
-#endif
-                //if (!seted)
-                //{
-                //    if (connector.IsDisposed)
-                //        throw new ObjectDisposedException("Provider");
-                //    if (!connector.IsConnected)
-                //        throw new Exception("client disconnected");
-                //    if (connector.ProviderSetting.DisconnectClientWhenTimeout)
-                //        connector.Disconnect();
-                //    throw new TimeoutException();
-                //}
 
                 if (result == null)
                 {
@@ -271,30 +256,66 @@ namespace SignalGo.Client.ClientManager
             }
             catch (Exception ex)
             {
-#if (NET40 || NET35)
-                if (connector.IsConnected && !connector.SendPingAndWaitToReceive())
-#else
-                if (connector.IsConnected && !await connector.SendPingAndWaitToReceive())
-#endif
+                if (connector.IsConnected && !await connector.SendPingAndWaitToReceiveAsync())
                 {
                     connector.Disconnect();
                 }
-                //if (connector.ProviderSetting.AutoReconnect && connector.ProviderSetting.HoldMethodCallsWhenDisconnected && !connector.IsConnected && !isIgnorePriority)
-                //{
-                //    AutoResetEvent resetEvent = new AutoResetEvent(true);
-                //    resetEvent.Reset();
-                //    connector.HoldMethodsToReconnect.Add(resetEvent);
-                //    if (connector.IsConnected)
-                //    {
-                //        connector.HoldMethodsToReconnect.Remove(resetEvent);
-                //        goto TryAgain;
-                //    }
-                //    else
-                //    {
-                //        resetEvent.WaitOne();
-                //        goto TryAgain;
-                //    }
-                //}
+                throw ex;
+            }
+            finally
+            {
+                WaitedMethodsForResponse.Remove(callInfo.Guid);
+            }
+        }
+#endif
+
+        private static string SendData(this ConnectorBase connector, MethodCallInfo callInfo)
+        {
+            //TryAgain:
+            bool isIgnorePriority = false;
+            try
+            {
+                TaskCompletionSource<MethodCallbackInfo> valueData = new TaskCompletionSource<MethodCallbackInfo>();
+                CancellationTokenSource ct = new CancellationTokenSource();
+                ct.Token.Register(() => valueData.TrySetCanceled(), useSynchronizationContext: false);
+
+                bool added = WaitedMethodsForResponse.TryAdd(callInfo.Guid, valueData);
+                object service = connector.Services.ContainsKey(callInfo.ServiceName) ? connector.Services[callInfo.ServiceName] : null;
+                //#if (PORTABLE)
+                MethodInfo method = service?.GetType().FindMethod(callInfo.MethodName);
+                //#else
+                //                var method = service?.GetType().FindMethod(callInfo.MethodName, RuntimeTypeHelper.GetMethodTypes(service.GetType(), callInfo).ToArray());
+                //#endif
+                //
+                isIgnorePriority = method?.GetCustomAttributes<PriorityCallAttribute>().Count() > 0;
+
+                connector.SendData(callInfo);
+
+
+                MethodCallbackInfo result = valueData.Task.Result;
+
+                if (result == null)
+                {
+                    if (connector.IsDisposed)
+                        throw new ObjectDisposedException("Provider");
+                    if (!connector.IsConnected)
+                        throw new Exception("client disconnected");
+                    return null;
+                }
+                if (result.IsException)
+                    throw new Exception("server exception:" + ClientSerializationHelper.DeserializeObject<string>(result.Data));
+                else if (result.IsAccessDenied && result.Data == null)
+                    throw new Exception("server permission denied exception.");
+
+                return result.Data;
+
+            }
+            catch (Exception ex)
+            {
+                if (connector.IsConnected && !connector.SendPingAndWaitToReceive())
+                {
+                    connector.Disconnect();
+                }
                 throw ex;
             }
             finally

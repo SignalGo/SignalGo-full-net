@@ -40,23 +40,23 @@ namespace SignalGo.Shared.IO
             _stream.Dispose();
         }
 
-#if (NET35 || NET40)
+
         public void Flush()
         {
             _stream.Flush();
         }
-#else
+#if (!NET35 && !NET40)
         public Task FlushAsync()
         {
             return _stream.FlushAsync();
         }
 #endif
-#if (NET35 || NET40)
+
         public int Read(byte[] buffer, int offset, int count)
         {
             return _stream.Read(buffer, offset, count);
         }
-#else
+#if (!NET35 && !NET40)
         public async Task<int> ReadAsync(byte[] buffer, int offset, int count)
         {
             if (_stream.CanTimeout && _stream.ReadTimeout > 0)
@@ -75,12 +75,12 @@ namespace SignalGo.Shared.IO
         }
 #endif
 
-#if (NET35 || NET40)
+
         public void Write(byte[] buffer, int offset, int count)
         {
             _stream.Write(buffer, offset, count);
         }
-#else
+#if (!NET35 && !NET40)
         public Task WriteAsync(byte[] buffer, int offset, int count)
         {
             return _stream.WriteAsync(buffer, offset, count);

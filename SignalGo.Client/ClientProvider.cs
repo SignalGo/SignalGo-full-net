@@ -35,22 +35,12 @@ namespace SignalGo.Client
             }
             ServerUrl = url;
             string hostName = uri.Host;
-#if (NET40 || NET35)
             base.Connect(hostName, uri.Port);
             SendFirstLineData();
             GetClientIdIfNeed();
-#else
-            base.Connect(hostName, uri.Port).GetAwaiter().GetResult();
-            SendFirstLineData().GetAwaiter().GetResult();
-            GetClientIdIfNeed().GetAwaiter().GetResult();
-#endif
 
             IsConnected = true;
-#if (NET40 || NET35)
             RunPriorities();
-#else
-            RunPriorities().GetAwaiter().GetResult();
-#endif
             StartToReadingClientData();
             if (IsAutoReconnecting)
                 OnConnectionChanged?.Invoke(ConnectionStatus.Reconnected);
@@ -64,11 +54,8 @@ namespace SignalGo.Client
         /// <param name="url"></param>
         /// <param name="isWebsocket"></param>
         /// <returns></returns>
-#if (NET40 || NET35)
-        public override void ConnectAsync(string url, bool isWebsocket = false)
-#else
+#if (!NET40 && !NET35)
         public override async Task ConnectAsync(string url, bool isWebsocket = false)
-#endif
         {
             IsWebSocket = isWebsocket;
             if (!Uri.TryCreate(url, UriKind.Absolute, out Uri uri))
@@ -81,28 +68,19 @@ namespace SignalGo.Client
             }
             ServerUrl = url;
             string hostName = uri.Host;
-#if (NET40 || NET35)
-            base.Connect(hostName, uri.Port);
-            SendFirstLineData();
-            GetClientIdIfNeed();
-#else
-            await base.Connect(hostName, uri.Port);
+            await base.ConnectAsync(hostName, uri.Port);
             await SendFirstLineData();
-            await GetClientIdIfNeed();
-#endif
+            await GetClientIdIfNeedAsync();
             StartToReadingClientData();
 
             IsConnected = true;
-#if (NET40 || NET35)
-            RunPriorities();
-#else
-            await RunPriorities();
-#endif
+            await RunPrioritiesAsync();
             if (IsAutoReconnecting)
                 OnConnectionChanged?.Invoke(ConnectionStatus.Reconnected);
             else
                 OnConnectionChanged?.Invoke(ConnectionStatus.Connected);
         }
+#endif
 
         private readonly bool _oneTimeConnectedAsyncCalledWithAutoReconnect = false;
 
@@ -245,11 +223,8 @@ namespace SignalGo.Client
 #endif
         }
 
-#if (NET40 || NET35)
-        private void GetClientIdIfNeed()
-#else
-        private async Task GetClientIdIfNeed()
-#endif
+#if (!NET40 && !NET35)
+        private async Task GetClientIdIfNeedAsync()
         {
             if (ProviderSetting.AutoDetectRegisterServices)
             {
@@ -259,11 +234,22 @@ namespace SignalGo.Client
                     (byte)CompressMode.None
                 };
 
-#if (NET40 || NET35)
-                StreamHelper.WriteToStream(_clientStream, data.ToArray());
-#else
                 await StreamHelper.WriteToStreamAsync(_clientStream, data.ToArray());
+            }
+        }
 #endif
+
+        private void GetClientIdIfNeed()
+        {
+            if (ProviderSetting.AutoDetectRegisterServices)
+            {
+                byte[] data = new byte[]
+                {
+                    (byte)DataType.GetClientId,
+                    (byte)CompressMode.None
+                };
+                
+                StreamHelper.WriteToStream(_clientStream, data.ToArray());
             }
         }
 
