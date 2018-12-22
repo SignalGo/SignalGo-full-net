@@ -81,7 +81,7 @@ namespace SignalGo.Shared.Models
         {
             foreach (string item in properties)
             {
-                foreach (BaseValidationRuleInfoAttribute validation in validations)
+                foreach (var validation in validations)
                 {
                     AddValidation(validationBuilder, validation, item);
                 }
@@ -456,7 +456,7 @@ namespace SignalGo.Shared.Models
                         {
                             if (objects.TryGetValue(okv.Key, out List<string> properties))
                             {
-                                foreach (BaseValidationRuleInfoAttribute item in CalculateArrays(okv.Key, properties, currentId))
+                                foreach (BaseValidationRuleInfoAttribute item in CalculateArrays(okv.Key, properties))
                                 {
                                     yield return item;
                                 }
@@ -468,7 +468,7 @@ namespace SignalGo.Shared.Models
             }
         }
 
-        private IEnumerable<BaseValidationRuleInfoAttribute> CalculateArrays(object instance, List<string> properties, int? currentTaskId)
+        private static IEnumerable<BaseValidationRuleInfoAttribute> CalculateArrays(object instance, List<string> properties)
         {
             bool isArray = typeof(IEnumerable).GetIsAssignableFrom(instance.GetType()) && !(instance is string);
             bool isDictionary = typeof(IDictionary).GetIsAssignableFrom(instance.GetType());
@@ -476,7 +476,7 @@ namespace SignalGo.Shared.Models
             {
                 foreach (object item in (IEnumerable)instance)
                 {
-                    if (CalculateArrays(item, properties, currentTaskId) is BaseValidationRuleInfoAttribute validation)
+                    if (CalculateArrays(item, properties) is BaseValidationRuleInfoAttribute validation)
                         yield return validation;
                 }
             }
@@ -484,29 +484,29 @@ namespace SignalGo.Shared.Models
             {
                 foreach (DictionaryEntry item in (IDictionary)instance)
                 {
-                    if (CalculateArrays(item.Key, properties, currentTaskId) is BaseValidationRuleInfoAttribute validation)
+                    if (CalculateArrays(item.Key, properties) is BaseValidationRuleInfoAttribute validation)
                         yield return validation;
-                    if (CalculateArrays(item.Value, properties, currentTaskId) is BaseValidationRuleInfoAttribute validation2)
+                    if (CalculateArrays(item.Value, properties) is BaseValidationRuleInfoAttribute validation2)
                         yield return validation2;
                 }
             }
             else
             {
-                foreach (BaseValidationRuleInfoAttribute validation in CalculateObject(instance, properties, currentTaskId))
+                foreach (BaseValidationRuleInfoAttribute validation in CalculateObject(instance, properties))
                 {
                     yield return validation;
                 }
             }
         }
 
-        private IEnumerable<BaseValidationRuleInfoAttribute> CalculateObject(object instance, List<string> properties, int? currentTaskId)
+        private static IEnumerable<BaseValidationRuleInfoAttribute> CalculateObject(object instance, List<string> properties)
         {
             foreach (System.Reflection.PropertyInfo property in instance.GetType().GetListOfProperties())
             {
                 if (properties.Contains(property.Name))
                     continue;
                 object currentValue = property.GetValue(instance, null);
-                foreach (BaseValidationRuleInfoAttribute validation in GetPropertyBaseValidationRuleInfoAttributes(instance.GetType(), property, instance, currentValue, currentTaskId))
+                foreach (BaseValidationRuleInfoAttribute validation in property.GetCustomAttributes<BaseValidationRuleInfoAttribute>(true))
                 {
                     if (validation.TaskType == ValidationRuleInfoTaskType.Error)
                     {
@@ -533,56 +533,6 @@ namespace SignalGo.Shared.Models
             }
         }
 
-        private IEnumerable<BaseValidationRuleInfoAttribute> GetPropertyBaseValidationRuleInfoAttributes(Type type, PropertyInfo propertyInfo, object instance, object currentValue, int? currentTaskId)
-        {
-            foreach (BaseValidationRuleInfoAttribute item in propertyInfo.GetCustomAttributes<BaseValidationRuleInfoAttribute>(true))
-            {
-                yield return item;
-            }
-
-            foreach (BaseValidationRuleInfoAttribute item in GetPropertyFluentBaseValidationRuleInfoAttributes(type, propertyInfo, instance, currentValue, currentTaskId))
-            {
-                yield return item;
-            }
-        }
-
-        private IEnumerable<BaseValidationRuleInfoAttribute> GetPropertyFluentBaseValidationRuleInfoAttributes(Type type, PropertyInfo propertyInfo, object instance, object currentValue, int? currentTaskId)
-        {
-            if (propertyInfo != null)
-            {
-                if (FluentValidationRules.TryGetValue(type, out Dictionary<string, List<object>> validations))
-                {
-                    if (validations.TryGetValue(propertyInfo.Name, out List<object> attributes))
-                    {
-                        foreach (object attribute in attributes)
-                        {
-                            BaseValidationRuleInfoAttribute attributeInstance = null;
-                            if (attribute is Type attributeType)
-                            {
-                                try
-                                {
-                                    attributeInstance = (BaseValidationRuleInfoAttribute)Activator.CreateInstance(attributeType);
-                                }
-                                catch (Exception ex)
-                                {
-                                    throw new Exception($"I went to create instance of your attribute by type {attributeType.FullName} but it had Exception, are you made constructor for that? see the inner exception for more details", ex);
-                                }
-                            }
-                            else
-                            {
-                                attributeInstance = (BaseValidationRuleInfoAttribute)attribute;
-                            }
-
-                            attributeInstance.PropertyInfo = propertyInfo;
-                            attributeInstance.Object = instance;
-                            attributeInstance.CurrentValue = currentValue;
-                            AddRule(currentTaskId, attributeInstance);
-                            yield return attributeInstance;
-                        }
-                    }
-                }
-            }
-        }
         /// <summary>
         /// remove tasks from memory
         /// </summary>

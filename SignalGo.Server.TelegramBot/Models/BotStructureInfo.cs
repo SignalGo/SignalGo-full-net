@@ -1,7 +1,9 @@
-﻿using SignalGo.Server.Models;
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+using SignalGo.Server.Models;
 using SignalGo.Server.ServiceManager;
 using SignalGo.Shared.Models;
-using System.Collections.Generic;
 
 namespace SignalGo.Server.TelegramBot.Models
 {
@@ -9,47 +11,47 @@ namespace SignalGo.Server.TelegramBot.Models
     {
         public bool InitializeServicesFromAttributes { get; set; } = false;
 
-        public string GetCancelButtonText(TelegramClientInfo clientInfo)
+        public string GetCancelButtonText()
         {
             return "/Cancel";
         }
 
-        public string GetMethodSelectedText(string methodName, TelegramClientInfo clientInfo)
+        public string GetMethodSelectedText(string methodName)
         {
             return $"Method {methodName} Selected!";
         }
 
-        public string GetParameterNotFoundText(string parameterName, TelegramClientInfo clientInfo)
+        public string GetParameterNotFoundText(string parameterName)
         {
             return $"Parameter {parameterName} not found!";
         }
 
-        public string GetParameterSelectedText(string parameterName, TelegramClientInfo clientInfo)
+        public string GetParameterSelectedText(string parameterName)
         {
             return $"Please Send {parameterName} Value:";
         }
 
-        public string GetParameterValueChangedText(string parameterName, TelegramClientInfo clientInfo)
+        public string GetParameterValueChangedText(string parameterName)
         {
             return $"Parameter {parameterName} value changed, please click on Send button or another parameter";
         }
 
-        public string GetSendButtonText(TelegramClientInfo clientInfo)
+        public string GetSendButtonText()
         {
             return "/Send";
         }
 
-        public string GetServiceNotFoundText(string serviceName, TelegramClientInfo clientInfo)
+        public string GetServiceNotFoundText(string serviceName)
         {
             return $"Service {serviceName} not found";
         }
 
-        public string GetServiceSelectedText(string serviceName, TelegramClientInfo clientInfo)
+        public string GetServiceSelectedText(string serviceName)
         {
             return "Service Selected:\n" + serviceName;
         }
 
-        public string GetServicesGeneratedText(TelegramClientInfo clientInfo)
+        public string GetServicesGeneratedText()
         {
             return "Services Generated!";
         }
@@ -68,11 +70,6 @@ namespace SignalGo.Server.TelegramBot.Models
         {
             changed = false;
             return null;
-        }
-
-        public bool OnServiceGenerating(string serviceName, TelegramClientInfo clientInfo)
-        {
-            return true;
         }
     }
 }

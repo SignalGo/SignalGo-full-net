@@ -23,53 +23,53 @@ namespace SignalGo.Server.TelegramBot.Models
         /// text of cancel button default is /Cancel
         /// </summary>
         /// <returns></returns>
-        string GetCancelButtonText(TelegramClientInfo clientInfo);
+        string GetCancelButtonText();
         /// <summary>
         /// text of Send button default is /Send
         /// </summary>
         /// <returns></returns>
-        string GetSendButtonText(TelegramClientInfo clientInfo);
+        string GetSendButtonText();
         /// <summary>
         /// text of Services Generated
         /// </summary>
         /// <returns></returns>
-        string GetServicesGeneratedText(TelegramClientInfo clientInfo);
+        string GetServicesGeneratedText();
         /// <summary>
         /// text of service not found
         /// </summary>
         /// <param name="serviceName"></param>
         /// <returns></returns>
-        string GetServiceNotFoundText(string serviceName, TelegramClientInfo clientInfo);
+        string GetServiceNotFoundText(string serviceName);
         /// <summary>
         /// text of service selected
         /// </summary>
         /// <param name="serviceName"></param>
         /// <returns></returns>
-        string GetServiceSelectedText(string serviceName, TelegramClientInfo clientInfo);
+        string GetServiceSelectedText(string serviceName);
         /// <summary>
         /// text of method selected on bot
         /// </summary>
         /// <param name="methodName"></param>
         /// <returns></returns>
-        string GetMethodSelectedText(string methodName, TelegramClientInfo clientInfo);
+        string GetMethodSelectedText(string methodName);
         /// <summary>
         /// text of parameter selected on bot buttons
         /// </summary>
         /// <param name="parameterName"></param>
         /// <returns></returns>
-        string GetParameterSelectedText(string parameterName, TelegramClientInfo clientInfo);
+        string GetParameterSelectedText(string parameterName);
         /// <summary>
         /// text of parameter not found
         /// </summary>
         /// <param name="parameterName"></param>
         /// <returns></returns>
-        string GetParameterNotFoundText(string parameterName, TelegramClientInfo clientInfo);
+        string GetParameterNotFoundText(string parameterName);
         /// <summary>
         /// text of parameter value changed
         /// </summary>
         /// <param name="parameterName"></param>
         /// <returns></returns>
-        string GetParameterValueChangedText(string parameterName, TelegramClientInfo clientInfo);
+        string GetParameterValueChangedText(string parameterName);
         /// <summary>
         ///  this method will calling before the service methods Call
         /// </summary>
@@ -91,12 +91,5 @@ namespace SignalGo.Server.TelegramBot.Models
         /// <returns></returns>
         string OnCustomResponse(ServerBase serverBase, TelegramClientInfo clientInfo, string serviceName, string methodName, List<ParameterInfo> parameters,
             CallMethodResultInfo<OperationContext> currentResponse, out bool changed);
-
-        /// <summary>
-        /// when service is generating as button you could handle it
-        /// </summary>
-        /// <param name="serviceName"></param>
-        /// <returns></returns>
-        bool OnServiceGenerating(string serviceName, TelegramClientInfo clientInfo);
     }
 }

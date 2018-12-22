@@ -3,9 +3,9 @@
   <PropertyGroup>
     <TargetFrameworks>net451;netstandard2.0;</TargetFrameworks>
     <!--<TargetFramework>netstandard2.0</TargetFramework>-->
-    <AssemblyVersion>5.2</AssemblyVersion>
-    <FileVersion>5.2</FileVersion>
-    <Version>5.2</Version>
+    <AssemblyVersion>5.0</AssemblyVersion>
+    <FileVersion>5.0</FileVersion>
+    <Version>5.0</Version>
     <Authors>Ali Yousefi</Authors>
     <Company></Company>
     <DebugType>full</DebugType>

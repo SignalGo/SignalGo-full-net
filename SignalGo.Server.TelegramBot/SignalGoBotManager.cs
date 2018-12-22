@@ -29,7 +29,7 @@ namespace SignalGo.Server.TelegramBot
 
         private Dictionary<string, Type> Services { get; set; } = new Dictionary<string, Type>();
         private Dictionary<Type, Dictionary<string, Delegate>> OverridedMethodResponses { get; set; } = new Dictionary<Type, Dictionary<string, Delegate>>();
-        //private List<List<KeyboardButton>> ServicesButtons { get; set; }
+        private List<List<KeyboardButton>> ServicesButtons { get; set; }
         private ConcurrentDictionary<int, TelegramClientInfo> ConnectedClients { get; set; } = new ConcurrentDictionary<int, TelegramClientInfo>();
         public async Task Start(string token, ServerBase serverBase, IBotStructureInfo botStructureInfo = null, System.Net.Http.HttpClient httpClient = null)
         {
@@ -60,7 +60,7 @@ namespace SignalGo.Server.TelegramBot
                 {
                     if (!ConnectedClients.TryGetValue(e.Message.From.Id, out TelegramClientInfo clientInfo))
                     {
-                        clientInfo = new TelegramClientInfo(_serverBase)
+                        clientInfo = new TelegramClientInfo
                         {
                             ConnectedDateTime = DateTime.Now,
                             ClientId = Guid.NewGuid().ToString(),
@@ -70,7 +70,7 @@ namespace SignalGo.Server.TelegramBot
                         ConnectedClients.TryAdd(e.Message.From.Id, clientInfo);
                     }
 
-                    if (e.Message.Text == CurrentBotStructureInfo.GetCancelButtonText(clientInfo))
+                    if (e.Message.Text == CurrentBotStructureInfo.GetCancelButtonText())
                     {
                         if (!string.IsNullOrEmpty(clientInfo.CurrentMethodName) && !string.IsNullOrEmpty(clientInfo.CurrentServiceName))
                         {
@@ -81,7 +81,7 @@ namespace SignalGo.Server.TelegramBot
                             await ShowServices(clientInfo, e);
                         }
                     }
-                    else if (e.Message.Text == CurrentBotStructureInfo.GetSendButtonText(clientInfo) && !string.IsNullOrEmpty(clientInfo.CurrentServiceName) && !string.IsNullOrEmpty(clientInfo.CurrentMethodName))
+                    else if (e.Message.Text == CurrentBotStructureInfo.GetSendButtonText() && !string.IsNullOrEmpty(clientInfo.CurrentServiceName) && !string.IsNullOrEmpty(clientInfo.CurrentMethodName))
                     {
                         if (Services.TryGetValue(clientInfo.CurrentServiceName, out Type service))
                         {
@@ -92,10 +92,8 @@ namespace SignalGo.Server.TelegramBot
                                 MethodInfo method = service.GetFullServiceLevelMethods().FirstOrDefault(x => x.Name.Equals(clientInfo.CurrentMethodName, StringComparison.OrdinalIgnoreCase));
                                 if (OverridedMethodResponses.TryGetValue(service, out Dictionary<string, Delegate> methods) && methods.TryGetValue(clientInfo.CurrentMethodName, out Delegate function))
                                 {
-                                    BotCustomResponse botCustomResponse = new BotCustomResponse();
-                                    BotResponseInfoBase response = (BotResponseInfoBase)function.DynamicInvoke(result.Context, botCustomResponse, result.Result);
+                                    var response = (BotResponseInfoBase)function.DynamicInvoke(result.Context, result.Result);
                                     await ShowResultValue(response.Message, method, clientInfo, e);
-                                    botCustomResponse.OnAfterComeplete?.Invoke();
                                 }
                                 else
                                 {
@@ -179,7 +177,7 @@ namespace SignalGo.Server.TelegramBot
             clientInfo.CurrentParameterName = null;
             ReplyKeyboardMarkup replyMarkup = new ReplyKeyboardMarkup
             {
-                Keyboard = GetMethodParametersButtons(methodInfo, clientInfo)
+                Keyboard = GetMethodParametersButtons(methodInfo)
             };
             if (callMethodResultInfo.CallbackInfo.Data.Length > 4000)
             {
@@ -213,7 +211,7 @@ namespace SignalGo.Server.TelegramBot
             clientInfo.CurrentParameterName = null;
             ReplyKeyboardMarkup replyMarkup = new ReplyKeyboardMarkup
             {
-                Keyboard = GetMethodParametersButtons(methodInfo, clientInfo)
+                Keyboard = GetMethodParametersButtons(methodInfo)
             };
             await _botClient.SendTextMessageAsync(
               chatId: e.Message.Chat,
@@ -228,7 +226,7 @@ namespace SignalGo.Server.TelegramBot
             clientInfo.CurrentParameterName = null;
             ReplyKeyboardMarkup replyMarkup = new ReplyKeyboardMarkup
             {
-                Keyboard = GetMethodParametersButtons(methodInfo, clientInfo)
+                Keyboard = GetMethodParametersButtons(methodInfo)
             };
             Shared.Models.ParameterInfo find = clientInfo.ParameterInfoes.FirstOrDefault(x => x.Name.Equals(parameterInfo.Name, StringComparison.OrdinalIgnoreCase));
             if (find == null)
@@ -239,7 +237,7 @@ namespace SignalGo.Server.TelegramBot
             find.Value = value;
             await _botClient.SendTextMessageAsync(
                 chatId: e.Message.Chat,
-                text: CurrentBotStructureInfo.GetParameterValueChangedText(GetParameterCaption(methodInfo, parameterInfo), clientInfo),
+                text: CurrentBotStructureInfo.GetParameterValueChangedText(GetParameterCaption(methodInfo, parameterInfo)),
                 replyMarkup: replyMarkup
                );
         }
@@ -250,11 +248,11 @@ namespace SignalGo.Server.TelegramBot
             {
                 ReplyKeyboardMarkup replyMarkup = new ReplyKeyboardMarkup
                 {
-                    Keyboard = GetMethodParametersButtons(methodInfo, clientInfo)
+                    Keyboard = GetMethodParametersButtons(methodInfo)
                 };
                 await _botClient.SendTextMessageAsync(
                     chatId: e.Message.Chat,
-                    text: CurrentBotStructureInfo.GetParameterNotFoundText(e.Message.Text, clientInfo),
+                    text: CurrentBotStructureInfo.GetParameterNotFoundText(e.Message.Text),
                     replyMarkup: replyMarkup
                    );
             }
@@ -263,11 +261,11 @@ namespace SignalGo.Server.TelegramBot
                 clientInfo.CurrentParameterName = parameterInfo.Name;// GetParameterCaption(methodInfo, parameterInfo);
                 ReplyKeyboardMarkup replyMarkup = new ReplyKeyboardMarkup
                 {
-                    Keyboard = GetMethodParametersButtons(methodInfo, clientInfo)
+                    Keyboard = GetMethodParametersButtons(methodInfo)
                 };
                 await _botClient.SendTextMessageAsync(
                     chatId: e.Message.Chat,
-                    text: CurrentBotStructureInfo.GetParameterSelectedText(GetParameterCaption(methodInfo, parameterInfo), clientInfo),
+                    text: CurrentBotStructureInfo.GetParameterSelectedText(GetParameterCaption(methodInfo, parameterInfo)),
                     replyMarkup: replyMarkup
                    );
             }
@@ -278,11 +276,11 @@ namespace SignalGo.Server.TelegramBot
             clientInfo.CurrentMethodName = method.Name;
             ReplyKeyboardMarkup replyMarkup = new ReplyKeyboardMarkup
             {
-                Keyboard = GetMethodParametersButtons(method, clientInfo)
+                Keyboard = GetMethodParametersButtons(method)
             };
             await _botClient.SendTextMessageAsync(
                 chatId: e.Message.Chat,
-                text: CurrentBotStructureInfo.GetMethodSelectedText(e.Message.Text, clientInfo),
+                text: CurrentBotStructureInfo.GetMethodSelectedText(e.Message.Text),
                 replyMarkup: replyMarkup
                );
         }
@@ -296,11 +294,11 @@ namespace SignalGo.Server.TelegramBot
                 //clientInfo.CurrentServiceName = GetServiceCaption(service);
                 ReplyKeyboardMarkup replyMarkup = new ReplyKeyboardMarkup
                 {
-                    Keyboard = GetServiceMethodsButtons(service, clientInfo)
+                    Keyboard = GetServiceMethodsButtons(service)
                 };
                 await _botClient.SendTextMessageAsync(
                      chatId: e.Message.Chat,
-                     text: CurrentBotStructureInfo.GetServiceSelectedText(GetServiceCaption(service), clientInfo),
+                     text: CurrentBotStructureInfo.GetServiceSelectedText(GetServiceCaption(service)),
                      replyMarkup: replyMarkup
                    );
             }
@@ -308,7 +306,7 @@ namespace SignalGo.Server.TelegramBot
             {
                 await _botClient.SendTextMessageAsync(
                     chatId: e.Message.Chat,
-                    text: CurrentBotStructureInfo.GetServiceNotFoundText(serviceName, clientInfo)
+                    text: CurrentBotStructureInfo.GetServiceNotFoundText(serviceName)
                   );
             }
         }
@@ -318,42 +316,23 @@ namespace SignalGo.Server.TelegramBot
             clientInfo.CurrentServiceName = null;
             ReplyKeyboardMarkup replyMarkup = new ReplyKeyboardMarkup
             {
-                Keyboard = GetListOfServicesButtons(clientInfo)
+                Keyboard = GetListOfServicesButtons()
             };
             await _botClient.SendTextMessageAsync(
                  chatId: e.Message.Chat,
-                 text: CurrentBotStructureInfo.GetServicesGeneratedText(clientInfo),
+                 text: CurrentBotStructureInfo.GetServicesGeneratedText(),
                  replyMarkup: replyMarkup
                );
-        }
-
-        public async void ShowServices(TelegramClientInfo clientInfo)
-        {
-            try
-            {
-                clientInfo.CurrentServiceName = null;
-                ReplyKeyboardMarkup replyMarkup = new ReplyKeyboardMarkup
-                {
-                    Keyboard = GetListOfServicesButtons(clientInfo)
-                };
-                await _botClient.SendTextMessageAsync(
-                     chatId: clientInfo.Message.Chat,
-                     text: CurrentBotStructureInfo.GetServicesGeneratedText(clientInfo),
-                     replyMarkup: replyMarkup
-                   );
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex);
-            }
         }
 
         /// <summary>
         /// get buttons of all services
         /// </summary>
         /// <returns></returns>
-        private List<List<KeyboardButton>> GetListOfServicesButtons(TelegramClientInfo clientInfo)
+        private List<List<KeyboardButton>> GetListOfServicesButtons()
         {
+            if (ServicesButtons != null)
+                return ServicesButtons;
             List<KeyboardButton> columns = new List<KeyboardButton>();
 
             List<List<KeyboardButton>> rows = new List<List<KeyboardButton>>();
@@ -364,7 +343,7 @@ namespace SignalGo.Server.TelegramBot
             {
                 System.Type item = services[i];
                 ServiceContractAttribute attribute = item.GetCustomAttribute<ServiceContractAttribute>();
-                if (attribute.ServiceType != ServiceType.HttpService)
+                if (attribute.ServiceType != ServiceType.HttpService || Services.ContainsKey(attribute.Name))
                     continue;
                 string serviceName = "";
                 if (CurrentBotStructureInfo.InitializeServicesFromAttributes)
@@ -376,10 +355,7 @@ namespace SignalGo.Server.TelegramBot
                 }
 
                 serviceName = attribute.Name;
-                if (!CurrentBotStructureInfo.OnServiceGenerating(serviceName, clientInfo))
-                    continue;
-                if (!Services.ContainsKey(attribute.Name))
-                    Services.Add(serviceName, item);
+                Services.Add(serviceName, item);
                 if (columnIndex == 3)
                 {
                     columnIndex = 0;
@@ -391,6 +367,7 @@ namespace SignalGo.Server.TelegramBot
             }
             if (rows.Count == 0)
                 rows.Add(columns);
+            ServicesButtons = rows;
             return rows;
         }
 
@@ -399,7 +376,7 @@ namespace SignalGo.Server.TelegramBot
         /// </summary>
         /// <param name="service"></param>
         /// <returns></returns>
-        private List<List<KeyboardButton>> GetServiceMethodsButtons(Type service, TelegramClientInfo clientInfo)
+        private List<List<KeyboardButton>> GetServiceMethodsButtons(Type service)
         {
             List<KeyboardButton> columns = new List<KeyboardButton>();
 
@@ -433,7 +410,7 @@ namespace SignalGo.Server.TelegramBot
             }
             if (rows.Count == 0)
                 rows.Add(columns);
-            rows.Add(new List<KeyboardButton>() { new KeyboardButton(CurrentBotStructureInfo.GetCancelButtonText(clientInfo)) });
+            rows.Add(new List<KeyboardButton>() { new KeyboardButton(CurrentBotStructureInfo.GetCancelButtonText()) });
             return rows;
         }
 
@@ -594,7 +571,7 @@ namespace SignalGo.Server.TelegramBot
             return null;
         }
 
-        private List<List<KeyboardButton>> GetMethodParametersButtons(MethodInfo method, TelegramClientInfo clientInfo)
+        private List<List<KeyboardButton>> GetMethodParametersButtons(MethodInfo method)
         {
             List<KeyboardButton> columns = new List<KeyboardButton>();
 
@@ -641,38 +618,22 @@ namespace SignalGo.Server.TelegramBot
             }
             if (rows.Count == 0)
                 rows.Add(columns);
-            rows.Add(new List<KeyboardButton>() { new KeyboardButton(CurrentBotStructureInfo.GetSendButtonText(clientInfo)) });
-            rows.Add(new List<KeyboardButton>() { new KeyboardButton(CurrentBotStructureInfo.GetCancelButtonText(clientInfo)) });
+            rows.Add(new List<KeyboardButton>() { new KeyboardButton(CurrentBotStructureInfo.GetSendButtonText()) });
+            rows.Add(new List<KeyboardButton>() { new KeyboardButton(CurrentBotStructureInfo.GetCancelButtonText()) });
             return rows;
         }
 
         /// <summary>
         /// override response of service method
         /// </summary>
-        public void OverrideServiceMethodResponse<T, TMethodResponse, TResult>(string methodName, Func<OperationContext, BotCustomResponse, TMethodResponse, BotResponseInfo<TResult>> customizeResponse)
+        public void OverrideServiceMethodResponse<T, TMethodResponse, TResult>(string methodName, Func<OperationContext, TMethodResponse, BotResponseInfo<TResult>> customizeResponse)
         {
             Type serviceType = typeof(T);
 
             if (!OverridedMethodResponses.TryGetValue(serviceType, out Dictionary<string, Delegate> responses))
                 responses = OverridedMethodResponses[serviceType] = new Dictionary<string, Delegate>();
-            if (responses.ContainsKey(methodName))
-                throw new Exception($"method {methodName} is exist and you ar adding duplicate");
+
             responses.Add(methodName, customizeResponse);
-        }
-
-        public void OverrideServiceMethodResponse<T, TMethodResponse, TResult>(Func<OperationContext, BotCustomResponse, TMethodResponse, BotResponseInfo<TResult>> customizeResponse, params string[] methods)
-        {
-            Type serviceType = typeof(T);
-
-            if (!OverridedMethodResponses.TryGetValue(serviceType, out Dictionary<string, Delegate> responses))
-                responses = OverridedMethodResponses[serviceType] = new Dictionary<string, Delegate>();
-
-            foreach (string methodName in methods)
-            {
-                if (responses.ContainsKey(methodName))
-                    throw new Exception($"method {methodName} is exist and you ar adding duplicate");
-                responses.Add(methodName, customizeResponse);
-            }
         }
     }
 }
