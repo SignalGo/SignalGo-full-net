@@ -1445,12 +1445,12 @@ namespace SignalGo.Shared.Converters
                 {
                     if (existObjects.Contains(item))
                     {
-                        if (IsEnabledReferenceResolverForArray)
-                        {
-                            writer.WriteStartObject();
-                            WriteReferenceProperty(writer, item.Value.GetType(), item.Value, refProperty);
-                            writer.WriteEndObject();
-                        }
+                        //if (IsEnabledReferenceResolverForArray)
+                        //{
+                        writer.WriteStartObject();
+                        WriteReferenceProperty(writer, item.Value.GetType(), item.Value, refProperty);
+                        writer.WriteEndObject();
+                        //}
 
                     }
                     else
@@ -1470,13 +1470,13 @@ namespace SignalGo.Shared.Converters
                     SerializedObjects.Add(item.Value);
                 else
                 {
-                    if (IsEnabledReferenceResolverForArray)
-                    {
-                        writer.WritePropertyName(item.Key.ToString());
-                        writer.WriteStartObject();
-                        WriteReferenceProperty(writer, item.Value.GetType(), item.Value, refProperty);
-                        writer.WriteEndObject();
-                    }
+                    //if (IsEnabledReferenceResolverForArray)
+                    //{
+                    writer.WritePropertyName(item.Key.ToString());
+                    writer.WriteStartObject();
+                    WriteReferenceProperty(writer, item.Value.GetType(), item.Value, refProperty);
+                    writer.WriteEndObject();
+                    //}
                     continue;
                 }
                 writer.WritePropertyName(item.Key.ToString());
@@ -1498,7 +1498,7 @@ namespace SignalGo.Shared.Converters
                 {
                     if (existObjects.Contains(item))
                     {
-                        if (SerializedObjects.Contains(item) && IsEnabledReferenceResolverForArray)
+                        if (SerializedObjects.Contains(item)) //&& IsEnabledReferenceResolverForArray)
                         {
                             writer.WriteStartObject();
                             WriteReferenceProperty(writer, item.GetType(), item, refProperty);
@@ -1528,13 +1528,13 @@ namespace SignalGo.Shared.Converters
                     SerializedObjects.Add(item);
                 else
                 {
-                    if (IsEnabledReferenceResolverForArray)
-                    {
-                        if (writer.WriteState != WriteState.Object)
-                            writer.WriteStartObject();
-                        WriteReferenceProperty(writer, item.GetType(), item, refProperty);
-                        writer.WriteEndObject();
-                    }
+                    //if (IsEnabledReferenceResolverForArray)
+                    //{
+                    if (writer.WriteState != WriteState.Object)
+                        writer.WriteStartObject();
+                    WriteReferenceProperty(writer, item.GetType(), item, refProperty);
+                    writer.WriteEndObject();
+                    //}
                     continue;
                 }
                 serializer.Serialize(writer, item);
@@ -1690,13 +1690,13 @@ namespace SignalGo.Shared.Converters
                                     {
                                         if (SerializedObjects.Contains(propValue))
                                         {
-                                            if (IsEnabledReferenceResolverForArray)
-                                            {
-                                                writer.WritePropertyName(property.Name);
-                                                writer.WriteStartObject();
-                                                WriteReferenceProperty(writer, propValue.GetType(), propValue, refProperty);
-                                                writer.WriteEndObject();
-                                            }
+                                            //if (IsEnabledReferenceResolverForArray)
+                                            //{
+                                            writer.WritePropertyName(property.Name);
+                                            writer.WriteStartObject();
+                                            WriteReferenceProperty(writer, propValue.GetType(), propValue, refProperty);
+                                            writer.WriteEndObject();
+                                            //}
                                             return;
                                         }
                                         else
