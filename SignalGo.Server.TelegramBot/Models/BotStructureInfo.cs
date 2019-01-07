@@ -1,6 +1,7 @@
 ﻿using SignalGo.Server.Models;
 using SignalGo.Server.ServiceManager;
 using SignalGo.Shared.Models;
+using System;
 using System.Collections.Generic;
 
 namespace SignalGo.Server.TelegramBot.Models
@@ -44,7 +45,7 @@ namespace SignalGo.Server.TelegramBot.Models
             return $"Service {serviceName} not found";
         }
 
-        public string GetServiceSelectedText(string serviceName, TelegramClientInfo clientInfo)
+        public string GetServiceSelectedText(string serviceName, string caption, Type serviceType, TelegramClientInfo clientInfo)
         {
             return "Service Selected:\n" + serviceName;
         }
@@ -73,6 +74,21 @@ namespace SignalGo.Server.TelegramBot.Models
         public bool OnServiceGenerating(string serviceName, TelegramClientInfo clientInfo)
         {
             return true;
+        }
+
+        public void OnButtonsGenerating(List<List<BotButtonInfo>> buttons, BotLevelType botLevelType, string serviceName, string methodName, TelegramClientInfo clientInfo)
+        {
+
+        }
+
+        public void OnClientConnected(TelegramClientInfo clientInfo, SignalGoBotManager signalGoBotManager)
+        {
+
+        }
+
+        public bool OnParameterSelecting(System.Reflection.MethodInfo methodInfo, System.Reflection.ParameterInfo parameterInfo, TelegramClientInfo clientInfo, string value)
+        {
+            return false;
         }
     }
 }

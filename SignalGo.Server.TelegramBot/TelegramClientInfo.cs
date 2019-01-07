@@ -17,5 +17,6 @@ namespace SignalGo.Server.TelegramBot
         public string CurrentMethodName { get; set; }
         public string CurrentParameterName { get; set; }
         public List<ParameterInfo> ParameterInfoes { get; set; } = new List<ParameterInfo>();
+        public SignalGoBotManager SignalGoBotManager { get; set; }
     }
 }

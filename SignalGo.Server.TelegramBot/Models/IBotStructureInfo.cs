@@ -1,10 +1,19 @@
 ﻿using SignalGo.Server.Models;
 using SignalGo.Server.ServiceManager;
 using SignalGo.Shared.Models;
+using System;
 using System.Collections.Generic;
+using Telegram.Bot.Args;
 
 namespace SignalGo.Server.TelegramBot.Models
 {
+    public enum BotLevelType : byte
+    {
+        Services = 0,
+        Methods = 1,
+        Parameters = 2
+    }
+
     /// <summary>
     /// create your bot structre
     /// </summary>
@@ -15,6 +24,12 @@ namespace SignalGo.Server.TelegramBot.Models
         /// you could customize your methods responses here
         /// </summary>
         void OnStarted(SignalGoBotManager signalGoBotManager);
+        /// <summary>
+        /// when new client connect to bot
+        /// </summary>
+        /// <param name="clientInfo"></param>
+        /// <param name="signalGoBotManager"></param>
+        void OnClientConnected(TelegramClientInfo clientInfo, SignalGoBotManager signalGoBotManager);
         /// <summary>
         /// initialize all services and methods buttons  etc from attributes otherwise buttons will not initialize and show to clients
         /// </summary>
@@ -45,7 +60,7 @@ namespace SignalGo.Server.TelegramBot.Models
         /// </summary>
         /// <param name="serviceName"></param>
         /// <returns></returns>
-        string GetServiceSelectedText(string serviceName, TelegramClientInfo clientInfo);
+        string GetServiceSelectedText(string serviceName, string caption, Type serviceType, TelegramClientInfo clientInfo);
         /// <summary>
         /// text of method selected on bot
         /// </summary>
@@ -98,5 +113,20 @@ namespace SignalGo.Server.TelegramBot.Models
         /// <param name="serviceName"></param>
         /// <returns></returns>
         bool OnServiceGenerating(string serviceName, TelegramClientInfo clientInfo);
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="buttons"></param>
+        /// <param name="clientInfo"></param>
+        void OnButtonsGenerating(List<List<BotButtonInfo>> buttons, BotLevelType botLevelType, string serviceName, string methodName, TelegramClientInfo clientInfo);
+        /// <summary>
+        /// when parameter selecting
+        /// </summary>
+        /// <param name="methodInfo"></param>
+        /// <param name="parameterInfo"></param>
+        /// <param name="clientInfo"></param>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        bool OnParameterSelecting(System.Reflection.MethodInfo methodInfo, System.Reflection.ParameterInfo parameterInfo, TelegramClientInfo clientInfo, string value);
     }
 }
