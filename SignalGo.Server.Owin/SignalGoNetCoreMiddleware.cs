@@ -8,6 +8,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.WebSockets;
 using System.Threading.Tasks;
 
 namespace SignalGo.Server.Owin
@@ -63,16 +64,10 @@ namespace SignalGo.Server.Owin
             if (isWebSocketd)
             {
                 owinClientInfo.StreamHelper = SignalGoStreamBase.CurrentBase;
-                //Action<IDictionary<string, object>, Func<IDictionary<string, object>, Task>> accept = context.Get<Action<IDictionary<string, object>, Func<IDictionary<string, object>, Task>>>("websocket.Accept");
-                //if (accept == null)
-                //{
-                //    // Bad Request
-                //    context.Response.StatusCode = 400;
-                //    context.Response.WriteAsync("Not a valid websocket request");
-                //    return Task.FromResult<object>(null);
-                //}
-                //WebsocketClient websocketClient = new WebsocketClient() { ClientInfo = owinClientInfo, CurrentServerBase = CurrentServerBase };
-                //accept(null, websocketClient.RunWebSocket);
+                var web = context.WebSockets.IsWebSocketRequest;
+                WebSocket webSocket = await context.WebSockets.AcceptWebSocketAsync();
+                owinClientInfo.ClientStream = new PipeNetworkStream(new WebsocketStream(webSocket));
+                await HttpProvider.AddWebSocketHttpClient(owinClientInfo, CurrentServerBase);
                 await Task.FromResult<object>(null);
 
             }

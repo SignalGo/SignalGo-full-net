@@ -78,17 +78,16 @@ namespace SignalGo.Server.Owin
     {
         public OwinClientInfo ClientInfo { get; set; }
         public ServerBase CurrentServerBase { get; set; }
-        public Task RunWebSocket(IDictionary<string, object> websocketContext)
+        public async Task RunWebSocket(IDictionary<string, object> websocketContext)
         {
             if (websocketContext.TryGetValue(typeof(WebSocketContext).FullName, out object value))
             {
                 WebSocket webSocket = ((WebSocketContext)value).WebSocket;
                 ClientInfo.ClientStream = new PipeNetworkStream(new WebsocketStream(webSocket));
-                return HttpProvider.AddWebSocketHttpClient(ClientInfo, CurrentServerBase);
+                await HttpProvider.AddWebSocketHttpClient(ClientInfo, CurrentServerBase);
             }
             else
             {
-                return null;
                 //mWebSocket = new OwinWebSocket(websocketContext);
             }
         }

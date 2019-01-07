@@ -192,7 +192,7 @@ namespace SignalGo.Server.ServiceManager.Versions
                         tcpClient.GetStream().ReadTimeout = -1;
                         tcpClient.GetStream().WriteTimeout = -1;
                     }
-                    SignalGoDuplexServiceProvider.StartToReadingClientData(client, _serverBase);
+                    await SignalGoDuplexServiceProvider.StartToReadingClientData(client, _serverBase);
                 }
                 else if (firstLineString.Contains("HTTP/"))
                 {
@@ -266,7 +266,7 @@ namespace SignalGo.Server.ServiceManager.Versions
             }
             return stringBuilder.ToString();
         }
-        
+
         /// <summary>
         /// count of connected
         /// </summary>

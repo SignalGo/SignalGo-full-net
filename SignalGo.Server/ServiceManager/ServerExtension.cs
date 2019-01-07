@@ -1,6 +1,7 @@
 ﻿using SignalGo.Server.Helpers;
 using SignalGo.Server.Models;
 using SignalGo.Server.ServiceManager.Providers;
+using SignalGo.Shared.Helpers;
 using SignalGo.Shared.Models;
 using System;
 using System.Collections.Generic;
@@ -101,15 +102,17 @@ namespace SignalGo.Server.ServiceManager
         //    client.StreamHelper.WriteBlockToStream(client.ClientStream, bytes);
         //}
 
-        internal static async Task<object> SendDataWithCallClientServiceMethod(ServerBase serverBase, ClientInfo client, Type returnType, string serviceName, string methodName, params Shared.Models.ParameterInfo[] args)
+        internal static async Task<T> SendDataWithCallClientServiceMethod<T>(ServerBase serverBase, ClientInfo client, Type returnType, string serviceName, string methodName, params Shared.Models.ParameterInfo[] args)
         {
-            if (returnType == null)
+            if (returnType == null || returnType == typeof(void))
                 returnType = typeof(object);
             //var method = typeof(ServerExtensions).GetMethod("SendDataWithCallClientServiceMethodGeneric").MakeGenericMethod(returnType);
             //Func<object> run = () =>
             //{
             //    return SendDataWithCallClientServiceMethodGeneric<int>(serverBase, client, returnType, serviceName, methodName, args);
             //};
+            if (methodName.LastIndexOf("Async", StringComparison.OrdinalIgnoreCase) == methodName.Length - 5)
+                methodName = methodName.Substring(0, methodName.Length - 5);
 #if (NET35 || NET40)
             return null;// Task<object>.Factory.StartNew(run);
 #else
@@ -133,15 +136,22 @@ namespace SignalGo.Server.ServiceManager
             bytes.AddRange(jsonBytes);
 
             await client.StreamHelper.WriteToStreamAsync(client.ClientStream, bytes.ToArray());
-            var result = taskCompletionSource.GetType().GetProperty("Task").GetValue(taskCompletionSource, null);
-            return result;
+            object result = taskCompletionSource.GetType().GetProperty("Task").GetValue(taskCompletionSource, null);
+            return (T)result;
 #endif
         }
 
-        internal static async Task<object> SendWebSocketDataWithCallClientServiceMethod(ServerBase serverBase, ClientInfo client, Type returnType, string serviceName, string methodName, params Shared.Models.ParameterInfo[] args)
+        internal static async Task<T> SendWebSocketDataWithCallClientServiceMethod<T>(ServerBase serverBase, ClientInfo client, Type returnType, string serviceName, string methodName, params Shared.Models.ParameterInfo[] args)
         {
-            if (returnType == null)
+            if (returnType == null || returnType == typeof(void))
                 returnType = typeof(object);
+            else if (returnType.GetBaseType() == typeof(Task))
+            {
+                returnType = returnType.GetGenericArguments()[0];
+            }
+
+            if (methodName.LastIndexOf("Async", StringComparison.OrdinalIgnoreCase) == methodName.Length - 5)
+                methodName = methodName.Substring(0, methodName.Length - 5);
 #if (NET35 || NET40)
             return null;// Task<object>.Factory.StartNew(run);
 #else
@@ -166,19 +176,20 @@ namespace SignalGo.Server.ServiceManager
                     MethodCallInfo cb = callInfo.Clone();
                     cb.PartNumber = i == listOfParts.Count ? (short)-1 : (short)i;
                     json = (int)DataType.CallMethod + "," + (int)CompressMode.None + "/" + ServerSerializationHelper.SerializeObject(cb, serverBase);
-                    byte[] result = Encoding.UTF8.GetBytes(json);
-                    await client.StreamHelper.WriteToStreamAsync(client.ClientStream, result);
+                    byte[] bytes = Encoding.UTF8.GetBytes(json);
+                    await client.StreamHelper.WriteToStreamAsync(client.ClientStream, bytes);
                     i++;
                 }
             }
             else
             {
                 json = (int)DataType.CallMethod + "," + (int)CompressMode.None + "/" + json;
-                byte[] result = Encoding.UTF8.GetBytes(json);
-                await client.StreamHelper.WriteToStreamAsync(client.ClientStream, result);
+                byte[] bytes = Encoding.UTF8.GetBytes(json);
+                await client.StreamHelper.WriteToStreamAsync(client.ClientStream, bytes);
             }
-
-            return taskCompletionSource.GetType().GetProperty("Task").GetValue(taskCompletionSource, null);
+            object value = taskCompletionSource.GetType().GetProperty("Task").GetValue(taskCompletionSource, null);
+            T result = await (Task<T>)value;
+            return result;
 #endif
         }
         //static object SendCallClientMethod(this OperationCalls client, string callerName, params object[] args)

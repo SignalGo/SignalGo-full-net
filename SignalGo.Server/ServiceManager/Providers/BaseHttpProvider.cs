@@ -153,6 +153,10 @@ namespace SignalGo.Server.ServiceManager.Providers
 
             client.ResponseHeaders["Content-Type"] = "application/json; charset=utf-8".Split(',');
             client.ResponseHeaders["Connection"] = "Close".Split(',');
+            if (serverBase.ProviderSetting.HttpSetting.HandleCrossOriginAccess)
+            {
+                AddOriginHeader(client, serverBase);
+            }
 
             byte[] dataBytes = Encoding.UTF8.GetBytes(newLine + json + newLine);
             await SendResponseHeadersToClient(HttpStatusCode.OK, client.ResponseHeaders, client, dataBytes.Length);

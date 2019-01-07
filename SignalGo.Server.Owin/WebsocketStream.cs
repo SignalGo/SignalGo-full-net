@@ -42,10 +42,10 @@ namespace SignalGo.Server.Owin
 
         public Task<int> ReadAsync(byte[] buffer, int offset, int count)
         {
-            return Task.Run(() =>
+            return Task.Run(async () =>
             {
                 ArraySegment<byte> data = new ArraySegment<byte>(buffer, 0, count);
-                WebSocketReceiveResult result = _webSocket.ReceiveAsync(data, new System.Threading.CancellationToken()).GetAwaiter().GetResult();
+                WebSocketReceiveResult result = await _webSocket.ReceiveAsync(data, new System.Threading.CancellationToken());
                 //Array.Copy(buffer, data.Array, result.Count);
                 return result.Count;
             });
