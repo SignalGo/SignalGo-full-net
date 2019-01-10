@@ -216,6 +216,27 @@ namespace SignalGo.Shared.IO
 
             return response;
         }
+        //private byte[] DecodeMessage(byte[] bytes)
+        //{
+        //    byte secondByte = bytes[1];
+        //    int dataLength = secondByte & 127;
+        //    int indexFirstMask = 2;
+        //    if (dataLength == 126)
+        //        indexFirstMask = 4;
+        //    else if (dataLength == 127)
+        //        indexFirstMask = 10;
+
+        //    IEnumerable<byte> keys = bytes.Skip(indexFirstMask).Take(4);
+        //    int indexFirstDataByte = indexFirstMask + 4;
+
+        //    byte[] decoded = new byte[bytes.Length - indexFirstDataByte];
+        //    for (int i = indexFirstDataByte, j = 0; i < bytes.Length; i++, j++)
+        //    {
+        //        decoded[j] = (byte)(bytes[i] ^ keys.ElementAt(j % 4));
+        //    }
+
+        //    return decoded;
+        //}
 
         public byte[] DecodeMessage(byte[] bytes)
         {

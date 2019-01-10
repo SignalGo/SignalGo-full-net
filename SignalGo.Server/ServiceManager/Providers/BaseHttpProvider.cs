@@ -891,7 +891,7 @@ namespace SignalGo.Server.ServiceManager.Providers
             string response = "";
             while (true)
             {
-                byte singleByte = await stream.ReadOneByteAcync();
+                byte singleByte = await stream.ReadOneByteAsync();
                 bytes.Add(singleByte);
                 if (bytes.Count >= maxLen)
                 {
@@ -1030,7 +1030,7 @@ namespace SignalGo.Server.ServiceManager.Providers
         }
 
 
-        internal static async Task SendResponseHeadersToClient(HttpStatusCode httpStatusCode, IDictionary<string, string[]> webResponseHeaderCollection, ClientInfo client, int contentLength)
+        public static async Task SendResponseHeadersToClient(HttpStatusCode httpStatusCode, IDictionary<string, string[]> webResponseHeaderCollection, ClientInfo client, int contentLength)
         {
 
             string newLine = TextHelper.NewLine;

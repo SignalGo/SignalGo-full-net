@@ -56,13 +56,13 @@ namespace SignalGo.Server.ServiceManager.Providers
 #if (NET35 || NET40)
             return Task.Factory.StartNew(() =>
 #else
-            return Task.Run(() =>
+            return Task.Run(async () =>
 #endif
             {
                 try
                 {
                     client.IsWebSocket = true;
-                    WebSocketProvider.StartToReadingClientData(client, serverBase);
+                    await WebSocketProvider.StartToReadingClientData(client, serverBase);
                 }
                 catch (Exception ex)
                 {
@@ -85,7 +85,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     if (line == TextHelper.NewLine)
                         break;
                 }
-                var requestHeaders = builder.ToString();
+                string requestHeaders = builder.ToString();
                 if (requestHeaders.Contains("Sec-WebSocket-Key"))
                 {
                     tcpClient.ReceiveTimeout = -1;
@@ -105,7 +105,14 @@ namespace SignalGo.Server.ServiceManager.Providers
                      + "Sec-WebSocket-Accept: " + acceptKey + newLine + newLine;
                     byte[] bytes = System.Text.Encoding.UTF8.GetBytes(response);
                     await client.ClientStream.WriteAsync(bytes, 0, bytes.Length);
-                    WebSocketProvider.StartToReadingClientData(client, serverBase);
+                    await WebSocketProvider.StartToReadingClientData(client, serverBase);
+                }
+                else if(requestHeaders.Contains("SignalGoHttpDuplex"))
+                {
+                    client = serverBase.ServerDataProvider.CreateClientInfo(false, tcpClient, reader);
+                    client.ProtocolType = ClientProtocolType.HttpDuplex;
+                    client.StreamHelper = SignalGoStreamWebSocket.CurrentWebSocket;
+                    await SignalGoDuplexServiceProvider.StartToReadingClientData(client, serverBase);
                 }
                 else
                 {
@@ -117,8 +124,8 @@ namespace SignalGo.Server.ServiceManager.Providers
                         client.StreamHelper = SignalGoStreamBase.CurrentBase;
 
                         string[] lines = null;
-                        if (requestHeaders.Contains(TextHelper.NewLine+ TextHelper.NewLine))
-                            lines = requestHeaders.Substring(0, requestHeaders.IndexOf(TextHelper.NewLine+ TextHelper.NewLine)).Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                        if (requestHeaders.Contains(TextHelper.NewLine + TextHelper.NewLine))
+                            lines = requestHeaders.Substring(0, requestHeaders.IndexOf(TextHelper.NewLine + TextHelper.NewLine)).Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
                         else
                             lines = requestHeaders.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
                         if (lines.Length > 0)

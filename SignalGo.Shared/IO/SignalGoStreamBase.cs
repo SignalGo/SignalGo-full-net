@@ -87,7 +87,7 @@ namespace SignalGo.Shared.IO
 #if (!NET35 && !NET40)
         public virtual Task<byte> ReadOneByteAsync(PipeNetworkStream stream)
         {
-            return stream.ReadOneByteAcync();
+            return stream.ReadOneByteAsync();
         }
 #endif
 

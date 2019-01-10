@@ -309,7 +309,7 @@ namespace SignalGo.Shared.IO
         }
 
 #if (!NET35 && !NET40)
-        public async Task<byte> ReadOneByteAcync()
+        public async Task<byte> ReadOneByteAsync()
         {
             if (IsClosed && QueueBuffers.IsEmpty && BlockBuffers.Count == 0)
                 throw new Exception("read zero buffer! client disconnected");
@@ -328,13 +328,13 @@ namespace SignalGo.Shared.IO
             else
             {
                 if (!QueueBuffers.TryPeek(out result))
-                    return await ReadOneByteAcync();
+                    return await ReadOneByteAsync();
             }
 
             if (result.IsFinished)
             {
                 QueueBuffers.TryDequeue(out result);
-                return await ReadOneByteAcync();
+                return await ReadOneByteAsync();
             }
             else
             {

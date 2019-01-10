@@ -262,7 +262,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                                 break;
                             }
                         }
-                        foreach (var item in parametersValues)
+                        foreach (object item in parametersValues)
                         {
                             if (item is BaseStreamInfo stream)
                             {
@@ -873,10 +873,10 @@ namespace SignalGo.Server.ServiceManager.Providers
             //    bytes = EncryptBytes(bytes, client);
             byte[] len = BitConverter.GetBytes(bytes.Length);
             List<byte> data = new List<byte>
-                    {
-                        (byte)DataType.ResponseCallMethod,
-                        (byte)CompressMode.None
-                    };
+            {
+                 (byte)DataType.ResponseCallMethod,
+                 (byte)CompressMode.None
+            };
             data.AddRange(len);
             data.AddRange(bytes);
             if (data.Count > serverBase.ProviderSetting.MaximumSendDataBlock)

@@ -39,6 +39,10 @@ namespace SignalGo.Server.Models
         /// web socket protocol
         /// </summary>
         WebSocket = 5,
+        /// <summary>
+        /// http duplex client
+        /// </summary>
+        HttpDuplex = 6
     }
 
     /// <summary>
