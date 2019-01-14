@@ -489,7 +489,7 @@ namespace SignalGo.Server.ServiceManager.Providers
             {
                 ((IHttpClientInfo)result.ServiceInstance).RequestHeaders = client.RequestHeaders;
                 ((IHttpClientInfo)result.ServiceInstance).ResponseHeaders = client.ResponseHeaders;
-                ((IHttpClientInfo)result.ServiceInstance).IPAddress = client.IPAddress;
+                ((IHttpClientInfo)result.ServiceInstance).IPAddressBytes = client.IPAddressBytes;
             }
             if (serverBase.ProviderSetting.HttpSetting.HandleCrossOriginAccess)
             {

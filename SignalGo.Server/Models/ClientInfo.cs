@@ -69,7 +69,18 @@ namespace SignalGo.Server.Models
         /// <summary>
         /// ip address of client
         /// </summary>
-        public string IPAddress { get; set; }
+        public string IPAddress
+        {
+            get
+            {
+                return new System.Net.IPAddress(IPAddressBytes).ToString();
+            }
+        }
+        /// <summary>
+        /// bytes of ip address
+        /// </summary>
+        public byte[] IPAddressBytes { get; set; }
+
         /// <summary>
         /// version of client
         /// </summary>

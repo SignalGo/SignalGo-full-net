@@ -21,7 +21,11 @@ namespace SignalGo.Shared.Models
         /// <summary>
         /// ip address of client
         /// </summary>
-        string IPAddress { get; set; }
+        string IPAddress { get; }
+        /// <summary>
+        /// bytes of ip address
+        /// </summary>
+        byte[] IPAddressBytes { get; set; }
         void SetFirstFile(HttpPostedFileInfo fileInfo);
         HttpPostedFileInfo TakeNextFile();
     }

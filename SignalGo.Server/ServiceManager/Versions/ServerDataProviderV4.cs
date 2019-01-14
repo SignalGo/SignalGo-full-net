@@ -127,7 +127,8 @@ namespace SignalGo.Server.ServiceManager.Versions
                 client = new ClientInfo(_serverBase);
             client.ConnectedDateTime = DateTime.Now;
             client.TcpClient = tcpClient;
-            client.IPAddress = ((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address.ToString().Replace("::ffff:", "");
+            //client.IPAddressBytes = ((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address.ToString().Replace("::ffff:", "");
+            client.IPAddressBytes = ((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address.GetAddressBytes();
             client.ClientId = Guid.NewGuid().ToString();
             _serverBase.Clients.TryAdd(client.ClientId, client);
             client.ClientStream = stream;
