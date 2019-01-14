@@ -66,6 +66,8 @@ namespace SignalGo.Server.Models
         /// client id
         /// </summary>
         public string ClientId { get; set; }
+
+        string _IPAddress;
         /// <summary>
         /// ip address of client
         /// </summary>
@@ -73,13 +75,28 @@ namespace SignalGo.Server.Models
         {
             get
             {
-                return new System.Net.IPAddress(IPAddressBytes).ToString();
+                if (string.IsNullOrEmpty(_IPAddress))
+                    _IPAddress = new System.Net.IPAddress(IPAddressBytes).ToString();
+                return _IPAddress;
             }
         }
+
+        byte[] _IPAddressBytes;
         /// <summary>
         /// bytes of ip address
         /// </summary>
-        public byte[] IPAddressBytes { get; set; }
+        public byte[] IPAddressBytes
+        {
+            get
+            {
+                return _IPAddressBytes;
+            }
+            set
+            {
+                _IPAddressBytes = value;
+                _IPAddress = null;
+            }
+        }
 
         /// <summary>
         /// version of client
