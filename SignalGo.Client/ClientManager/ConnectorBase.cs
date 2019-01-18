@@ -1129,7 +1129,9 @@ namespace SignalGo.Client.ClientManager
                             if (geted)
                             {
                                 if (callback.IsException)
+                                {
                                     keyValue.SetException(new Exception(callback.Data));
+                                }
                                 else
                                     keyValue.SetResult(callback);
                             }
@@ -1269,34 +1271,36 @@ namespace SignalGo.Client.ClientManager
         {
             try
             {
-                string json = ClientSerializationHelper.SerializeObject(callback);
-                List<byte> bytes = new List<byte>
-                    {
-                        (byte)DataType.CallMethod,
-                        (byte)CompressMode.None
-                    };
-                byte[] jsonBytes = Encoding.UTF8.GetBytes(json);
-                if (SecuritySettings != null)
-                    jsonBytes = EncryptBytes(jsonBytes);
-                byte[] dataLen = BitConverter.GetBytes(jsonBytes.Length);
-                bytes.AddRange(dataLen);
-                bytes.AddRange(jsonBytes);
-                if (bytes.Count > ProviderSetting.MaximumSendDataBlock)
-                    throw new Exception("SendData data length is upper than MaximumSendDataBlock");
                 if (IsWebSocket)
                 {
+                    string json = ClientSerializationHelper.SerializeObject(callback) + "#end";
+                    byte[] jsonBytes = Encoding.UTF8.GetBytes(json);
 #if (NET40 || NET35)
-                    StreamHelper.WriteToStream(_clientStream, new byte[] { bytes[0] });
-                    StreamHelper.WriteToStream(_clientStream, new byte[] { bytes[1] });
-                    StreamHelper.WriteToStream(_clientStream, bytes.Skip(2).ToArray());
+                    StreamHelper.WriteToStream(_clientStream, new byte[] { (byte)DataType.CallMethod });
+                    StreamHelper.WriteToStream(_clientStream, new byte[] { (byte)CompressMode.None });
+                    StreamHelper.WriteToStream(_clientStream, jsonBytes.ToArray());
 #else
-                    await StreamHelper.WriteToStreamAsync(_clientStream, new byte[] { bytes[0] });
-                    await StreamHelper.WriteToStreamAsync(_clientStream, new byte[] { bytes[1] });
-                    await StreamHelper.WriteToStreamAsync(_clientStream, bytes.Skip(2).ToArray());
+                    await StreamHelper.WriteToStreamAsync(_clientStream, new byte[] { (byte)DataType.CallMethod });
+                    await StreamHelper.WriteToStreamAsync(_clientStream, new byte[] { (byte)CompressMode.None });
+                    await StreamHelper.WriteToStreamAsync(_clientStream, jsonBytes);
 #endif
                 }
                 else
                 {
+                    string json = ClientSerializationHelper.SerializeObject(callback);
+                    List<byte> bytes = new List<byte>
+                    {
+                        (byte)DataType.CallMethod,
+                        (byte)CompressMode.None
+                    };
+                    byte[] jsonBytes = Encoding.UTF8.GetBytes(json);
+                    if (SecuritySettings != null)
+                        jsonBytes = EncryptBytes(jsonBytes);
+                    byte[] dataLen = BitConverter.GetBytes(jsonBytes.Length);
+                    bytes.AddRange(dataLen);
+                    bytes.AddRange(jsonBytes);
+                    if (bytes.Count > ProviderSetting.MaximumSendDataBlock)
+                        throw new Exception("SendData data length is upper than MaximumSendDataBlock");
 #if (NET40 || NET35)
                     StreamHelper.WriteToStream(_clientStream, bytes.ToArray());
 #else
@@ -1306,9 +1310,17 @@ namespace SignalGo.Client.ClientManager
             }
             catch (Exception ex)
             {
-                if (ConnectorExtensions.WaitedMethodsForResponse.TryGetValue(callback.Guid, out TaskCompletionSource<MethodCallbackInfo> keyValue))
+                try
                 {
-                    keyValue.SetException(ex);
+                    if (ConnectorExtensions.WaitedMethodsForResponse.TryGetValue(callback.Guid, out TaskCompletionSource<MethodCallbackInfo> keyValue))
+                    {
+                        keyValue.SetException(ex);
+                    }
+                }
+                catch (Exception ex2)
+                {
+
+
                 }
                 //AutoLogger.LogError(ex, "ConnectorBase SendData");
             }
