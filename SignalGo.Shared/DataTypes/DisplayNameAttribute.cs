@@ -2,9 +2,9 @@
 
 namespace SignalGo.Shared.DataTypes
 {
-    public class DisplayNameAttribute : Attribute
+    public class ParameterDisplayNameAttribute : Attribute
     {
-        public DisplayNameAttribute(string name)
+        public ParameterDisplayNameAttribute(string name)
         {
             Name = name;
         }
