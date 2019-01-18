@@ -19,7 +19,7 @@ namespace SignalGo.Server.ServiceManager.Providers
             //            {
             try
             {
-                Console.WriteLine($"OneWay Client Connected: {client.IPAddress}");
+                //Console.WriteLine($"OneWay Client Connected: {client.IPAddress}");
                 await RunMethod(serverBase, client);
                 serverBase.DisposeClient(client, null, "OneWay StartToReadingClientData finished");
             }

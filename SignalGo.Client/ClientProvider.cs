@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using SignalGo.Client.ClientManager;
 using SignalGo.Shared;
+using SignalGo.Shared.Helpers;
 using SignalGo.Shared.Models;
 using SignalGo.Shared.Security;
 using System;
@@ -21,9 +22,9 @@ namespace SignalGo.Client
         /// </summary>
         /// <param name="url">server url address</param>
         /// <param name="isWebsocket"></param>
-        public override void Connect(string url, bool isWebsocket = false)
+        public override void Connect(string url)
         {
-            IsWebSocket = isWebsocket;
+            IsWebSocket = ProtocolType == ClientProtocolType.WebSocket;
             if (!Uri.TryCreate(url, UriKind.Absolute, out Uri uri))
             {
                 throw new Exception("url is not valid");
@@ -34,22 +35,12 @@ namespace SignalGo.Client
             }
             ServerUrl = url;
             string hostName = uri.Host;
-#if (NET40 || NET35)
             base.Connect(hostName, uri.Port);
             SendFirstLineData();
             GetClientIdIfNeed();
-#else
-            base.Connect(hostName, uri.Port).GetAwaiter().GetResult();
-            SendFirstLineData().GetAwaiter().GetResult();
-            GetClientIdIfNeed().GetAwaiter().GetResult();
-#endif
 
             IsConnected = true;
-#if (NET40 || NET35)
             RunPriorities();
-#else
-            RunPriorities().GetAwaiter().GetResult();
-#endif
             StartToReadingClientData();
             if (IsAutoReconnecting)
                 OnConnectionChanged?.Invoke(ConnectionStatus.Reconnected);
@@ -63,13 +54,10 @@ namespace SignalGo.Client
         /// <param name="url"></param>
         /// <param name="isWebsocket"></param>
         /// <returns></returns>
-#if (NET40 || NET35)
-        public override void ConnectAsync(string url, bool isWebsocket = false)
-#else
-        public override async Task ConnectAsync(string url, bool isWebsocket = false)
-#endif
+#if (!NET40 && !NET35)
+        public override async Task ConnectAsync(string url)
         {
-            IsWebSocket = isWebsocket;
+            IsWebSocket = ProtocolType == ClientProtocolType.WebSocket;
             if (!Uri.TryCreate(url, UriKind.Absolute, out Uri uri))
             {
                 throw new Exception("url is not valid");
@@ -80,28 +68,19 @@ namespace SignalGo.Client
             }
             ServerUrl = url;
             string hostName = uri.Host;
-#if (NET40 || NET35)
-            base.Connect(hostName, uri.Port);
-            SendFirstLineData();
-            GetClientIdIfNeed();
-#else
-            await base.Connect(hostName, uri.Port);
+            await base.ConnectAsync(hostName, uri.Port);
             await SendFirstLineData();
-            await GetClientIdIfNeed();
-#endif
+            await GetClientIdIfNeedAsync();
             StartToReadingClientData();
 
             IsConnected = true;
-#if (NET40 || NET35)
-            RunPriorities();
-#else
-            await RunPriorities();
-#endif
+            await RunPrioritiesAsync();
             if (IsAutoReconnecting)
                 OnConnectionChanged?.Invoke(ConnectionStatus.Reconnected);
             else
                 OnConnectionChanged?.Invoke(ConnectionStatus.Connected);
         }
+#endif
 
         private readonly bool _oneTimeConnectedAsyncCalledWithAutoReconnect = false;
 
@@ -236,7 +215,63 @@ namespace SignalGo.Client
         private Task SendFirstLineData()
 #endif
         {
-            byte[] firstBytes = Encoding.UTF8.GetBytes($"SignalGo/4.0 {_address}:{_port}" + "\r\n");
+            byte[] firstBytes = null;
+            if (ProtocolType == ClientProtocolType.HttpDuplex)
+            {
+                string newLine = TextHelper.NewLine;
+                Uri.TryCreate(ServerUrl, UriKind.Absolute, out Uri uri);
+                string port = uri.Port == 80 ? "" : ":" + uri.Port;
+                string headData = $"POST {uri.AbsolutePath} HTTP/1.1{newLine}Host: {uri.Host + port}{newLine}Connection: keep-alive{newLine}Content-Length: {1024 * 1024}{newLine}SignalGo: SignalGoHttpDuplex{newLine + newLine}";
+                firstBytes = Encoding.UTF8.GetBytes(headData);
+                //                string newLine = TextHelper.NewLine;
+                //                Uri.TryCreate(ServerUrl, UriKind.Absolute, out Uri uri);
+                //                string port = uri.Port == 80 ? "" : ":" + uri.Port;
+                //                //string headData = $"GET {uri.AbsolutePath} HTTP/1.1{newLine}Host: {uri.Host + port}{newLine}Connection: keep-alive{newLine}Sec-WebSocket-Key: x3JJHMbDL1EzLkh9GBhXDw=={newLine}Sec-WebSocket-Protocol: chat, superchat{newLine}Sec-WebSocket-Version: 13{newLine + newLine}";
+                //                string headData = $@"GET / HTTP/1.1
+                //Host: {uri.Host + port}
+                //User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:64.0) Gecko/20100101 Firefox/64.0
+                //Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+                //Accept-Language: en-US,en;q=0.5
+                //Accept-Encoding: gzip, deflate
+                //Sec-WebSocket-Version: 13
+                //Origin: null
+                //SignalGo: SignalGoHttpDuplex
+                //Sec-WebSocket-Extensions: permessage-deflate
+                //Sec-WebSocket-Key: Kf1/4OQ83wCdLhsU8LkwqQ==
+                //DNT: 1
+                //Connection: keep-alive, Upgrade
+                //Pragma: no-cache
+                //Cache-Control: no-cache
+                //Upgrade: websocket{newLine + newLine}";
+                //                firstBytes = Encoding.UTF8.GetBytes(headData);
+            }
+            else if (ProtocolType == ClientProtocolType.WebSocket)
+            {
+                string newLine = TextHelper.NewLine;
+                Uri.TryCreate(ServerUrl, UriKind.Absolute, out Uri uri);
+                string port = uri.Port == 80 ? "" : ":" + uri.Port;
+                //string headData = $"GET {uri.AbsolutePath} HTTP/1.1{newLine}Host: {uri.Host + port}{newLine}Connection: keep-alive{newLine}Sec-WebSocket-Key: x3JJHMbDL1EzLkh9GBhXDw=={newLine}Sec-WebSocket-Protocol: chat, superchat{newLine}Sec-WebSocket-Version: 13{newLine + newLine}";
+                string headData = $@"GET / HTTP/1.1
+Host: {uri.Host + port}
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:64.0) Gecko/20100101 Firefox/64.0
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+Accept-Language: en-US,en;q=0.5
+Accept-Encoding: gzip, deflate
+Sec-WebSocket-Version: 13
+Origin: null
+Sec-WebSocket-Extensions: permessage-deflate
+Sec-WebSocket-Key: Kf1/4OQ83wCdLhsU8LkwqQ==
+DNT: 1
+Connection: keep-alive, Upgrade
+Pragma: no-cache
+Cache-Control: no-cache
+Upgrade: websocket{newLine + newLine}";
+                firstBytes = Encoding.UTF8.GetBytes(headData);
+            }
+            else
+            {
+                firstBytes = Encoding.UTF8.GetBytes($"SignalGo/4.0 {_address}:{_port}" + TextHelper.NewLine);
+            }
 #if (NET40 || NET35)
             _client.GetStream().Write(firstBytes, 0, firstBytes.Length);
 #else
@@ -244,11 +279,23 @@ namespace SignalGo.Client
 #endif
         }
 
-#if (NET40 || NET35)
-        private void GetClientIdIfNeed()
-#else
-        private async Task GetClientIdIfNeed()
+#if (!NET40 && !NET35)
+        private async Task GetClientIdIfNeedAsync()
+        {
+            if (ProviderSetting.AutoDetectRegisterServices && ProtocolType != ClientProtocolType.HttpDuplex)
+            {
+                byte[] data = new byte[]
+                {
+                    (byte)DataType.GetClientId,
+                    (byte)CompressMode.None
+                };
+
+                await StreamHelper.WriteToStreamAsync(_clientStream, data.ToArray());
+            }
+        }
 #endif
+
+        private void GetClientIdIfNeed()
         {
             if (ProviderSetting.AutoDetectRegisterServices)
             {
@@ -258,11 +305,7 @@ namespace SignalGo.Client
                     (byte)CompressMode.None
                 };
 
-#if (NET40 || NET35)
                 StreamHelper.WriteToStream(_clientStream, data.ToArray());
-#else
-                await StreamHelper.WriteToStreamAsync(_clientStream, data.ToArray());
-#endif
             }
         }
 

@@ -12,7 +12,7 @@ namespace SignalGo.Server.ServiceManager.Providers
 {
     public class WebSocketProvider : BaseProvider
     {
-        public static async void StartToReadingClientData(ClientInfo client, ServerBase serverBase)
+        public static async Task StartToReadingClientData(ClientInfo client, ServerBase serverBase)
         {
             try
             {

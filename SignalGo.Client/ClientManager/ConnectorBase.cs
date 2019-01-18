@@ -20,6 +20,29 @@ using SignalGo.Shared.Security;
 namespace SignalGo.Client.ClientManager
 {
     /// <summary>
+    /// protocol of signalgo client to connect server
+    /// if your server is hosted on iis use httpduplex
+    /// </summary>
+    public enum ClientProtocolType : byte
+    {
+        /// <summary>
+        /// unknown
+        /// </summary>
+        None = 0,
+        /// <summary>
+        /// signalgo duplex client
+        /// </summary>
+        SignalGoDuplex = 1,
+        /// <summary>
+        /// signalgo http duplex
+        /// </summary>
+        HttpDuplex = 2,
+        /// <summary>
+        /// websocket
+        /// </summary>
+        WebSocket = 3
+    }
+    /// <summary>
     /// base client connect to server helper
     /// </summary>
     public abstract class ConnectorBase : IDisposable
@@ -28,6 +51,11 @@ namespace SignalGo.Client.ClientManager
         {
             JsonSettingHelper.Initialize();
         }
+        /// <summary>
+        /// protocol of signalgo client to connect server
+        /// if your server is hosted on iis use httpduplex
+        /// </summary>
+        public ClientProtocolType ProtocolType { get; set; } = ClientProtocolType.SignalGoDuplex;
 
         internal ISignalGoStream StreamHelper { get; set; } = null;
         internal JsonSettingHelper JsonSettingHelper { get; set; } = new JsonSettingHelper();
@@ -53,7 +81,7 @@ namespace SignalGo.Client.ClientManager
         public bool IsDisposed { get; internal set; }
 
         internal string ServerUrl { get; set; }
-        public virtual void Connect(string url, bool isWebsocket = false)
+        public virtual void Connect(string url)
         {
 
         }
@@ -61,7 +89,7 @@ namespace SignalGo.Client.ClientManager
 #if (NET40 || NET35)
         public virtual void ConnectAsync(string url, bool isWebsocket = false)
 #else
-        public virtual Task ConnectAsync(string url, bool isWebsocket = false)
+        public virtual Task ConnectAsync(string url)
 #endif
         {
             throw new NotImplementedException();
@@ -125,12 +153,10 @@ namespace SignalGo.Client.ClientManager
         /// </summary>
         /// <param name="address">server address</param>
         /// <param name="port">server port</param>
-#if (NET35 || NET40)
-        internal void Connect(string address, int port)
-#else
-        internal async Task Connect(string address, int port)
-#endif
+#if (!NET35 && !NET40)
+        internal async Task ConnectAsync(string address, int port)
         {
+            IsWebSocket = ProtocolType == ClientProtocolType.WebSocket;
             if (IsConnected)
                 throw new Exception("client is connected!");
             if (IsDisposed)
@@ -141,28 +167,36 @@ namespace SignalGo.Client.ClientManager
                 StreamHelper = SignalGoStreamBase.CurrentBase;
             _address = address;
             _port = port;
-#if (NET35 || NET40)
-            _client = new TcpClient();
-            _client.NoDelay = true;
-            IAsyncResult result = _client.BeginConnect(address, port, null, null);
-
-            bool success = result.AsyncWaitHandle.WaitOne(TimeSpan.FromSeconds(5));
-
-            if (!success)
-            {
-                throw new Exception("Failed to connect.");
-            }
-
-            // we have connected
-            _client.EndConnect(result);
-#else
             _client = new TcpClient();
             await _client.ConnectAsync(address, port);
-#endif
             _clientStream = new PipeNetworkStream(new NormalStream(_client.GetStream()));
 
         }
+#endif
 
+
+        internal void Connect(string address, int port)
+        {
+            IsWebSocket = ProtocolType == ClientProtocolType.WebSocket;
+            if (IsConnected)
+                throw new Exception("client is connected!");
+            if (IsDisposed)
+                throw new ObjectDisposedException("Connector");
+            if (IsWebSocket)
+                StreamHelper = SignalGoStreamWebSocket.CurrentWebSocket;
+            else
+                StreamHelper = SignalGoStreamBase.CurrentBase;
+            _address = address;
+            _port = port;
+
+            _client = new TcpClient();
+#if (NETSTANDARD1_6)
+            _client.ConnectAsync(address, port).GetAwaiter().GetResult();
+#else
+            _client.Connect(address, port);
+#endif
+            _clientStream = new PipeNetworkStream(new NormalStream(_client.GetStream()));
+        }
         /// <summary>
         /// This registers service on server and methods that the client can call
         /// T type must inherited OprationCalls interface
@@ -194,11 +228,8 @@ namespace SignalGo.Client.ClientManager
             return GetType().GetMethod("GetDefaultGeneric").MakeGenericMethod(t).Invoke(this, null);
         }
 
-#if (NET35 || NET40)
-        internal void RunPriorities()
-#else
-        internal async Task RunPriorities()
-#endif
+#if (!NET35 && !NET40)
+        internal async Task RunPrioritiesAsync()
         {
             if (!IsPriorityEnabled)
                 return;
@@ -238,26 +269,77 @@ namespace SignalGo.Client.ClientManager
                         {
                             if (!IsConnected)
                                 break;
-#if (NET35 || NET40)
-                            Thread.Sleep(ProviderSetting.PriorityFunctionDelayTime);
-#else
                             await Task.Delay(ProviderSetting.PriorityFunctionDelayTime);
-#endif
-#if (NET35 || NET40)
-                            priorityAction = function().Result;
-#else
                             priorityAction = await function();
-#endif
                             if (priorityAction == PriorityAction.BreakAll)
                                 break;
                             else if (priorityAction == PriorityAction.HoldAll)
                             {
                                 HoldAllPrioritiesTaskResult = new TaskCompletionSource<object>();
-#if (NET35 || NET40)
-                                object result = HoldAllPrioritiesTaskResult.Task.Result;
-#else
                                 await HoldAllPrioritiesTaskResult.Task;
+                            }
+                        }
+                        while (IsPriorityEnabled && priorityAction == PriorityAction.TryAgain);
+                        if (priorityAction == PriorityAction.BreakAll)
+                            break;
+                    }
+                }
+                catch (Exception ex)
+                {
+
+                }
+            }
+        }
 #endif
+        internal void RunPriorities()
+        {
+            if (!IsPriorityEnabled)
+                return;
+            foreach (Delegate item in PriorityActionsAfterConnected)
+            {
+                try
+                {
+                    if (!IsPriorityEnabled || !IsConnected)
+                        break;
+                    if (item is Action action)
+                        action();
+                    else if (item is Func<PriorityAction>)
+                    {
+                        PriorityAction priorityAction = PriorityAction.TryAgain;
+                        do
+                        {
+                            if (!IsConnected)
+                                break;
+                            Thread.Sleep(ProviderSetting.PriorityFunctionDelayTime);
+                            priorityAction = ((Func<PriorityAction>)item)();
+                            if (priorityAction == PriorityAction.BreakAll)
+                                break;
+                            else if (priorityAction == PriorityAction.HoldAll)
+                            {
+                                HoldAllPrioritiesResetEvent.Reset();
+                                HoldAllPrioritiesResetEvent.WaitOne();
+                            }
+                        }
+                        while (IsPriorityEnabled && priorityAction == PriorityAction.TryAgain);
+                        if (priorityAction == PriorityAction.BreakAll)
+                            break;
+                    }
+                    else if (item is Func<Task<PriorityAction>> function)
+                    {
+                        PriorityAction priorityAction = PriorityAction.TryAgain;
+                        do
+                        {
+                            if (!IsConnected)
+                                break;
+                            Thread.Sleep(ProviderSetting.PriorityFunctionDelayTime);
+
+                            priorityAction = function().Result;
+                            if (priorityAction == PriorityAction.BreakAll)
+                                break;
+                            else if (priorityAction == PriorityAction.HoldAll)
+                            {
+                                HoldAllPrioritiesTaskResult = new TaskCompletionSource<object>();
+                                object result = HoldAllPrioritiesTaskResult.Task.Result;
                             }
                         }
                         while (IsPriorityEnabled && priorityAction == PriorityAction.TryAgain);
@@ -451,28 +533,45 @@ namespace SignalGo.Client.ClientManager
 
             T objectInstance = InterfaceWrapper.Wrap<T>((serviceName, method, args) =>
             {
+                IStreamInfo iStream = null;
+                foreach (object item in args)
+                {
+                    if (item is IStreamInfo value)
+                    {
+                        iStream = value;
+                        iStream.ClientId = ClientId;
+                    }
+                }
+
+                MethodInfo findMethod = typeof(ConnectorBase).FindMethod("UploadStreamAsync");
+                MethodInfo madeMethod = findMethod.MakeGenericMethod(method.ReturnType);
+                Task result = (Task)madeMethod.Invoke(this, new object[] { this, serverAddress, port, name, method.Name, ArgumentsToParameters(args).ToArray(), iStream });
+
 #if (NET40 || NET35)
-                return UploadStreamAsync<object>(name, serverAddress, port, serviceName, method, args).Result;
+                result.Wait();
 #else
-                return UploadStreamAsync<object>(name, serverAddress, port, serviceName, method, args).GetAwaiter().GetResult();
+                result.GetAwaiter().GetResult();
 #endif
+                if (method.ReturnType == typeof(void))
+                    return null;
+                return result.GetType().GetProperty("Result").GetValue(result, null);
             }, (serviceName, method, args) =>
             {
-                if (method.ReturnType == typeof(Task))
+                IStreamInfo iStream = null;
+                foreach (object item in args)
                 {
-                    return UploadStreamAsync<object>(name, serverAddress, port, serviceName, method, args);
+                    if (item is IStreamInfo value)
+                    {
+                        iStream = value;
+                        iStream.ClientId = ClientId;
+                    }
                 }
-                //this is async function
-                else if (method.ReturnType.GetBaseType() == typeof(Task))
-                {
-                    //return UploadStreamAsync(name, serverAddress, port, serviceName, method, args);
-                    //ConnectorExtension.SendDataAsync<object>()
-                    MethodInfo findMethod = typeof(ConnectorBase).FindMethod("UploadStreamAsync");
-                    Type methodType = method.ReturnType.GetListOfGenericArguments().FirstOrDefault();
-                    MethodInfo madeMethod = findMethod.MakeGenericMethod(methodType);
-                    return madeMethod.Invoke(this, new object[] { name, serverAddress, port, serviceName, method, args });
-                }
-                throw new NotSupportedException();
+
+                MethodInfo findMethod = typeof(ConnectorBase).FindMethod("UploadStreamAsync");
+                Type methodType = method.ReturnType.GetListOfGenericArguments().FirstOrDefault();
+                MethodInfo madeMethod = findMethod.MakeGenericMethod(methodType);
+
+                return madeMethod.Invoke(this, new object[] { this, serverAddress, port, name, method.Name, ArgumentsToParameters(args).ToArray(), iStream });
             });
             InstancesOfRegisterStreamService.TryAdd(callKey, objectInstance);
             return objectInstance;
@@ -485,20 +584,34 @@ namespace SignalGo.Client.ClientManager
         //        return (T)await UploadStream(name, serverAddress, port, serviceName, method, args, true);
         //    });
         //}
+        public static T UploadStreamSync<T>(ClientProvider clientProvider, string serverAddress, int? port, string serviceName, string methodName, Shared.Models.ParameterInfo[] parameters, IStreamInfo iStream)
+        {
+#if (NET40 || NET35)
+            return UploadStreamAsync<T>(clientProvider, serverAddress, port, serviceName, methodName, parameters, iStream).Result;
+#else
+            return UploadStreamAsync<T>(clientProvider, serverAddress, port, serviceName, methodName, parameters, iStream).GetAwaiter().GetResult();
+#endif
+        }
 
 #if (NET40 || NET35)
-        public Task<T> UploadStreamAsync<T>(string name, string serverAddress, int? port, string serviceName, MethodInfo method, object[] args)
+        public static Task<T> UploadStreamAsync<T>(ClientProvider clientProvider, string serverAddress, int? port,string serviceName, string methodName, Shared.Models.ParameterInfo[] parameters, IStreamInfo iStream)
 #else
-        public async Task<T> UploadStreamAsync<T>(string name, string serverAddress, int? port, string serviceName, MethodInfo method, object[] args)
+        public static async Task<T> UploadStreamAsync<T>(ClientProvider clientProvider, string serverAddress, int? port, string serviceName, string methodName, Shared.Models.ParameterInfo[] parameters, IStreamInfo iStream)
 #endif
         {
+            ISignalGoStream streamHelper = clientProvider == null ? SignalGoStreamBase.CurrentBase : clientProvider.StreamHelper;
+            int maximumReceiveStreamHeaderBlock = clientProvider == null ? int.MaxValue : clientProvider.ProviderSetting.MaximumReceiveStreamHeaderBlock;
+            Type returnType = typeof(T);
             if (string.IsNullOrEmpty(serverAddress))
-                serverAddress = _address;
+                serverAddress = clientProvider?._address;
 
             if (port == null || port.Value == 0)
-                port = _port;
+                port = clientProvider?._port;
+
+            if (port == null || string.IsNullOrEmpty(serverAddress))
+                throw new Exception("please fill server address and port number");
 #if (NETSTANDARD1_6 || NETCOREAPP1_1)
-            var _newClient = new TcpClient();
+            TcpClient _newClient = new TcpClient();
             bool isSuccess = _newClient.ConnectAsync(serverAddress, port.Value).Wait(new TimeSpan(0, 0, 10));
             if (!isSuccess)
                 throw new TimeoutException();
@@ -514,7 +627,7 @@ namespace SignalGo.Client.ClientManager
             PipeNetworkStream stream = new PipeNetworkStream(new NormalStream(_newClient.GetStream()));
             //var json = JsonConvert.SerializeObject(Data);
             //var jsonBytes = Encoding.UTF8.GetBytes(json);
-            string header = "SignalGo-Stream/4.0\r\n";
+            string header = "SignalGo-Stream/4.0" + TextHelper.NewLine;
             byte[] bytes = Encoding.UTF8.GetBytes(header);
 #if (NET40 || NET35)
             stream.Write(bytes, 0, bytes.Length);
@@ -522,7 +635,8 @@ namespace SignalGo.Client.ClientManager
             await stream.WriteAsync(bytes, 0, bytes.Length);
 #endif
             bool isUpload = false;
-            if (method.GetParameters().Any(x => x.ParameterType == typeof(StreamInfo) || (x.ParameterType.GetIsGenericType() && x.ParameterType.GetGenericTypeDefinition() == typeof(StreamInfo<>))))
+            //if (parameters.Any(x => x.ParameterType == typeof(StreamInfo) || (x.ParameterType.GetIsGenericType() && x.ParameterType.GetGenericTypeDefinition() == typeof(StreamInfo<>))))
+            if (iStream != null)
             {
                 isUpload = true;
 #if (NET40 || NET35)
@@ -540,18 +654,17 @@ namespace SignalGo.Client.ClientManager
 #endif
             }
             MethodCallInfo callInfo = new MethodCallInfo();
-            callInfo.ServiceName = name;
-            IStreamInfo iStream = null;
-            foreach (object item in args)
-            {
-                if (item is IStreamInfo value)
-                {
-                    iStream = value;
-                    iStream.ClientId = ClientId;
-                }
-            }
-            callInfo.Parameters = method.MethodToParameters(x => ClientSerializationHelper.SerializeObject(x), args).ToArray();
-            string methodName = method.Name;
+            callInfo.ServiceName = serviceName;
+            //IStreamInfo iStream = null;
+            //foreach (object item in args)
+            //{
+            //    if (item is IStreamInfo value)
+            //    {
+            //        iStream = value;
+            //        iStream.ClientId = ClientId;
+            //    }
+            //}
+            callInfo.Parameters = parameters;// method.MethodToParameters(x => ClientSerializationHelper.SerializeObject(x), args).ToArray();
             if (methodName.EndsWith("Async"))
                 methodName = methodName.Substring(0, methodName.Length - 5);
             callInfo.MethodName = methodName;
@@ -560,9 +673,9 @@ namespace SignalGo.Client.ClientManager
 
             byte[] jsonBytes = Encoding.UTF8.GetBytes(json);
 #if (NET40 || NET35)
-            StreamHelper.WriteBlockToStream(stream, jsonBytes);
+            streamHelper.WriteBlockToStream(stream, jsonBytes);
 #else
-            await StreamHelper.WriteBlockToStreamAsync(stream, jsonBytes);
+            await streamHelper.WriteBlockToStreamAsync(stream, jsonBytes);
 #endif
             CompressMode compressMode = CompressMode.None;
             if (isUpload)
@@ -577,16 +690,16 @@ namespace SignalGo.Client.ClientManager
                     if (firstData != null && firstData.Key != DataType.FlushStream)
                         return -1;
 #if (NET40 || NET35)
-                    firstData = iStream.ReadFirstData(stream, ProviderSetting.MaximumReceiveStreamHeaderBlock);
+                    firstData = iStream.ReadFirstData(stream, maximumReceiveStreamHeaderBlock);
 #else
-                    firstData = await iStream.ReadFirstDataAsync(stream, ProviderSetting.MaximumReceiveStreamHeaderBlock);
+                    firstData = await iStream.ReadFirstDataAsync(stream, maximumReceiveStreamHeaderBlock);
 #endif
                     if (firstData.Key == DataType.FlushStream)
                     {
 #if (NET40 || NET35)
-                        byte[] data = StreamHelper.ReadBlockToEnd(stream, firstData.Value, ProviderSetting.MaximumReceiveStreamHeaderBlock);
+                        byte[] data = streamHelper.ReadBlockToEnd(stream, firstData.Value, maximumReceiveStreamHeaderBlock);
 #else
-                        byte[] data = await StreamHelper.ReadBlockToEndAsync(stream, firstData.Value, ProviderSetting.MaximumReceiveStreamHeaderBlock);
+                        byte[] data = await streamHelper.ReadBlockToEndAsync(stream, firstData.Value, maximumReceiveStreamHeaderBlock);
 #endif
                         return BitConverter.ToInt64(data, 0);
                     }
@@ -614,6 +727,8 @@ namespace SignalGo.Client.ClientManager
 
                         if (position + blockOfRead > length)
                             blockOfRead = (int)(length - position);
+                        if (bytes.Length < blockOfRead)
+                            bytes = new byte[blockOfRead];
 #if (NET40 || NET35)
                         int readCount = iStream.Stream.Read(bytes, blockOfRead);
 #else
@@ -633,16 +748,16 @@ namespace SignalGo.Client.ClientManager
                     while (true)
                     {
 #if (NET40 || NET35)
-                        firstData = iStream.ReadFirstData(stream, ProviderSetting.MaximumReceiveStreamHeaderBlock);
+                        firstData = iStream.ReadFirstData(stream, maximumReceiveStreamHeaderBlock);
 #else
-                        firstData = await iStream.ReadFirstDataAsync(stream, ProviderSetting.MaximumReceiveStreamHeaderBlock);
+                        firstData = await iStream.ReadFirstDataAsync(stream, maximumReceiveStreamHeaderBlock);
 #endif
                         if (firstData.Key == DataType.FlushStream)
                         {
 #if (NET40 || NET35)
-                            byte[] data = StreamHelper.ReadBlockToEnd(stream, firstData.Value, ProviderSetting.MaximumReceiveStreamHeaderBlock);
+                            byte[] data = streamHelper.ReadBlockToEnd(stream, firstData.Value, maximumReceiveStreamHeaderBlock);
 #else
-                            byte[] data = await StreamHelper.ReadBlockToEndAsync(stream, firstData.Value, ProviderSetting.MaximumReceiveStreamHeaderBlock);
+                            byte[] data = await streamHelper.ReadBlockToEndAsync(stream, firstData.Value, maximumReceiveStreamHeaderBlock);
 #endif
                         }
                         else
@@ -653,24 +768,24 @@ namespace SignalGo.Client.ClientManager
             else
             {
 #if (NET40 || NET35)
-                byte dataTypeByte = StreamHelper.ReadOneByte(stream);
-                byte compressModeByte = StreamHelper.ReadOneByte(stream);
+                byte dataTypeByte = streamHelper.ReadOneByte(stream);
+                byte compressModeByte = streamHelper.ReadOneByte(stream);
 #else
-                byte dataTypeByte = await StreamHelper.ReadOneByteAsync(stream);
-                byte compressModeByte = await StreamHelper.ReadOneByteAsync(stream);
+                byte dataTypeByte = await streamHelper.ReadOneByteAsync(stream);
+                byte compressModeByte = await streamHelper.ReadOneByteAsync(stream);
 #endif
             }
 #if (NET40 || NET35)
-            byte[] callBackBytes = StreamHelper.ReadBlockToEnd(stream, compressMode, ProviderSetting.MaximumReceiveStreamHeaderBlock);
+            byte[] callBackBytes = streamHelper.ReadBlockToEnd(stream, compressMode, maximumReceiveStreamHeaderBlock);
 #else
-            byte[] callBackBytes = await StreamHelper.ReadBlockToEndAsync(stream, compressMode, ProviderSetting.MaximumReceiveStreamHeaderBlock);
+            byte[] callBackBytes = await streamHelper.ReadBlockToEndAsync(stream, compressMode, maximumReceiveStreamHeaderBlock);
 #endif
             MethodCallbackInfo callbackInfo = ClientSerializationHelper.DeserializeObject<MethodCallbackInfo>(Encoding.UTF8.GetString(callBackBytes, 0, callBackBytes.Length));
             if (callbackInfo.IsException)
                 throw new Exception(callbackInfo.Data);
-            Type methodType = method.ReturnType;
+            Type methodType = returnType;
             if (methodType.GetBaseType() == typeof(Task))
-                methodType = method.ReturnType.GetListOfGenericArguments().FirstOrDefault();
+                methodType = returnType.GetListOfGenericArguments().FirstOrDefault();
 
             object result = ClientSerializationHelper.DeserializeObject(callbackInfo.Data, methodType);
             if (!isUpload)
@@ -697,6 +812,19 @@ namespace SignalGo.Client.ClientManager
             return (T)result;
 #endif
         }
+
+        private static List<Shared.Models.ParameterInfo> ArgumentsToParameters(object[] args)
+        {
+            List<Shared.Models.ParameterInfo> parameters = new List<Shared.Models.ParameterInfo>();
+            foreach (object item in args)
+            {
+                if (item is SignalGo.Shared.Models.ParameterInfo p)
+                    parameters.Add(p);
+                else
+                    parameters.Add(new Shared.Models.ParameterInfo() { Value = ClientSerializationHelper.SerializeObject(item) });
+            }
+            return parameters;
+        }
         public static T SendOneWayMethod<T>(string serverAddress, int port, string serviceName, string methodName, params Shared.Models.ParameterInfo[] parameters)
         {
 #if (NET40 || NET35)
@@ -719,7 +847,7 @@ namespace SignalGo.Client.ClientManager
             //    port = _port;
 
 #if (NETSTANDARD1_6 || NETCOREAPP1_1)
-            var _newClient = new TcpClient();
+            TcpClient _newClient = new TcpClient();
             bool isSuccess = _newClient.ConnectAsync(serverAddress, port).Wait(new TimeSpan(0, 0, 10));
             if (!isSuccess)
                 throw new TimeoutException();
@@ -746,7 +874,7 @@ namespace SignalGo.Client.ClientManager
             string json = ClientSerializationHelper.SerializeObject(callInfo);
             byte[] jsonBytes = Encoding.UTF8.GetBytes(json);
 
-            string line = "SignalGo-OneWay/4.0" + "\r\n";
+            string line = "SignalGo-OneWay/4.0" + TextHelper.NewLine;
             byte[] lineBytes = Encoding.UTF8.GetBytes(line);
             SignalGoStreamBase streamHelper = new SignalGoStreamBase();
 #if (NET40 || NET35)
@@ -761,8 +889,8 @@ namespace SignalGo.Client.ClientManager
             CompressMode compressMode = (CompressMode)stream.ReadOneByte();
             byte[] readData = streamHelper.ReadBlockToEnd(stream, compressMode, int.MaxValue);
 #else
-            DataType dataType = (DataType)await stream.ReadOneByteAcync();
-            CompressMode compressMode = (CompressMode)await stream.ReadOneByteAcync();
+            DataType dataType = (DataType)await stream.ReadOneByteAsync();
+            CompressMode compressMode = (CompressMode)await stream.ReadOneByteAsync();
             byte[] readData = await streamHelper.ReadBlockToEndAsync(stream, compressMode, int.MaxValue);
 #endif
             json = Encoding.UTF8.GetString(readData, 0, readData.Length);
@@ -927,14 +1055,26 @@ namespace SignalGo.Client.ClientManager
             {
                 try
                 {
-
+                    if (ProtocolType == ClientProtocolType.WebSocket)
+                    {
+                        while (true)
+                        {
+#if (NET35 || NET40)
+                            var line = _clientStream.ReadLine();
+#else
+                            string line = await _clientStream.ReadLineAsync();
+#endif
+                            if (line == TextHelper.NewLine)
+                                break;
+                        }
+                    }
                     while (true)
                     {
                         //first byte is DataType
 #if (NET40 || NET35)
-                        int dataTypeByte = _clientStream.ReadOneByte();
+                        int dataTypeByte = StreamHelper.ReadOneByte(_clientStream);
 #else
-                        int dataTypeByte = await _clientStream.ReadOneByteAcync();
+                        int dataTypeByte = await StreamHelper.ReadOneByteAsync(_clientStream);
 #endif
                         DataType dataType = (DataType)dataTypeByte;
                         if (dataType == DataType.PingPong)
@@ -944,9 +1084,9 @@ namespace SignalGo.Client.ClientManager
                         }
                         //secound byte is compress mode
 #if (NET40 || NET35)
-                        int compressModeByte = _clientStream.ReadOneByte();
+                        int compressModeByte = StreamHelper.ReadOneByte(_clientStream);
 #else
-                        int compressModeByte = await _clientStream.ReadOneByteAcync();
+                        int compressModeByte = await StreamHelper.ReadOneByteAsync(_clientStream);
 #endif
                         CompressMode compresssMode = (CompressMode)compressModeByte;
 
@@ -989,7 +1129,9 @@ namespace SignalGo.Client.ClientManager
                             if (geted)
                             {
                                 if (callback.IsException)
+                                {
                                     keyValue.SetException(new Exception(callback.Data));
+                                }
                                 else
                                     keyValue.SetResult(callback);
                             }
@@ -1052,25 +1194,31 @@ namespace SignalGo.Client.ClientManager
         }
 
         private ManualResetEvent PingAndWaitForPong = new ManualResetEvent(true);
-#if (NET40 || NET35)
-        public bool SendPingAndWaitToReceive()
-#else
-        public async Task<bool> SendPingAndWaitToReceive()
-#endif
+#if (!NET40 && !NET35)
+        public async Task<bool> SendPingAndWaitToReceiveAsync()
         {
             try
             {
                 PingAndWaitForPong.Reset();
-#if (PORTABLE)
-                var stream = _client.WriteStream;
-#else
                 NetworkStream stream = _client.GetStream();
-#endif
-#if (NET40 || NET35)
-                StreamHelper.WriteToStream(_clientStream, new byte[] { (byte)DataType.PingPong });
-#else
                 await StreamHelper.WriteToStreamAsync(_clientStream, new byte[] { (byte)DataType.PingPong });
+                return PingAndWaitForPong.WaitOne(new TimeSpan(0, 0, 3));
+            }
+            catch (Exception ex)
+            {
+                AutoLogger.LogError(ex, "ConnectorBase SendData");
+                return false;
+            }
+        }
 #endif
+
+        public bool SendPingAndWaitToReceive()
+        {
+            try
+            {
+                PingAndWaitForPong.Reset();
+                NetworkStream stream = _client.GetStream();
+                StreamHelper.WriteToStream(_clientStream, new byte[] { (byte)DataType.PingPong });
                 return PingAndWaitForPong.WaitOne(new TimeSpan(0, 0, 3));
             }
             catch (Exception ex)
@@ -1123,36 +1271,56 @@ namespace SignalGo.Client.ClientManager
         {
             try
             {
-#if (PORTABLE)
-                var stream = _client.WriteStream;
+                if (IsWebSocket)
+                {
+                    string json = ClientSerializationHelper.SerializeObject(callback) + "#end";
+                    byte[] jsonBytes = Encoding.UTF8.GetBytes(json);
+#if (NET40 || NET35)
+                    StreamHelper.WriteToStream(_clientStream, new byte[] { (byte)DataType.CallMethod });
+                    StreamHelper.WriteToStream(_clientStream, new byte[] { (byte)CompressMode.None });
+                    StreamHelper.WriteToStream(_clientStream, jsonBytes.ToArray());
 #else
-                NetworkStream stream = _client.GetStream();
+                    await StreamHelper.WriteToStreamAsync(_clientStream, new byte[] { (byte)DataType.CallMethod });
+                    await StreamHelper.WriteToStreamAsync(_clientStream, new byte[] { (byte)CompressMode.None });
+                    await StreamHelper.WriteToStreamAsync(_clientStream, jsonBytes);
 #endif
-                string json = ClientSerializationHelper.SerializeObject(callback);
-                List<byte> bytes = new List<byte>
+                }
+                else
+                {
+                    string json = ClientSerializationHelper.SerializeObject(callback);
+                    List<byte> bytes = new List<byte>
                     {
                         (byte)DataType.CallMethod,
                         (byte)CompressMode.None
                     };
-                byte[] jsonBytes = Encoding.UTF8.GetBytes(json);
-                if (SecuritySettings != null)
-                    jsonBytes = EncryptBytes(jsonBytes);
-                byte[] dataLen = BitConverter.GetBytes(jsonBytes.Length);
-                bytes.AddRange(dataLen);
-                bytes.AddRange(jsonBytes);
-                if (bytes.Count > ProviderSetting.MaximumSendDataBlock)
-                    throw new Exception("SendData data length is upper than MaximumSendDataBlock");
+                    byte[] jsonBytes = Encoding.UTF8.GetBytes(json);
+                    if (SecuritySettings != null)
+                        jsonBytes = EncryptBytes(jsonBytes);
+                    byte[] dataLen = BitConverter.GetBytes(jsonBytes.Length);
+                    bytes.AddRange(dataLen);
+                    bytes.AddRange(jsonBytes);
+                    if (bytes.Count > ProviderSetting.MaximumSendDataBlock)
+                        throw new Exception("SendData data length is upper than MaximumSendDataBlock");
 #if (NET40 || NET35)
-                StreamHelper.WriteToStream(_clientStream, bytes.ToArray());
+                    StreamHelper.WriteToStream(_clientStream, bytes.ToArray());
 #else
-                await StreamHelper.WriteToStreamAsync(_clientStream, bytes.ToArray());
+                    await StreamHelper.WriteToStreamAsync(_clientStream, bytes.ToArray());
 #endif
+                }
             }
             catch (Exception ex)
             {
-                if (ConnectorExtensions.WaitedMethodsForResponse.TryGetValue(callback.Guid, out TaskCompletionSource<MethodCallbackInfo> keyValue))
+                try
                 {
-                    keyValue.SetException(ex);
+                    if (ConnectorExtensions.WaitedMethodsForResponse.TryGetValue(callback.Guid, out TaskCompletionSource<MethodCallbackInfo> keyValue))
+                    {
+                        keyValue.SetException(ex);
+                    }
+                }
+                catch (Exception ex2)
+                {
+
+
                 }
                 //AutoLogger.LogError(ex, "ConnectorBase SendData");
             }

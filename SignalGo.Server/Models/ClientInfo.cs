@@ -1,4 +1,5 @@
-﻿using SignalGo.Shared.DataTypes;
+﻿using SignalGo.Server.ServiceManager;
+using SignalGo.Shared.DataTypes;
 using SignalGo.Shared.Http;
 using SignalGo.Shared.IO;
 using SignalGo.Shared.Models;
@@ -38,6 +39,10 @@ namespace SignalGo.Server.Models
         /// web socket protocol
         /// </summary>
         WebSocket = 5,
+        /// <summary>
+        /// http duplex client
+        /// </summary>
+        HttpDuplex = 6
     }
 
     /// <summary>
@@ -46,13 +51,53 @@ namespace SignalGo.Server.Models
     public class ClientInfo
     {
         /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="serverBase"></param>
+        public ClientInfo(ServerBase serverBase)
+        {
+            CurrentClientServer = serverBase;
+        }
+        /// <summary>
+        /// current client server
+        /// </summary>
+        public ServerBase CurrentClientServer { get; set; }
+        /// <summary>
         /// client id
         /// </summary>
         public string ClientId { get; set; }
+
+        string _IPAddress;
         /// <summary>
         /// ip address of client
         /// </summary>
-        public string IPAddress { get; set; }
+        public string IPAddress
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(_IPAddress))
+                    _IPAddress = new System.Net.IPAddress(IPAddressBytes).ToString();
+                return _IPAddress;
+            }
+        }
+
+        byte[] _IPAddressBytes;
+        /// <summary>
+        /// bytes of ip address
+        /// </summary>
+        public byte[] IPAddressBytes
+        {
+            get
+            {
+                return _IPAddressBytes;
+            }
+            set
+            {
+                _IPAddressBytes = value;
+                _IPAddress = null;
+            }
+        }
+
         /// <summary>
         /// version of client
         /// </summary>
@@ -112,6 +157,13 @@ namespace SignalGo.Server.Models
     /// </summary>
     public class HttpClientInfo : ClientInfo, IHttpClientInfo
     {
+        /// <summary>
+        /// current server base
+        /// </summary>
+        /// <param name="serverBase"></param>
+        public HttpClientInfo(ServerBase serverBase) : base(serverBase)
+        {
+        }
         /// <summary>
         /// status of response for client
         /// </summary>

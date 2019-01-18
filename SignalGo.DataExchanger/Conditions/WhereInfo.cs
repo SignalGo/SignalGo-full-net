@@ -7,7 +7,7 @@ namespace SignalGo.DataExchanger.Conditions
     /// <summary>
     /// this is where 
     /// </summary>
-    public class WhereInfo : IRunnable, IAddConditionSides
+    public class WhereInfo : IAddConditionSides
     {
         public IAddConditionSides Parent { get; set; }
         public Dictionary<string, object> PublicVariables { get; set; }
@@ -23,7 +23,6 @@ namespace SignalGo.DataExchanger.Conditions
         /// name of variable of where for example var x from user.posts 'x' is variable name
         /// </summary>
         public string VariableName { get; set; }
-
         /// <summary>
         /// add a runnable to this where
         /// </summary>

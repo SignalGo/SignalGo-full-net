@@ -16,7 +16,7 @@ namespace SignalGo.Server.ServiceManager.Providers
     /// </summary>
     public class SignalGoDuplexServiceProvider : BaseProvider
     {
-        public static async void StartToReadingClientData(ClientInfo client, ServerBase serverBase)
+        public static async Task StartToReadingClientData(ClientInfo client, ServerBase serverBase)
         {
             try
             {

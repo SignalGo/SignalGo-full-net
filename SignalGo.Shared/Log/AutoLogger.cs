@@ -38,10 +38,17 @@ namespace SignalGo.Shared.Log
                     dir = DirectoryLocation;
                 else
                     dir = Path.Combine(DirectoryLocation, DirectoryName);
+                try
+                {
 #if (!PORTABLE)
-                if (!Directory.Exists(dir))
-                    Directory.CreateDirectory(dir);
+                    if (!Directory.Exists(dir))
+                        Directory.CreateDirectory(dir);
 #endif
+                }
+                catch
+                {
+
+                }
                 return Path.Combine(dir, FileName);
             }
         }
@@ -153,7 +160,7 @@ namespace SignalGo.Shared.Log
                 using (FileStream stream = new FileStream(fileName, FileMode.OpenOrCreate, FileAccess.ReadWrite))
                 {
                     stream.Seek(0, SeekOrigin.End);
-                    byte[] bytes = Encoding.UTF8.GetBytes(System.Environment.NewLine + str.ToString());
+                    byte[] bytes = Encoding.UTF8.GetBytes(Helpers.TextHelper.NewLine + str.ToString());
                     stream.Write(bytes, 0, bytes.Length);
                 }
             }
@@ -201,7 +208,7 @@ namespace SignalGo.Shared.Log
                     using (FileStream stream = new FileStream(fileName, FileMode.OpenOrCreate, FileAccess.ReadWrite))
                     {
                         stream.Seek(0, SeekOrigin.End);
-                        byte[] bytes = Encoding.UTF8.GetBytes(System.Environment.NewLine + str.ToString());
+                        byte[] bytes = Encoding.UTF8.GetBytes(Helpers.TextHelper.NewLine + str.ToString());
                         stream.Write(bytes, 0, bytes.Length);
                     }
                 }

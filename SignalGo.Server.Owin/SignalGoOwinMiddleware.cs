@@ -40,9 +40,9 @@ namespace SignalGo.Server.Owin
             if (!BaseProvider.ExistService(serviceName, CurrentServerBase) && !isWebSocketd)
                 return Next.Invoke(context);
 
-            OwinClientInfo owinClientInfo = new OwinClientInfo();
+            OwinClientInfo owinClientInfo = new OwinClientInfo(CurrentServerBase);
             owinClientInfo.ConnectedDateTime = DateTime.Now;
-            owinClientInfo.IPAddress = context.Request.RemoteIpAddress;
+            owinClientInfo.IPAddressBytes = IPAddress.Parse(context.Request.RemoteIpAddress).GetAddressBytes();
             owinClientInfo.ClientId = Guid.NewGuid().ToString();
             CurrentServerBase.Clients.TryAdd(owinClientInfo.ClientId, owinClientInfo);
 
@@ -78,17 +78,16 @@ namespace SignalGo.Server.Owin
     {
         public OwinClientInfo ClientInfo { get; set; }
         public ServerBase CurrentServerBase { get; set; }
-        public Task RunWebSocket(IDictionary<string, object> websocketContext)
+        public async Task RunWebSocket(IDictionary<string, object> websocketContext)
         {
             if (websocketContext.TryGetValue(typeof(WebSocketContext).FullName, out object value))
             {
                 WebSocket webSocket = ((WebSocketContext)value).WebSocket;
                 ClientInfo.ClientStream = new PipeNetworkStream(new WebsocketStream(webSocket));
-                return HttpProvider.AddWebSocketHttpClient(ClientInfo, CurrentServerBase);
+                await HttpProvider.AddWebSocketHttpClient(ClientInfo, CurrentServerBase);
             }
             else
             {
-                return null;
                 //mWebSocket = new OwinWebSocket(websocketContext);
             }
         }

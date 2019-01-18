@@ -39,7 +39,7 @@ namespace SignalGo.Client
         {
             isStart = false;
 #if (!PORTABLE)
-            socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, System.Net.Sockets.ProtocolType.Udp);
             iPEndPoint = new IPEndPoint(IPAddress.Parse(ipAddress), port);
 #else
             socket = new Sockets.Plugin.UdpSocketClient();

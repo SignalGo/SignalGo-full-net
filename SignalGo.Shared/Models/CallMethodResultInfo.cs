@@ -8,7 +8,7 @@ namespace SignalGo.Shared.Models
 {
     public class CallMethodResultInfo<T>
     {
-        public CallMethodResultInfo(MethodCallbackInfo callbackInfo, IStreamInfo streamInfo, List<HttpKeyAttribute> httpKeyAttributees, Type serviceType, MethodInfo method, object serviceInstance, FileActionResult fileActionResult, T context)
+        public CallMethodResultInfo(MethodCallbackInfo callbackInfo, IStreamInfo streamInfo, List<HttpKeyAttribute> httpKeyAttributees, Type serviceType, MethodInfo method, object serviceInstance, FileActionResult fileActionResult, T context, object result)
         {
             CallbackInfo = callbackInfo;
             StreamInfo = streamInfo;
@@ -18,6 +18,7 @@ namespace SignalGo.Shared.Models
             ServiceInstance = serviceInstance;
             FileActionResult = fileActionResult;
             Context = context;
+            Result = result;
         }
 
         public MethodCallbackInfo CallbackInfo { get; set; }
@@ -28,5 +29,6 @@ namespace SignalGo.Shared.Models
         public object ServiceInstance { get; set; }
         public FileActionResult FileActionResult { get; set; }
         public T Context { get; set; }
+        public object Result { get; set; }
     }
 }

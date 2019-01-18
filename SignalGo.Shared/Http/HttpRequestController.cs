@@ -39,7 +39,36 @@ namespace SignalGo.Shared.Http
         public IDictionary<string, string[]> RequestHeaders { get; set; }
         public IDictionary<string, string[]> ResponseHeaders { get; set; } = new WebHeaderCollection();
 
-        public string IPAddress { get; set; }
+        string _IPAddress;
+        /// <summary>
+        /// ip address of client
+        /// </summary>
+        public string IPAddress
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(_IPAddress))
+                    _IPAddress = new System.Net.IPAddress(IPAddressBytes).ToString();
+                return _IPAddress;
+            }
+        }
+
+        byte[] _IPAddressBytes;
+        /// <summary>
+        /// bytes of ip address
+        /// </summary>
+        public byte[] IPAddressBytes
+        {
+            get
+            {
+                return _IPAddressBytes;
+            }
+            set
+            {
+                _IPAddressBytes = value;
+                _IPAddress = null;
+            }
+        }
 
         public ActionResult Content(string text)
         {

@@ -1,13 +1,18 @@
 ﻿#if (NETSTANDARD)
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.Http.Internal;
 using Microsoft.Extensions.Primitives;
+using SignalGo.Server.Models;
 using SignalGo.Server.ServiceManager;
 using SignalGo.Server.ServiceManager.Providers;
 using SignalGo.Shared.IO;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Net.WebSockets;
 using System.Threading.Tasks;
 
 namespace SignalGo.Server.Owin
@@ -40,41 +45,45 @@ namespace SignalGo.Server.Owin
             string uri = context.Request.Path.Value + context.Request.QueryString.ToString();
             string serviceName = uri.Contains('/') ? uri.Substring(0, uri.LastIndexOf('/')).Trim('/') : "";
             bool isWebSocketd = context.Request.Headers.ContainsKey("Sec-WebSocket-Key");
-            if (!BaseProvider.ExistService(serviceName, CurrentServerBase) && !isWebSocketd && !context.Request.Headers.ContainsKey("signalgo-servicedetail") && context.Request.Headers["content-type"] != "SignalGo Service Reference")
+            if (!BaseProvider.ExistService(serviceName, CurrentServerBase) && !isWebSocketd && !context.Request.Headers.ContainsKey("signalgo") && !context.Request.Headers.ContainsKey("signalgo-servicedetail") && context.Request.Headers["content-type"] != "SignalGo Service Reference")
             {
                 await _next.Invoke(context);
                 return;
             }
 
-            OwinClientInfo owinClientInfo = new OwinClientInfo();
+            OwinClientInfo owinClientInfo = new OwinClientInfo(CurrentServerBase);
             owinClientInfo.ChangeStatusAction = (code) =>
             {
                 context.Response.StatusCode = code;
             };
 
             owinClientInfo.ConnectedDateTime = DateTime.Now;
-            owinClientInfo.IPAddress = context.Connection.RemoteIpAddress.ToString();
+            owinClientInfo.IPAddressBytes = context.Connection.RemoteIpAddress.GetAddressBytes();
             owinClientInfo.ClientId = Guid.NewGuid().ToString();
             CurrentServerBase.Clients.TryAdd(owinClientInfo.ClientId, owinClientInfo);
 
             //owinClientInfo.OwinContext = context;
             owinClientInfo.RequestHeaders = new HttpHeaderCollection(context.Request.Headers);
             owinClientInfo.ResponseHeaders = new HttpHeaderCollection(context.Response.Headers);
-            if (isWebSocketd)
+            if (context.Request.Headers.ContainsKey("signalgo") && context.Request.Headers["signalgo"] == "SignalGoHttpDuplex")
+            {
+                context.Response.Headers["Content-Length"] = "170";
+                context.Request.EnableRewind();
+                context.Request.EnableBuffering();
+                owinClientInfo.StreamHelper = SignalGoStreamBase.CurrentBase;
+                owinClientInfo.ClientStream = new PipeNetworkStream(new DuplexStream(context.Request.Body, context.Response.Body));
+                owinClientInfo.ProtocolType = ClientProtocolType.HttpDuplex;
+                await SignalGoDuplexServiceProvider.StartToReadingClientData(owinClientInfo, CurrentServerBase);
+                await Task.FromResult<object>(null);
+            }
+            else if (isWebSocketd)
             {
                 owinClientInfo.StreamHelper = SignalGoStreamBase.CurrentBase;
-                //Action<IDictionary<string, object>, Func<IDictionary<string, object>, Task>> accept = context.Get<Action<IDictionary<string, object>, Func<IDictionary<string, object>, Task>>>("websocket.Accept");
-                //if (accept == null)
-                //{
-                //    // Bad Request
-                //    context.Response.StatusCode = 400;
-                //    context.Response.WriteAsync("Not a valid websocket request");
-                //    return Task.FromResult<object>(null);
-                //}
-                //WebsocketClient websocketClient = new WebsocketClient() { ClientInfo = owinClientInfo, CurrentServerBase = CurrentServerBase };
-                //accept(null, websocketClient.RunWebSocket);
+                bool web = context.WebSockets.IsWebSocketRequest;
+                WebSocket webSocket = await context.WebSockets.AcceptWebSocketAsync();
+                owinClientInfo.ClientStream = new PipeNetworkStream(new WebsocketStream(webSocket));
+                await HttpProvider.AddWebSocketHttpClient(owinClientInfo, CurrentServerBase);
                 await Task.FromResult<object>(null);
-
             }
             else
             {

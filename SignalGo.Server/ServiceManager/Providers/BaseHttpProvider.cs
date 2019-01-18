@@ -30,7 +30,7 @@ namespace SignalGo.Server.ServiceManager.Providers
         {
             try
             {
-                string newLine = "\r\n";
+                string newLine = TextHelper.NewLine;
                 string headerResponse = client.RequestHeaders.ToString();
                 if (methodName.ToLower() == "get" && !string.IsNullOrEmpty(address) && address != "/")
                 {
@@ -46,7 +46,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 }
                 else if (methodName.ToLower() == "post" && !string.IsNullOrEmpty(address) && address != "/")
                 {
-                    int indexOfStartedContent = headerResponse.IndexOf("\r\n\r\n");
+                    int indexOfStartedContent = headerResponse.IndexOf(TextHelper.NewLine + TextHelper.NewLine);
                     string content = "";
                     if (indexOfStartedContent > 0)
                     {
@@ -153,6 +153,10 @@ namespace SignalGo.Server.ServiceManager.Providers
 
             client.ResponseHeaders["Content-Type"] = "application/json; charset=utf-8".Split(',');
             client.ResponseHeaders["Connection"] = "Close".Split(',');
+            if (serverBase.ProviderSetting.HttpSetting.HandleCrossOriginAccess)
+            {
+                AddOriginHeader(client, serverBase);
+            }
 
             byte[] dataBytes = Encoding.UTF8.GetBytes(newLine + json + newLine);
             await SendResponseHeadersToClient(HttpStatusCode.OK, client.ResponseHeaders, client, dataBytes.Length);
@@ -191,7 +195,7 @@ namespace SignalGo.Server.ServiceManager.Providers
         internal static async Task RunHttpRequest(ServerBase serverBase, string address, string httpMethod, string content, HttpClientInfo client)
         {
 
-            string newLine = "\r\n";
+            string newLine = TextHelper.NewLine;
 
             string fullAddress = address;
             address = address.Trim('/');
@@ -262,7 +266,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 }
                 else if (parameters.StartsWith("----") && parameters.ToLower().Contains("content-disposition"))
                 {
-                    string boundary = parameters.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries)[0];
+                    string boundary = parameters.Split(new string[] { TextHelper.NewLine }, StringSplitOptions.RemoveEmptyEntries)[0];
                     string[] pValues = parameters.Split(new string[] { boundary }, StringSplitOptions.RemoveEmptyEntries);
                     string name = "";
                     foreach (string valueData in pValues)
@@ -273,7 +277,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                             {
                                 int index = valueData.ToLower().IndexOf("content-disposition");
                                 string header = valueData.Substring(index);
-                                int headLen = header.IndexOf("\r\n");
+                                int headLen = header.IndexOf(TextHelper.NewLine);
                                 header = valueData.Substring(index, headLen);
                                 string newData = valueData.Substring(index + headLen + 2);
                                 //newData = newData.Split(new string[] { boundary }, StringSplitOptions.RemoveEmptyEntries);
@@ -386,7 +390,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 // exception = ex;
                 if (serverBase.ErrorHandlingFunction != null)
                 {
-                    ActionResult result = serverBase.ErrorHandlingFunction(ex, serviceType, method,client).ToActionResult();
+                    ActionResult result = serverBase.ErrorHandlingFunction(ex, serviceType, method, client).ToActionResult();
                     await RunHttpActionResult(client, result.Data, client, serverBase);
                 }
                 else
@@ -420,7 +424,7 @@ namespace SignalGo.Server.ServiceManager.Providers
 
         internal static async Task RunIndexHttpRequest(HttpClientInfo client, ServerBase serverBase)
         {
-            string newLine = "\r\n";
+            string newLine = TextHelper.NewLine;
 
             MethodInfo method = null;
             Type serviceType = null;
@@ -485,7 +489,7 @@ namespace SignalGo.Server.ServiceManager.Providers
             {
                 ((IHttpClientInfo)result.ServiceInstance).RequestHeaders = client.RequestHeaders;
                 ((IHttpClientInfo)result.ServiceInstance).ResponseHeaders = client.ResponseHeaders;
-                ((IHttpClientInfo)result.ServiceInstance).IPAddress = client.IPAddress;
+                ((IHttpClientInfo)result.ServiceInstance).IPAddressBytes = client.IPAddressBytes;
             }
             if (serverBase.ProviderSetting.HttpSetting.HandleCrossOriginAccess)
             {
@@ -605,7 +609,7 @@ namespace SignalGo.Server.ServiceManager.Providers
         /// <param name="client">client</param>
         internal static async Task RunPostHttpRequestFile(string address, string httpMethod, string content, HttpClientInfo client, ServerBase serverBase)
         {
-            string newLine = "\r\n";
+            string newLine = TextHelper.NewLine;
             string fullAddress = address;
             address = address.Trim('/');
             List<string> lines = address.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries).ToList();
@@ -652,7 +656,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     {
                         if (httpData.Replace(" ", "").Contains(";filename="))
                         {
-                            foreach (string header in httpData.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries))
+                            foreach (string header in httpData.Split(new string[] { TextHelper.NewLine }, StringSplitOptions.RemoveEmptyEntries))
                             {
                                 int index = header.ToLower().IndexOf("content-type: ");
                                 if (index == 0)
@@ -676,21 +680,20 @@ namespace SignalGo.Server.ServiceManager.Providers
                         {
                             if (httpData.Replace(" ", "").Contains(";name="))
                             {
-                                string[] sp = httpData.Split(new string[] { "\r\n\r\n" }, StringSplitOptions.RemoveEmptyEntries);
+                                string[] sp = httpData.Split(new string[] { TextHelper.NewLine+ TextHelper.NewLine }, StringSplitOptions.RemoveEmptyEntries);
                                 string contentHeaders = sp.FirstOrDefault();
                                 string datas = sp.LastOrDefault();
                                 int index = contentHeaders.ToLower().IndexOf("content-disposition");
                                 string header = contentHeaders.Substring(index);
-                                int headLen = httpData.IndexOf("\r\n");
-                                //var headLen = data.IndexOf("\r\n\r\n");
+                                int headLen = httpData.IndexOf(TextHelper.NewLine);
                                 //header = sp.Length > 1 ? datas : data.Substring(index, headLen);
                                 //var byteData = GoStreamReader.ReadBlockSize(client.TcpClient.GetStream(), (ulong)(len - content.Length - fileHeaderCount));
                                 string newData = sp.Length > 1 ? datas : httpData.Substring(headLen + 4);//+ 4 Encoding.UTF8.GetString(byteData);
-                                newData = newData.Trim(Environment.NewLine.ToCharArray());
+                                newData = newData.Trim(TextHelper.NewLine.ToCharArray());
                                 //var newData = text.Substring(0, text.IndexOf(boundary) - 4);
                                 if (header.ToLower().IndexOf("content-disposition:") == 0)
                                 {
-                                    CustomContentDisposition disp = new CustomContentDisposition(header.Trim().Split(new string[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault());
+                                    CustomContentDisposition disp = new CustomContentDisposition(header.Trim().Split(new string[] { TextHelper.NewLine }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault());
                                     if (disp.Parameters.ContainsKey("name"))
                                         name = disp.Parameters["name"];
                                     //StringBuilder build = new StringBuilder();
@@ -710,7 +713,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                                 }
                             }
                         }
-                        string[] keyValue = httpData.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
+                        string[] keyValue = httpData.Split(new string[] { TextHelper.NewLine }, StringSplitOptions.RemoveEmptyEntries);
                         if (keyValue.Length == 2)
                         {
                             if (!string.IsNullOrEmpty(parameters))
@@ -888,7 +891,7 @@ namespace SignalGo.Server.ServiceManager.Providers
             string response = "";
             while (true)
             {
-                byte singleByte = await stream.ReadOneByteAcync();
+                byte singleByte = await stream.ReadOneByteAsync();
                 bytes.Add(singleByte);
                 if (bytes.Count >= maxLen)
                 {
@@ -896,7 +899,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     response = data;
                     if (response.Contains("--") && string.IsNullOrEmpty(boundary))
                     {
-                        string[] split = response.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
+                        string[] split = response.Split(new string[] { TextHelper.NewLine }, StringSplitOptions.RemoveEmptyEntries);
                         foreach (string item in split)
                         {
                             if (response.Contains("--"))
@@ -920,7 +923,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                         string data = Encoding.UTF8.GetString(bytes.ToArray());
                         string res = data.Replace(" ", "").ToLower();
 
-                        string[] lines = res.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
+                        string[] lines = res.Split(new string[] { TextHelper.NewLine }, StringSplitOptions.RemoveEmptyEntries);
                         bool canBreak = false;
                         foreach (string item in lines)
                         {
@@ -946,7 +949,7 @@ namespace SignalGo.Server.ServiceManager.Providers
             response = Encoding.UTF8.GetString(bytes.ToArray());
             if (response.Contains("--") && string.IsNullOrEmpty(boundary))
             {
-                string[] split = response.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
+                string[] split = response.Split(new string[] { TextHelper.NewLine }, StringSplitOptions.RemoveEmptyEntries);
                 foreach (string item in split)
                 {
                     if (response.Contains("--"))
@@ -1027,10 +1030,10 @@ namespace SignalGo.Server.ServiceManager.Providers
         }
 
 
-        internal static async Task SendResponseHeadersToClient(HttpStatusCode httpStatusCode, IDictionary<string, string[]> webResponseHeaderCollection, ClientInfo client, int contentLength)
+        public static async Task SendResponseHeadersToClient(HttpStatusCode httpStatusCode, IDictionary<string, string[]> webResponseHeaderCollection, ClientInfo client, int contentLength)
         {
 
-            string newLine = "\r\n";
+            string newLine = TextHelper.NewLine;
             string firstLine = "";
             firstLine = $"HTTP/1.1 {(int)httpStatusCode} {HttpRequestController.GetStatusDescription((int)httpStatusCode)}" + newLine;
 

@@ -5,7 +5,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Net;
 using System.IO;
 
-namespace SignalGoTest.Download
+namespace SignalGoTest2.Download
 {
     /// <summary>
     /// Summary description for WebServiceTest

@@ -6,13 +6,12 @@ namespace SignalGo.Shared.IO
     public interface ISignalGoStream
     {
         byte[] EncodeMessageToSend(byte[] bytesRaw);
-#if (NET35 || NET40)
         void WriteToStream(PipeNetworkStream stream, byte[] data);
         byte[] ReadBlockToEnd(PipeNetworkStream stream, CompressMode compress, int maximum);
         void WriteBlockToStream(PipeNetworkStream stream, byte[] data);
         byte ReadOneByte(PipeNetworkStream stream);
         byte[] ReadBlockSize(PipeNetworkStream stream, int count);
-#else
+#if (!NET35 && !NET40)
         Task WriteToStreamAsync(PipeNetworkStream stream, byte[] data);
         Task<byte[]> ReadBlockToEndAsync(PipeNetworkStream stream, CompressMode compress, int maximum);
         Task WriteBlockToStreamAsync(PipeNetworkStream stream, byte[] data);

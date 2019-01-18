@@ -101,7 +101,7 @@ namespace SignalGo.Server.Helpers
                                             {
                                                 object value = Enum.Parse(type, ex.RefrenceType.Substring(ex.RefrenceType.LastIndexOf('.') + 1, ex.RefrenceType.Length - ex.RefrenceType.LastIndexOf('.') - 1));
                                                 int exNumber = (int)value;
-                                                exceptions += ex.RefrenceType + $" ({exNumber}) : " + ex.Comment + Environment.NewLine;
+                                                exceptions += ex.RefrenceType + $" ({exNumber}) : " + ex.Comment + TextHelper.NewLine;
                                                 continue;
                                             }
                                         }
@@ -111,7 +111,7 @@ namespace SignalGo.Server.Helpers
 
                                     }
 
-                                    exceptions += ex.RefrenceType + ":" + ex.Comment + Environment.NewLine;
+                                    exceptions += ex.RefrenceType + ":" + ex.Comment + TextHelper.NewLine;
                                 }
                             }
                             id++;
@@ -217,7 +217,7 @@ namespace SignalGo.Server.Helpers
                                         {
                                             object value = Enum.Parse(type, ex.RefrenceType.Substring(ex.RefrenceType.LastIndexOf('.') + 1, ex.RefrenceType.Length - ex.RefrenceType.LastIndexOf('.') - 1));
                                             int exNumber = (int)value;
-                                            exceptions += ex.RefrenceType + $" ({exNumber}) : " + ex.Comment + Environment.NewLine;
+                                            exceptions += ex.RefrenceType + $" ({exNumber}) : " + ex.Comment + TextHelper.NewLine;
                                             continue;
                                         }
                                     }
@@ -227,7 +227,7 @@ namespace SignalGo.Server.Helpers
 
                                 }
 
-                                exceptions += ex.RefrenceType + ":" + ex.Comment + Environment.NewLine;
+                                exceptions += ex.RefrenceType + ":" + ex.Comment + TextHelper.NewLine;
                             }
                         }
                         id++;
@@ -318,7 +318,7 @@ namespace SignalGo.Server.Helpers
                                         {
                                             object value = Enum.Parse(type, ex.RefrenceType.Substring(ex.RefrenceType.LastIndexOf('.') + 1, ex.RefrenceType.Length - ex.RefrenceType.LastIndexOf('.') - 1));
                                             int exNumber = (int)value;
-                                            exceptions += ex.RefrenceType + $" ({exNumber}) : " + ex.Comment + Environment.NewLine;
+                                            exceptions += ex.RefrenceType + $" ({exNumber}) : " + ex.Comment + TextHelper.NewLine;
                                             continue;
                                         }
                                     }
@@ -328,7 +328,7 @@ namespace SignalGo.Server.Helpers
 
                                 }
 
-                                exceptions += ex.RefrenceType + ":" + ex.Comment + Environment.NewLine;
+                                exceptions += ex.RefrenceType + ":" + ex.Comment + TextHelper.NewLine;
                             }
                         }
                         id++;
