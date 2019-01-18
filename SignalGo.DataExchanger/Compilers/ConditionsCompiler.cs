@@ -42,6 +42,7 @@ namespace SignalGo.DataExchanger.Compilers
             {
                 WhereInfo = new WhereInfo()
             };
+            VariableInfo.WhereInfo.Parent = VariableInfo;
             VariableInfo.WhereInfo.PublicVariables = VariableInfo.PublicVariables;
             ExtractVariables(selectQuery, ref index, VariableInfo.WhereInfo);
         }
@@ -123,7 +124,16 @@ namespace SignalGo.DataExchanger.Compilers
                 }
                 else if (foundVariableStep == 1)
                 {
-                    if (concat.Equals("in", StringComparison.OrdinalIgnoreCase))
+                    if (string.IsNullOrEmpty(variableName))
+                    {
+                        if (isWhiteSpaceChar)
+                        {
+                            variableName = concat.Trim();
+                            concat = "";
+                            canSkip = true;
+                        }
+                    }
+                    else if (concat.Equals("in", StringComparison.OrdinalIgnoreCase))
                     {
                         concat = "";
                         foundVariableStep = 2;
@@ -184,8 +194,21 @@ namespace SignalGo.DataExchanger.Compilers
                     index = i;
                     break;
                 }
+                if (isWhiteSpaceChar && foundVariableStep == 0 && concat.Trim().Equals("in", StringComparison.OrdinalIgnoreCase))
+                {
+                    foundVariableStep = 3;
+                    concat = "";
+                    canSkip = true;
+                }
+                else if (foundVariableStep == 3 && isWhiteSpaceChar)
+                {
+                    parent.Add(new PropertyInfo() { PropertyPath = concat.Trim() , PublicVariables  = parent.PublicVariables});
+                    foundVariableStep = 0;
+                    concat = "";
+                    canSkip = true;
+                }
                 //find a side
-                if (foundVariableStep == 1)
+                else if (foundVariableStep == 1)
                 {
                     if (currentChar == '"')
                     {
@@ -228,7 +251,17 @@ namespace SignalGo.DataExchanger.Compilers
                         }
                         else if (concat.Equals("var", StringComparison.OrdinalIgnoreCase))
                         {
+                            index = i;
+                            do
+                            {
+                                index--;
+                            }
+                            while (selectQuery[index].ToString().ToLower() != "v");
 
+                            ExtractVariables(selectQuery, ref index, parent.Parent);
+                            i = index;
+                            concat = "";
+                            canSkip = true;
                         }
                         else if (concat.Length > 3)
                             throw new Exception($"I cannot found operator,I try but found '{concat}' are you sure you don't missed?");

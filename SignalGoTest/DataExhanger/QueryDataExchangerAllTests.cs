@@ -271,7 +271,6 @@ namespace SignalGoTest.DataExhanger
         [TestMethod]
         public void Example15()
         {
-            return;
             string query = @"select{name family posts{title articles{author}date news{newsName}}files{id name}}
                                     var user
                                     {
