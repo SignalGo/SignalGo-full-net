@@ -552,6 +552,8 @@ namespace SignalGo.Server.ServiceManager.Providers
                         byte[] bytes = data.ToList().GetRange(0, readCount).ToArray();
                         await client.ClientStream.WriteAsync(bytes, 0, bytes.Length);
                     }
+                    //delay to fix fast dispose before client read data
+                    await Task.Delay(1000);
                     file.FileStream.Dispose();
                 }
                 else
