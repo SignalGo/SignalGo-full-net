@@ -24,14 +24,6 @@ namespace SignalGoTest
                 {
                     return new MessageContract() { IsSuccess = false, Message = ex.ToString() };
                 };
-                server.OnConnectedClientAction = (client) =>
-                {
-
-                };
-                server.OnDisconnectedClientAction = (client) =>
-                {
-
-                };
                 server.ValidationResultHandlingFunction = (errors, service, method) =>
                 {
                     List<Models.ValidationRule> result = new List<Models.ValidationRule>();
