@@ -70,11 +70,11 @@ namespace SignalGo.Server.ServiceManager
         /// <summary>
         /// Action raised when a client connected successfully
         /// </summary>
-        public Action<ClientInfo> OnConnectedClientAction { get; set; }
+        public Action<ClientInfo> OnClientConnectedAction { get; set; }
         /// <summary>
         /// after client disconnected
         /// </summary>
-        public Action<ClientInfo> OnDisconnectedClientAction { get; set; }
+        public Action<ClientInfo> OnClientDisconnectedAction { get; set; }
 
         /// <summary>
         /// all of registred services like server services, client services, http services etc
@@ -253,7 +253,6 @@ namespace SignalGo.Server.ServiceManager
                 OperationContextBase.SavedSettings.Remove(client);
 
                 client.OnDisconnected?.Invoke();
-                OnDisconnectedClientAction?.Invoke(client);
             }
             catch (Exception ex)
             {
@@ -262,7 +261,14 @@ namespace SignalGo.Server.ServiceManager
             }
             finally
             {
-                //GC.Collect();
+                try
+                {
+                    OnClientDisconnectedAction?.Invoke(client);
+                }
+                catch (Exception ex)
+                {
+
+                }
             }
         }
 
