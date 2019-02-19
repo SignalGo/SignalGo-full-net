@@ -57,6 +57,8 @@ namespace SignalGo.DataExchanger.Compilers
 
         public object Run<T>(object obj)
         {
+            if (VariableInfo == null)
+                return obj;
             if (obj is IEnumerable)
                 return GenerateArrayObject((IEnumerable<T>)obj, VariableInfo);
             else
