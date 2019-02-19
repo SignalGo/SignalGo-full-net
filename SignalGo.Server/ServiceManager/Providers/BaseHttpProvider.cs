@@ -682,7 +682,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                         {
                             if (httpData.Replace(" ", "").Contains(";name="))
                             {
-                                string[] sp = httpData.Split(new string[] { TextHelper.NewLine+ TextHelper.NewLine }, StringSplitOptions.RemoveEmptyEntries);
+                                string[] sp = httpData.Split(new string[] { TextHelper.NewLine + TextHelper.NewLine }, StringSplitOptions.RemoveEmptyEntries);
                                 string contentHeaders = sp.FirstOrDefault();
                                 string datas = sp.LastOrDefault();
                                 int index = contentHeaders.ToLower().IndexOf("content-disposition");
@@ -872,8 +872,8 @@ namespace SignalGo.Server.ServiceManager.Providers
 
                 Shared.Models.ServiceReference.NamespaceReferenceInfo referenceData = new ServiceReferenceHelper() { IsRenameDuplicateMethodNames = client.RequestHeaders["selectedLanguage"].FirstOrDefault() == "1" }.GetServiceReferenceCSharpCode(client.GetRequestHeaderValue("servicenamespace"), serverBase);
                 string result = ServerSerializationHelper.SerializeObject(referenceData, serverBase);
-                client.ResponseHeaders.Add("Content-Type", "text/html; charset=utf-8");
-                client.ResponseHeaders.Add("Service-Type", "SignalGoServiceType");
+                client.ResponseHeaders["Content-Type"] = "text/html; charset=utf-8".Split(',');
+                client.ResponseHeaders["Service-Type"] = "SignalGoServiceType".Split(',');
                 byte[] dataBytes = Encoding.UTF8.GetBytes(result);
                 await SendResponseHeadersToClient(HttpStatusCode.OK, client.ResponseHeaders, client, dataBytes.Length);
                 await SendResponseDataToClient(dataBytes, client);
@@ -982,9 +982,9 @@ namespace SignalGo.Server.ServiceManager.Providers
                 //string message = newLine + $"{msg}" + newLine;
                 string message = "";
 
-                client.ResponseHeaders.Add("Content-Type", "text/html; charset=utf-8");
+                client.ResponseHeaders["Content-Type"] = "text/html; charset=utf-8".Split(',');
                 //responseHeaders.Add("Content-Length", (message.Length - 2).ToString());
-                client.ResponseHeaders.Add("Connection", "Close");
+                client.ResponseHeaders["Connection"] = "Close".Split(',');
                 if (serverBase.ErrorHandlingFunction != null)
                 {
                     message = newLine + $"{serverBase.ErrorHandlingFunction(exception, srviceType, methodInfo, client).SerializeObject(serverBase)}" + newLine;
@@ -1044,7 +1044,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 webResponseHeaderCollection["Content-Type"] = "text/html; charset=utf-8".Split(',');
             }
             if (!webResponseHeaderCollection.ContainsKey("Content-Length") || webResponseHeaderCollection["Content-Length"].FirstOrDefault() == "0")
-                webResponseHeaderCollection.Add("Content-Length", (contentLength).ToString().Split(','));
+                webResponseHeaderCollection["Content-Length"] = (contentLength).ToString().Split(',');
             else
             {
 
