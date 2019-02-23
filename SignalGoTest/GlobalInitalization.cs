@@ -1,5 +1,6 @@
 ﻿using SignalGo.Client;
 using SignalGo.Server.ServiceManager;
+using SignalGoTest.Callbacks;
 using SignalGoTest.Models;
 using System.Collections.Generic;
 
@@ -18,7 +19,7 @@ namespace SignalGoTest
                 server.RegisterServerService<Models.TestServerStreamModel>();
                 server.RegisterServerService<Models.TestServerModel>();
                 server.RegisterServerService<Models.AuthenticationService>();
-
+                server.RegisterClientService<Models.ITestClientServiceModel>();
                 server.Start("http://localhost:1132/SignalGoTestService");
                 server.ErrorHandlingFunction = (ex, serviceType, method, client) =>
                 {
@@ -74,6 +75,7 @@ namespace SignalGoTest
             client = provider;
             //connect to your server must have full address that your server is listen
             provider.Connect("http://localhost:1132/SignalGoTestService");
+            provider.RegisterClientService<TestClientServiceModel>();
             return provider;
         }
     }

@@ -80,6 +80,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AsyncAwaitCalls\AsyncAwaitTest.cs" />
+    <Compile Include="Callbacks\CallbackMethodsTest.cs" />
     <Compile Include="Connected Services\SignalGoTestServices\Reference.cs" />
     <Compile Include="DataExhanger\DataExchangerTest.cs" />
     <Compile Include="DataExhanger\QueryDataExchangerAllTests.cs" />

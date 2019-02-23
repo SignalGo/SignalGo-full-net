@@ -67,6 +67,10 @@ namespace SignalGoTest2Services.Interfaces
         Task<SignalGoTest2.Models.MessageContract> UserAccessAsync();
         SignalGoTest2.Models.MessageContract GustAccess();
         Task<SignalGoTest2.Models.MessageContract> GustAccessAsync();
+        SignalGoTest2.Models.MessageContract TestCallbacksSync();
+        Task<SignalGoTest2.Models.MessageContract> TestCallbacksSyncAsync();
+        SignalGoTest2.Models.MessageContract TestCallbacksAsync();
+        Task<SignalGoTest2.Models.MessageContract> TestCallbacksAsyncAsync();
     }
 }
 
@@ -311,6 +315,30 @@ namespace SignalGoTest2Services.ServerServices
                 {
                 });
         }
+        public SignalGoTest2.Models.MessageContract TestCallbacksSync()
+        {
+                return  SignalGo.Client.ClientManager.ConnectorExtensions.SendDataSync<SignalGoTest2.Models.MessageContract>(CurrentProvider, ServiceName,"TestCallbacksSync", new SignalGo.Shared.Models.ParameterInfo[]
+                {
+                });
+        }
+        public Task<SignalGoTest2.Models.MessageContract> TestCallbacksSyncAsync()
+        {
+                return SignalGo.Client.ClientManager.ConnectorExtensions.SendDataAsync<SignalGoTest2.Models.MessageContract>(CurrentProvider, ServiceName,"TestCallbacksSync", new SignalGo.Shared.Models.ParameterInfo[]
+                {
+                });
+        }
+        public SignalGoTest2.Models.MessageContract TestCallbacksAsync()
+        {
+                return  SignalGo.Client.ClientManager.ConnectorExtensions.SendDataSync<SignalGoTest2.Models.MessageContract>(CurrentProvider, ServiceName,"TestCallbacksAsync", new SignalGo.Shared.Models.ParameterInfo[]
+                {
+                });
+        }
+        public Task<SignalGoTest2.Models.MessageContract> TestCallbacksAsyncAsync()
+        {
+                return SignalGo.Client.ClientManager.ConnectorExtensions.SendDataAsync<SignalGoTest2.Models.MessageContract>(CurrentProvider, ServiceName,"TestCallbacksAsync", new SignalGo.Shared.Models.ParameterInfo[]
+                {
+                });
+        }
     }
 }
 
@@ -526,6 +554,22 @@ namespace SignalGoTest2Services.OneWayServices
         public Task<SignalGoTest2.Models.MessageContract> GustAccessAsync()
         {
                 return SignalGo.Client.ClientProvider.SendOneWayMethodAsync<SignalGoTest2.Models.MessageContract>(_signalGoServerAddress, _signalGoPortNumber, "authenticationonewayservice", "GustAccess");
+        }
+        public SignalGoTest2.Models.MessageContract TestCallbacksSync()
+        {
+                return SignalGo.Client.ClientProvider.SendOneWayMethod<SignalGoTest2.Models.MessageContract>(_signalGoServerAddress, _signalGoPortNumber, "authenticationonewayservice", "TestCallbacksSync");
+        }
+        public Task<SignalGoTest2.Models.MessageContract> TestCallbacksSyncAsync()
+        {
+                return SignalGo.Client.ClientProvider.SendOneWayMethodAsync<SignalGoTest2.Models.MessageContract>(_signalGoServerAddress, _signalGoPortNumber, "authenticationonewayservice", "TestCallbacksSync");
+        }
+        public SignalGoTest2.Models.MessageContract TestCallbacksAsync()
+        {
+                return SignalGo.Client.ClientProvider.SendOneWayMethod<SignalGoTest2.Models.MessageContract>(_signalGoServerAddress, _signalGoPortNumber, "authenticationonewayservice", "TestCallbacksAsync");
+        }
+        public Task<SignalGoTest2.Models.MessageContract> TestCallbacksAsyncAsync()
+        {
+                return SignalGo.Client.ClientProvider.SendOneWayMethodAsync<SignalGoTest2.Models.MessageContract>(_signalGoServerAddress, _signalGoPortNumber, "authenticationonewayservice", "TestCallbacksAsync");
         }
     }
 }
@@ -965,11 +1009,63 @@ namespace SignalGoTest2Services.HttpServices
                         throw new Exception(result.Data);
                 return SignalGo.Client.ClientSerializationHelper.DeserializeObject<SignalGoTest2.Models.MessageContract>(result.Data);
         }
+        public SignalGoTest2.Models.MessageContract TestCallbacksSync()
+        {
+                SignalGo.Client.HttpClientResponse result = _httpClient.Post(_serverUrl + (_serverUrl.EndsWith("/") ? "" : "/") + "authentication/TestCallbacksSync", new SignalGo.Shared.Models.ParameterInfo[]
+                {
+                });
+                ResponseHeaders = result.ResponseHeaders;
+                Status = result.Status;
+                if (Status == System.Net.HttpStatusCode.InternalServerError)
+                        throw new Exception(result.Data);
+                return SignalGo.Client.ClientSerializationHelper.DeserializeObject<SignalGoTest2.Models.MessageContract>(result.Data);
+        }
+        public async Task<SignalGoTest2.Models.MessageContract> TestCallbacksSyncAsync()
+        {
+                SignalGo.Client.HttpClientResponse result = await _httpClient.PostAsync(_serverUrl + (_serverUrl.EndsWith("/") ? "" : "/") + "authentication/TestCallbacksSync", new SignalGo.Shared.Models.ParameterInfo[]
+                {
+                });
+                ResponseHeaders = result.ResponseHeaders;
+                Status = result.Status;
+                if (Status == System.Net.HttpStatusCode.InternalServerError)
+                        throw new Exception(result.Data);
+                return SignalGo.Client.ClientSerializationHelper.DeserializeObject<SignalGoTest2.Models.MessageContract>(result.Data);
+        }
+        public SignalGoTest2.Models.MessageContract TestCallbacksAsync()
+        {
+                SignalGo.Client.HttpClientResponse result = _httpClient.Post(_serverUrl + (_serverUrl.EndsWith("/") ? "" : "/") + "authentication/TestCallbacksAsync", new SignalGo.Shared.Models.ParameterInfo[]
+                {
+                });
+                ResponseHeaders = result.ResponseHeaders;
+                Status = result.Status;
+                if (Status == System.Net.HttpStatusCode.InternalServerError)
+                        throw new Exception(result.Data);
+                return SignalGo.Client.ClientSerializationHelper.DeserializeObject<SignalGoTest2.Models.MessageContract>(result.Data);
+        }
+        public async Task<SignalGoTest2.Models.MessageContract> TestCallbacksAsyncAsync()
+        {
+                SignalGo.Client.HttpClientResponse result = await _httpClient.PostAsync(_serverUrl + (_serverUrl.EndsWith("/") ? "" : "/") + "authentication/TestCallbacksAsync", new SignalGo.Shared.Models.ParameterInfo[]
+                {
+                });
+                ResponseHeaders = result.ResponseHeaders;
+                Status = result.Status;
+                if (Status == System.Net.HttpStatusCode.InternalServerError)
+                        throw new Exception(result.Data);
+                return SignalGo.Client.ClientSerializationHelper.DeserializeObject<SignalGoTest2.Models.MessageContract>(result.Data);
+        }
     }
 }
 
 namespace SignalGoTest2Services.ClientServices
 {
+    [ServiceContract("testservermodelclientservice", ServiceType.ClientService, InstanceType.SingleInstance)]
+    public partial interface IITestClientServiceModel
+    {
+        string HelloWorld(string yourName);
+        string HelloWorld2(string yourName);
+        string TestMethod(string param1, string param2);
+        string TestMethod2(string param1, string param2);
+    }
 }
 
 namespace SignalGoTest2.Models
