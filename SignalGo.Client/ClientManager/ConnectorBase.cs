@@ -163,6 +163,8 @@ namespace SignalGo.Client.ClientManager
                 throw new Exception("client is connected!");
             if (IsDisposed)
                 throw new ObjectDisposedException("Connector");
+            if (port == 443)
+                ProviderSetting.ServerServiceSetting.IsHttps = true;
             _address = address;
             _port = port;
             StreamHelper = SignalGoStreamBase.CurrentBase;
@@ -172,11 +174,7 @@ namespace SignalGo.Client.ClientManager
             }
             else
             {
-#if (NETSTANDARD2_0 || NET45)
                 _client = new WebSocketClientWorker(new TcpClient());
-#else
-                throw new NotSupportedException();
-#endif
             }
 
             await _client.ConnectAsync(address, port);
@@ -185,13 +183,18 @@ namespace SignalGo.Client.ClientManager
 #if (NETSTANDARD1_6)
                 throw new Exception("not support ssl in net standard 1.6 yet.");
 #else
-                SslStream sslStream = new SslStream(_client.GetStream());
-                await sslStream.AuthenticateAsClientAsync(address);
-                _clientStream = new PipeNetworkStream(new NormalStream(sslStream));
+
                 if (ProtocolType == ClientProtocolType.WebSocket)
                 {
+                    _clientStream = new PipeNetworkStream(new NormalStream(_client.GetStream()));
                     await ReadAllWebSocketResponseLinesAsync();
-                    _clientStream = new PipeNetworkStream(new WebSocketStream(sslStream));
+                    _clientStream = new PipeNetworkStream(new WebSocketStream(_client.GetStream()));
+                }
+                else
+                {
+                    SslStream sslStream = new SslStream(_client.GetStream());
+                    await sslStream.AuthenticateAsClientAsync(address);
+                    _clientStream = new PipeNetworkStream(new NormalStream(sslStream));
                 }
 #endif
             }
@@ -237,6 +240,8 @@ namespace SignalGo.Client.ClientManager
                 throw new Exception("client is connected!");
             if (IsDisposed)
                 throw new ObjectDisposedException("Connector");
+            if (port == 443)
+                ProviderSetting.ServerServiceSetting.IsHttps = true;
             _address = address;
             _port = port;
             StreamHelper = SignalGoStreamBase.CurrentBase;
@@ -246,12 +251,7 @@ namespace SignalGo.Client.ClientManager
             }
             else
             {
-                //StreamHelper = SignalGoStreamWebSocket.CurrentWebSocket;
-#if (NETSTANDARD2_0 || NET45)
                 _client = new WebSocketClientWorker(new TcpClient());
-#else
-                throw new NotSupportedException();
-#endif
             }
 #if (NETSTANDARD1_6)
             _client.ConnectAsync(address, port).GetAwaiter().GetResult();
@@ -263,17 +263,22 @@ namespace SignalGo.Client.ClientManager
 #if (NETSTANDARD1_6)
                 throw new Exception("not support ssl in net standard 1.6 yet.");
 #else
-                SslStream sslStream = new SslStream(_client.GetStream());
-                sslStream.AuthenticateAsClient(address);
-                _clientStream = new PipeNetworkStream(new NormalStream(sslStream));
+
                 if (ProtocolType == ClientProtocolType.WebSocket)
                 {
+                    _clientStream = new PipeNetworkStream(new NormalStream(_client.GetStream()));
 #if (NETSTANDARD1_6)
                     ReadAllWebSocketResponseLines();
 #else
                     ReadAllWebSocketResponseLines();
 #endif
-                    _clientStream = new PipeNetworkStream(new WebSocketStream(sslStream));
+                    _clientStream = new PipeNetworkStream(new WebSocketStream(_client.GetStream()));
+                }
+                else
+                {
+                    SslStream sslStream = new SslStream(_client.GetStream());
+                    sslStream.AuthenticateAsClient(address);
+                    _clientStream = new PipeNetworkStream(new NormalStream(sslStream));
                 }
 #endif
             }

@@ -8,6 +8,7 @@ using System.Net.Sockets;
 using System.Threading.Tasks;
 using SignalGo.Shared.Helpers;
 using System.Text;
+using System.Net.Security;
 
 namespace SignalGo.Client
 {
@@ -90,13 +91,13 @@ namespace SignalGo.Client
             return _tcpClient.GetStream();
         }
     }
-#if (NETSTANDARD2_0 || NET45)
     /// <summary>
     /// web socket manager
     /// </summary>
     public class WebSocketClientWorker : IClientWorker
     {
         private TcpClient _tcpClient;
+        private Stream _stream;
         //private ClientWebSocket _clientWebSocket;
         //readonly ClientWebSocketStream _stream = null;
         public WebSocketClientWorker(TcpClient tcpClient)
@@ -110,6 +111,7 @@ namespace SignalGo.Client
         /// <param name="port"></param>
         public void Connect(string address, int port)
         {
+            string host = address;
             if (port == 443)
                 address = "wss://" + address;
             else
@@ -118,9 +120,26 @@ namespace SignalGo.Client
                 throw new Exception($"cannot parse uri {address}");
             //string headData = $"GET {uri.AbsolutePath} HTTP/1.1{newLine}Host: {uri.Host + port}{newLine}Connection: keep-alive{newLine}Sec-WebSocket-Key: x3JJHMbDL1EzLkh9GBhXDw=={newLine}Sec-WebSocket-Protocol: chat, superchat{newLine}Sec-WebSocket-Version: 13{newLine + newLine}";
             byte[] firstBytes = GetFirstLineBytes(uri.Host, port);
+#if (NETSTANDARD1_6)
+            _tcpClient.ConnectAsync(uri.Host, port).GetAwaiter().GetResult();
+#else
             _tcpClient.Connect(uri.Host, port);
-            //_clientWebSocket.Options.SetRequestHeader("SignalgoDuplexWebSocket", "true");
-            _tcpClient.GetStream().Write(firstBytes, 0, firstBytes.Length);
+#endif
+            if (port == 443)
+            {
+#if (NETSTANDARD1_6)
+                throw new NotSupportedException("not support ssl connection in NETSTANDARD 1.6");
+#else
+                SslStream sslStream = new SslStream(_tcpClient.GetStream());
+                sslStream.AuthenticateAsClient(host);
+                _stream = sslStream;
+#endif
+            }
+            else
+            {
+                _stream = _tcpClient.GetStream();
+            }
+            _stream.Write(firstBytes, 0, firstBytes.Length);
         }
 
         private byte[] GetFirstLineBytes(string host, int port)
@@ -145,6 +164,7 @@ Upgrade: websocket{newLine + newLine}";
             return Encoding.UTF8.GetBytes(headData);
         }
 
+#if (!NET35 && !NET40)
         /// <summary>
         /// connect to server async
         /// </summary>
@@ -153,6 +173,7 @@ Upgrade: websocket{newLine + newLine}";
         /// <returns></returns>
         public async Task ConnectAsync(string address, int port)
         {
+            string host = address;
             if (port == 443)
                 address = "wss://" + address;
             else
@@ -162,13 +183,27 @@ Upgrade: websocket{newLine + newLine}";
                 throw new Exception($"cannot parse uri {address}");
             byte[] firstBytes = GetFirstLineBytes(uri.Host, port);
             await _tcpClient.ConnectAsync(uri.Host, port);
-            await _tcpClient.GetStream().WriteAsync(firstBytes, 0, firstBytes.Length);
+            if (port == 443)
+            {
+#if (NETSTANDARD1_6)
+                throw new NotSupportedException("not support ssl connection in NETSTANDARD 1.6");
+#else
+                SslStream sslStream = new SslStream(_tcpClient.GetStream());
+                await sslStream.AuthenticateAsClientAsync(host);
+                _stream = sslStream;
+#endif
+            }
+            else
+            {
+                _stream = _tcpClient.GetStream();
+            }
+            await _stream.WriteAsync(firstBytes, 0, firstBytes.Length);
         }
-
-        /// <summary>
-        /// dispose client
-        /// </summary>
-        public void Dispose()
+#endif
+                /// <summary>
+                /// dispose client
+                /// </summary>
+                public void Dispose()
         {
 #if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
             _tcpClient.Dispose();
@@ -179,8 +214,7 @@ Upgrade: websocket{newLine + newLine}";
 
         public Stream GetStream()
         {
-            return _tcpClient.GetStream();
+            return _stream;
         }
     }
-#endif
 }
