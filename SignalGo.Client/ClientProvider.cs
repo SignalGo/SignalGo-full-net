@@ -36,6 +36,9 @@ namespace SignalGo.Client
             {
                 throw new Exception("port is not valid");
             }
+
+            if (uri.Scheme.Equals("wss", StringComparison.OrdinalIgnoreCase) || uri.Scheme.Equals("ws", StringComparison.OrdinalIgnoreCase))
+                ProtocolType = ClientProtocolType.WebSocket;
             ServerUrl = url;
             string hostName = uri.Host;
             base.Connect(hostName, uri.Port);
@@ -64,6 +67,7 @@ namespace SignalGo.Client
             if (ProtocolType != ClientProtocolType.HttpDuplex)
                 throw new NotSupportedException();
 #endif
+            
             if (!Uri.TryCreate(url, UriKind.Absolute, out Uri uri))
             {
                 throw new Exception("url is not valid");
@@ -72,6 +76,8 @@ namespace SignalGo.Client
             {
                 throw new Exception("port is not valid");
             }
+            if (uri.Scheme.Equals("wss", StringComparison.OrdinalIgnoreCase) || uri.Scheme.Equals("ws", StringComparison.OrdinalIgnoreCase))
+                ProtocolType = ClientProtocolType.WebSocket;
             ServerUrl = url;
             string hostName = uri.Host;
             await base.ConnectAsync(hostName, uri.Port);
