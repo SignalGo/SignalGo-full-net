@@ -24,7 +24,10 @@ namespace SignalGo.Client
         /// <param name="isWebsocket"></param>
         public override void Connect(string url)
         {
-            IsWebSocket = ProtocolType == ClientProtocolType.WebSocket;
+#if (!NETSTANDARD2_0 && !NET45)
+            if (ProtocolType != ClientProtocolType.HttpDuplex)
+                throw new NotSupportedException();
+#endif
             if (!Uri.TryCreate(url, UriKind.Absolute, out Uri uri))
             {
                 throw new Exception("url is not valid");
@@ -57,7 +60,10 @@ namespace SignalGo.Client
 #if (!NET40 && !NET35)
         public override async Task ConnectAsync(string url)
         {
-            IsWebSocket = ProtocolType == ClientProtocolType.WebSocket;
+#if (!NETSTANDARD2_0 && !NET45)
+            if (ProtocolType != ClientProtocolType.HttpDuplex)
+                throw new NotSupportedException();
+#endif
             if (!Uri.TryCreate(url, UriKind.Absolute, out Uri uri))
             {
                 throw new Exception("url is not valid");
@@ -247,35 +253,21 @@ namespace SignalGo.Client
             }
             else if (ProtocolType == ClientProtocolType.WebSocket)
             {
-                string newLine = TextHelper.NewLine;
-                Uri.TryCreate(ServerUrl, UriKind.Absolute, out Uri uri);
-                string port = uri.Port == 80 ? "" : ":" + uri.Port;
-                //string headData = $"GET {uri.AbsolutePath} HTTP/1.1{newLine}Host: {uri.Host + port}{newLine}Connection: keep-alive{newLine}Sec-WebSocket-Key: x3JJHMbDL1EzLkh9GBhXDw=={newLine}Sec-WebSocket-Protocol: chat, superchat{newLine}Sec-WebSocket-Version: 13{newLine + newLine}";
-                string headData = $@"GET / HTTP/1.1
-Host: {uri.Host + port}
-User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:64.0) Gecko/20100101 Firefox/64.0
-Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
-Accept-Language: en-US,en;q=0.5
-Accept-Encoding: gzip, deflate
-Sec-WebSocket-Version: 13
-Origin: null
-Sec-WebSocket-Extensions: permessage-deflate
-Sec-WebSocket-Key: Kf1/4OQ83wCdLhsU8LkwqQ==
-DNT: 1
-Connection: keep-alive, Upgrade
-Pragma: no-cache
-Cache-Control: no-cache
-Upgrade: websocket{newLine + newLine}";
-                firstBytes = Encoding.UTF8.GetBytes(headData);
+                //do nothing
+#if (NET40 || NET35)
+                return;
+#else
+                return Task.FromResult<object>(null);
+#endif
             }
             else
             {
                 firstBytes = Encoding.UTF8.GetBytes($"SignalGo/4.0 {_address}:{_port}" + TextHelper.NewLine);
             }
 #if (NET40 || NET35)
-            _client.GetStream().Write(firstBytes, 0, firstBytes.Length);
+            StreamHelper.WriteToStream(_clientStream, firstBytes);
 #else
-            return _client.GetStream().WriteAsync(firstBytes, 0, firstBytes.Length);
+            return StreamHelper.WriteToStreamAsync(_clientStream,firstBytes);
 #endif
         }
 
@@ -297,23 +289,15 @@ Upgrade: websocket{newLine + newLine}";
 
         private void GetClientIdIfNeed()
         {
-            if (ProviderSetting.AutoDetectRegisterServices)
+            if (ProviderSetting.AutoDetectRegisterServices && ProtocolType != ClientProtocolType.HttpDuplex)
             {
                 byte[] data = new byte[]
                 {
                     (byte)DataType.GetClientId,
                     (byte)CompressMode.None
                 };
-
                 StreamHelper.WriteToStream(_clientStream, data.ToArray());
             }
-        }
-
-        public void TestDisConnect()
-        {
-#if (!NETSTANDARD1_6)
-            _client.Close();
-#endif
         }
     }
 }

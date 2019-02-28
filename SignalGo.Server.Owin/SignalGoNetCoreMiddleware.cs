@@ -73,7 +73,13 @@ namespace SignalGo.Server.Owin
                 owinClientInfo.StreamHelper = SignalGoStreamBase.CurrentBase;
                 owinClientInfo.ClientStream = new PipeNetworkStream(new DuplexStream(context.Request.Body, context.Response.Body));
                 owinClientInfo.ProtocolType = ClientProtocolType.HttpDuplex;
-                await SignalGoDuplexServiceProvider.StartToReadingClientData(owinClientInfo, CurrentServerBase);
+                if (context.Request.Headers["SignalgoDuplexWebSocket"] == "true")
+                {
+                    owinClientInfo.StreamHelper = SignalGoStreamWebSocketLlight.CurrentWebSocket;
+                    await HttpProvider.AddSignalGoWebSocketHttpClient(owinClientInfo, CurrentServerBase);
+                }
+                else
+                    await HttpProvider.AddSignalGoWebSocketHttpClient(owinClientInfo, CurrentServerBase);
                 await Task.FromResult<object>(null);
             }
             else if (isWebSocketd)

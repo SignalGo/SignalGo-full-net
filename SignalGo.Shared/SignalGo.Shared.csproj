@@ -11,10 +11,10 @@
     <MinimumVisualStudioVersion>10.0</MinimumVisualStudioVersion>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <AssemblyVersion>5.4</AssemblyVersion>
-    <FileVersion>5.4</FileVersion>
+    <AssemblyVersion>5.5</AssemblyVersion>
+    <FileVersion>5.5</FileVersion>
     <!--<VersionPrefix>4.0</VersionPrefix>-->
-    <Version>5.4</Version>
+    <Version>5.5</Version>
     <!--<VersionSuffix>beta1</VersionSuffix>-->
     <Authors>Ali Yousefi</Authors>
     <Company></Company>

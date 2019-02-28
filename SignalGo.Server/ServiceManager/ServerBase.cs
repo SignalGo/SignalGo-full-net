@@ -1,9 +1,11 @@
-﻿using SignalGo.Server.Models;
+﻿using SignalGo.Server.IO;
+using SignalGo.Server.Models;
 using SignalGo.Server.ServiceManager.Versions;
 using SignalGo.Shared;
 using SignalGo.Shared.Converters;
 using SignalGo.Shared.DataTypes;
 using SignalGo.Shared.Helpers;
+using SignalGo.Shared.IO;
 using SignalGo.Shared.Log;
 using SignalGo.Shared.Models;
 using System;
@@ -21,6 +23,10 @@ namespace SignalGo.Server.ServiceManager
     /// </summary>
     public abstract class ServerBase : IDisposable, IValidationRuleInfo
     {
+        static ServerBase()
+        {
+            WebcoketDatagramBase.Current = new WebcoketDatagram();
+        }
         /// <summary>
         /// default constructor
         /// </summary>

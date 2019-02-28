@@ -3,9 +3,9 @@
   <PropertyGroup>
     <TargetFrameworks>net451;netstandard2.0;</TargetFrameworks>
     <!--<TargetFramework>netstandard2.0</TargetFramework>-->
-    <AssemblyVersion>5.4</AssemblyVersion>
-    <FileVersion>5.4</FileVersion>
-    <Version>5.4</Version>
+    <AssemblyVersion>5.5</AssemblyVersion>
+    <FileVersion>5.5</FileVersion>
+    <Version>5.5</Version>
     <Authors>Ali Yousefi</Authors>
     <Company></Company>
     <DebugType>full</DebugType>
@@ -20,9 +20,9 @@
     <ProjectReference Include="..\SignalGo.Shared\SignalGo.Shared.csproj" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net451'">
-    <PackageReference Include="Microsoft.Owin" Version="4.0.0" />
+    <PackageReference Include="Microsoft.Owin" Version="4.0.1" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
-    <PackageReference Include="Microsoft.AspNetCore.Http" Version="2.1.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Http" Version="2.2.2" />
   </ItemGroup>
 </Project>
