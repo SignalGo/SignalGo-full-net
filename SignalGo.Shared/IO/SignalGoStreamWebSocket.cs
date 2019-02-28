@@ -155,7 +155,7 @@ namespace SignalGo.Shared.IO
 # if (!NET35 && !NET40)
         public Task FlushAsync()
         {
-           return _stream.FlushAsync();
+            return _stream.FlushAsync();
         }
 #endif
 
@@ -202,17 +202,40 @@ namespace SignalGo.Shared.IO
             return decode.Length;
         }
 #endif
+
         public void Write(byte[] buffer, int offset, int count)
         {
-            byte[] encode = WebcoketDatagramBase.Current.Encode(buffer.Take(count).ToArray());
-            _stream.Write(encode, 0, encode.Length);
+            if (count > WebcoketDatagramBase.MaxLength)
+            {
+                foreach (byte[] item in WebcoketDatagramBase.GetSegments(buffer.Take(count).ToArray()))
+                {
+                    byte[] encode = WebcoketDatagramBase.Current.Encode(item);
+                    _stream.Write(encode, 0, encode.Length);
+                }
+            }
+            else
+            {
+                byte[] encode = WebcoketDatagramBase.Current.Encode(buffer.Take(count).ToArray());
+                _stream.Write(encode, 0, encode.Length);
+            }
         }
 
 # if (!NET35 && !NET40)
-        public Task WriteAsync(byte[] buffer, int offset, int count)
+        public async Task WriteAsync(byte[] buffer, int offset, int count)
         {
-            byte[] encode = WebcoketDatagramBase.Current.Encode(buffer.Take(count).ToArray());
-            return _stream.WriteAsync(encode, 0, encode.Length);
+            if (count > WebcoketDatagramBase.MaxLength)
+            {
+                foreach (byte[] item in WebcoketDatagramBase.GetSegments(buffer.Take(count).ToArray()))
+                {
+                    byte[] encode = WebcoketDatagramBase.Current.Encode(item);
+                    await _stream.WriteAsync(encode, 0, encode.Length);
+                }
+            }
+            else
+            {
+                byte[] encode = WebcoketDatagramBase.Current.Encode(buffer.Take(count).ToArray());
+                await _stream.WriteAsync(encode, 0, encode.Length);
+            }
         }
 #endif
     }

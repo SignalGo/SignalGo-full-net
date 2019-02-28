@@ -51,6 +51,8 @@ namespace SignalGo.Client.IO
             }
         }
 
+
+
         public override byte[] Encode(byte[] bytes)
         {
             int opCode = 2;

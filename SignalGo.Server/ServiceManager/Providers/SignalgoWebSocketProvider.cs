@@ -197,35 +197,15 @@ namespace SignalGo.Server.ServiceManager.Providers
                 MethodCallbackInfo callbackResult = await callback;
 #endif
                 string json = ServerSerializationHelper.SerializeObject(callbackResult, serverBase);
-                if (json.Length > 30000)
-                {
-                    List<string> listOfParts = GeneratePartsOfData(json);
-                    int i = 1;
-                    foreach (string item in listOfParts)
-                    {
-                        MethodCallbackInfo cb = callbackResult.Clone();
-                        cb.PartNumber = i == listOfParts.Count ? (short)-1 : (short)i;
-                        cb.Data = item;
-                        json = (int)DataType.ResponseCallMethod + "," + (int)CompressMode.None + "/" + ServerSerializationHelper.SerializeObject(cb, serverBase);
-                        byte[] result = Encoding.UTF8.GetBytes(json);
-                        //if (ClientsSettings.ContainsKey(client))
-                        //    result = EncryptBytes(result, client);
-                        await client.StreamHelper.WriteToStreamAsync(client.ClientStream, result);
-                        i++;
-                    }
-                }
-                else
-                {
-                    byte[] bytes = Encoding.UTF8.GetBytes(json);
-                    List<byte> result = new List<byte>();
-                    result.Add((byte)DataType.ResponseCallMethod);
-                    result.Add((byte)CompressMode.None);
+                byte[] bytes = Encoding.UTF8.GetBytes(json);
+                List<byte> result = new List<byte>();
+                result.Add((byte)DataType.ResponseCallMethod);
+                result.Add((byte)CompressMode.None);
 
-                    result.AddRange(BitConverter.GetBytes(bytes.Length));
-                    result.AddRange(bytes);
-                    
-                    await client.StreamHelper.WriteToStreamAsync(client.ClientStream, result.ToArray());
-                }
+                result.AddRange(BitConverter.GetBytes(bytes.Length));
+                result.AddRange(bytes);
+
+                await client.StreamHelper.WriteToStreamAsync(client.ClientStream, result.ToArray());
             }
             catch (Exception ex)
             {
@@ -237,24 +217,6 @@ namespace SignalGo.Server.ServiceManager.Providers
             {
                 //ClientConnectedCallingCount--;
             }
-        }
-
-        public static List<string> GeneratePartsOfData(string data)
-        {
-            int partCount = (int)Math.Ceiling((double)data.Length / 30000);
-            List<string> partData = new List<string>();
-            for (int i = 0; i < partCount; i++)
-            {
-                if (i != partCount - 1)
-                {
-                    partData.Add(data.Substring((i * 30000), 30000));
-                }
-                else
-                {
-                    partData.Add(data.Substring((i * 30000), data.Length - (i * 30000)));
-                }
-            }
-            return partData;
         }
     }
 }
