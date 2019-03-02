@@ -50,15 +50,17 @@ namespace SignalGo.DataExchanger.Compilers
         public object Run(object obj)
         {
             if (obj is IEnumerable)
-                return GenerateArrayObject(obj);
+                return GenerateArrayObject(obj, VariableInfo);
             else
                 return VariableInfo.Run(obj);
         }
 
         public object Run<T>(object obj)
         {
+            if (VariableInfo == null)
+                return obj;
             if (obj is IEnumerable)
-                return GenerateArrayObject((IEnumerable<T>)obj);
+                return GenerateArrayObject((IEnumerable<T>)obj, VariableInfo);
             else
                 return (T)VariableInfo.Run(obj);
         }
@@ -69,15 +71,33 @@ namespace SignalGo.DataExchanger.Compilers
         /// <param name="data"></param>
         /// <param name="selectNode"></param>
         /// <returns></returns>
-        private object GenerateArrayObject(object data)
+        internal static object GenerateArrayObject(object data, VariableInfo variableInfo)
         {
-            return ((IEnumerable)data).Cast<object>().Where(x => (bool)VariableInfo.Run(x));
+            return ((IEnumerable)data).Cast<object>().Where(x => (bool)variableInfo.Run(x));
         }
 
-        private IEnumerable<T> GenerateArrayObject<T>(IEnumerable<T> data)
+        internal static IEnumerable<T> GenerateArrayObject<T>(IEnumerable<T> data, VariableInfo variableInfo)
         {
-            return data.Where(x => (bool)VariableInfo.Run(x));
+            IEnumerable<T> result = data.Where(x =>
+            {
+                bool v = (bool)variableInfo.Run(x);
+                return v;
+            });
+            return result;
         }
+
+        private VariableInfo GetParentAsVariable(IAddConditionSides parent)
+        {
+            do
+            {
+                if (parent is VariableInfo variableInfo)
+                    return variableInfo;
+                parent = parent.Parent;
+            }
+            while (parent != null);
+            return null;
+        }
+
         /// <summary>
         /// extract full 'var'
         /// </summary>
@@ -115,7 +135,14 @@ namespace SignalGo.DataExchanger.Compilers
                     if (StringHelper.IsWhiteSpaceCharacter(currentChar) || currentChar == '{')
                     {
                         variableName = concat.Trim('{').Trim();
-                        VariableInfo.PublicVariables.Add(variableName, null);
+                        GetParentAsVariable(parent).PublicVariables.Add(variableName, null);
+                        index = i;
+                        string afterIn = ExtractAfterIn(selectQuery, ref index);
+                        if (afterIn != null)
+                        {
+                            i = index;
+                            GetParentAsVariable(parent).PublicVariablePropertyNames.Add(variableName, afterIn.Trim());
+                        }
                         concat = "";
                         index = i + 1;
                         ExtractInside(selectQuery, "where", '{', '}', ref index, parent);
@@ -147,13 +174,54 @@ namespace SignalGo.DataExchanger.Compilers
                     concat = "";
                     canSkip = true;
                     //if that is first 'var' skip step 1 to find 'in' example (var x in user.posts) this is not first variable 
-                    if (parent == VariableInfo.WhereInfo)
+                    if (parent == GetParentAsVariable(parent).WhereInfo)
                         foundVariableStep = 2;
                     else
                         foundVariableStep = 1;
                 }
             }
+        }
 
+        private string ExtractAfterIn(string selectQuery, ref int index)
+        {
+            bool canSkip = true;
+            byte step = 0;
+            string concat = "";
+            for (int i = index; i < selectQuery.Length; i++)
+            {
+                //current char
+                char currentChar = selectQuery[i];
+                bool isWhiteSpaceChar = StringHelper.IsWhiteSpaceCharacter(currentChar);
+                if (canSkip)
+                {
+                    //skip white space chars
+                    if (isWhiteSpaceChar)
+                        continue;
+                    else
+                        canSkip = false;
+                }
+                if (step == 0 && concat.Length == 2)
+                {
+                    if (concat.Equals("in", StringComparison.OrdinalIgnoreCase))
+                    {
+                        step = 1;
+                        concat = "";
+                        canSkip = true;
+                    }
+                    else
+                        return null;
+                }
+                else if (step == 1)
+                {
+                    if (isWhiteSpaceChar || currentChar == '{')
+                    {
+                        index = i;
+                        return concat;
+                    }
+                }
+                concat += currentChar;
+            }
+            return null;
         }
 
         /// <summary>
@@ -202,7 +270,7 @@ namespace SignalGo.DataExchanger.Compilers
                 }
                 else if (foundVariableStep == 3 && isWhiteSpaceChar)
                 {
-                    parent.Add(new PropertyInfo() { PropertyPath = concat.Trim() , PublicVariables  = parent.PublicVariables});
+                    parent.Add(new PropertyInfo() { PropertyPath = concat.Trim(), PublicVariables = parent.PublicVariables });
                     foundVariableStep = 0;
                     concat = "";
                     canSkip = true;
@@ -258,7 +326,15 @@ namespace SignalGo.DataExchanger.Compilers
                             }
                             while (selectQuery[index].ToString().ToLower() != "v");
 
-                            ExtractVariables(selectQuery, ref index, parent.Parent);
+                            VariableInfo newVariableInfo = new VariableInfo()
+                            {
+                                WhereInfo = new WhereInfo()
+                            };
+                            newVariableInfo.Parent = parent.Parent;
+                            newVariableInfo.WhereInfo.Parent = newVariableInfo;
+                            newVariableInfo.WhereInfo.PublicVariables = newVariableInfo.PublicVariables;
+                            parent.Parent.Add(newVariableInfo);
+                            ExtractVariables(selectQuery, ref index, newVariableInfo.WhereInfo);
                             i = index;
                             concat = "";
                             canSkip = true;

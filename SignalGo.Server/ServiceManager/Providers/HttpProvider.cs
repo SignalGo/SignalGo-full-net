@@ -71,6 +71,29 @@ namespace SignalGo.Server.ServiceManager.Providers
             });
         }
 
+#if (NET35 || NET40)
+        public static Task AddSignalGoWebSocketHttpClient(ClientInfo client, ServerBase serverBase)
+#else
+        public static Task AddSignalGoWebSocketHttpClient(ClientInfo client, ServerBase serverBase)
+#endif
+        {
+#if (NET35 || NET40)
+            return Task.Factory.StartNew(() =>
+#else
+            return Task.Run(async () =>
+#endif
+            {
+                try
+                {
+                    client.IsWebSocket = true;
+                    await SignalgoWebSocketProvider.StartToReadingClientData(client, serverBase);
+                }
+                catch (Exception ex)
+                {
+                    serverBase.DisposeClient(client, null, "HttpProvider AddWebSocketHttpClient exception");
+                }
+            });
+        }
 
         public static async Task StartToReadingClientData(TcpClient tcpClient, ServerBase serverBase, PipeNetworkStream reader, StringBuilder builder)
         {
@@ -93,7 +116,6 @@ namespace SignalGo.Server.ServiceManager.Providers
                     client = serverBase.ServerDataProvider.CreateClientInfo(false, tcpClient, reader);
                     client.ProtocolType = ClientProtocolType.WebSocket;
                     client.IsWebSocket = true;
-                    client.StreamHelper = SignalGoStreamWebSocket.CurrentWebSocket;
                     string key = requestHeaders.Replace("ey:", "`").Split('`')[1].Replace("\r", "").Split('\n')[0].Trim();
                     string acceptKey = AcceptKey(ref key);
                     string newLine = TextHelper.NewLine;
@@ -105,13 +127,18 @@ namespace SignalGo.Server.ServiceManager.Providers
                      + "Sec-WebSocket-Accept: " + acceptKey + newLine + newLine;
                     byte[] bytes = System.Text.Encoding.UTF8.GetBytes(response);
                     await client.ClientStream.WriteAsync(bytes, 0, bytes.Length);
-                    await WebSocketProvider.StartToReadingClientData(client, serverBase);
+                    client.StreamHelper = SignalGoStreamBase.CurrentBase;
+                    client.ClientStream = new PipeNetworkStream(new WebSocketStream(client.TcpClient.GetStream()));
+                    if (requestHeaders.Contains("SignalgoDuplexWebSocket"))
+                        await SignalGoDuplexServiceProvider.StartToReadingClientData(client, serverBase);
+                    else
+                        await WebSocketProvider.StartToReadingClientData(client, serverBase);
                 }
-                else if(requestHeaders.Contains("SignalGoHttpDuplex"))
+                else if (requestHeaders.Contains("SignalGoHttpDuplex"))
                 {
                     client = serverBase.ServerDataProvider.CreateClientInfo(false, tcpClient, reader);
                     client.ProtocolType = ClientProtocolType.HttpDuplex;
-                    client.StreamHelper = SignalGoStreamWebSocket.CurrentWebSocket;
+                    client.StreamHelper = SignalGoStreamBase.CurrentBase;
                     await SignalGoDuplexServiceProvider.StartToReadingClientData(client, serverBase);
                 }
                 else

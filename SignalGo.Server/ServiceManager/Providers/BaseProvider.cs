@@ -537,7 +537,10 @@ namespace SignalGo.Server.ServiceManager.Providers
                     {
                         parameters.Remove(findNoNameParameter);
                         value = DeserializeParameterValue(methodParameter, findNoNameParameter, i, customDataExchanger, allMethods, serverBase, client);
-                        parametersValues.Add(value);
+                        if (value == null)
+                            parametersValues.Add(findNoNameParameter.Value.Trim('"'));
+                        else
+                            parametersValues.Add(value);
                         parametersKeyValues[methodParameterName] = value;
                     }
                     else if (!string.IsNullOrEmpty(jsonParameters))

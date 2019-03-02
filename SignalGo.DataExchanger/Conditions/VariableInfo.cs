@@ -1,8 +1,9 @@
-﻿using System;
+﻿using SignalGo.DataExchanger.Compilers;
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Reflection;
 
 namespace SignalGo.DataExchanger.Conditions
 {
@@ -12,6 +13,7 @@ namespace SignalGo.DataExchanger.Conditions
     public class VariableInfo : IAddConditionSides
     {
         public Dictionary<string, object> PublicVariables { get; set; } = new Dictionary<string, object>();
+        public Dictionary<string, string> PublicVariablePropertyNames { get; set; } = new Dictionary<string, string>();
         /// <summary>
         /// where inside of variable
         /// </summary>
@@ -59,12 +61,52 @@ namespace SignalGo.DataExchanger.Conditions
         /// <returns></returns>
         public object Run(object newPoint)
         {
-            var first = PublicVariables.First();
+            KeyValuePair<string, object> first = PublicVariables.First();
             PublicVariables[first.Key] = newPoint;
-            var result = WhereInfo.Run(newPoint);
-            foreach (var item in Children)
+            object result = WhereInfo.Run(newPoint);
+            foreach (VariableInfo variableInfo in Children)
             {
-                item.Run(result);
+                object variableValue = null;
+                System.Reflection.PropertyInfo property = null;
+                foreach (KeyValuePair<string, object> variable in variableInfo.PublicVariables)
+                {
+                    if (variableInfo.PublicVariablePropertyNames.TryGetValue(variable.Key, out string name))
+                    {
+                        string[] nameValue = name.Split('.');
+                        if (first.Key.Equals(nameValue[0], StringComparison.OrdinalIgnoreCase))
+                        {
+                            property = newPoint.GetType().GetProperties().FirstOrDefault(x => x.Name.Equals(nameValue.Last(), System.StringComparison.OrdinalIgnoreCase));
+                            if (property != null)
+                            {
+                                object value = property.GetValue(newPoint);
+                                variableValue = value;
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (variableValue is IEnumerable enumerable)
+                {
+                    Type[] generics = property.PropertyType.GetGenericArguments();
+                    if (generics.Length > 0)
+                    {
+                        var method = typeof(ConditionsCompiler).GetMethods(BindingFlags.NonPublic | BindingFlags.Static).Where(x => x.Name == "GenerateArrayObject" && x.GetGenericArguments().Length > 0).FirstOrDefault();
+                        method = method.MakeGenericMethod(generics[0]);
+                        var value = method.Invoke(null, new object[] { variableValue, variableInfo });
+                        value = typeof(Enumerable).GetMethod("ToList", BindingFlags.Static | BindingFlags.Public).MakeGenericMethod(generics[0]).Invoke(null, new object[] { value });
+                        property.SetValue(newPoint, value);
+                    }
+                    else
+                    {
+                        var value = ConditionsCompiler.GenerateArrayObject(variableValue, variableInfo);
+                        property.SetValue(newPoint, value);
+                    }
+                }
+                else
+                {
+                    object value = variableInfo.Run(variableValue);
+                }
+
             }
             return result;
         }

@@ -23,5 +23,6 @@ namespace SignalGoTest.AsyncAwaitCalls
             result2 = await service.ServerAsyncMethodAsync("hello2");
             Assert.IsTrue(result2 == "not found");
         }
+
     }
 }

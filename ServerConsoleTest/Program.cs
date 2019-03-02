@@ -140,49 +140,7 @@ namespace ServerConsoleTest
                 ServerProvider serverProvider = new ServerProvider();
                 serverProvider.RegisterServerService<FullHttpSupportService>();
                 serverProvider.Start("http://localhost:8080/TestService/any");
-
-                //SignalGoBlazorHttpClient signalGoBlazorHttpClient = new SignalGoBlazorHttpClient();
-                //SignalGo.Http.HttpClientResponse result = signalGoBlazorHttpClient.PostAsync("http://dev.atitec.ir:1747/Authentication/Login", new ParameterInfo[] {
-                //    new ParameterInfo()
-                //    {
-                //         Name = "userName",
-                //         Value="98test"
-                //    } ,
-                //    new ParameterInfo()
-                //    {
-                //         Name = "password",
-                //         Value="d5e4aa21-6fe2-4fbc-9264-a14e14698564868385e8-2922-41c0-a4cf-29fb65203c28"
-                //    }
-                //}).GetAwaiter().GetResult();
-                //HttpClient tesClient = new HttpClient();
-                //tesClient.Post("http://panel.menno.ir/Authentication/Login", new SignalGo.Shared.Models.ParameterInfo[] {
-                //    new SignalGo.Shared.Models.ParameterInfo(){ Name = "username" , Value ="ali"},
-                //    new SignalGo.Shared.Models.ParameterInfo(){ Name ="password",Value = "12345" }
-                //});
-                //PipeNetworkStream pipeNetworkStream = new PipeNetworkStream(null);
-                //byte[] result = pipeNetworkStream.Read(100, out int readCount);
-                //ServerProvider serverProvider = new ServerProvider();
-                //serverProvider.RegisterServerService(typeof(TestService));
-                //serverProvider.RegisterClientService(typeof(ITestClientService));
-                //serverProvider.Start("http://localhost:9752/SignalGoTestService");
-                //Thread.Sleep(2000);
-                //Thread thread2 = new Thread(() =>
-                //{
-                //    for (int i = 0; i < 10; i++)
-                //    {
-                //        ConnectNewClient();
-                //    }
-                //});
-                //thread2.Start();
-
-                //ClientProvider clientProvider2 = new ClientProvider();
-                //clientProvider2.Connect("http://localhost:3284/TestServices/SignalGo");
-                //var service2 = clientProvider2.RegisterServerServiceInterfaceWrapper<ITestManager>();
-                //clientProvider2.RegisterClientService<ClientService>();
-                //var result3 = service2.HelloWorld("reza123", "passee");
-                //var result4 = service2.Test();
-                //result2 = service.Test();
-                //ClientAutoReconnectTest();
+                
                 Console.WriteLine("seerver started");
             }
             catch (Exception ex)
@@ -255,15 +213,7 @@ namespace ServerConsoleTest
                 }
                 return SignalGo.Client.PriorityAction.TryAgain;
             });
-
-            Task.Run(async () =>
-            {
-                while (true)
-                {
-                    await Task.Delay(10000);
-                    clientProvider.TestDisConnect();
-                }
-            });
+            
         }
     }
 }

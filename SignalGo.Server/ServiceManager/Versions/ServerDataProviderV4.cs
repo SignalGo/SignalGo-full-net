@@ -132,6 +132,7 @@ namespace SignalGo.Server.ServiceManager.Versions
             client.ClientId = Guid.NewGuid().ToString();
             _serverBase.Clients.TryAdd(client.ClientId, client);
             client.ClientStream = stream;
+            _serverBase.OnClientConnectedAction?.Invoke(client);
             return client;
         }
 

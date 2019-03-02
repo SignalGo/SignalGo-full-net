@@ -1,6 +1,10 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SignalGoTest2.Models;
 using SignalGoTest2Services.Interfaces;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 
 namespace SignalGoTest.DataExhanger
@@ -8,6 +12,43 @@ namespace SignalGoTest.DataExhanger
     [TestClass]
     public class DataExchangerTest
     {
+        [TestMethod]
+        public void TestExpresions()
+        {
+
+        }
+
+        private Func<T, T> CreateNewStatement<T>(params string[] fields)
+        {
+            // input parameter "o"
+            ParameterExpression xParameter = Expression.Parameter(typeof(T), "o");
+
+            // new statement "new Data()"
+            NewExpression xNew = Expression.New(typeof(T));
+
+            // create initializers
+            IEnumerable<MemberAssignment> bindings = fields.Select(o => o.Trim())
+                .Select(o =>
+                {
+                    // property "Field1"
+                    System.Reflection.PropertyInfo mi = typeof(T).GetProperty(o);
+                    // original value "o.Field1"
+                    MemberExpression xOriginal = Expression.Property(xParameter, mi);
+                    // set value "Field1 = o.Field1"
+                    return Expression.Bind(mi, xOriginal);
+                }
+            );
+
+            // initialization "new Data { Field1 = o.Field1, Field2 = o.Field2 }"
+            MemberInitExpression xInit = Expression.MemberInit(xNew, bindings);
+
+            // expression "o => new Data { Field1 = o.Field1, Field2 = o.Field2 }"
+            Expression<Func<T, T>> lambda = Expression.Lambda<Func<T, T>>(xInit, xParameter);
+
+            // compile to Func<Data, Data>
+            return lambda.Compile();
+        }
+
         [TestMethod]
         public void TestDataExchanger()
         {

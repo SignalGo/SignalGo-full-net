@@ -674,7 +674,7 @@ namespace SignalGo.Shared.Converters
                 return Activator.CreateInstance(type, 0);
             else
             {
-                if (type.GetIsGenericType() && type.GetGenericTypeDefinition() == typeof(ICollection<>))
+                if (type.GetIsGenericType() && (type.GetGenericTypeDefinition() == typeof(ICollection<>) || type.GetGenericTypeDefinition() == typeof(IEnumerable<>)))
                 {
                     Type generic = type.GetListOfGenericArguments().FirstOrDefault();
                     return Activator.CreateInstance(typeof(List<>).MakeGenericType(generic));

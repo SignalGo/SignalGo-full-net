@@ -6,7 +6,7 @@ using System.Linq;
 
 namespace SignalGoTest.DataExhanger
 {
-    public struct UserEx
+    public class UserEx
     {
         public string Name { get; set; }
         public string Family { get; set; }
@@ -22,7 +22,7 @@ namespace SignalGoTest.DataExhanger
         }
     }
 
-    public struct PostEx
+    public class PostEx
     {
         public string Title { get; set; }
         public string Content { get; set; }
@@ -33,13 +33,13 @@ namespace SignalGoTest.DataExhanger
         {
             if (obj is PostEx post)
             {
-                return Title == post.Title && Content == post.Content && Date == post.Date && (News == null ? News == post.News : News.SequenceEqual(post.News)) && (Articles == null ? Articles == post.Articles : Articles.SequenceEqual(post.Articles));
+                return Title == post.Title && Content == post.Content && Date.ToString() == post.Date.ToString() && (News == null ? News == post.News : News.SequenceEqual(post.News)) && (Articles == null ? Articles == post.Articles : Articles.SequenceEqual(post.Articles));
             }
             return false;
         }
     }
 
-    public struct ArticleEx
+    public class ArticleEx
     {
         public string Author { get; set; }
         public DateTime Date { get; set; }
@@ -47,13 +47,13 @@ namespace SignalGoTest.DataExhanger
         {
             if (obj is ArticleEx article)
             {
-                return Author == article.Author && Date == article.Date;
+                return Author == article.Author && Date.ToString() == article.Date.ToString();
             }
             return false;
         }
     }
 
-    public struct NewsEx
+    public class NewsEx
     {
         public string NewsName { get; set; }
         public string Description { get; set; }
@@ -67,7 +67,7 @@ namespace SignalGoTest.DataExhanger
         }
     }
 
-    public struct FileEx
+    public class FileEx
     {
         public int Id { get; set; }
         public string Name { get; set; }
@@ -76,7 +76,7 @@ namespace SignalGoTest.DataExhanger
         {
             if (obj is FileEx file)
             {
-                return Id == file.Id && Name == file.Name && DateTime == file.DateTime;
+                return Id == file.Id && Name == file.Name && DateTime.ToString() == file.DateTime.ToString();
             }
             return false;
         }

@@ -16,6 +16,8 @@ using System.Threading.Tasks;
 using SignalGo.Shared;
 using SignalGo.Shared.Log;
 using SignalGo.Shared.Security;
+using System.Net.Security;
+using SignalGo.Client.IO;
 
 namespace SignalGo.Client.ClientManager
 {
@@ -47,6 +49,11 @@ namespace SignalGo.Client.ClientManager
     /// </summary>
     public abstract class ConnectorBase : IDisposable
     {
+        static ConnectorBase()
+        {
+            WebcoketDatagramBase.Current = new WebcoketDatagram();
+        }
+
         public ConnectorBase()
         {
             JsonSettingHelper.Initialize();
@@ -62,10 +69,6 @@ namespace SignalGo.Client.ClientManager
         internal AutoLogger AutoLogger { get; set; } = new AutoLogger() { FileName = "ConnectorBase Logs.log" };
         //internal ConcurrentList<AutoResetEvent> HoldMethodsToReconnect = new ConcurrentList<AutoResetEvent>();
         internal ConcurrentList<Delegate> PriorityActionsAfterConnected = new ConcurrentList<Delegate>();
-        /// <summary>
-        /// is WebSocket data provider
-        /// </summary>
-        public bool IsWebSocket { get; internal set; }
         /// <summary>
         /// client session id from server
         /// </summary>
@@ -130,7 +133,7 @@ namespace SignalGo.Client.ClientManager
         /// <summary>
         /// client tcp
         /// </summary>
-        internal TcpClient _client;
+        internal IClientWorker _client;
         internal PipeNetworkStream _clientStream;
         /// <summary>
         /// registred callbacks
@@ -156,46 +159,140 @@ namespace SignalGo.Client.ClientManager
 #if (!NET35 && !NET40)
         internal async Task ConnectAsync(string address, int port)
         {
-            IsWebSocket = ProtocolType == ClientProtocolType.WebSocket;
             if (IsConnected)
                 throw new Exception("client is connected!");
             if (IsDisposed)
                 throw new ObjectDisposedException("Connector");
-            if (IsWebSocket)
-                StreamHelper = SignalGoStreamWebSocket.CurrentWebSocket;
-            else
-                StreamHelper = SignalGoStreamBase.CurrentBase;
+            if (port == 443)
+                ProviderSetting.ServerServiceSetting.IsHttps = true;
             _address = address;
             _port = port;
-            _client = new TcpClient();
-            await _client.ConnectAsync(address, port);
-            _clientStream = new PipeNetworkStream(new NormalStream(_client.GetStream()));
+            StreamHelper = SignalGoStreamBase.CurrentBase;
+            if (ProtocolType == ClientProtocolType.SignalGoDuplex)
+            {
+                _client = new TcpClientWorker(new TcpClient());
+            }
+            else
+            {
+                _client = new WebSocketClientWorker(new TcpClient());
+            }
 
+            await _client.ConnectAsync(address, port);
+            if (ProviderSetting.ServerServiceSetting.IsHttps)
+            {
+#if (NETSTANDARD1_6)
+                throw new Exception("not support ssl in net standard 1.6 yet.");
+#else
+
+                if (ProtocolType == ClientProtocolType.WebSocket)
+                {
+                    _clientStream = new PipeNetworkStream(new NormalStream(_client.GetStream()));
+                    await ReadAllWebSocketResponseLinesAsync();
+                    _clientStream = new PipeNetworkStream(new WebSocketStream(_client.GetStream()));
+                }
+                else
+                {
+                    SslStream sslStream = new SslStream(_client.GetStream());
+                    await sslStream.AuthenticateAsClientAsync(address);
+                    _clientStream = new PipeNetworkStream(new NormalStream(sslStream));
+                }
+#endif
+            }
+            else
+            {
+                _clientStream = new PipeNetworkStream(new NormalStream(_client.GetStream()));
+                if (ProtocolType == ClientProtocolType.WebSocket)
+                {
+                    await ReadAllWebSocketResponseLinesAsync();
+                    _clientStream = new PipeNetworkStream(new WebSocketStream(_client.GetStream()));
+                }
+            }
+            if (ProtocolType == ClientProtocolType.WebSocket)
+                _clientStream.BufferToRead = ushort.MaxValue;
         }
 #endif
 
+        private void ReadAllWebSocketResponseLines()
+        {
+            while (true)
+            {
+                string line = _clientStream.ReadLine();
+                if (string.IsNullOrEmpty(line) || line == TextHelper.NewLine)
+                    break;
+            }
+        }
+
+#if (!NET35 && !NET40)
+        private async Task ReadAllWebSocketResponseLinesAsync()
+        {
+            while (true)
+            {
+                string line = await _clientStream.ReadLineAsync();
+                if (string.IsNullOrEmpty(line) || line == TextHelper.NewLine)
+                    break;
+            }
+        }
+#endif
 
         internal void Connect(string address, int port)
         {
-            IsWebSocket = ProtocolType == ClientProtocolType.WebSocket;
             if (IsConnected)
                 throw new Exception("client is connected!");
             if (IsDisposed)
                 throw new ObjectDisposedException("Connector");
-            if (IsWebSocket)
-                StreamHelper = SignalGoStreamWebSocket.CurrentWebSocket;
-            else
-                StreamHelper = SignalGoStreamBase.CurrentBase;
+            if (port == 443)
+                ProviderSetting.ServerServiceSetting.IsHttps = true;
             _address = address;
             _port = port;
-
-            _client = new TcpClient();
+            StreamHelper = SignalGoStreamBase.CurrentBase;
+            if (ProtocolType == ClientProtocolType.SignalGoDuplex)
+            {
+                _client = new TcpClientWorker(new TcpClient());
+            }
+            else
+            {
+                _client = new WebSocketClientWorker(new TcpClient());
+            }
 #if (NETSTANDARD1_6)
             _client.ConnectAsync(address, port).GetAwaiter().GetResult();
 #else
             _client.Connect(address, port);
 #endif
-            _clientStream = new PipeNetworkStream(new NormalStream(_client.GetStream()));
+            if (ProviderSetting.ServerServiceSetting.IsHttps)
+            {
+#if (NETSTANDARD1_6)
+                throw new Exception("not support ssl in net standard 1.6 yet.");
+#else
+
+                if (ProtocolType == ClientProtocolType.WebSocket)
+                {
+                    _clientStream = new PipeNetworkStream(new NormalStream(_client.GetStream()));
+#if (NETSTANDARD1_6)
+                    ReadAllWebSocketResponseLines();
+#else
+                    ReadAllWebSocketResponseLines();
+#endif
+                    _clientStream = new PipeNetworkStream(new WebSocketStream(_client.GetStream()));
+                }
+                else
+                {
+                    SslStream sslStream = new SslStream(_client.GetStream());
+                    sslStream.AuthenticateAsClient(address);
+                    _clientStream = new PipeNetworkStream(new NormalStream(sslStream));
+                }
+#endif
+            }
+            else
+            {
+                _clientStream = new PipeNetworkStream(new NormalStream(_client.GetStream()));
+                if (ProtocolType == ClientProtocolType.WebSocket)
+                {
+                    ReadAllWebSocketResponseLines();
+                    _clientStream = new PipeNetworkStream(new WebSocketStream(_client.GetStream()));
+                }
+            }
+            if (ProtocolType == ClientProtocolType.WebSocket)
+                _clientStream.BufferToRead = ushort.MaxValue;
         }
         /// <summary>
         /// This registers service on server and methods that the client can call
@@ -208,6 +305,8 @@ namespace SignalGo.Client.ClientManager
         {
             if (IsDisposed)
                 throw new ObjectDisposedException("Connector");
+            if (constructors == null || constructors.Length == 0)
+                constructors = new object[] { this };
             Type type = typeof(T);
             string name = type.GetServerServiceName(true);
             object objectInstance = Activator.CreateInstance(type, constructors);
@@ -594,7 +693,7 @@ namespace SignalGo.Client.ClientManager
         }
 
 #if (NET40 || NET35)
-        public static Task<T> UploadStreamAsync<T>(ClientProvider clientProvider, string serverAddress, int? port,string serviceName, string methodName, Shared.Models.ParameterInfo[] parameters, IStreamInfo iStream)
+        public static Task<T> UploadStreamAsync<T>(ClientProvider clientProvider, string serverAddress, int? port, string serviceName, string methodName, Shared.Models.ParameterInfo[] parameters, IStreamInfo iStream)
 #else
         public static async Task<T> UploadStreamAsync<T>(ClientProvider clientProvider, string serverAddress, int? port, string serviceName, string methodName, Shared.Models.ParameterInfo[] parameters, IStreamInfo iStream)
 #endif
@@ -1047,150 +1146,160 @@ namespace SignalGo.Client.ClientManager
 
 #endif
         {
-#if (NET35 || NET40)
-            Task.Factory.StartNew(() =>
-#else
-            await Task.Factory.StartNew(async () =>
-#endif
+            try
             {
-                try
+
+#if (NET35 || NET40)
+                Task.Factory.StartNew(() =>
+#else
+                await Task.Factory.StartNew(async () =>
+#endif
                 {
-                    if (ProtocolType == ClientProtocolType.WebSocket)
+                    try
                     {
                         while (true)
                         {
-#if (NET35 || NET40)
-                            var line = _clientStream.ReadLine();
-#else
-                            string line = await _clientStream.ReadLineAsync();
-#endif
-                            if (line == TextHelper.NewLine)
-                                break;
-                        }
-                    }
-                    while (true)
-                    {
-                        //first byte is DataType
+                            //first byte is DataType
 #if (NET40 || NET35)
-                        int dataTypeByte = StreamHelper.ReadOneByte(_clientStream);
+                            int dataTypeByte = StreamHelper.ReadOneByte(_clientStream);
 #else
-                        int dataTypeByte = await StreamHelper.ReadOneByteAsync(_clientStream);
+                            int dataTypeByte = await StreamHelper.ReadOneByteAsync(_clientStream);
 #endif
-                        DataType dataType = (DataType)dataTypeByte;
-                        if (dataType == DataType.PingPong)
-                        {
-                            PingAndWaitForPong.Set();
-                            continue;
-                        }
-                        //secound byte is compress mode
-#if (NET40 || NET35)
-                        int compressModeByte = StreamHelper.ReadOneByte(_clientStream);
-#else
-                        int compressModeByte = await StreamHelper.ReadOneByteAsync(_clientStream);
-#endif
-                        CompressMode compresssMode = (CompressMode)compressModeByte;
-
-                        // server is called client method
-                        if (dataType == DataType.CallMethod)
-                        {
-#if (NET40 || NET35)
-                            byte[] bytes = StreamHelper.ReadBlockToEnd(_clientStream, compresssMode, ProviderSetting.MaximumReceiveDataBlock);
-#else
-                            byte[] bytes = await StreamHelper.ReadBlockToEndAsync(_clientStream, compresssMode, ProviderSetting.MaximumReceiveDataBlock);
-#endif
-                            if (SecuritySettings != null)
-                                bytes = DecryptBytes(bytes);
-                            string json = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
-                            MethodCallInfo callInfo = ClientSerializationHelper.DeserializeObject<MethodCallInfo>(json);
-                            if (callInfo.Type == MethodType.User)
-                                CallMethod(callInfo);
-                            else if (callInfo.Type == MethodType.SignalGo)
+                            DataType dataType = (DataType)dataTypeByte;
+                            if (dataType == DataType.PingPong)
                             {
-                                if (callInfo.MethodName == "/MustReconnectUdpServer")
+                                PingAndWaitForPong.Set();
+                                continue;
+                            }
+                            //secound byte is compress mode
+#if (NET40 || NET35)
+                            int compressModeByte = StreamHelper.ReadOneByte(_clientStream);
+#else
+                            int compressModeByte = await StreamHelper.ReadOneByteAsync(_clientStream);
+#endif
+                            CompressMode compresssMode = (CompressMode)compressModeByte;
+
+                            // server is called client method
+                            if (dataType == DataType.CallMethod)
+                            {
+#if (NET40 || NET35)
+                                byte[] bytes = StreamHelper.ReadBlockToEnd(_clientStream, compresssMode, ProviderSetting.MaximumReceiveDataBlock);
+#else
+                                byte[] bytes = await StreamHelper.ReadBlockToEndAsync(_clientStream, compresssMode, ProviderSetting.MaximumReceiveDataBlock);
+#endif
+                                if (SecuritySettings != null)
+                                    bytes = DecryptBytes(bytes);
+                                string json = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
+                                MethodCallInfo callInfo = ClientSerializationHelper.DeserializeObject<MethodCallInfo>(json);
+                                if (callInfo.Type == MethodType.User)
+                                    CallMethod(callInfo);
+                                else if (callInfo.Type == MethodType.SignalGo)
                                 {
-                                    ReconnectToUdp(callInfo);
+                                    if (callInfo.MethodName == "/MustReconnectUdpServer")
+                                    {
+                                        ReconnectToUdp(callInfo);
+                                    }
                                 }
                             }
-                        }
-                        //after client called server method, server response to client
-                        else if (dataType == DataType.ResponseCallMethod)
-                        {
-#if (NET40 || NET35)
-                            byte[] bytes = StreamHelper.ReadBlockToEnd(_clientStream, compresssMode, ProviderSetting.MaximumReceiveDataBlock);
-#else
-                            byte[] bytes = await StreamHelper.ReadBlockToEndAsync(_clientStream, compresssMode, ProviderSetting.MaximumReceiveDataBlock);
-#endif
-                            if (SecuritySettings != null)
-                                bytes = DecryptBytes(bytes);
-                            string json = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
-                            MethodCallbackInfo callback = ClientSerializationHelper.DeserializeObject<MethodCallbackInfo>(json);
-
-                            bool geted = ConnectorExtensions.WaitedMethodsForResponse.TryGetValue(callback.Guid, out TaskCompletionSource<MethodCallbackInfo> keyValue);
-                            if (geted)
+                            //after client called server method, server response to client
+                            else if (dataType == DataType.ResponseCallMethod)
                             {
-                                if (callback.IsException)
+                                string json = "";
+                                //                                if (ProtocolType == ClientProtocolType.WebSocket)
+                                //                                {
+                                //#if (NET40 || NET35)
+                                //                                    json = _clientStream.ReadLine("#end");
+                                //#else
+                                //                                    json = await _clientStream.ReadLineAsync("#end");
+                                //#endif
+                                //                                    if (json.EndsWith("#end"))
+                                //                                        json = json.Substring(0, json.Length - 4);
+                                //                                }
+                                //                                else
+                                //                                {
+#if (NET40 || NET35)
+                                byte[] bytes = StreamHelper.ReadBlockToEnd(_clientStream, compresssMode, ProviderSetting.MaximumReceiveDataBlock);
+#else
+                                byte[] bytes = await StreamHelper.ReadBlockToEndAsync(_clientStream, compresssMode, ProviderSetting.MaximumReceiveDataBlock);
+#endif
+                                if (SecuritySettings != null)
+                                    bytes = DecryptBytes(bytes);
+                                json = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
+                                //}
+
+                                MethodCallbackInfo callback = ClientSerializationHelper.DeserializeObject<MethodCallbackInfo>(json);
+
+                                bool geted = ConnectorExtensions.WaitedMethodsForResponse.TryGetValue(callback.Guid, out TaskCompletionSource<MethodCallbackInfo> keyValue);
+                                if (geted)
                                 {
-                                    keyValue.SetException(new Exception(callback.Data));
+                                    if (callback.IsException)
+                                    {
+                                        keyValue.SetException(new Exception(callback.Data));
+                                    }
+                                    else
+                                        keyValue.SetResult(callback);
                                 }
+                            }
+                            else if (dataType == DataType.GetServiceDetails)
+                            {
+#if (NET40 || NET35)
+                                byte[] bytes = StreamHelper.ReadBlockToEnd(_clientStream, compresssMode, ProviderSetting.MaximumReceiveDataBlock);
+#else
+                                byte[] bytes = await StreamHelper.ReadBlockToEndAsync(_clientStream, compresssMode, ProviderSetting.MaximumReceiveDataBlock);
+#endif
+                                if (SecuritySettings != null)
+                                    bytes = DecryptBytes(bytes);
+                                string json = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
+                                ProviderDetailsInfo getServiceDetialResult = ClientSerializationHelper.DeserializeObject<ProviderDetailsInfo>(json);
+                                if (getServiceDetialResult == null)
+                                    ServiceDetailEventTaskResult.SetException(ClientSerializationHelper.DeserializeObject<Exception>(json));
                                 else
-                                    keyValue.SetResult(callback);
+                                    ServiceDetailEventTaskResult.SetResult(getServiceDetialResult);
+                            }
+                            else if (dataType == DataType.GetMethodParameterDetails)
+                            {
+#if (NET40 || NET35)
+                                byte[] bytes = StreamHelper.ReadBlockToEnd(_clientStream, compresssMode, ProviderSetting.MaximumReceiveDataBlock);
+#else
+                                byte[] bytes = await StreamHelper.ReadBlockToEndAsync(_clientStream, compresssMode, ProviderSetting.MaximumReceiveDataBlock);
+#endif
+                                if (SecuritySettings != null)
+                                    bytes = DecryptBytes(bytes);
+                                string json = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
+                                ServiceParameterDetailEventTaskResult.SetResult(json);
+                            }
+                            else if (dataType == DataType.GetClientId)
+                            {
+#if (NET40 || NET35)
+                                byte[] bytes = StreamHelper.ReadBlockToEnd(_clientStream, compresssMode, ProviderSetting.MaximumReceiveDataBlock);
+#else
+                                byte[] bytes = await StreamHelper.ReadBlockToEndAsync(_clientStream, compresssMode, ProviderSetting.MaximumReceiveDataBlock);
+#endif
+                                if (SecuritySettings != null)
+                                    bytes = DecryptBytes(bytes);
+                                ClientId = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
+                            }
+                            else
+                            {
+                                //incorrect data! :|
+                                AutoLogger.LogText("StartToReadingClientData Incorrect Data!");
+                                Disconnect();
+                                break;
                             }
                         }
-                        else if (dataType == DataType.GetServiceDetails)
-                        {
-#if (NET40 || NET35)
-                            byte[] bytes = StreamHelper.ReadBlockToEnd(_clientStream, compresssMode, ProviderSetting.MaximumReceiveDataBlock);
-#else
-                            byte[] bytes = await StreamHelper.ReadBlockToEndAsync(_clientStream, compresssMode, ProviderSetting.MaximumReceiveDataBlock);
-#endif
-                            if (SecuritySettings != null)
-                                bytes = DecryptBytes(bytes);
-                            string json = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
-                            ProviderDetailsInfo getServiceDetialResult = ClientSerializationHelper.DeserializeObject<ProviderDetailsInfo>(json);
-                            if (getServiceDetialResult == null)
-                                ServiceDetailEventTaskResult.SetException(ClientSerializationHelper.DeserializeObject<Exception>(json));
-                            else
-                                ServiceDetailEventTaskResult.SetResult(getServiceDetialResult);
-                        }
-                        else if (dataType == DataType.GetMethodParameterDetails)
-                        {
-#if (NET40 || NET35)
-                            byte[] bytes = StreamHelper.ReadBlockToEnd(_clientStream, compresssMode, ProviderSetting.MaximumReceiveDataBlock);
-#else
-                            byte[] bytes = await StreamHelper.ReadBlockToEndAsync(_clientStream, compresssMode, ProviderSetting.MaximumReceiveDataBlock);
-#endif
-                            if (SecuritySettings != null)
-                                bytes = DecryptBytes(bytes);
-                            string json = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
-                            ServiceParameterDetailEventTaskResult.SetResult(json);
-                        }
-                        else if (dataType == DataType.GetClientId)
-                        {
-#if (NET40 || NET35)
-                            byte[] bytes = StreamHelper.ReadBlockToEnd(_clientStream, compresssMode, ProviderSetting.MaximumReceiveDataBlock);
-#else
-                            byte[] bytes = await StreamHelper.ReadBlockToEndAsync(_clientStream, compresssMode, ProviderSetting.MaximumReceiveDataBlock);
-#endif
-                            if (SecuritySettings != null)
-                                bytes = DecryptBytes(bytes);
-                            ClientId = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
-                        }
-                        else
-                        {
-                            //incorrect data! :|
-                            AutoLogger.LogText("StartToReadingClientData Incorrect Data!");
-                            Disconnect();
-                            break;
-                        }
                     }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine("Client Disconnected");
-                    AutoLogger.LogError(ex, "StartToReadingClientData");
-                    Disconnect();
-                }
-            });
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("Client Disconnected");
+                        AutoLogger.LogError(ex, "StartToReadingClientData");
+                        Disconnect();
+                    }
+                });
+            }
+            catch
+            {
+
+            }
         }
 
         private ManualResetEvent PingAndWaitForPong = new ManualResetEvent(true);
@@ -1200,7 +1309,6 @@ namespace SignalGo.Client.ClientManager
             try
             {
                 PingAndWaitForPong.Reset();
-                NetworkStream stream = _client.GetStream();
                 await StreamHelper.WriteToStreamAsync(_clientStream, new byte[] { (byte)DataType.PingPong });
                 return PingAndWaitForPong.WaitOne(new TimeSpan(0, 0, 3));
             }
@@ -1217,7 +1325,6 @@ namespace SignalGo.Client.ClientManager
             try
             {
                 PingAndWaitForPong.Reset();
-                NetworkStream stream = _client.GetStream();
                 StreamHelper.WriteToStream(_clientStream, new byte[] { (byte)DataType.PingPong });
                 return PingAndWaitForPong.WaitOne(new TimeSpan(0, 0, 3));
             }
@@ -1271,42 +1378,49 @@ namespace SignalGo.Client.ClientManager
         {
             try
             {
-                if (IsWebSocket)
+                //                if (IsWebSocket)
+                //                {
+                //                    string json = ClientSerializationHelper.SerializeObject(callback) + "#end";
+                //                    byte[] jsonBytes = Encoding.UTF8.GetBytes(json);
+                //#if (NET40 || NET35)
+                //                    StreamHelper.WriteToStream(_clientStream, new byte[] { (byte)DataType.CallMethod });
+                //                    StreamHelper.WriteToStream(_clientStream, new byte[] { (byte)CompressMode.None });
+                //                    StreamHelper.WriteToStream(_clientStream, jsonBytes.ToArray());
+                //#else
+                //                    await StreamHelper.WriteToStreamAsync(_clientStream, new byte[] { (byte)DataType.CallMethod });
+                //                    await StreamHelper.WriteToStreamAsync(_clientStream, new byte[] { (byte)CompressMode.None });
+                //                    await StreamHelper.WriteToStreamAsync(_clientStream, jsonBytes);
+                //#endif
+                //                }
+                //                else
+                //                {
+                string json = ClientSerializationHelper.SerializeObject(callback);
+                //if (ProtocolType == ClientProtocolType.WebSocket)
+                //{
+                //    json += "#end";
+                //}
+                List<byte> bytes = new List<byte>
                 {
-                    string json = ClientSerializationHelper.SerializeObject(callback) + "#end";
-                    byte[] jsonBytes = Encoding.UTF8.GetBytes(json);
-#if (NET40 || NET35)
-                    StreamHelper.WriteToStream(_clientStream, new byte[] { (byte)DataType.CallMethod });
-                    StreamHelper.WriteToStream(_clientStream, new byte[] { (byte)CompressMode.None });
-                    StreamHelper.WriteToStream(_clientStream, jsonBytes.ToArray());
-#else
-                    await StreamHelper.WriteToStreamAsync(_clientStream, new byte[] { (byte)DataType.CallMethod });
-                    await StreamHelper.WriteToStreamAsync(_clientStream, new byte[] { (byte)CompressMode.None });
-                    await StreamHelper.WriteToStreamAsync(_clientStream, jsonBytes);
-#endif
-                }
-                else
-                {
-                    string json = ClientSerializationHelper.SerializeObject(callback);
-                    List<byte> bytes = new List<byte>
-                    {
-                        (byte)DataType.CallMethod,
-                        (byte)CompressMode.None
-                    };
-                    byte[] jsonBytes = Encoding.UTF8.GetBytes(json);
-                    if (SecuritySettings != null)
-                        jsonBytes = EncryptBytes(jsonBytes);
-                    byte[] dataLen = BitConverter.GetBytes(jsonBytes.Length);
-                    bytes.AddRange(dataLen);
-                    bytes.AddRange(jsonBytes);
-                    if (bytes.Count > ProviderSetting.MaximumSendDataBlock)
-                        throw new Exception("SendData data length is upper than MaximumSendDataBlock");
+                    (byte)DataType.CallMethod,
+                    (byte)CompressMode.None
+                };
+                byte[] jsonBytes = Encoding.UTF8.GetBytes(json);
+                if (SecuritySettings != null)
+                    jsonBytes = EncryptBytes(jsonBytes);
+                //if (ProtocolType != ClientProtocolType.WebSocket)
+                //{
+                byte[] dataLen = BitConverter.GetBytes(jsonBytes.Length);
+                bytes.AddRange(dataLen);
+                //}
+                bytes.AddRange(jsonBytes);
+                if (bytes.Count > ProviderSetting.MaximumSendDataBlock)
+                    throw new Exception("SendData data length is upper than MaximumSendDataBlock");
 #if (NET40 || NET35)
                     StreamHelper.WriteToStream(_clientStream, bytes.ToArray());
 #else
-                    await StreamHelper.WriteToStreamAsync(_clientStream, bytes.ToArray());
+                await StreamHelper.WriteToStreamAsync(_clientStream, bytes.ToArray());
 #endif
-                }
+                //}
             }
             catch (Exception ex)
             {
@@ -1317,12 +1431,11 @@ namespace SignalGo.Client.ClientManager
                         keyValue.SetException(ex);
                     }
                 }
-                catch (Exception ex2)
+                catch
                 {
 
 
                 }
-                //AutoLogger.LogError(ex, "ConnectorBase SendData");
             }
         }
 
@@ -1404,9 +1517,16 @@ namespace SignalGo.Client.ClientManager
             }
             catch (Exception ex)
             {
-                AutoLogger.LogError(ex, "ConnectorBase CallMethod");
-                callback.IsException = true;
-                callback.Data = ClientSerializationHelper.SerializeObject(ex.ToString());
+                try
+                {
+                    AutoLogger.LogError(ex, "ConnectorBase CallMethod");
+                    callback.IsException = true;
+                    callback.Data = ClientSerializationHelper.SerializeObject(ex.ToString());
+                }
+                catch
+                {
+
+                }
             }
             SendCallbackData(callback);
         }
@@ -1430,26 +1550,33 @@ namespace SignalGo.Client.ClientManager
         internal async void SendCallbackData(MethodCallbackInfo callback)
 #endif
         {
-            string json = ClientSerializationHelper.SerializeObject(callback);
-            byte[] bytes = Encoding.UTF8.GetBytes(json);
-            if (SecuritySettings != null)
-                bytes = EncryptBytes(bytes);
-            byte[] len = BitConverter.GetBytes(bytes.Length);
-            List<byte> data = new List<byte>
+            try
+            {
+                string json = ClientSerializationHelper.SerializeObject(callback);
+                byte[] bytes = Encoding.UTF8.GetBytes(json);
+                if (SecuritySettings != null)
+                    bytes = EncryptBytes(bytes);
+                byte[] len = BitConverter.GetBytes(bytes.Length);
+                List<byte> data = new List<byte>
             {
                 (byte)DataType.ResponseCallMethod,
                 (byte)CompressMode.None
             };
-            data.AddRange(len);
-            data.AddRange(bytes);
-            if (data.Count > ProviderSetting.MaximumSendDataBlock)
-                throw new Exception("SendCallbackData data length is upper than MaximumSendDataBlock");
+                data.AddRange(len);
+                data.AddRange(bytes);
+                if (data.Count > ProviderSetting.MaximumSendDataBlock)
+                    throw new Exception("SendCallbackData data length is upper than MaximumSendDataBlock");
 
 #if (NET40 || NET35)
-            StreamHelper.WriteToStream(_clientStream, data.ToArray());
+                StreamHelper.WriteToStream(_clientStream, data.ToArray());
 #else
-            await StreamHelper.WriteToStreamAsync(_clientStream, data.ToArray());
+                await StreamHelper.WriteToStreamAsync(_clientStream, data.ToArray());
 #endif
+            }
+            catch (Exception ex)
+            {
+                AutoLogger.LogError(ex, "SendCallbackData");
+            }
         }
 
 
@@ -1554,11 +1681,7 @@ namespace SignalGo.Client.ClientManager
                 throw new ObjectDisposedException("Connector");
 
             if (_client != null)
-#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
                 _client.Dispose();
-#else
-                _client.Close();
-#endif
             if (IsConnected)
             {
                 IsConnected = false;

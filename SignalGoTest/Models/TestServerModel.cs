@@ -85,6 +85,36 @@ namespace SignalGoTest.Models
         {
             return new MessageContract() { IsSuccess = true, Message = "gust success" };
         }
+
+        public MessageContract TestCallbacksSync()
+        {
+            foreach (ITestClientServiceModel item in OperationContext.Current.GetAllClientServices<ITestClientServiceModel>())
+            {
+                string result = item.HelloWorld("hello world");
+                if (result != "Hello")
+                    return new MessageContract() { IsSuccess = false };
+
+                result = item.TestMethod("ali", "yousefi");
+                if (result != "ali yousefi")
+                    return new MessageContract() { IsSuccess = false };
+            }
+            return new MessageContract() { IsSuccess = true };
+        }
+
+        public async Task<MessageContract> TestCallbacksAsync()
+        {
+            foreach (ITestClientServiceModel item in OperationContext.Current.GetAllClientServices<ITestClientServiceModel>())
+            {
+                string result = await item.HelloWorld2("hello world");
+                if (result != "Hello")
+                    return new MessageContract() { IsSuccess = false };
+
+                result = await item.TestMethod2("ali", "yousefi");
+                if (result != "ali yousefi")
+                    return new MessageContract() { IsSuccess = false };
+            }
+            return new MessageContract() { IsSuccess = true };
+        }
     }
 
     public class TestServerModel : ITestServerModel

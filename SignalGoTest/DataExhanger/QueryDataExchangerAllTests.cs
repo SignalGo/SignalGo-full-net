@@ -1,5 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SignalGo.DataExchanger.Compilers;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -277,7 +278,11 @@ namespace SignalGoTest.DataExhanger
                                         where sum(sum(count(user.posts),count(user.posts)),count(user.posts))==6)
                                         var post in user.posts
 	                                    {
-		                                    where post.Title = ""ali""
+		                                    where post.Title = ""hello every body""
+	                                    }
+                                        var file in user.files
+	                                    {
+		                                    where file.Name = ""page.jpg""
 	                                    }
                                     }";
             SelectCompiler selectCompiler = new SelectCompiler();
@@ -285,11 +290,102 @@ namespace SignalGoTest.DataExhanger
             ConditionsCompiler conditionsCompiler = new ConditionsCompiler();
             conditionsCompiler.Compile(anotherResult);
             IEnumerable<UserEx> toComiple = QueryDataExchangerText.GetUsersEx();
+            IEnumerable<UserEx> toComiple2 = QueryDataExchangerText.GetUsersEx();
 
             object result = selectCompiler.Run(toComiple);
             IEnumerable<UserEx> resultWheres = (IEnumerable<UserEx>)conditionsCompiler.Run<UserEx>(toComiple);
             List<UserEx> resultData = resultWheres.ToList();
-            List<UserEx> linqList = toComiple.Where(x => ((x.Posts.Count() + x.Posts.Count()) + x.Posts.Count()) == 6).ToList();
+            List<UserEx> linqList = toComiple2.Where(x => ((x.Posts.Count() + x.Posts.Count()) + x.Posts.Count()) == 6).ToList();
+            foreach (UserEx item in linqList)
+            {
+                if (item.Files != null)
+                {
+                    item.Files = item.Files.Where(x => x.Name == "page.jpg").ToList();
+                    foreach (var file in item.Files)
+                    {
+                        file.DateTime = DateTime.MinValue;
+                    }
+                }
+                if (item.Posts != null)
+                {
+                    foreach (var post in item.Posts)
+                    {
+                        post.Content = null;
+                        foreach (var news in post.News)
+                        {
+                            news.Description = null;
+                        }
+                        foreach (var art in post.Articles)
+                        {
+                            art.Date = DateTime.MinValue;
+                        }
+                    }
+                    item.Posts = item.Posts.Where(x => x.Title == "hello every body").ToList();
+                }
+            }
+            bool equal = resultData.SequenceEqual(linqList);
+            Assert.IsTrue(equal);
+        }
+
+        [TestMethod]
+        public void Example16()
+        {
+            string query = @"select{name family posts{title articles{author}date news{newsName}}files{id name}}
+                                    var user
+                                    {
+                                        where sum(sum(count(user.posts),count(user.posts)),count(user.posts))==6)
+                                        var post in user.posts
+	                                    {
+		                                    where post.Title = ""hello every body""
+                                            var news in post.news
+                                            {
+                                                where news.NewsName = ""how are you world?""
+                                            }
+	                                    }
+                                        var file in user.files
+	                                    {
+		                                    where file.Name = ""page.jpg""
+	                                    }
+                                    }";
+            SelectCompiler selectCompiler = new SelectCompiler();
+            string anotherResult = selectCompiler.Compile(query);
+            ConditionsCompiler conditionsCompiler = new ConditionsCompiler();
+            conditionsCompiler.Compile(anotherResult);
+            IEnumerable<UserEx> toComiple = QueryDataExchangerText.GetUsersEx();
+            IEnumerable<UserEx> toComiple2 = QueryDataExchangerText.GetUsersEx();
+
+            object result = selectCompiler.Run(toComiple);
+            IEnumerable<UserEx> resultWheres = (IEnumerable<UserEx>)conditionsCompiler.Run<UserEx>(toComiple);
+            List<UserEx> resultData = resultWheres.ToList();
+            List<UserEx> linqList = toComiple2.Where(x => ((x.Posts.Count() + x.Posts.Count()) + x.Posts.Count()) == 6).ToList();
+            foreach (UserEx item in linqList)
+            {
+                if (item.Files != null)
+                {
+                    item.Files = item.Files.Where(x => x.Name == "page.jpg").ToList();
+                    foreach (var file in item.Files)
+                    {
+                        file.DateTime = DateTime.MinValue;
+                    }
+                }
+                if (item.Posts != null)
+                {
+                    foreach (var post in item.Posts)
+                    {
+                        post.Content = null;
+                        post.News = post.News.Where(x => x.NewsName == "how are you world?").ToList();
+                        foreach (var news in post.News)
+                        {
+                            news.Description = null;
+                        }
+                        foreach (var art in post.Articles)
+                        {
+                            art.Date = DateTime.MinValue;
+                        }
+                    }
+                    item.Posts = item.Posts.Where(x => x.Title == "hello every body").ToList();
+                }
+            }
             bool equal = resultData.SequenceEqual(linqList);
             Assert.IsTrue(equal);
         }

@@ -3,8 +3,10 @@ using SignalGo.Shared.IO;
 using SignalGo.Shared.Models;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Security;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
@@ -99,11 +101,16 @@ namespace SignalGo.Client
 
                 byte[] headBytes = Encoding.GetBytes(headData);
 
-                using (NetworkStream stream = tcpClient.GetStream())
+                using (Stream stream = uri.Port == 443 ? (Stream)new SslStream(tcpClient.GetStream()) : tcpClient.GetStream())
                 {
+                    if (uri.Port == 443)
+                    {
+                        SslStream sslStream = (SslStream)stream;
+                        sslStream.AuthenticateAsClient(uri.Host);
+                    }
                     stream.Write(headBytes, 0, headBytes.Length);
                     stream.Write(dataBytes, 0, dataBytes.Length);
-                    
+
 
                     using (PipeNetworkStream pipelineReader = new PipeNetworkStream(new NormalStream(stream), 30000))
                     {
@@ -181,7 +188,7 @@ namespace SignalGo.Client
                 if (parameterInfoes != null)
                 {
                     string formdataTemplate = "Content-Disposition: form-data; name=\"{0}\"\r\n\r\n{1}";
-                    string boundaryinsert = TextHelper.NewLine+ "--" + boundary + TextHelper.NewLine;
+                    string boundaryinsert = TextHelper.NewLine + "--" + boundary + TextHelper.NewLine;
                     foreach (ParameterInfo item in parameterInfoes)
                     {
                         valueData.AppendLine(boundaryinsert);
@@ -194,8 +201,13 @@ namespace SignalGo.Client
 
                 byte[] headBytes = Encoding.GetBytes(headData);
 
-                using (NetworkStream stream = tcpClient.GetStream())
+                using (Stream stream = uri.Port == 443 ? (Stream)new SslStream(tcpClient.GetStream()) : tcpClient.GetStream())
                 {
+                    if (uri.Port == 443)
+                    {
+                        SslStream sslStream = (SslStream)stream;
+                        await sslStream.AuthenticateAsClientAsync(uri.Host);
+                    }
                     stream.Write(headBytes, 0, headBytes.Length);
                     stream.Write(dataBytes, 0, dataBytes.Length);
 

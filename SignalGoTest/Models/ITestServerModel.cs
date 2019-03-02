@@ -34,6 +34,8 @@ namespace SignalGoTest.Models
     public interface ITestClientServiceModel
     {
         string HelloWorld(string yourName);
-        Task<string> HelloWorldAsync(string yourName);
+        Task<string> HelloWorld2(string yourName);
+        string TestMethod(string param1, string param2);
+        Task<string> TestMethod2(string param1, string param2);
     }
 }

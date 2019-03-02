@@ -12,6 +12,8 @@ namespace SignalGo.DataExchanger.Conditions
         public string PropertyPath { get; set; }
         public object Run(object newPoint)
         {
+            if (newPoint == null)
+                return null;
             var split = PropertyPath.Split('.');
 
             for (int i = 1; i < split.Length; i++)

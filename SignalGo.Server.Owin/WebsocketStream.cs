@@ -1,5 +1,6 @@
 ﻿using SignalGo.Shared.IO;
 using System;
+using System.Linq;
 using System.Net.WebSockets;
 using System.Threading.Tasks;
 
@@ -53,14 +54,36 @@ namespace SignalGo.Server.Owin
 
         public void Write(byte[] buffer, int offset, int count)
         {
-            ArraySegment<byte> data = new ArraySegment<byte>(buffer, 0, count);
-            _webSocket.SendAsync(data, WebSocketMessageType.Binary, true, new System.Threading.CancellationToken()).GetAwaiter().GetResult();
+            if (count > WebcoketDatagramBase.MaxLength)
+            {
+                foreach (byte[] item in WebcoketDatagramBase.GetSegments(buffer.Take(count).ToArray()))
+                {
+                    ArraySegment<byte> data = new ArraySegment<byte>(item, 0, item.Length);
+                    _webSocket.SendAsync(data, WebSocketMessageType.Binary, true, new System.Threading.CancellationToken()).GetAwaiter().GetResult();
+                }
+            }
+            else
+            {
+                ArraySegment<byte> data = new ArraySegment<byte>(buffer, 0, count);
+                _webSocket.SendAsync(data, WebSocketMessageType.Binary, true, new System.Threading.CancellationToken()).GetAwaiter().GetResult();
+            }
         }
 
-        public Task WriteAsync(byte[] buffer, int offset, int count)
+        public async Task WriteAsync(byte[] buffer, int offset, int count)
         {
-            ArraySegment<byte> data = new ArraySegment<byte>(buffer, 0, count);
-            return _webSocket.SendAsync(data, WebSocketMessageType.Binary, true, new System.Threading.CancellationToken());
+            if (count > WebcoketDatagramBase.MaxLength)
+            {
+                foreach (byte[] item in WebcoketDatagramBase.GetSegments(buffer.Take(count).ToArray()))
+                {
+                    ArraySegment<byte> data = new ArraySegment<byte>(item, 0, item.Length);
+                    await _webSocket.SendAsync(data, WebSocketMessageType.Binary, true, new System.Threading.CancellationToken());
+                }
+            }
+            else
+            {
+                ArraySegment<byte> data = new ArraySegment<byte>(buffer, 0, count);
+                await _webSocket.SendAsync(data, WebSocketMessageType.Binary, true, new System.Threading.CancellationToken());
+            }
         }
     }
 }

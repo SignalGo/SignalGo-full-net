@@ -178,87 +178,87 @@ namespace SignalGo.Server.Log
             MethodsCallHandler.EndHttpMethodCallAction += new EndHttpCallAction(EndHttpMethodCallAction);
             MethodsCallHandler.EndMethodCallAction += new EndMethodCallAction(EndMethodCallAction);
             MethodsCallHandler.EndStreamCallAction += new EndStreamCallAction(EndStreamCallAction);
-            StartEngine();
+            //StartEngine();
         }
 
         private void BeginClientMethodCallAction(object clientInfo, string callGuid, string serviceName, string methodName, SignalGo.Shared.Models.ParameterInfo[] values)
         {
-            ClientInfo client = (ClientInfo)clientInfo;
-            CallClientMethodLogInformation result = AddCallClientMethodLog(client.ClientId, client.IPAddress, client.ConnectedDateTime, serviceName, methodName, values);
-            if (result != null)
-                result.CallerGuid = callGuid;
+            //ClientInfo client = (ClientInfo)clientInfo;
+            //CallClientMethodLogInformation result = AddCallClientMethodLog(client.ClientId, client.IPAddress, client.ConnectedDateTime, serviceName, methodName, values);
+            //if (result != null)
+            //    result.CallerGuid = callGuid;
         }
 
         private void BeginHttpMethodCallAction(object clientInfo, string callGuid, string address, MethodInfo method, SignalGo.Shared.Models.ParameterInfo[] values)
         {
-            ClientInfo client = (ClientInfo)clientInfo;
-            HttpCallMethodLogInformation result = AddHttpMethodLog(client.ClientId, client.IPAddress, client.ConnectedDateTime, address, method, values);
-            if (result != null)
-                result.CallerGuid = callGuid;
+            //ClientInfo client = (ClientInfo)clientInfo;
+            //HttpCallMethodLogInformation result = AddHttpMethodLog(client.ClientId, client.IPAddress, client.ConnectedDateTime, address, method, values);
+            //if (result != null)
+            //    result.CallerGuid = callGuid;
         }
 
         private void BeginMethodCallAction(object clientInfo, string callGuid, string serviceName, MethodInfo method, SignalGo.Shared.Models.ParameterInfo[] values)
         {
-            ClientInfo client = (ClientInfo)clientInfo;
-            CallMethodLogInformation result = AddCallMethodLog(client.ClientId, client.IPAddress, client.ConnectedDateTime, serviceName, method, values);
-            if (result != null)
-                result.CallerGuid = callGuid;
+            //ClientInfo client = (ClientInfo)clientInfo;
+            //CallMethodLogInformation result = AddCallMethodLog(client.ClientId, client.IPAddress, client.ConnectedDateTime, serviceName, method, values);
+            //if (result != null)
+            //    result.CallerGuid = callGuid;
         }
 
         private void BeginStreamCallAction(object clientInfo, string callGuid, string serviceName, string methodName, SignalGo.Shared.Models.ParameterInfo[] values)
         {
-            ClientInfo client = (ClientInfo)clientInfo;
-            StreamCallMethodLogInformation result = AddStreamCallMethodLog(client.ClientId, client.IPAddress, client.ConnectedDateTime, serviceName, methodName, values);
-            if (result != null)
-                result.CallerGuid = callGuid;
+            //ClientInfo client = (ClientInfo)clientInfo;
+            //StreamCallMethodLogInformation result = AddStreamCallMethodLog(client.ClientId, client.IPAddress, client.ConnectedDateTime, serviceName, methodName, values);
+            //if (result != null)
+            //    result.CallerGuid = callGuid;
         }
 
         private void EndClientMethodCallAction(object clientInfo, string callGuid, string serviceName, string methodName, object[] values, string result, Exception exception)
         {
-            BaseLogInformation find = Logs.FirstOrDefault(x => x.CallerGuid == callGuid);
-            if (find != null)
-            {
-                find.Exception = exception;
-                FinishLog((CallClientMethodLogInformation)find, result);
-            }
+            //BaseLogInformation find = Logs.FirstOrDefault(x => x.CallerGuid == callGuid);
+            //if (find != null)
+            //{
+            //    find.Exception = exception;
+            //    FinishLog((CallClientMethodLogInformation)find, result);
+            //}
         }
 
         private void EndHttpMethodCallAction(object clientInfo, string callGuid, string address, System.Reflection.MethodInfo method, SignalGo.Shared.Models.ParameterInfo[] values, object result, Exception exception)
         {
-            BaseLogInformation find = Logs.FirstOrDefault(x => x.CallerGuid == callGuid);
-            if (find != null)
-            {
-                find.Exception = exception;
-                FinishLog((HttpCallMethodLogInformation)find, result == null ? "" : JsonConvert.SerializeObject(result, new JsonSerializerSettings()
-                {
-                    NullValueHandling = NullValueHandling.Ignore,
-                    ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
-                    Error = (o, e) =>
-                    {
+            //BaseLogInformation find = Logs.FirstOrDefault(x => x.CallerGuid == callGuid);
+            //if (find != null)
+            //{
+            //    find.Exception = exception;
+            //    FinishLog((HttpCallMethodLogInformation)find, result == null ? "" : JsonConvert.SerializeObject(result, new JsonSerializerSettings()
+            //    {
+            //        NullValueHandling = NullValueHandling.Ignore,
+            //        ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+            //        Error = (o, e) =>
+            //        {
 
-                    }
-                }));
-            }
+            //        }
+            //    }));
+            //}
         }
 
         private void EndMethodCallAction(object clientInfo, string callGuid, string serviceName, System.Reflection.MethodInfo method, SignalGo.Shared.Models.ParameterInfo[] values, string result, Exception exception)
         {
-            BaseLogInformation find = Logs.FirstOrDefault(x => x.CallerGuid == callGuid);
-            if (find != null)
-            {
-                find.Exception = exception;
-                FinishLog((CallMethodLogInformation)find, result);
-            }
+            //BaseLogInformation find = Logs.FirstOrDefault(x => x.CallerGuid == callGuid);
+            //if (find != null)
+            //{
+            //    find.Exception = exception;
+            //    FinishLog((CallMethodLogInformation)find, result);
+            //}
         }
 
         private void EndStreamCallAction(object clientInfo, string callGuid, string serviceName, string methodName, SignalGo.Shared.Models.ParameterInfo[] values, string result, Exception exception)
         {
-            BaseLogInformation find = Logs.FirstOrDefault(x => x.CallerGuid == callGuid);
-            if (find != null)
-            {
-                find.Exception = exception;
-                FinishLog((StreamCallMethodLogInformation)find, result);
-            }
+            //BaseLogInformation find = Logs.FirstOrDefault(x => x.CallerGuid == callGuid);
+            //if (find != null)
+            //{
+            //    find.Exception = exception;
+            //    FinishLog((StreamCallMethodLogInformation)find, result);
+            //}
         }
 
 

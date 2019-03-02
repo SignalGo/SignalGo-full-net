@@ -592,8 +592,12 @@ namespace SignalGo.Server.Models
         public ClientInfo Client { get; set; }
     }
 
+    /// <summary>
+    /// operation context extentions
+    /// </summary>
     public static class OCExtension
     {
+        #region normal context services
         /// <summary>
         /// get current context service
         /// </summary>
@@ -900,6 +904,7 @@ namespace SignalGo.Server.Models
             }
         }
 
+        #endregion
 
 
 
@@ -915,8 +920,7 @@ namespace SignalGo.Server.Models
 
 
 
-
-
+        #region client context services
 
 
 
@@ -1117,5 +1121,44 @@ namespace SignalGo.Server.Models
             return (from x in GetListOfExcludeClientContextServices<T>(serverBase, clientIds) select x.Service);
         }
 
+
+        #endregion
+        /// <summary>
+        /// get all client clienccontext services with setting query
+        /// </summary>
+        /// <typeparam name="TService"></typeparam>
+        /// <typeparam name="TSetting"></typeparam>
+        /// <param name="serverBase"></param>
+        /// <param name="canTake"></param>
+        /// <param name=""></param>
+        /// <returns></returns>
+        public static IEnumerable<ClientContext<TService>> GetAllClientClientContextServices<TService, TSetting>(this OperationContext operationContext, Func<TSetting, bool> canTake) where TService : class
+        {
+            return GetAllClientClientContextServices<TService, TSetting>(operationContext.ServerBase, canTake);
+        }
+
+        /// <summary>
+        /// get all client clienccontext services with setting query
+        /// </summary>
+        /// <typeparam name="TService"></typeparam>
+        /// <typeparam name="TSetting"></typeparam>
+        /// <param name="serverBase"></param>
+        /// <param name="canTake"></param>
+        /// <param name=""></param>
+        /// <returns></returns>
+        public static IEnumerable<ClientContext<TService>> GetAllClientClientContextServices<TService, TSetting>(this ServerBase serverBase, Func<TSetting, bool> canTake) where TService : class
+        {
+            foreach (KeyValuePair<string, ClientInfo> item in serverBase.Clients)
+            {
+                var setting = (TSetting)OperationContextBase.GetSetting(item.Value, typeof(TSetting));
+                if (setting == null)
+                    continue;
+                else if (canTake.Invoke(setting))
+                {
+                    TService find = GenerateClientServiceInstance<TService>(serverBase, item.Value);
+                    yield return new ClientContext<TService>(find, item.Value);
+                }
+            }
+        }
     }
 }

@@ -1,9 +1,11 @@
-﻿using SignalGo.Server.Models;
+﻿using SignalGo.Server.IO;
+using SignalGo.Server.Models;
 using SignalGo.Server.ServiceManager.Versions;
 using SignalGo.Shared;
 using SignalGo.Shared.Converters;
 using SignalGo.Shared.DataTypes;
 using SignalGo.Shared.Helpers;
+using SignalGo.Shared.IO;
 using SignalGo.Shared.Log;
 using SignalGo.Shared.Models;
 using System;
@@ -21,6 +23,10 @@ namespace SignalGo.Server.ServiceManager
     /// </summary>
     public abstract class ServerBase : IDisposable, IValidationRuleInfo
     {
+        static ServerBase()
+        {
+            WebcoketDatagramBase.Current = new WebcoketDatagram();
+        }
         /// <summary>
         /// default constructor
         /// </summary>
@@ -70,11 +76,11 @@ namespace SignalGo.Server.ServiceManager
         /// <summary>
         /// Action raised when a client connected successfully
         /// </summary>
-        public Action<ClientInfo> OnConnectedClientAction { get; set; }
+        public Action<ClientInfo> OnClientConnectedAction { get; set; }
         /// <summary>
         /// after client disconnected
         /// </summary>
-        public Action<ClientInfo> OnDisconnectedClientAction { get; set; }
+        public Action<ClientInfo> OnClientDisconnectedAction { get; set; }
 
         /// <summary>
         /// all of registred services like server services, client services, http services etc
@@ -253,7 +259,6 @@ namespace SignalGo.Server.ServiceManager
                 OperationContextBase.SavedSettings.Remove(client);
 
                 client.OnDisconnected?.Invoke();
-                OnDisconnectedClientAction?.Invoke(client);
             }
             catch (Exception ex)
             {
@@ -262,7 +267,14 @@ namespace SignalGo.Server.ServiceManager
             }
             finally
             {
-                //GC.Collect();
+                try
+                {
+                    OnClientDisconnectedAction?.Invoke(client);
+                }
+                catch (Exception ex)
+                {
+
+                }
             }
         }
 
