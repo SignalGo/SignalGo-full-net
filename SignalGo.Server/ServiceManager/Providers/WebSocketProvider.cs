@@ -35,21 +35,21 @@ namespace SignalGo.Server.ServiceManager.Providers
                     {
 
                         string json = "";
-                        if (client.IsOwinClient)
-                        {
-                            json = await stream.ReadLineAsync("#end");
-                        }
-                        else
-                        {
-                            do
-                            {
-                                byte[] bytes = await client.StreamHelper.ReadBlockToEndAsync(stream, compressMode, serverBase.ProviderSetting.MaximumReceiveDataBlock);
-                                //if (ClientsSettings.ContainsKey(client))
-                                //    bytes = DecryptBytes(bytes, client);
-                                json += Encoding.UTF8.GetString(bytes);
-                            }
-                            while (json.IndexOf("#end") != json.Length - 4);
-                        }
+                        //if (client.IsOwinClient)
+                        //{
+                        json = await stream.ReadLineAsync("#end");
+                        //}
+                        //else
+                        //{
+                        //    do
+                        //    {
+                        //        byte[] bytes = await client.StreamHelper.ReadBlockToEndAsync(stream, compressMode, serverBase.ProviderSetting.MaximumReceiveDataBlock);
+                        //        //if (ClientsSettings.ContainsKey(client))
+                        //        //    bytes = DecryptBytes(bytes, client);
+                        //        json += Encoding.UTF8.GetString(bytes);
+                        //    }
+                        //    while (json.IndexOf("#end") != json.Length - 4);
+                        //}
 
                         if (json.EndsWith("#end"))
                             json = json.Substring(0, json.Length - 4);
@@ -77,17 +77,17 @@ namespace SignalGo.Server.ServiceManager.Providers
                     else if (dataType == DataType.ResponseCallMethod)
                     {
                         string json = "";
-                        if (client.IsOwinClient)
-                        {
-                            json = await stream.ReadLineAsync("#end");
-                        }
-                        else
-                        {
-                            byte[] bytes = await client.StreamHelper.ReadBlockToEndAsync(stream, compressMode, serverBase.ProviderSetting.MaximumReceiveDataBlock);
-                            //if (ClientsSettings.ContainsKey(client))
-                            //    bytes = DecryptBytes(bytes, client);
-                            json = Encoding.UTF8.GetString(bytes);
-                        }
+                        //if (client.IsOwinClient)
+                        //{
+                        json = await stream.ReadLineAsync("#end");
+                        //}
+                        //else
+                        //{
+                        //    byte[] bytes = await client.StreamHelper.ReadBlockToEndAsync(stream, compressMode, serverBase.ProviderSetting.MaximumReceiveDataBlock);
+                        //    //if (ClientsSettings.ContainsKey(client))
+                        //    //    bytes = DecryptBytes(bytes, client);
+                        //    json = Encoding.UTF8.GetString(bytes);
+                        //}
 
                         if (json.EndsWith("#end"))
                             json = json.Substring(0, json.Length - 4);
