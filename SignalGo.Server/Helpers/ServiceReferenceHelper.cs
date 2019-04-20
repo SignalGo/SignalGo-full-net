@@ -205,7 +205,7 @@ namespace SignalGo.Server.Helpers
                 if (justDeclared)
                     methods = serviceType.GetListOfDeclaredMethods().ToList();
                 else
-                    methods = serviceType.GetListOfMethodsWithAllOfBases();
+                    methods = serviceType.GetListOfMethodsWithAllOfBases().Where(x => x.IsPublic && !x.IsStatic).ToList();
                 foreach (MethodInfo methodInfo in methods.Where(x => !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_"))) && !x.IsStatic))
                 {
                     GenerateMethod(methodInfo, classReferenceInfo);
