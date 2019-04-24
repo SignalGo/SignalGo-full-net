@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using SignalGo.Shared.IO;
 using System;
+using System.IO;
 using System.Net;
 #if (!PORTABLE)
 #endif
@@ -97,7 +98,10 @@ namespace SignalGo.Shared.Models
         /// length of stream
         /// </summary>
         public long Length { get; set; }
-
+        /// <summary>
+        /// content type of stream
+        /// </summary>
+        public string ContentType { get; set; }
         /// <summary>
         /// close the connection
         /// </summary>
@@ -176,6 +180,16 @@ namespace SignalGo.Shared.Models
     /// <typeparam name="T">data of stream</typeparam>
     public class StreamInfo<T> : BaseStreamInfo
     {
+        public StreamInfo()
+        {
+
+        }
+
+        public StreamInfo(PipeNetworkStream stream)
+        {
+            Stream = stream;
+        }
+
         /// <summary>
         /// data of stream
         /// </summary>
@@ -184,6 +198,14 @@ namespace SignalGo.Shared.Models
 
     public class StreamInfo : BaseStreamInfo
     {
+        public StreamInfo()
+        {
 
+        }
+
+        public StreamInfo(PipeNetworkStream stream)
+        {
+            Stream = stream;
+        }
     }
 }

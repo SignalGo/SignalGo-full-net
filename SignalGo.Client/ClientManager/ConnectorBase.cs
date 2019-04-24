@@ -63,6 +63,10 @@ namespace SignalGo.Client.ClientManager
         /// if your server is hosted on iis use httpduplex
         /// </summary>
         public ClientProtocolType ProtocolType { get; set; } = ClientProtocolType.SignalGoDuplex;
+        /// <summary>
+        /// when signalgo want use streaming protocol it will use http protocol to connect to server because iis is not support signalgo protocol
+        /// </summary>
+        public bool UseHttpStream { get; set; } = false;
 
         internal ISignalGoStream StreamHelper { get; set; } = null;
         internal JsonSettingHelper JsonSettingHelper { get; set; } = new JsonSettingHelper();

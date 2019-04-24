@@ -220,7 +220,7 @@ namespace SignalGo.Client.ClientManager
             try
             {
                 TaskCompletionSource<MethodCallbackInfo> valueData = new TaskCompletionSource<MethodCallbackInfo>();
-                CancellationTokenSource ct = new CancellationTokenSource((int)connector.ProviderSetting.ServerServiceSetting.SendDataTimeout.TotalMilliseconds);
+                CancellationTokenSource ct = new CancellationTokenSource((int)connector.ProviderSetting.ReceiveDataTimeout.TotalMilliseconds);
                 ct.Token.Register(() => valueData.TrySetCanceled(), useSynchronizationContext: false);
 
                 bool added = WaitedMethodsForResponse.TryAdd(callInfo.Guid, valueData);
