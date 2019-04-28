@@ -830,7 +830,7 @@ namespace SignalGo.Client.ClientManager
                 }
                 else
                 {
-                    long length = iStream.Length;
+                    long length = iStream.Length.Value;
                     long position = 0;
                     int blockOfRead = 1024 * 10;
                     while (length != position)
