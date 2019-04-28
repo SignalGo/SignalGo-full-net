@@ -500,8 +500,12 @@ namespace SignalGo.Server.ServiceManager.Providers
             if (result.StreamInfo != null)
             {
                 result.FileActionResult = new FileActionResult(result.StreamInfo.Stream);
-                if (!client.ResponseHeaders.ContainsKey("content-length"))
-                    client.ResponseHeaders.Add("Content-Length", result.StreamInfo.Length.ToString());
+                if (!client.ResponseHeaders.ContainsKey("content-length") && result.StreamInfo.Length.HasValue)
+                    client.ResponseHeaders.Add("Content-Length", result.StreamInfo.Length.Value);
+                if (!client.ResponseHeaders.ContainsKey("content-type") && result.StreamInfo.ContentType != null)
+                    client.ResponseHeaders.Add("Content-Type", result.StreamInfo.ContentType);
+                if (result.StreamInfo.Status.HasValue)
+                    client.Status = result.StreamInfo.Status.Value;
             }
             if (result.FileActionResult != null)
                 await RunHttpActionResult(client, result.FileActionResult, client, serverBase);
@@ -585,9 +589,12 @@ namespace SignalGo.Server.ServiceManager.Providers
                 else
                 {
                     string data = null;
-                    if (result is ActionResult)
+                    if (result is ActionResult actionResult)
                     {
-                        data = (((ActionResult)result).Data is string ? ((ActionResult)result).Data.ToString() : ServerSerializationHelper.SerializeObject(((ActionResult)result).Data, serverBase));
+                        if (actionResult.Data is System.IO.Stream)
+                            data = "";
+                        else
+                            data = actionResult.Data is string ? actionResult.Data.ToString() : ServerSerializationHelper.SerializeObject(actionResult.Data, serverBase);
                         //if (!controller.ResponseHeaders.ContainsKey("content-length"))
                         //    controller.ResponseHeaders.Add("Content-Length", (System.Text.Encoding.UTF8.GetByteCount(data)).ToString().Split(','));
 
@@ -601,7 +608,10 @@ namespace SignalGo.Server.ServiceManager.Providers
                     }
                     else
                     {
-                        data = result is string ? (string)result : ServerSerializationHelper.SerializeObject(result, serverBase);
+                        if (result is System.IO.Stream)
+                            data = "";
+                        else
+                            data = result is string ? (string)result : ServerSerializationHelper.SerializeObject(result, serverBase);
                         //if (!controller.ResponseHeaders.ContainsKey("content-length"))
                         //    controller.ResponseHeaders.Add("Content-Length", (System.Text.Encoding.UTF8.GetByteCount(data)).ToString().Split(','));
 

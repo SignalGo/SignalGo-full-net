@@ -218,23 +218,31 @@ namespace SignalGo.Client.ClientManager
 
         private void ReadAllWebSocketResponseLines()
         {
+            StringBuilder stringBuilder = new StringBuilder();
             while (true)
             {
                 string line = _clientStream.ReadLine();
+                stringBuilder.AppendLine(line);
                 if (string.IsNullOrEmpty(line) || line == TextHelper.NewLine)
                     break;
             }
+            if (!stringBuilder.ToString().Contains("101 Switching Protocols"))
+                throw new Exception(stringBuilder.ToString());
         }
 
 #if (!NET35 && !NET40)
         private async Task ReadAllWebSocketResponseLinesAsync()
         {
+            StringBuilder stringBuilder = new StringBuilder();
             while (true)
             {
                 string line = await _clientStream.ReadLineAsync();
+                stringBuilder.AppendLine(line);
                 if (string.IsNullOrEmpty(line) || line == TextHelper.NewLine)
                     break;
             }
+            if (!stringBuilder.ToString().Contains("101 Switching Protocols"))
+                throw new Exception(stringBuilder.ToString());
         }
 #endif
 

@@ -1,7 +1,6 @@
 ﻿using Newtonsoft.Json;
 using SignalGo.Shared.IO;
 using System;
-using System.IO;
 using System.Net;
 #if (!PORTABLE)
 #endif
@@ -15,6 +14,14 @@ namespace SignalGo.Shared.Models
     public interface IStreamInfo : IDisposable
     {
         /// <summary>
+        /// status of request
+        /// </summary>
+        HttpStatusCode? Status { get; set; }
+        /// <summary>
+        /// content type of stream
+        /// </summary>
+        string ContentType { get; set; }
+        /// <summary>
         /// client id 
         /// </summary>
         string ClientId { get; set; }
@@ -25,7 +32,7 @@ namespace SignalGo.Shared.Models
         /// <summary>
         /// length of stream
         /// </summary>
-        long Length { get; set; }
+        long? Length { get; set; }
         /// <summary>
         /// wrtie manually to stream
         /// </summary>
@@ -57,7 +64,7 @@ namespace SignalGo.Shared.Models
         /// <summary>
         /// status of request
         /// </summary>
-        public HttpStatusCode Status { get; set; } = HttpStatusCode.OK;
+        public HttpStatusCode? Status { get; set; } = HttpStatusCode.OK;
         /// <summary>
         /// this action use client side for send one byte when client is ready to download
         /// </summary>
@@ -97,11 +104,11 @@ namespace SignalGo.Shared.Models
         /// <summary>
         /// length of stream
         /// </summary>
-        public long Length { get; set; }
+        public long? Length { get; set; }
         /// <summary>
         /// content type of stream
         /// </summary>
-        public string ContentType { get; set; }
+        public string ContentType { get; set; } = "";
         /// <summary>
         /// close the connection
         /// </summary>
