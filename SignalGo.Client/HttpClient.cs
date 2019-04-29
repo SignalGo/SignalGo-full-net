@@ -25,12 +25,26 @@ namespace SignalGo.Client
         /// response headers
         /// </summary>
         public SignalGo.Shared.Http.WebHeaderCollection ResponseHeaders { get; set; }
+        /// <summary>
+        /// get stream info from http response
+        /// </summary>
+        /// <returns></returns>
+        public T GetStream<T>() where T : IStreamInfo
+        {
+            IStreamInfo streamInfo = (IStreamInfo)Activator.CreateInstance(typeof(T), Stream);
+            streamInfo.Status = Status;
+            if (ResponseHeaders.ContainsKey("Content-Length"))
+                streamInfo.Length = long.Parse(ResponseHeaders["Content-Length"]);
+            if (ResponseHeaders.ContainsKey("Content-Type"))
+                streamInfo.ContentType = ResponseHeaders["Content-Type"];
+            return (T)streamInfo;
+        }
     }
 
     /// <summary>
     /// reponse of http request
     /// </summary>
-    public class HttpClientResponse: HttpClientResponseBase
+    public class HttpClientResponse : HttpClientResponseBase
     {
         /// <summary>
         /// data of response
@@ -152,7 +166,7 @@ namespace SignalGo.Client
 #if (NETSTANDARD1_6)
             throw new NotSupportedException();
 #else
-            var response = PostHead(url, parameterInfoes);
+            HttpClientResponseBase response = PostHead(url, parameterInfoes);
             try
             {
                 HttpClientResponse httpClientResponse = new HttpClientResponse
@@ -271,7 +285,7 @@ namespace SignalGo.Client
         /// <returns></returns>
         public async Task<HttpClientResponse> PostAsync(string url, ParameterInfo[] parameterInfoes)
         {
-            var response = await PostHeadAsync(url, parameterInfoes);
+            HttpClientResponseBase response = await PostHeadAsync(url, parameterInfoes);
             try
             {
                 HttpClientResponse httpClientResponse = new HttpClientResponse
