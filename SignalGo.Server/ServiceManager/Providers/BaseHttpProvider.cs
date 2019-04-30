@@ -502,8 +502,10 @@ namespace SignalGo.Server.ServiceManager.Providers
                 result.FileActionResult = new FileActionResult(result.StreamInfo.Stream);
                 if (!client.ResponseHeaders.ContainsKey("content-length") && result.StreamInfo.Length.HasValue)
                     client.ResponseHeaders.Add("Content-Length", result.StreamInfo.Length.Value);
-                if (!client.ResponseHeaders.ContainsKey("content-type") && result.StreamInfo.ContentType != null)
+                if (!client.ResponseHeaders.ContainsKey("content-type") && !string.IsNullOrEmpty(result.StreamInfo.ContentType))
                     client.ResponseHeaders.Add("Content-Type", result.StreamInfo.ContentType);
+                if (!client.ResponseHeaders.ContainsKey("content-disposition") && !string.IsNullOrEmpty(result.StreamInfo.FileName))
+                    client.ResponseHeaders.Add("Content-Disposition", $"attachment; filename={result.StreamInfo.FileName}");
                 if (result.StreamInfo.Status.HasValue)
                     client.Status = result.StreamInfo.Status.Value;
             }

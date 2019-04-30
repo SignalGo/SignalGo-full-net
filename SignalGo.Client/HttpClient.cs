@@ -37,6 +37,18 @@ namespace SignalGo.Client
                 streamInfo.Length = long.Parse(ResponseHeaders["Content-Length"]);
             if (ResponseHeaders.ContainsKey("Content-Type"))
                 streamInfo.ContentType = ResponseHeaders["Content-Type"];
+            if (ResponseHeaders.ContainsKey("Content-Disposition"))
+            {
+                try
+                {
+                    CustomContentDisposition customContentDisposition = new CustomContentDisposition(ResponseHeaders["Content-Disposition"]);
+                    streamInfo.FileName = customContentDisposition.FileName;
+                }
+                catch
+                {
+
+                }
+            }
             return (T)streamInfo;
         }
     }

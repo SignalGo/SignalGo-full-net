@@ -22,6 +22,10 @@ namespace SignalGo.Shared.Models
         /// </summary>
         string ContentType { get; set; }
         /// <summary>
+        /// content type of stream
+        /// </summary>
+        string FileName { get; set; }
+        /// <summary>
         /// client id 
         /// </summary>
         string ClientId { get; set; }
@@ -109,6 +113,10 @@ namespace SignalGo.Shared.Models
         /// content type of stream
         /// </summary>
         public string ContentType { get; set; } = "";
+        /// <summary>
+        /// content type of stream
+        /// </summary>
+        public string FileName { get; set; } = "";
         /// <summary>
         /// close the connection
         /// </summary>
