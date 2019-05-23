@@ -232,7 +232,7 @@ namespace SignalGo.Client
                         {
                             if (item.Value == null || item.Value.Length == 0)
                                 continue;
-                            headData += item.Key + ": " + string.Join(",", item.Value);
+                            headData += item.Key + ": " + string.Join(",", item.Value) + newLine;
                         }
                     }
                 }

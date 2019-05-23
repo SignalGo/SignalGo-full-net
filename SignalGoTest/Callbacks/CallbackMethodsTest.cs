@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace SignalGoTest.Callbacks
 {
-    public class TestClientServiceModel : SignalGoTest2Services.ClientServices.IITestClientServiceModel
+    public class TestClientServiceModel : SignalGoTest2Services.ClientServices.ITestClientServiceModel
     {
         public string HelloWorld(string yourName)
         {
