@@ -47,7 +47,6 @@ namespace SignalGo.Client
 #else
             SendFirstLineData().GetAwaiter().GetResult();
 #endif
-            SendFirstLineData();
             GetClientIdIfNeed();
 
             IsConnected = true;
