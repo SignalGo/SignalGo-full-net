@@ -61,6 +61,11 @@ namespace SignalGo.Shared.Converters
             ListOfContextsDataExchangers[Task.CurrentId.GetValueOrDefault()].Add(result);
         }
 
+        /// <summary>
+        /// ignore custom properties of object from current context
+        /// </summary>
+        /// <param name="instance">instance of object you want ingore properties</param>
+        /// <param name="property">properties to ignore</param>
         public static void Ignore(object instance, params string[] property)
         {
             if (Task.CurrentId == null)
@@ -75,7 +80,6 @@ namespace SignalGo.Shared.Converters
                 LimitationMode = LimitExchangeType.Both
             };
             ListOfContextsDataExchangers[Task.CurrentId.GetValueOrDefault()].Add(result);
-
         }
 
 
@@ -718,24 +722,24 @@ namespace SignalGo.Shared.Converters
                         string value = reader.Value.ToString();
                         reader.Read();
                         int parseValue = int.Parse(value);
-                        if (!SerializedReferencedObjects.ContainsKey(parseValue) || canIgnore)
+                        if (!SerializedReferencedObjects.ContainsKey(parseValue))
                             return null;
                         return SerializedReferencedObjects[parseValue];
                     }
                     else if (propertyName == valuesProperty)
                     {
-                        object value = ReadNewArray(instance, reader, objectType, reader.Value, serializer, canIgnore);
+                        object value = ReadNewArray(instance, reader, objectType, reader.Value, serializer, false);
                         instance = value;
                         continue;
                     }
                     if (instance == null)
-                        instance = CreateInstance(objectType, canIgnore);
+                        instance = CreateInstance(objectType, false);
                     ValidationRuleInfoManager?.AddObjectPropertyAsChecked(CurrentTaskId, objectType, instance, null, null, null);
-                    ReadNewProperty(instance, reader, objectType, existingValue, serializer, canIgnore);
+                    ReadNewProperty(instance, reader, objectType, existingValue, serializer, false);
                 }
                 else if (reader.TokenType == JsonToken.StartArray)
                 {
-                    object value = ReadNewArray(null, reader, objectType, reader.Value, serializer, canIgnore);
+                    object value = ReadNewArray(null, reader, objectType, reader.Value, serializer, false);
                 }
                 else if (reader.TokenType == JsonToken.EndObject)
                     break;
@@ -745,6 +749,8 @@ namespace SignalGo.Shared.Converters
                 }
 
             }
+            if (canIgnore)
+                return null;
             if (instance == null)
                 instance = CreateInstance(objectType, isIgnore);
             return instance;
@@ -1000,7 +1006,7 @@ namespace SignalGo.Shared.Converters
             {
                 if (propertyName == idProperty)
                 {
-                    if (reader.Value == null || canIgnore)
+                    if (reader.Value == null)
                         return;
                     SerializedReferencedObjects.Add(int.Parse(reader.Value.ToString()), instance);
                 }
