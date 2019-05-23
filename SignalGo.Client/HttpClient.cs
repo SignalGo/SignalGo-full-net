@@ -81,7 +81,7 @@ namespace SignalGo.Client
         public string KeyParameterValue { get; set; }
         public HttpClientResponseBase Response { get; set; }
 
-        public HttpClientResponseBase PostHead(string url, ParameterInfo[] parameterInfoes)
+        public HttpClientResponseBase PostHead(string url, ParameterInfo[] parameterInfoes, BaseStreamInfo streamInfo = null)
         {
 #if (NETSTANDARD1_6)
             throw new NotSupportedException();
@@ -91,6 +91,8 @@ namespace SignalGo.Client
             TcpClient tcpClient = new TcpClient(uri.Host, uri.Port);
             try
             {
+                if (streamInfo != null && (!streamInfo.Length.HasValue || streamInfo.Length <= 0))
+                    throw new Exception("Please set streamInfo.Length before upload your stream!");
                 if (!string.IsNullOrEmpty(KeyParameterName))
                 {
                     List<ParameterInfo> list = parameterInfoes.ToList();
@@ -139,7 +141,20 @@ namespace SignalGo.Client
                 stream.Write(headBytes, 0, headBytes.Length);
                 stream.Write(dataBytes, 0, dataBytes.Length);
 
-
+                if (streamInfo != null)
+                {
+                    int sentBytesCount = 0;
+                    int wantReadCount = 1024 * 512;
+                    while (streamInfo.Length > sentBytesCount)
+                    {
+                        if (wantReadCount > streamInfo.Length - sentBytesCount)
+                            wantReadCount = (int)(streamInfo.Length - sentBytesCount);
+                        byte[] result = new byte[wantReadCount];
+                        int readCount = streamInfo.Stream.Read(result, wantReadCount);
+                        stream.Write(result, 0, readCount);
+                        sentBytesCount += readCount;
+                    }
+                }
                 PipeNetworkStream pipelineReader = new PipeNetworkStream(new NormalStream(stream), 30000);
 
                 List<string> lines = new List<string>();
@@ -172,13 +187,14 @@ namespace SignalGo.Client
         /// </summary>
         /// <param name="url"></param>
         /// <param name="parameterInfoes"></param>
+        /// <param name="streamInfo"></param>
         /// <returns></returns>
-        public HttpClientResponse Post(string url, ParameterInfo[] parameterInfoes)
+        public HttpClientResponse Post(string url, ParameterInfo[] parameterInfoes, BaseStreamInfo streamInfo = null)
         {
 #if (NETSTANDARD1_6)
             throw new NotSupportedException();
 #else
-            HttpClientResponseBase response = PostHead(url, parameterInfoes);
+            HttpClientResponseBase response = PostHead(url, parameterInfoes, streamInfo);
             try
             {
                 HttpClientResponse httpClientResponse = new HttpClientResponse
@@ -215,13 +231,15 @@ namespace SignalGo.Client
         }
 
 #if (!NET35 && !NET40 && !NETSTANDARD1_6)
-        public async Task<HttpClientResponseBase> PostHeadAsync(string url, ParameterInfo[] parameterInfoes)
+        public async Task<HttpClientResponseBase> PostHeadAsync(string url, ParameterInfo[] parameterInfoes, BaseStreamInfo streamInfo = null)
         {
             string newLine = TextHelper.NewLine;
             Uri uri = new Uri(url);
             TcpClient tcpClient = new TcpClient(uri.Host, uri.Port);
             try
             {
+                if (streamInfo != null && (!streamInfo.Length.HasValue || streamInfo.Length <= 0))
+                    throw new Exception("Please set streamInfo.Length before upload your stream!");
                 string boundary = "----------------------------" + DateTime.Now.Ticks.ToString("x");
                 string headData = $"POST {uri.AbsolutePath} HTTP/1.1" + newLine + $"Host: {uri.Host}" + newLine + $"Content-Type: multipart/form-data; boundary={boundary}" + newLine;
                 if (RequestHeaders != null && RequestHeaders.Count > 0)
@@ -263,6 +281,21 @@ namespace SignalGo.Client
                 stream.Write(headBytes, 0, headBytes.Length);
                 stream.Write(dataBytes, 0, dataBytes.Length);
 
+                if (streamInfo != null)
+                {
+                    int sentBytesCount = 0;
+                    int wantReadCount = 1024 * 512;
+                    while (streamInfo.Length > sentBytesCount)
+                    {
+                        if (wantReadCount > streamInfo.Length - sentBytesCount)
+                            wantReadCount = (int)(streamInfo.Length - sentBytesCount);
+                        byte[] result = new byte[wantReadCount];
+                        int readCount = await streamInfo.Stream.ReadAsync(result, wantReadCount);
+                        await stream.WriteAsync(result, 0, readCount);
+                        sentBytesCount += readCount;
+                    }
+                }
+
                 PipeNetworkStream pipelineReader = new PipeNetworkStream(new NormalStream(stream), 30000);
 
                 List<string> lines = new List<string>();
@@ -295,9 +328,9 @@ namespace SignalGo.Client
         /// <param name="url"></param>
         /// <param name="parameterInfoes"></param>
         /// <returns></returns>
-        public async Task<HttpClientResponse> PostAsync(string url, ParameterInfo[] parameterInfoes)
+        public async Task<HttpClientResponse> PostAsync(string url, ParameterInfo[] parameterInfoes, BaseStreamInfo streamInfo = null)
         {
-            HttpClientResponseBase response = await PostHeadAsync(url, parameterInfoes);
+            HttpClientResponseBase response = await PostHeadAsync(url, parameterInfoes, streamInfo);
             try
             {
                 HttpClientResponse httpClientResponse = new HttpClientResponse
