@@ -13,23 +13,55 @@ using System.Threading.Tasks;
 
 namespace SignalGo.Client
 {
-    /// <summary>
-    /// reponse of http request
-    /// </summary>
-    public class HttpClientResponse
+    public class HttpClientResponseBase
     {
+        public TcpClient TcpClient { get; set; }
+        public PipeNetworkStream Stream { get; set; }
         /// <summary>
         /// status
         /// </summary>
         public HttpStatusCode Status { get; set; } = HttpStatusCode.OK;
         /// <summary>
-        /// data of response
-        /// </summary>
-        public string Data { get; set; }
-        /// <summary>
         /// response headers
         /// </summary>
         public SignalGo.Shared.Http.WebHeaderCollection ResponseHeaders { get; set; }
+        /// <summary>
+        /// get stream info from http response
+        /// </summary>
+        /// <returns></returns>
+        public T GetStream<T>() where T : IStreamInfo
+        {
+            IStreamInfo streamInfo = (IStreamInfo)Activator.CreateInstance(typeof(T), Stream);
+            streamInfo.Status = Status;
+            if (ResponseHeaders.ContainsKey("Content-Length"))
+                streamInfo.Length = long.Parse(ResponseHeaders["Content-Length"]);
+            if (ResponseHeaders.ContainsKey("Content-Type"))
+                streamInfo.ContentType = ResponseHeaders["Content-Type"];
+            if (ResponseHeaders.ContainsKey("Content-Disposition"))
+            {
+                try
+                {
+                    CustomContentDisposition customContentDisposition = new CustomContentDisposition(ResponseHeaders["Content-Disposition"]);
+                    streamInfo.FileName = customContentDisposition.FileName;
+                }
+                catch
+                {
+
+                }
+            }
+            return (T)streamInfo;
+        }
+    }
+
+    /// <summary>
+    /// reponse of http request
+    /// </summary>
+    public class HttpClientResponse : HttpClientResponseBase
+    {
+        /// <summary>
+        /// data of response
+        /// </summary>
+        public string Data { get; set; }
     }
 
     /// <summary>
@@ -47,13 +79,9 @@ namespace SignalGo.Client
         public SignalGo.Shared.Http.WebHeaderCollection RequestHeaders { get; set; } = new Shared.Http.WebHeaderCollection();
         public string KeyParameterName { get; set; }
         public string KeyParameterValue { get; set; }
-        /// <summary>
-        /// post a data to server
-        /// </summary>
-        /// <param name="url"></param>
-        /// <param name="parameterInfoes"></param>
-        /// <returns></returns>
-        public HttpClientResponse Post(string url, ParameterInfo[] parameterInfoes)
+        public HttpClientResponseBase Response { get; set; }
+
+        public HttpClientResponseBase PostHead(string url, ParameterInfo[] parameterInfoes, BaseStreamInfo streamInfo = null)
         {
 #if (NETSTANDARD1_6)
             throw new NotSupportedException();
@@ -63,6 +91,8 @@ namespace SignalGo.Client
             TcpClient tcpClient = new TcpClient(uri.Host, uri.Port);
             try
             {
+                if (streamInfo != null && (!streamInfo.Length.HasValue || streamInfo.Length <= 0))
+                    throw new Exception("Please set streamInfo.Length before upload your stream!");
                 if (!string.IsNullOrEmpty(KeyParameterName))
                 {
                     List<ParameterInfo> list = parameterInfoes.ToList();
@@ -101,75 +131,115 @@ namespace SignalGo.Client
 
                 byte[] headBytes = Encoding.GetBytes(headData);
 
-                using (Stream stream = uri.Port == 443 ? (Stream)new SslStream(tcpClient.GetStream()) : tcpClient.GetStream())
+                Stream stream = uri.Port == 443 ? (Stream)new SslStream(tcpClient.GetStream()) : tcpClient.GetStream();
+
+                if (uri.Port == 443)
                 {
-                    if (uri.Port == 443)
+                    SslStream sslStream = (SslStream)stream;
+                    sslStream.AuthenticateAsClient(uri.Host);
+                }
+                stream.Write(headBytes, 0, headBytes.Length);
+                stream.Write(dataBytes, 0, dataBytes.Length);
+
+                if (streamInfo != null)
+                {
+                    int sentBytesCount = 0;
+                    int wantReadCount = 1024 * 512;
+                    while (streamInfo.Length > sentBytesCount)
                     {
-                        SslStream sslStream = (SslStream)stream;
-                        sslStream.AuthenticateAsClient(uri.Host);
-                    }
-                    stream.Write(headBytes, 0, headBytes.Length);
-                    stream.Write(dataBytes, 0, dataBytes.Length);
-
-
-                    using (PipeNetworkStream pipelineReader = new PipeNetworkStream(new NormalStream(stream), 30000))
-                    {
-                        List<string> lines = new List<string>();
-                        string line = null;
-                        do
-                        {
-                            if (line != null)
-                                lines.Add(line);
-                            line = pipelineReader.ReadLine();
-                        }
-                        while (line != newLine);
-                        HttpClientResponse httpClientResponse = new HttpClientResponse
-                        {
-                            Status = (HttpStatusCode)Enum.Parse(typeof(HttpStatusCode), lines[0].Split(' ')[1]),
-                            ResponseHeaders = SignalGo.Shared.Http.WebHeaderCollection.GetHttpHeaders(lines.Skip(1).ToArray())
-                        };
-                        int length = int.Parse(httpClientResponse.ResponseHeaders["content-length"]);
-                        byte[] result = new byte[length];
-                        int readCount = 0;
-                        while (readCount < length)
-                        {
-                            byte[] bytes = new byte[512];
-                            int readedCount = 0;
-                            readedCount = pipelineReader.Read(bytes, bytes.Length);
-
-                            for (int i = 0; i < readedCount; i++)
-                            {
-                                result[i + readCount] = bytes[i];
-                            }
-                            readCount += readedCount;
-                        }
-                        httpClientResponse.Data = Encoding.GetString(result);
-
-                        return httpClientResponse;
+                        if (wantReadCount > streamInfo.Length - sentBytesCount)
+                            wantReadCount = (int)(streamInfo.Length - sentBytesCount);
+                        byte[] result = new byte[wantReadCount];
+                        int readCount = streamInfo.Stream.Read(result, wantReadCount);
+                        stream.Write(result, 0, readCount);
+                        sentBytesCount += readCount;
                     }
                 }
+                PipeNetworkStream pipelineReader = new PipeNetworkStream(new NormalStream(stream), 30000);
+
+                List<string> lines = new List<string>();
+                string line = null;
+                do
+                {
+                    if (line != null)
+                        lines.Add(line.TrimEnd());
+                    line = pipelineReader.ReadLine();
+                }
+                while (line != newLine);
+                HttpClientResponseBase httpClientResponse = new HttpClientResponseBase
+                {
+                    Status = (HttpStatusCode)Enum.Parse(typeof(HttpStatusCode), lines[0].Split(' ')[1]),
+                    ResponseHeaders = SignalGo.Shared.Http.WebHeaderCollection.GetHttpHeaders(lines.Skip(1).ToArray()),
+                    Stream = pipelineReader,
+                    TcpClient = tcpClient
+                };
+                Response = httpClientResponse;
+                return httpClientResponse;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+#endif
+        }
+        /// <summary>
+        /// post a data to server
+        /// </summary>
+        /// <param name="url"></param>
+        /// <param name="parameterInfoes"></param>
+        /// <param name="streamInfo"></param>
+        /// <returns></returns>
+        public HttpClientResponse Post(string url, ParameterInfo[] parameterInfoes, BaseStreamInfo streamInfo = null)
+        {
+#if (NETSTANDARD1_6)
+            throw new NotSupportedException();
+#else
+            HttpClientResponseBase response = PostHead(url, parameterInfoes, streamInfo);
+            try
+            {
+                HttpClientResponse httpClientResponse = new HttpClientResponse
+                {
+                    Status = response.Status,
+                    ResponseHeaders = response.ResponseHeaders,
+                    Stream = response.Stream,
+                    TcpClient = response.TcpClient,
+                };
+                int length = int.Parse(httpClientResponse.ResponseHeaders["content-length"]);
+                byte[] result = new byte[length];
+                int readCount = 0;
+                while (readCount < length)
+                {
+                    byte[] bytes = new byte[512];
+                    int readedCount = 0;
+                    readedCount = response.Stream.Read(bytes, bytes.Length);
+
+                    for (int i = 0; i < readedCount; i++)
+                    {
+                        result[i + readCount] = bytes[i];
+                    }
+                    readCount += readedCount;
+                }
+                httpClientResponse.Data = Encoding.GetString(result);
+                response = httpClientResponse;
+                return httpClientResponse;
             }
             finally
             {
-                tcpClient.Close();
+                response.TcpClient.Close();
             }
 #endif
         }
 
 #if (!NET35 && !NET40 && !NETSTANDARD1_6)
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="url"></param>
-        /// <param name="parameterInfoes"></param>
-        /// <returns></returns>
-        public async Task<HttpClientResponse> PostAsync(string url, ParameterInfo[] parameterInfoes)
+        public async Task<HttpClientResponseBase> PostHeadAsync(string url, ParameterInfo[] parameterInfoes, BaseStreamInfo streamInfo = null)
         {
             string newLine = TextHelper.NewLine;
             Uri uri = new Uri(url);
             TcpClient tcpClient = new TcpClient(uri.Host, uri.Port);
             try
             {
+                if (streamInfo != null && (!streamInfo.Length.HasValue || streamInfo.Length <= 0))
+                    throw new Exception("Please set streamInfo.Length before upload your stream!");
                 string boundary = "----------------------------" + DateTime.Now.Ticks.ToString("x");
                 string headData = $"POST {uri.AbsolutePath} HTTP/1.1" + newLine + $"Host: {uri.Host}" + newLine + $"Content-Type: multipart/form-data; boundary={boundary}" + newLine;
                 if (RequestHeaders != null && RequestHeaders.Count > 0)
@@ -180,7 +250,7 @@ namespace SignalGo.Client
                         {
                             if (item.Value == null || item.Value.Length == 0)
                                 continue;
-                            headData += item.Key + ": " + string.Join(",", item.Value);
+                            headData += item.Key + ": " + string.Join(",", item.Value) + newLine;
                         }
                     }
                 }
@@ -201,54 +271,96 @@ namespace SignalGo.Client
 
                 byte[] headBytes = Encoding.GetBytes(headData);
 
-                using (Stream stream = uri.Port == 443 ? (Stream)new SslStream(tcpClient.GetStream()) : tcpClient.GetStream())
-                {
-                    if (uri.Port == 443)
-                    {
-                        SslStream sslStream = (SslStream)stream;
-                        await sslStream.AuthenticateAsClientAsync(uri.Host);
-                    }
-                    stream.Write(headBytes, 0, headBytes.Length);
-                    stream.Write(dataBytes, 0, dataBytes.Length);
+                Stream stream = uri.Port == 443 ? (Stream)new SslStream(tcpClient.GetStream()) : tcpClient.GetStream();
 
-                    using (PipeNetworkStream pipelineReader = new PipeNetworkStream(new NormalStream(stream), 30000))
+                if (uri.Port == 443)
+                {
+                    SslStream sslStream = (SslStream)stream;
+                    await sslStream.AuthenticateAsClientAsync(uri.Host);
+                }
+                stream.Write(headBytes, 0, headBytes.Length);
+                stream.Write(dataBytes, 0, dataBytes.Length);
+
+                if (streamInfo != null)
+                {
+                    int sentBytesCount = 0;
+                    int wantReadCount = 1024 * 512;
+                    while (streamInfo.Length > sentBytesCount)
                     {
-                        List<string> lines = new List<string>();
-                        string line = null;
-                        do
-                        {
-                            if (line != null)
-                                lines.Add(line);
-                            line = await pipelineReader.ReadLineAsync();
-                        }
-                        while (line != newLine);
-                        HttpClientResponse httpClientResponse = new HttpClientResponse
-                        {
-                            Status = (HttpStatusCode)Enum.Parse(typeof(HttpStatusCode), lines[0].Split(' ')[1]),
-                            ResponseHeaders = SignalGo.Shared.Http.WebHeaderCollection.GetHttpHeaders(lines.Skip(1).ToArray())
-                        };
-                        int length = int.Parse(httpClientResponse.ResponseHeaders["content-length"]);
-                        byte[] result = new byte[length];
-                        int readCount = 0;
-                        while (readCount < length)
-                        {
-                            byte[] bytes = new byte[512];
-                            int readedCount = 0;
-                            readedCount = await pipelineReader.ReadAsync(bytes, bytes.Length);
-                            for (int i = 0; i < readedCount; i++)
-                            {
-                                result[i + readCount] = bytes[i];
-                            }
-                            readCount += readedCount;
-                        }
-                        httpClientResponse.Data = Encoding.GetString(result);
-                        return httpClientResponse;
+                        if (wantReadCount > streamInfo.Length - sentBytesCount)
+                            wantReadCount = (int)(streamInfo.Length - sentBytesCount);
+                        byte[] result = new byte[wantReadCount];
+                        int readCount = await streamInfo.Stream.ReadAsync(result, wantReadCount);
+                        await stream.WriteAsync(result, 0, readCount);
+                        sentBytesCount += readCount;
                     }
                 }
+
+                PipeNetworkStream pipelineReader = new PipeNetworkStream(new NormalStream(stream), 30000);
+
+                List<string> lines = new List<string>();
+                string line = null;
+                do
+                {
+                    if (line != null)
+                        lines.Add(line.TrimEnd());
+                    line = await pipelineReader.ReadLineAsync();
+                }
+                while (line != newLine);
+                HttpClientResponseBase httpClientResponse = new HttpClientResponseBase
+                {
+                    Status = (HttpStatusCode)Enum.Parse(typeof(HttpStatusCode), lines[0].Split(' ')[1]),
+                    ResponseHeaders = SignalGo.Shared.Http.WebHeaderCollection.GetHttpHeaders(lines.Skip(1).ToArray()),
+                    Stream = pipelineReader,
+                    TcpClient = tcpClient
+                };
+                Response = httpClientResponse;
+                return httpClientResponse;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="url"></param>
+        /// <param name="parameterInfoes"></param>
+        /// <returns></returns>
+        public async Task<HttpClientResponse> PostAsync(string url, ParameterInfo[] parameterInfoes, BaseStreamInfo streamInfo = null)
+        {
+            HttpClientResponseBase response = await PostHeadAsync(url, parameterInfoes, streamInfo);
+            try
+            {
+                HttpClientResponse httpClientResponse = new HttpClientResponse
+                {
+                    Status = response.Status,
+                    ResponseHeaders = response.ResponseHeaders,
+                    Stream = response.Stream,
+                    TcpClient = response.TcpClient,
+                };
+                int length = int.Parse(httpClientResponse.ResponseHeaders["content-length"]);
+                byte[] result = new byte[length];
+                int readCount = 0;
+                while (readCount < length)
+                {
+                    byte[] bytes = new byte[512];
+                    int readedCount = 0;
+                    readedCount = await response.Stream.ReadAsync(bytes, bytes.Length);
+                    for (int i = 0; i < readedCount; i++)
+                    {
+                        result[i + readCount] = bytes[i];
+                    }
+                    readCount += readedCount;
+                }
+                httpClientResponse.Data = Encoding.GetString(result);
+                response = httpClientResponse;
+                return httpClientResponse;
             }
             finally
             {
-                tcpClient.Close();
+                response.TcpClient.Close();
             }
         }
 #endif

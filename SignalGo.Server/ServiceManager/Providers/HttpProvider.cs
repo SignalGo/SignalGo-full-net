@@ -130,9 +130,18 @@ namespace SignalGo.Server.ServiceManager.Providers
                     client.StreamHelper = SignalGoStreamBase.CurrentBase;
                     client.ClientStream = new PipeNetworkStream(new WebSocketStream(client.TcpClient.GetStream()));
                     if (requestHeaders.Contains("SignalgoDuplexWebSocket"))
+                    {
+                        
                         await SignalGoDuplexServiceProvider.StartToReadingClientData(client, serverBase);
+                    }
                     else
-                        await WebSocketProvider.StartToReadingClientData(client, serverBase);
+                    {
+                        //client.StreamHelper = SignalGoStreamWebSocketLlight.CurrentWebSocket;
+                        //client.ClientStream = new PipeNetworkStream(new WebSocketStream(client.TcpClient.GetStream()));
+                        //await WebSocketProvider.StartToReadingClientData(client, serverBase);
+                        
+                        await HttpProvider.AddWebSocketHttpClient(client, serverBase);
+                    }
                 }
                 else if (requestHeaders.Contains("SignalGoHttpDuplex"))
                 {

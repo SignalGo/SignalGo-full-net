@@ -42,7 +42,7 @@ namespace SignalGo.Shared.IO
         {
             get
             {
-                throw new NotImplementedException();
+               throw new NotImplementedException();
             }
         }
 

@@ -35,21 +35,21 @@ namespace SignalGo.Server.ServiceManager.Providers
                     {
 
                         string json = "";
-                        if (client.IsOwinClient)
-                        {
-                            json = await stream.ReadLineAsync("#end");
-                        }
-                        else
-                        {
-                            do
-                            {
-                                byte[] bytes = await client.StreamHelper.ReadBlockToEndAsync(stream, compressMode, serverBase.ProviderSetting.MaximumReceiveDataBlock);
-                                //if (ClientsSettings.ContainsKey(client))
-                                //    bytes = DecryptBytes(bytes, client);
-                                json += Encoding.UTF8.GetString(bytes);
-                            }
-                            while (json.IndexOf("#end") != json.Length - 4);
-                        }
+                        //if (client.IsOwinClient)
+                        //{
+                        json = await stream.ReadLineAsync("#end");
+                        //}
+                        //else
+                        //{
+                        //    do
+                        //    {
+                        //        byte[] bytes = await client.StreamHelper.ReadBlockToEndAsync(stream, compressMode, serverBase.ProviderSetting.MaximumReceiveDataBlock);
+                        //        //if (ClientsSettings.ContainsKey(client))
+                        //        //    bytes = DecryptBytes(bytes, client);
+                        //        json += Encoding.UTF8.GetString(bytes);
+                        //    }
+                        //    while (json.IndexOf("#end") != json.Length - 4);
+                        //}
 
                         if (json.EndsWith("#end"))
                             json = json.Substring(0, json.Length - 4);
@@ -77,17 +77,17 @@ namespace SignalGo.Server.ServiceManager.Providers
                     else if (dataType == DataType.ResponseCallMethod)
                     {
                         string json = "";
-                        if (client.IsOwinClient)
-                        {
-                            json = await stream.ReadLineAsync("#end");
-                        }
-                        else
-                        {
-                            byte[] bytes = await client.StreamHelper.ReadBlockToEndAsync(stream, compressMode, serverBase.ProviderSetting.MaximumReceiveDataBlock);
-                            //if (ClientsSettings.ContainsKey(client))
-                            //    bytes = DecryptBytes(bytes, client);
-                            json = Encoding.UTF8.GetString(bytes);
-                        }
+                        //if (client.IsOwinClient)
+                        //{
+                        json = await stream.ReadLineAsync("#end");
+                        //}
+                        //else
+                        //{
+                        //    byte[] bytes = await client.StreamHelper.ReadBlockToEndAsync(stream, compressMode, serverBase.ProviderSetting.MaximumReceiveDataBlock);
+                        //    //if (ClientsSettings.ContainsKey(client))
+                        //    //    bytes = DecryptBytes(bytes, client);
+                        //    json = Encoding.UTF8.GetString(bytes);
+                        //}
 
                         if (json.EndsWith("#end"))
                             json = json.Substring(0, json.Length - 4);
@@ -224,7 +224,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 MethodCallbackInfo callbackResult = await callback;
 #endif
                 string json = ServerSerializationHelper.SerializeObject(callbackResult, serverBase);
-                if (json.Length > 30000)
+                if (json.Length > 5000)
                 {
                     List<string> listOfParts = GeneratePartsOfData(json);
                     int i = 1;
@@ -264,17 +264,18 @@ namespace SignalGo.Server.ServiceManager.Providers
 
         public static List<string> GeneratePartsOfData(string data)
         {
-            int partCount = (int)Math.Ceiling((double)data.Length / 30000);
+            int sizeOfLength = 5000;
+            int partCount = (int)Math.Ceiling((double)data.Length / sizeOfLength);
             List<string> partData = new List<string>();
             for (int i = 0; i < partCount; i++)
             {
                 if (i != partCount - 1)
                 {
-                    partData.Add(data.Substring((i * 30000), 30000));
+                    partData.Add(data.Substring((i * sizeOfLength), sizeOfLength));
                 }
                 else
                 {
-                    partData.Add(data.Substring((i * 30000), data.Length - (i * 30000)));
+                    partData.Add(data.Substring((i * sizeOfLength), data.Length - (i * sizeOfLength)));
                 }
             }
             return partData;

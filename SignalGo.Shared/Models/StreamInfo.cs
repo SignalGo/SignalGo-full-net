@@ -14,6 +14,18 @@ namespace SignalGo.Shared.Models
     public interface IStreamInfo : IDisposable
     {
         /// <summary>
+        /// status of request
+        /// </summary>
+        HttpStatusCode? Status { get; set; }
+        /// <summary>
+        /// content type of stream
+        /// </summary>
+        string ContentType { get; set; }
+        /// <summary>
+        /// content type of stream
+        /// </summary>
+        string FileName { get; set; }
+        /// <summary>
         /// client id 
         /// </summary>
         string ClientId { get; set; }
@@ -24,7 +36,7 @@ namespace SignalGo.Shared.Models
         /// <summary>
         /// length of stream
         /// </summary>
-        long Length { get; set; }
+        long? Length { get; set; }
         /// <summary>
         /// wrtie manually to stream
         /// </summary>
@@ -56,7 +68,7 @@ namespace SignalGo.Shared.Models
         /// <summary>
         /// status of request
         /// </summary>
-        public HttpStatusCode Status { get; set; } = HttpStatusCode.OK;
+        public HttpStatusCode? Status { get; set; } = HttpStatusCode.OK;
         /// <summary>
         /// this action use client side for send one byte when client is ready to download
         /// </summary>
@@ -96,8 +108,15 @@ namespace SignalGo.Shared.Models
         /// <summary>
         /// length of stream
         /// </summary>
-        public long Length { get; set; }
-
+        public long? Length { get; set; }
+        /// <summary>
+        /// content type of stream
+        /// </summary>
+        public string ContentType { get; set; } = "";
+        /// <summary>
+        /// content type of stream
+        /// </summary>
+        public string FileName { get; set; } = "";
         /// <summary>
         /// close the connection
         /// </summary>
@@ -176,6 +195,16 @@ namespace SignalGo.Shared.Models
     /// <typeparam name="T">data of stream</typeparam>
     public class StreamInfo<T> : BaseStreamInfo
     {
+        public StreamInfo()
+        {
+
+        }
+
+        public StreamInfo(PipeNetworkStream stream)
+        {
+            Stream = stream;
+        }
+
         /// <summary>
         /// data of stream
         /// </summary>
@@ -184,6 +213,14 @@ namespace SignalGo.Shared.Models
 
     public class StreamInfo : BaseStreamInfo
     {
+        public StreamInfo()
+        {
 
+        }
+
+        public StreamInfo(PipeNetworkStream stream)
+        {
+            Stream = stream;
+        }
     }
 }

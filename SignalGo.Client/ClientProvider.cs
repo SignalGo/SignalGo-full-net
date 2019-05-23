@@ -42,7 +42,11 @@ namespace SignalGo.Client
             ServerUrl = url;
             string hostName = uri.Host;
             base.Connect(hostName, uri.Port);
+#if (NET40 || NET35)
             SendFirstLineData();
+#else
+            SendFirstLineData().GetAwaiter().GetResult();
+#endif
             GetClientIdIfNeed();
 
             IsConnected = true;

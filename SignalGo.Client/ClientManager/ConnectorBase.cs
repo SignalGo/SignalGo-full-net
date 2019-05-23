@@ -63,6 +63,10 @@ namespace SignalGo.Client.ClientManager
         /// if your server is hosted on iis use httpduplex
         /// </summary>
         public ClientProtocolType ProtocolType { get; set; } = ClientProtocolType.SignalGoDuplex;
+        /// <summary>
+        /// when signalgo want use streaming protocol it will use http protocol to connect to server because iis is not support signalgo protocol
+        /// </summary>
+        public bool UseHttpStream { get; set; } = false;
 
         internal ISignalGoStream StreamHelper { get; set; } = null;
         internal JsonSettingHelper JsonSettingHelper { get; set; } = new JsonSettingHelper();
@@ -214,23 +218,31 @@ namespace SignalGo.Client.ClientManager
 
         private void ReadAllWebSocketResponseLines()
         {
+            StringBuilder stringBuilder = new StringBuilder();
             while (true)
             {
                 string line = _clientStream.ReadLine();
+                stringBuilder.AppendLine(line);
                 if (string.IsNullOrEmpty(line) || line == TextHelper.NewLine)
                     break;
             }
+            if (!stringBuilder.ToString().Contains("101 Switching Protocols"))
+                throw new Exception(stringBuilder.ToString());
         }
 
 #if (!NET35 && !NET40)
         private async Task ReadAllWebSocketResponseLinesAsync()
         {
+            StringBuilder stringBuilder = new StringBuilder();
             while (true)
             {
                 string line = await _clientStream.ReadLineAsync();
+                stringBuilder.AppendLine(line);
                 if (string.IsNullOrEmpty(line) || line == TextHelper.NewLine)
                     break;
             }
+            if (!stringBuilder.ToString().Contains("101 Switching Protocols"))
+                throw new Exception(stringBuilder.ToString());
         }
 #endif
 
@@ -818,7 +830,7 @@ namespace SignalGo.Client.ClientManager
                 }
                 else
                 {
-                    long length = iStream.Length;
+                    long length = iStream.Length.Value;
                     long position = 0;
                     int blockOfRead = 1024 * 10;
                     while (length != position)

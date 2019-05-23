@@ -792,7 +792,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     {
                         foreach (System.Reflection.ParameterInfo p in param)
                         {
-                            if (!parameters.Any(x => x.Name.Equals(p.Name, StringComparison.OrdinalIgnoreCase)))
+                            if (!parameters.Any(x => x.Name != null && x.Name.Equals(p.Name, StringComparison.OrdinalIgnoreCase)))
                             {
                                 if (fakeCount > 0 && param.LastOrDefault() == p)
                                     break;

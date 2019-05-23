@@ -97,7 +97,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 callback = result.CallbackInfo;
                 streamInfo = result.StreamInfo;
                 userStream = streamInfo.Stream;
-                long len = streamInfo.Length;
+                long len = streamInfo.Length.GetValueOrDefault();
                 await SendCallbackData(callback, client, serverBase);
                 isCallbackSended = true;
                 long writeLen = 0;

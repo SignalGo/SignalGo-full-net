@@ -60,7 +60,7 @@ namespace SignalGo.Server.Helpers
                     {
                         if (serviceType == typeof(object))
                             continue;
-                        List<MethodInfo> methods = serviceType.GetMethods().Where(x => !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_"))) && x.DeclaringType != typeof(object)).ToList();
+                        List<MethodInfo> methods = serviceType.GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance).Where(x => !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_"))) && x.DeclaringType != typeof(object)).ToList();
                         if (methods.Count == 0)
                             continue;
                         CommentOfClassInfo comment = xmlCommentLoader.GetComment(serviceType);
@@ -185,7 +185,7 @@ namespace SignalGo.Server.Helpers
                         }
                     }
 
-                    List<MethodInfo> methods = service.Value.GetMethods().Where(x => !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_"))) && x.DeclaringType != typeof(object)).ToList();
+                    List<MethodInfo> methods = service.Value.GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance).Where(x => !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_"))) && x.DeclaringType != typeof(object)).ToList();
                     if (methods.Count == 0)
                         continue;
                     CommentOfClassInfo comment = xmlCommentLoader.GetComment(service.Value);
@@ -594,7 +594,7 @@ namespace SignalGo.Server.Helpers
         internal string SendMethodParameterDetail(Type serviceType, MethodParameterDetails detail, ServerBase serverBase)
         {
             string json = null;
-            foreach (MethodInfo method in serviceType.GetMethods())
+            foreach (MethodInfo method in serviceType.GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance))
             {
                 if (method.IsSpecialName && (method.Name.StartsWith("set_") || method.Name.StartsWith("get_")))
                     continue;
