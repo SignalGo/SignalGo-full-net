@@ -1,4 +1,5 @@
 ﻿using SignalGo.Shared.DataTypes;
+using SignalGo.Shared.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,207 +10,89 @@ namespace SignalGo.Server.ServiceManager
     /// <summary>
     /// signalGo server provider
     /// </summary>
-    public class ServerProvider : UdpServiceBase
+    public class ServerProvider : ServerBase
     {
-        public static ServerProvider CurrentServerProvider { get; set; }
         /// <summary>
-        /// strat the server
+        /// start the server
         /// </summary>
-        /// <param name="url">url of services</param>
+        /// <param name="url">your server url exmaple : "http://localhost:80/any"</param>
         public void Start(string url)
         {
+            //validate url
             if (!Uri.TryCreate(url, UriKind.Absolute, out Uri uri))
             {
-                throw new Exception("url is not valid");
+                throw new Exception($"url is not valid {url}");
             }
+            //validate port number
             else if (uri.Port <= 0)
             {
-                throw new Exception("port is not valid");
+                throw new Exception($"port is not valid {url}");
             }
-            if (string.IsNullOrEmpty(uri.AbsolutePath))
-                throw new Exception("this path is not support,please set full path example: http://localhost:5050/SignalGo");
 
+            //start the server listener
             ServerDataProvider.Start(this, uri.Port);
         }
 
         /// <summary>
-        /// strat the server without manully register your services with call register services methods
+        /// start the server without manully register your services with call register services methods
         /// </summary>
-        /// <param name="url">url of services</param>
-        /// <param name="assemblies">add your assemblies they have servicecontract over classes</param>
+        /// <param name="url">your server url exmaple : "http://localhost:80/any"</param>
+        /// <param name="assemblies">automaticaly add your server services and callbacks from an assembly without add them manualy</param>
         public void Start(string url, List<Assembly> assemblies)
         {
             Start(url);
-            Assembly assembly = Assembly.GetEntryAssembly();
-            if (assemblies == null)
-                assemblies = new List<Assembly>() { assembly };
+            //validate assemblies
+            if (assemblies == null || assemblies.Count == 0)
+                throw new Exception("assemblies parameter is null or empty, please add your assemblies or call Start method without assebmlies");
             AutoRegisterServices(assemblies);
 
-        }
-
-        internal IEnumerable<Type> GetAllTypes(List<Assembly> assemblies)
-        {
-            foreach (Assembly asm in assemblies)
-            {
-                foreach (Type type in asm.GetTypes())
-                {
-                    yield return type;
-                }
-            }
-        }
-
-        internal Type GetMainInheritancedType(Type type, List<Type> allTypes)
-        {
-            return allTypes.FirstOrDefault(x => x != type && x.GetInterfaces().Any(y => y == type));
         }
 
         /// <summary>
         /// automatic find services and register
         /// </summary>
         /// <param name="assemblies">add your assemblies they have servicecontract over classes</param>
-        public void AutoRegisterServices(List<Assembly> assemblies)
+        internal void AutoRegisterServices(List<Assembly> assemblies)
         {
-            //List<Type> ServerServices = new List<Type>();
-            //List<Type> ClientServices = new List<Type>();
-            //List<Type> HttpServices = new List<Type>();
-            //List<Type> StreamServices = new List<Type>();
-            List<Type> AllTypes = GetAllTypes(assemblies).ToList();
+            //get all types of all assemblies
+            IEnumerable<Type> allTypes = assemblies.GetAllTypes();
 
-            foreach (Type type in AllTypes)
+            foreach (Type type in allTypes)
             {
+                //find servicecontract attributes over type
                 ServiceContractAttribute[] attributes = type.GetCustomAttributes<ServiceContractAttribute>();
                 if (attributes.Length > 0)
                 {
                     foreach (ServiceContractAttribute att in attributes)
                     {
+                        //when attribute is server services for duplex protocols like websockets,signalgo etc
                         if (att.ServiceType == ServiceType.ServerService)
                         {
-                            //if (!ServerServices.Contains(type))
-                            //{
-                            //    if (type.GetIsInterface())
-                            //    {
-                            //        var find = GetMainInheritancedType(type, AllTypes);
-                            //        if (find != null)
-                            //            ServerServices.Add(find);
-                            //    }
-                            //    else
-                            //        ServerServices.Add(type);
-                            //}
                             RegisterServerService(type);
                         }
+                        //when attribute is client services for duplex protocols like websockets,wss,signalgo etc
                         else if (att.ServiceType == ServiceType.ClientService)
                         {
-                            //if (!ClientServices.Contains(type) && type.GetIsInterface())
-                            //    ClientServices.Add(type);
                             RegisterClientService(type);
                         }
+                        //when attribute is server services for one way protocols like http,https,signalgo etc
                         else if (att.ServiceType == ServiceType.HttpService)
                         {
-                            //if (!HttpServices.Contains(type))
-                            //{
-                            //    if (type.GetIsInterface())
-                            //    {
-                            //        var find = GetMainInheritancedType(type, AllTypes);
-                            //        if (find != null)
-                            //            HttpServices.Add(find);
-                            //    }
-                            //    else
-                            //        HttpServices.Add(type);
-                            //}
                             RegisterServerService(type);
                         }
+                        //when attribute is server stream services for duplex protocols like signalgo duplex
                         else if (att.ServiceType == ServiceType.StreamService)
                         {
                             RegisterServerService(type);
-                            //if (!StreamServices.Contains(type))
-                            //{
-                            //    if (type.GetIsInterface())
-                            //    {
-                            //        var find = GetMainInheritancedType(type, AllTypes);
-                            //        if (find != null)
-                            //            StreamServices.Add(find);
-                            //    }
-                            //    else
-                            //        StreamServices.Add(type);
-                            //}
                         }
+                        //when attribute is server services for oneway protocols like signalgo oneway
                         else if (att.ServiceType == ServiceType.OneWayService)
                         {
                             RegisterServerService(type);
-                            //if (!StreamServices.Contains(type))
-                            //{
-                            //    if (type.GetIsInterface())
-                            //    {
-                            //        var find = GetMainInheritancedType(type, AllTypes);
-                            //        if (find != null)
-                            //            StreamServices.Add(find);
-                            //    }
-                            //    else
-                            //        StreamServices.Add(type);
-                            //}
                         }
                     }
                 }
             }
-
-            //if (ServerServices.Count > 0)
-            //{
-            //    Console.WriteLine("Registering ServerServices:");
-            //    foreach (var item in ServerServices)
-            //    {
-            //        RegisterServerService(item);
-            //        Console.WriteLine(item.FullName);
-            //    }
-            //}
-            //            if (ClientServices.Count > 0)
-            //            {
-            //                Console.WriteLine("Registering ClientServices:");
-            //                foreach (var item in ClientServices)
-            //                {
-            //#if (!NETSTANDARD1_6 && !NETCOREAPP1_1)
-            //                    if (item.GetIsInterface())
-            //                        RegisterClientServiceInterface(item);
-            //                    else
-            //#endif
-            //                    RegisterClientService(item);
-            //                    Console.WriteLine(item.FullName);
-            //                }
-            //            }
-
-            //            if (HttpServices.Count > 0)
-            //            {
-            //                Console.WriteLine("Registering HttpServices:");
-            //                foreach (var item in HttpServices)
-            //                {
-            //                    RegisterHttpService(item);
-            //                    Console.WriteLine(item.FullName);
-            //                }
-            //            }
-            //            if (StreamServices.Count > 0)
-            //            {
-            //                Console.WriteLine("Registering StreamServices:");
-            //                foreach (var item in StreamServices)
-            //                {
-            //                    RegisterStreamService(item);
-            //                    Console.WriteLine(item.FullName);
-            //                }
-            //            }
         }
-        //public void StartWebSocket(string url)
-        //{
-        //    Uri uri = null;
-        //    if (!Uri.TryCreate(url, UriKind.Absolute, out uri))
-        //    {
-        //        throw new Exception("url is not valid");
-        //    }
-        //    else if (uri.Port <= 0)
-        //    {
-        //        throw new Exception("port is not valid");
-        //    }
-
-        //    //IPHostEntry Host = Dns.GetHostEntry(uri.Host);
-        //    //IPHostEntry server = Dns.Resolve(uri.Host);
-        //    ConnectWebSocket(uri.Port, new string[] { uri.AbsolutePath });
-        //}
     }
 }
