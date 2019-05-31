@@ -11,6 +11,21 @@ namespace SignalGo.Shared.Helpers
     /// </summary>
     public static class ReflectionHelper
     {
+        public static IEnumerable<Type> GetAllTypes(this IEnumerable<Assembly> assemblies)
+        {
+            foreach (Assembly asm in assemblies)
+            {
+                foreach (Type type in asm.GetTypes())
+                {
+                    yield return type;
+                }
+            }
+        }
+
+        public static Type GetMainInheritancedType(Type type, IEnumerable<Type> allTypes)
+        {
+            return allTypes.FirstOrDefault(x => x != type && x.GetInterfaces().Any(y => y == type));
+        }
 
         public static IEnumerable<Shared.Models.ParameterInfo> MethodToParameters(this MethodInfo methodInfo, Func<object, string> serialize, params object[] args)
         {

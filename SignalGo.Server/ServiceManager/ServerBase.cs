@@ -1,4 +1,5 @@
-﻿using SignalGo.Server.IO;
+﻿
+using SignalGo.Server.IO;
 using SignalGo.Server.Models;
 using SignalGo.Server.ServiceManager.Versions;
 using SignalGo.Shared;
@@ -23,17 +24,6 @@ namespace SignalGo.Server.ServiceManager
     /// </summary>
     public abstract class ServerBase : IDisposable, IValidationRuleInfo
     {
-        static ServerBase()
-        {
-            WebcoketDatagramBase.Current = new WebcoketDatagram();
-        }
-        /// <summary>
-        /// default constructor
-        /// </summary>
-        public ServerBase()
-        {
-            JsonSettingHelper.Initialize();
-        }
         /// <summary>
         /// lock for this server
         /// </summary>
@@ -92,7 +82,7 @@ namespace SignalGo.Server.ServiceManager
         /// list of clients
         /// key is clientId and value is client information
         /// </summary>
-        public ConcurrentDictionary<string, ClientInfo> Clients { get; set; } = new ConcurrentDictionary<string, ClientInfo>();
+        public ConcurrentDictionary<Guid, ClientInfo> Clients { get; set; } = new ConcurrentDictionary<Guid, ClientInfo>();
         /// <summary>
         /// single instance services
         /// key is service name and value is instance of service

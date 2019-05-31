@@ -1,14 +1,13 @@
 ﻿using SignalGo.Server.Models;
 using SignalGo.Shared.IO;
+using System;
 using System.Net.Sockets;
 
 namespace SignalGo.Server.ServiceManager.Versions
 {
-    public interface IServerDataProvider
+    public interface IServerDataProvider : IDisposable
     {
         void Start(ServerBase serverBase, int port);
-        ClientInfo CreateClientInfo(bool isHttp, TcpClient tcpClient, PipeNetworkStream stream);
-        string GetInformation();
-        int GetConnectedCount();
+        ClientInfo CreateClientInfo(ServerBase serverBase, ClientInfo client, TcpClient tcpClient, PipeNetworkStream stream);
     }
 }

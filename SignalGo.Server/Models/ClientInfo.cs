@@ -65,7 +65,7 @@ namespace SignalGo.Server.Models
         /// <summary>
         /// client id
         /// </summary>
-        public string ClientId { get; set; }
+        public Guid ClientId { get; set; }
 
         string _IPAddress;
         /// <summary>
