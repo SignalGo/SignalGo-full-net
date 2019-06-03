@@ -5,6 +5,7 @@ using SignalGo.Shared.IO;
 using SignalGo.Shared.Models;
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 
@@ -66,8 +67,7 @@ namespace SignalGo.Server.Models
         /// client id
         /// </summary>
         public Guid ClientId { get; set; }
-
-        string _IPAddress;
+        
         /// <summary>
         /// ip address of client
         /// </summary>
@@ -75,13 +75,10 @@ namespace SignalGo.Server.Models
         {
             get
             {
-                if (string.IsNullOrEmpty(_IPAddress))
-                    _IPAddress = new System.Net.IPAddress(IPAddressBytes).ToString();
-                return _IPAddress;
+                return new System.Net.IPAddress(IPAddressBytes).ToString();
             }
         }
 
-        byte[] _IPAddressBytes;
         /// <summary>
         /// bytes of ip address
         /// </summary>
@@ -89,12 +86,7 @@ namespace SignalGo.Server.Models
         {
             get
             {
-                return _IPAddressBytes;
-            }
-            set
-            {
-                _IPAddressBytes = value;
-                _IPAddress = null;
+                return ((IPEndPoint)TcpClient.Client.RemoteEndPoint).Address.GetAddressBytes();
             }
         }
 
@@ -102,10 +94,6 @@ namespace SignalGo.Server.Models
         /// version of client
         /// </summary>
         public uint? ClientVersion { get; set; }
-        /// <summary>
-        /// tag of client
-        /// </summary>
-        public object Tag { get; set; }
         /// <summary>
         /// when client disconnected
         /// </summary>

@@ -252,7 +252,6 @@ namespace SignalGo.Client.ClientManager
                     throw new Exception("server permission denied exception.");
 
                 return result.Data;
-
             }
             catch (Exception ex)
             {

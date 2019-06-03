@@ -35,7 +35,7 @@ namespace SignalGo.Server.ServiceManager
             }
 
             //start the server listener
-            ServerDataProvider.Start(this, uri.Port);
+            ServerDataProvider.StartAction(this, uri.Port);
         }
 
         /// <summary>
