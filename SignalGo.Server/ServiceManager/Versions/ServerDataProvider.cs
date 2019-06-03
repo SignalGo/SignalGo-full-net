@@ -50,6 +50,7 @@ namespace SignalGo.Server.ServiceManager.Versions
             {
                 try
                 {
+                    //create instance of tcp listener to lister for clients
                     _server = new TcpListener(IPAddress.IPv6Any, port);
                     _server.Server.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
                     _server.Server.NoDelay = true;
@@ -116,10 +117,10 @@ namespace SignalGo.Server.ServiceManager.Versions
                 }
                 catch (Exception)
                 {
-#if (NETSTANDARD)
-                    tcpClient.Dispose();
-#else
+#if (NET45)
                     tcpClient.Close();
+#else
+                    tcpClient.Dispose();
 #endif
                 }
             });
@@ -183,11 +184,6 @@ namespace SignalGo.Server.ServiceManager.Versions
                 //if the protocol is signalgo stream
                 if (firstLineString.Contains("SignalGo-Stream/4.0"))
                 {
-                    if (!serverBase.ProviderSetting.IsEnabledToUseTimeout)
-                    {
-                        tcpClient.GetStream().ReadTimeout = -1;
-                        tcpClient.GetStream().WriteTimeout = -1;
-                    }
                     client = CreateClientFunc(serverBase, client, tcpClient, streamReader);
                     client.ProtocolType = ClientProtocolType.SignalGoStream;
                     client.StreamHelper = SignalGoStreamBase.CurrentBase;
@@ -196,11 +192,6 @@ namespace SignalGo.Server.ServiceManager.Versions
                 //if the protocol is signalgo oneway
                 else if (firstLineString.Contains("SignalGo-OneWay/4.0"))
                 {
-                    if (!serverBase.ProviderSetting.IsEnabledToUseTimeout)
-                    {
-                        tcpClient.GetStream().ReadTimeout = -1;
-                        tcpClient.GetStream().WriteTimeout = -1;
-                    }
                     client = CreateClientFunc(serverBase, client, tcpClient, streamReader);
                     client.ProtocolType = ClientProtocolType.SignalGoOneWay;
                     client.StreamHelper = SignalGoStreamBase.CurrentBase;
@@ -211,28 +202,12 @@ namespace SignalGo.Server.ServiceManager.Versions
                 {
                     client = CreateClientFunc(serverBase, client, tcpClient, streamReader);
                     client.ProtocolType = ClientProtocolType.SignalGoDuplex;
-
                     client.StreamHelper = SignalGoStreamBase.CurrentBase;
-                    if (serverBase.ProviderSetting.ServerServiceSetting.IsEnabledToUseTimeout)
-                    {
-                        tcpClient.ReceiveTimeout = (int)serverBase.ProviderSetting.ServerServiceSetting.ReceiveDataTimeout.TotalMilliseconds;
-                        tcpClient.SendTimeout = (int)serverBase.ProviderSetting.ServerServiceSetting.SendDataTimeout.TotalMilliseconds;
-                    }
-                    else
-                    {
-                        tcpClient.GetStream().ReadTimeout = -1;
-                        tcpClient.GetStream().WriteTimeout = -1;
-                    }
                     await SignalGoDuplexServiceProvider.StartToReadingClientData(client, serverBase);
                 }
                 //if the protocol is http
                 else if (firstLineString.Contains("HTTP/"))
                 {
-                    if (serverBase.ProviderSetting.HttpSetting.IsEnabledToUseTimeout)
-                    {
-                        tcpClient.GetStream().ReadTimeout = (int)serverBase.ProviderSetting.HttpSetting.ReceiveDataTimeout.TotalMilliseconds;
-                        tcpClient.GetStream().WriteTimeout = (int)serverBase.ProviderSetting.HttpSetting.SendDataTimeout.TotalMilliseconds;
-                    }
                     await HttpProvider.StartToReadingClientData(tcpClient, serverBase, streamReader, new StringBuilder(firstLineString));
                 }
                 else
@@ -261,9 +236,16 @@ namespace SignalGo.Server.ServiceManager.Versions
         {
             var result = ExchangeClient(serverBase, streamReader, tcpClient);
             //set client timeouts
-
-            tcpClient.GetStream().ReadTimeout = (int)serverBase.ProviderSetting.ReceiveDataTimeout.TotalMilliseconds;
-            tcpClient.GetStream().WriteTimeout = (int)serverBase.ProviderSetting.SendDataTimeout.TotalMilliseconds;
+            if (serverBase.ProviderSetting.IsEnabledToUseTimeout)
+            {
+                tcpClient.ReceiveTimeout = (int)serverBase.ProviderSetting.ReceiveDataTimeout.TotalMilliseconds;
+                tcpClient.SendTimeout = (int)serverBase.ProviderSetting.SendDataTimeout.TotalMilliseconds;
+            }
+            else
+            {
+                tcpClient.GetStream().ReadTimeout = -1;
+                tcpClient.GetStream().WriteTimeout = -1;
+            }
             return result;
         }
 

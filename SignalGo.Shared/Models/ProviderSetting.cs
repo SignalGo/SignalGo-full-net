@@ -8,21 +8,9 @@ namespace SignalGo.Shared.Models
     public class BaseSetting
     {
         /// <summary>
-        /// if http protocolsetting is https
+        /// is protocol type ssl (security)
         /// </summary>
-        public bool IsHttps { get; set; }
-        /// <summary>
-        /// when you want to use timeouts on your provider set it true
-        /// </summary>
-        public bool IsEnabledToUseTimeout { get; set; }
-        /// <summary>
-        /// maximum value of timeout to wait for send data
-        /// </summary>
-        public TimeSpan SendDataTimeout { get; set; } = new TimeSpan(0, 0, 30);
-        /// <summary>
-        /// maximum value of timeout to wait for receive callbackinfo data
-        /// </summary>
-        public TimeSpan ReceiveDataTimeout { get; set; } = new TimeSpan(0, 0, 30);
+        public bool IsSSL { get; set; }
     }
 
     public class HttpSetting : BaseSetting

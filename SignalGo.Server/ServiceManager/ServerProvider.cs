@@ -43,11 +43,11 @@ namespace SignalGo.Server.ServiceManager
         /// </summary>
         /// <param name="url">your server url exmaple : "http://localhost:80/any"</param>
         /// <param name="assemblies">automaticaly add your server services and callbacks from an assembly without add them manualy</param>
-        public void Start(string url, List<Assembly> assemblies)
+        public void Start(string url, IEnumerable<Assembly> assemblies)
         {
             Start(url);
             //validate assemblies
-            if (assemblies == null || assemblies.Count == 0)
+            if (assemblies == null || assemblies.Count() == 0)
                 throw new Exception("assemblies parameter is null or empty, please add your assemblies or call Start method without assebmlies");
             AutoRegisterServices(assemblies);
 
@@ -57,7 +57,7 @@ namespace SignalGo.Server.ServiceManager
         /// automatic find services and register
         /// </summary>
         /// <param name="assemblies">add your assemblies they have servicecontract over classes</param>
-        internal void AutoRegisterServices(List<Assembly> assemblies)
+        internal void AutoRegisterServices(IEnumerable<Assembly> assemblies)
         {
             //get all types of all assemblies
             IEnumerable<Type> allTypes = assemblies.GetAllTypes();
