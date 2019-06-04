@@ -1,4 +1,10 @@
-﻿using SignalGo.Shared.Log;
+﻿// Licensed to the ali.visual.studio@gmail.com under one or more agreements.
+// The license this file to you under the GNU license.
+// See the LICENSE file in the project root for more information.
+//https://github.com/Ali-YousefiTelori
+//https://github.com/SignalGo/SignalGo-full-net
+
+using SignalGo.Shared.Logs;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -7,31 +13,18 @@ using System.Threading;
 namespace SignalGo.Shared
 {
     /// <summary>
-    /// ConcurrentDictionary extension helper
-    /// </summary>
-    public static class ConcurrentDictionaryEx
-    {
-        /// <summary>
-        /// remove a dictionary key
-        /// </summary>
-        /// <typeparam name="TKey"></typeparam>
-        /// <typeparam name="TValue"></typeparam>
-        /// <param name="self"></param>
-        /// <param name="key"></param>
-        /// <returns></returns>
-        public static bool Remove<TKey, TValue>(this ConcurrentDictionary<TKey, TValue> self, TKey key)
-        {
-            return ((IDictionary<TKey, TValue>)self).Remove(key);
-        }
-    }
-
-    /// <summary>
     /// run Action on same thread
     /// </summary>
     public static class AsyncActions
     {
+        /// <summary>
+        /// log somethings to files
+        /// </summary>
         public static AutoLogger AutoLogger { get; set; } = new AutoLogger() { FileName = "AsyncActions Logs.log" };
 #if (!PORTABLE)
+        /// <summary>
+        /// user interface thread
+        /// </summary>
         private static SynchronizationContext UIThread { get; set; }
         /// <summary>
         /// initialize ui thread
@@ -103,7 +96,12 @@ namespace SignalGo.Shared
                 }
             }
         }
-
+        /// <summary>
+        /// start new thread and run your action on new thread
+        /// </summary>
+        /// <param name="action"></param>
+        /// <param name="onException"></param>
+        /// <returns></returns>
         public static Thread StartNew(Action action, Action<Exception> onException = null)
         {
             Thread thread = new Thread(() =>

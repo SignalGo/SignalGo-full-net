@@ -20,14 +20,19 @@ using System.Threading;
 namespace SignalGo.Server.ServiceManager
 {
     /// <summary>
-    /// base of server
+    /// base of server provider
+    /// everything a server provider need on core and base will write here
     /// </summary>
     public abstract class ServerBase : IDisposable, IValidationRuleInfo
     {
         /// <summary>
         /// lock for this server
+        /// what is lock on here?
+        /// when client want lock a calling method by all of the server provider clients
+        /// its mean every clients will wait method calling to finish calling client by client
+        /// so if client A call server method, Client B,C,D,... will wait for client A to method call finish
         /// </summary>
-        public SemaphoreSlim LockWaitToRead { get; set; } = new SemaphoreSlim(1, 1);
+        internal SemaphoreSlim LockWaitToRead { get; set; } = new SemaphoreSlim(1, 1);
         /// <summary>
         /// validation rules manager
         /// </summary>
@@ -35,7 +40,7 @@ namespace SignalGo.Server.ServiceManager
         /// <summary>
         /// server data provider communication between client and server
         /// </summary>
-        public IServerDataProvider ServerDataProvider { get; private set; } = new ServerDataProviderV4();
+        public ServerDataProviderBase ServerDataProvider { get; private set; } = new ServerDataProvider();
         /// <summary>
         /// log errors and warnings
         /// </summary>

@@ -1,16 +1,26 @@
-﻿using System;
+﻿// Licensed to the ali.visual.studio@gmail.com under one or more agreements.
+// The license this file to you under the GNU license.
+// See the LICENSE file in the project root for more information.
+//https://github.com/Ali-YousefiTelori
+//https://github.com/SignalGo/SignalGo-full-net
+
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Threading;
 
-namespace SignalGo.Shared.Log
+namespace SignalGo.Shared.Logs
 {
     /// <summary>
     /// log exceptions and texts to a file
+    /// its simple log of signal go help you to save somthings
     /// </summary>
     public class AutoLogger
     {
+        /// <summary>
+        /// default log files
+        /// </summary>
         public static AutoLogger Default { get; set; } = new AutoLogger() { DirectoryName = "", FileName = "App Logs.log" };
         /// <summary>
         /// is enabled log system
@@ -60,6 +70,7 @@ namespace SignalGo.Shared.Log
 #if (!PORTABLE)
             try
             {
+                //get current directory of file to save
 #if (NETSTANDARD1_6)
                 System.Reflection.Assembly asm = System.Reflection.Assembly.GetEntryAssembly();
                 if (asm != null)
@@ -70,7 +81,6 @@ namespace SignalGo.Shared.Log
 #endif
                 if (!string.IsNullOrEmpty(DirectoryLocation) && !Directory.Exists(DirectoryLocation))
                     Directory.CreateDirectory(DirectoryLocation);
-                //Console.WriteLine("log location:" + DirectoryLocation);
             }
             catch (Exception ex)
             {
@@ -127,31 +137,32 @@ namespace SignalGo.Shared.Log
         public async void LogText(string text, bool stacktrace = false)
 #endif
         {
-            if (string.IsNullOrEmpty(DirectoryLocation) || !IsEnabled)
+            try
             {
-                return;
-            }
-            StringBuilder str = new StringBuilder();
-            str.AppendLine("<Text Log Start>");
-            str.AppendLine(text);
-            if (stacktrace)
-            {
-                str.AppendLine("<StackTrace>");
-                StringBuilder builder = new StringBuilder();
+                if (string.IsNullOrEmpty(DirectoryLocation) || !IsEnabled)
+                {
+                    return;
+                }
+                StringBuilder str = new StringBuilder();
+                str.AppendLine("<Text Log Start>");
+                str.AppendLine(text);
+                if (stacktrace)
+                {
+                    str.AppendLine("<StackTrace>");
+                    StringBuilder builder = new StringBuilder();
 #if (NETSTANDARD || NETCOREAPP)
                     GetOneStackTraceText(new StackTrace(new Exception(text), true), builder);
 #else
                 GetOneStackTraceText(new StackTrace(true), builder);
 #endif
-                str.AppendLine(builder.ToString());
+                    str.AppendLine(builder.ToString());
 
-                str.AppendLine("</StackTrace>");
-            }
-            str.AppendLine("<Text Log End>");
+                    str.AppendLine("</StackTrace>");
+                }
+                str.AppendLine("<Text Log End>");
 
-            string fileName = SavePath;
-            try
-            {
+                string fileName = SavePath;
+
 #if (NET35 || NET40)
                 lockWaitToRead.Wait();
 #else
@@ -186,10 +197,11 @@ namespace SignalGo.Shared.Log
         public async void LogError(Exception e, string title)
 #endif
         {
-            if (string.IsNullOrEmpty(DirectoryLocation) || !IsEnabled)
-                return;
             try
             {
+                if (string.IsNullOrEmpty(DirectoryLocation) || !IsEnabled)
+                    return;
+
                 StringBuilder str = new StringBuilder();
                 str.AppendLine(title);
                 str.AppendLine(e.ToString());

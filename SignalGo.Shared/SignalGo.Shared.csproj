@@ -182,8 +182,13 @@
     <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Remove="Log\MethodCallsLogger.cs" />
-    <Compile Remove="Log\MethodCallsLogLoader.cs" />
+    <Compile Remove="Olds\Log\MethodCallsLogger.cs" />
+    <Compile Remove="Olds\Log\MethodCallsLogLoader.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Compressions\" />
+    <Folder Include="IO\" />
+    <Folder Include="Olds\Log\" />
   </ItemGroup>
   <!--<Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />-->
 </Project>

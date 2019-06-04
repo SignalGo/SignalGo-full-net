@@ -94,7 +94,7 @@ namespace SignalGo.Server.Helpers
                                             string baseNameOfEnum = ex.RefrenceType.Substring(0, ex.RefrenceType.LastIndexOf('.'));
                                             Type type = GetEnumType(baseNameOfEnum);
 #if (NETSTANDARD1_6 || NETCOREAPP1_1)
-                                                                if (type != null && type.GetTypeInfo().IsEnum)
+                                            if (type != null && type.GetTypeInfo().IsEnum)
 #else
                                             if (type != null && type.IsEnum)
 #endif
@@ -616,23 +616,9 @@ namespace SignalGo.Server.Helpers
 
         internal static Type GetEnumType(string enumName)
         {
-#if (NETSTANDARD)
-            foreach (var assembly in SignalGo.Shared.Helpers.AppDomain.CurrentDomain.GetAssemblies())
-#else
-            foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
-#endif
-            {
-                Type type = assembly.GetType(enumName);
-                if (type == null)
-                    continue;
-#if (NETSTANDARD1_6 || NETCOREAPP1_1)
-                if (type.GetTypeInfo().IsEnum)
-                    return type;
-#else
-                if (type.IsEnum)
-                    return type;
-#endif
-            }
+            var type = Type.GetType(enumName);
+            if (type != null && type.GetIsEnum())
+                return type;
             return null;
         }
 

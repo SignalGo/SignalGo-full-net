@@ -2,7 +2,7 @@
 // The license this file to you under the GNU license.
 // See the LICENSE file in the project root for more information.
 //https://github.com/Ali-YousefiTelori
-
+//https://github.com/SignalGo/SignalGo-full-net
 using SignalGo.Server.Models;
 using SignalGo.Server.ServiceManager.Providers;
 using SignalGo.Shared.Converters;
