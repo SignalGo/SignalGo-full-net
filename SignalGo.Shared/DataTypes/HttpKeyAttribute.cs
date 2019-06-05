@@ -1,28 +1,16 @@
-﻿using System;
+﻿// Licensed to the ali.visual.studio@gmail.com under one or more agreements.
+// The license this file to you under the GNU license.
+// See the LICENSE file in the project root for more information.
+//https://github.com/Ali-YousefiTelori
+//https://github.com/SignalGo/SignalGo-full-net
+
+using System;
 
 namespace SignalGo.Shared.DataTypes
 {
-    //public class HttpSupportAttribute : ServiceContractAttribute
-    //{
-    //    public List<string> Addresses { get; set; } = new List<string>();
-    //    public HttpSupportAttribute(string address)
-    //    {
-    //        Addresses.Add(address);
-    //    }
-
-    //    public HttpSupportAttribute(string[] addresses)
-    //    {
-    //        Addresses.AddRange(addresses);
-    //    }
-    //}
-
-    public enum HttpKeyType
-    {
-        Cookie = 0,
-        ParameterName = 1,
-        ExpireField = 2
-    }
-
+    /// <summary>
+    /// http helper for authenticate with session and cookies
+    /// </summary>
     [AttributeUsage(AttributeTargets.Property, AllowMultiple = true)]
     public class HttpKeyAttribute : Attribute
     {
@@ -51,24 +39,8 @@ namespace SignalGo.Shared.DataTypes
         /// </summary>
         public string Perfix { get; set; } = "; path=/";
         /// <summary>
-        /// type of your key
-        /// </summary>
-        public HttpKeyType KeyType { get; set; } = HttpKeyType.Cookie;
-        /// <summary>
         /// name of key parameter when your keytype is ParameterName
         /// </summary>
         public string KeyParameterName { get; set; }
-
-        public HttpKeyAttribute()
-        {
-
-        }
-
-        public virtual bool CheckIsExpired(object value)
-        {
-            if (value is DateTime && (DateTime)value > DateTime.Now)
-                return false;
-            return true;
-        }
     }
 }

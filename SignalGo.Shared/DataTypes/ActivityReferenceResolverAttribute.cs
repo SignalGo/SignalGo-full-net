@@ -1,4 +1,10 @@
-﻿using System;
+﻿// Licensed to the ali.visual.studio@gmail.com under one or more agreements.
+// The license this file to you under the GNU license.
+// See the LICENSE file in the project root for more information.
+//https://github.com/Ali-YousefiTelori
+//https://github.com/SignalGo/SignalGo-full-net
+
+using System;
 
 namespace SignalGo.Shared.DataTypes
 {
