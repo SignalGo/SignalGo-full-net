@@ -211,10 +211,10 @@ namespace SignalGo.Shared.IO
             }
             else
             {
-                byte[] readBytes = result.ReadBufferSegment(count, out int readCount);
+                var readBytes = result.ReadBufferSegment(count, out int readCount);
                 if (result.IsFinished)
                     QueueBuffers.TryDequeue(out result);
-                Array.Copy(readBytes, bytes, readCount);
+                Array.Copy(readBytes.ToArray(), bytes, readCount);
                 return readCount;
             }
         }

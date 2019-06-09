@@ -18,14 +18,10 @@ namespace SignalGo.Shared
     public static class AsyncActions
     {
         /// <summary>
-        /// log somethings to files
-        /// </summary>
-        public static AutoLogger AutoLogger { get; set; } = new AutoLogger() { FileName = "AsyncActions Logs.log" };
-#if (!PORTABLE)
-        /// <summary>
         /// user interface thread
         /// </summary>
         private static SynchronizationContext UIThread { get; set; }
+
         /// <summary>
         /// initialize ui thread
         /// </summary>
@@ -40,7 +36,8 @@ namespace SignalGo.Shared
         /// run your code on ui thread
         /// </summary>
         /// <param name="action"></param>
-        public static void RunOnUI(Action action)
+        /// <param name="onException"></param>
+        public static void RunOnUI(Action action,Action<Exception> onException = null)
         {
             if (UIThread == null)
                 throw new Exception("UI thread not initialized please call AsyncActions.InitializeUIThread in your ui thread to initialize");
@@ -52,82 +49,9 @@ namespace SignalGo.Shared
                 }
                 catch (Exception ex)
                 {
-                    AutoLogger.LogError(ex, "AsyncActions RunOnUI");
+                    onException?.Invoke(ex);
                 }
             }, null);
-        }
-#endif
-        /// <summary>
-        /// if actions return exceptions
-        /// </summary>
-        public static Action<Exception> OnActionException { get; set; }
-        /// <summary>
-        /// Run action on thread
-        /// </summary>
-        /// <param name="action">your action</param>
-        /// <param name="onException"></param>
-        public static void Run(Action action, Action<Exception> onException = null)
-        {
-#if (NET35 || NET40)
-            ThreadPool.QueueUserWorkItem(RunAction, null);
-            void RunAction(object state)
-#else
-            System.Threading.Tasks.Task.Run(new Action(RunAction));
-            void RunAction()
-#endif
-            {
-                try
-                {
-                    action();
-                }
-                catch (Exception ex)
-                {
-                    try
-                    {
-                        onException?.Invoke(ex);
-                        AutoLogger.LogError(ex, "AsyncActions Run");
-                        OnActionException?.Invoke(ex);
-                    }
-                    catch (Exception ex2)
-                    {
-                        AutoLogger.LogError(ex2, "AsyncActions Run 2");
-
-                    }
-                }
-            }
-        }
-        /// <summary>
-        /// start new thread and run your action on new thread
-        /// </summary>
-        /// <param name="action"></param>
-        /// <param name="onException"></param>
-        /// <returns></returns>
-        public static Thread StartNew(Action action, Action<Exception> onException = null)
-        {
-            Thread thread = new Thread(() =>
-            {
-                try
-                {
-                    action();
-                }
-                catch (Exception ex)
-                {
-                    try
-                    {
-                        onException?.Invoke(ex);
-                        AutoLogger.LogError(ex, "AsyncActions Run");
-                        OnActionException?.Invoke(ex);
-                    }
-                    catch (Exception ex2)
-                    {
-                        AutoLogger.LogError(ex2, "AsyncActions Run 2");
-
-                    }
-                }
-            });
-            thread.IsBackground = true;
-            thread.Start();
-            return thread;
         }
     }
 }
