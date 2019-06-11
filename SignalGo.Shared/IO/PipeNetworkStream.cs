@@ -12,10 +12,10 @@ namespace SignalGo.Shared.IO
 {
     public class PipeNetworkStream : IDisposable
     {
-        private IStream Stream { get; set; }
+        private Stream Stream { get; set; }
         public int BufferToRead { get; set; }
         public int Timeout { get; set; } = -1;
-        public PipeNetworkStream(IStream stream, int timeout = -1, int bufferToRead = 512)
+        public PipeNetworkStream(Stream stream, int timeout = -1, int bufferToRead = 512)
         {
             Timeout = timeout;
             Stream = stream;

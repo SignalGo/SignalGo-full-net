@@ -37,7 +37,7 @@ namespace SignalGo.Shared
         /// </summary>
         /// <param name="action"></param>
         /// <param name="onException"></param>
-        public static void RunOnUI(Action action,Action<Exception> onException = null)
+        public static void RunOnUI(Action action, Action<Exception> onException = null)
         {
             if (UIThread == null)
                 throw new Exception("UI thread not initialized please call AsyncActions.InitializeUIThread in your ui thread to initialize");
