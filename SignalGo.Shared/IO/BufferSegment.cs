@@ -16,33 +16,16 @@ namespace SignalGo.Shared.IO
     /// save buffer of byte array on memory
     /// manage for memory heap and data for Garbage Collector
     /// </summary>
-    public class BufferSegment
+    public class BufferSegment<T>
     {
-        /// <summary>
-        /// length of buffer
-        /// </summary>
-        public int Length { get;private set; }
-
-        byte[] _Buffer;
         /// <summary>
         /// buffer of this segment
         /// </summary>
-        public byte[] Buffer
-        {
-            get
-            {
-                return _Buffer;
-            }
-            set
-            {
-                _Buffer = value;
-                Length = value.Length;
-            }
-        }
+        public T[] Buffer { get; set; }
         /// <summary>
         /// Current of position to read
         /// </summary>
-        public int Position { get; set; } = 0;
+        public int Position { get; set; }
 
         /// <summary>
         /// Is finished read buffer of segment
@@ -51,18 +34,17 @@ namespace SignalGo.Shared.IO
         {
             get
             {
-                return Position == Length;
+                return Position == Buffer.Length;
             }
         }
-
 
         /// <summary>
         /// Read one byte of Segment from Buffer
         /// </summary>
         /// <returns></returns>
-        public byte ReadFirstByte()
+        public T ReadFirstByte()
         {
-            byte result = Buffer[Position];
+            T result = Buffer[Position];
             Position++;
             return result;
         }
@@ -71,7 +53,7 @@ namespace SignalGo.Shared.IO
         /// It will tell you what is first byte from current position
         /// </summary>
         /// <returns></returns>
-        public byte WhatIsFirstByte()
+        public T WhatIsFirstByte()
         {
             return Buffer[Position];
         }
@@ -81,7 +63,7 @@ namespace SignalGo.Shared.IO
         /// </summary>
         /// <param name="count">count of need to read</param>
         /// <returns>bytes of segment</returns>
-        public byte[] ReadBufferSegment(ref int count)
+        public T[] ReadBufferSegment(ref int count)
         {
             var result = Buffer.Skip(Position).Take(count).ToArray();
             Position += result.Length;
@@ -94,12 +76,12 @@ namespace SignalGo.Shared.IO
         /// <param name="exitBytes">break when this bytes found</param>
         /// <param name="isFound">is found exitBytes from buffer</param>
         /// <returns>bytes of segment</returns>
-        public IEnumerable<byte> Read(ref byte[] exitBytes, out bool isFound)
+        public IEnumerable<T> Read(ref T[] exitBytes, out bool isFound)
         {
             isFound = false;
             int startPosition = Position;
             var len = exitBytes.Length;
-            for (int i = Position; i < Length; i++)
+            for (int i = Position; i < Buffer.Length; i++)
             {
                 if (Buffer.Skip(i).Take(len).SequenceEqual(exitBytes))
                 {

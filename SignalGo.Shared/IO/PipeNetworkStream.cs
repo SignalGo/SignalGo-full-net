@@ -10,153 +10,147 @@ using System.Threading.Tasks;
 
 namespace SignalGo.Shared.IO
 {
-    public class PipeNetworkStream : IDisposable
+    /// <summary>
+    /// pipe line network stream helper
+    /// this class help you easy to read a line of strin data from a stream
+    /// solve memory heaps and work very fast and easy
+    /// this stream will not lost data like streamreader when you read line of string data
+    /// </summary>
+    public class PipeLineStream : IDisposable
     {
-        private Stream Stream { get; set; }
-        public int BufferToRead { get; set; }
-        public int Timeout { get; set; } = -1;
-        public PipeNetworkStream(Stream stream, int timeout = -1, int bufferToRead = 512)
+        delegate void ActionRef<T>(ref T item);
+        /// <summary>
+        /// read buffer from stream
+        /// the action help ut to override dispose exception witout check it with if always
+        /// </summary>
+        Action ReadBufferAsyncAction { get; set; }
+        ActionRef<int> ReadAsyncAction { get; set; }
+        /// <summary>
+        /// constructor of pipe line stream
+        /// </summary>
+        /// <param name="stream">stream for read and write</param>
+        /// <param name="bufferToRead">buffer to read</param>
+        public PipeLineStream(Stream stream, int bufferToRead = 1024)
         {
-            Timeout = timeout;
             Stream = stream;
             BufferToRead = bufferToRead;
-            BlockBuffers = new ConcurrentBlockingCollection<BufferSegment>();
-            //BlockBuffers = new BlockingCollection<BufferSegment>();
+            ReadBufferAsyncAction = ReadBufferAsync;
         }
 
+        /// <summary>
+        /// stream to read or write data on it
+        /// </summary>
+        private Stream Stream { get; set; }
 
-        public bool IsClosed { get; set; } = false;
+        /// <summary>
+        /// default buffer read count from stream
+        /// </summary>
+        public int BufferToRead { get; set; }
 
-        //private BlockingCollection<BufferSegment> BlockBuffers { get; set; }
-        private ConcurrentBlockingCollection<BufferSegment> BlockBuffers { get; set; }
-        private ConcurrentQueue<BufferSegment> QueueBuffers = new ConcurrentQueue<BufferSegment>();
+        /// <summary>
+        /// block of buffers readed from stream
+        /// </summary>
+        private ConcurrentBlockingCollection<BufferSegment> BlockBuffers { get; set; } = new ConcurrentBlockingCollection<BufferSegment>();
 
-        public void Write(byte[] data, int offset, int count)
+        /// <summary>
+        /// all
+        /// </summary>
+        private ConcurrentQueue<BufferSegment> QueueBuffers { get; set; } = new ConcurrentQueue<BufferSegment>();
+
+        /// <summary>
+        /// write data to stream
+        /// </summary>
+        /// <param name="bytes">bytes of data</param>
+        /// <param name="offset">offset</param>
+        /// <param name="count">count to write</param>
+        public void Write(ref byte[] bytes, ref int offset, ref int count)
         {
-            Stream.Write(data, offset, count);
+            Stream.Write(bytes, offset, count);
         }
 
-#if (!NET35 && !NET40)
-        public Task WriteAsync(byte[] data, int offset, int count)
+        /// <summary>
+        /// write data to stream async
+        /// </summary>
+        /// <param name="bytes">bytes of data</param>
+        /// <param name="offset">offset</param>
+        /// <param name="count">count to write</param>
+        public Task WriteAsync(ref byte[] bytes, ref int offset, ref int count)
         {
-            return Stream.WriteAsync(data, offset, count);
+            return Stream.WriteAsync(bytes, offset, count);
         }
-#endif
-        private bool IsWaitToRead { get; set; } = false;
 
-        private readonly SemaphoreSlim lockWaitToRead = new SemaphoreSlim(1, 1);
-#if (!NET35 && !NET40)
         private async void ReadBufferAsync()
         {
             try
             {
-                try
-                {
-                    await lockWaitToRead.WaitAsync();
-
-                    if (IsWaitToRead || IsClosed)
-                        return;
-                    IsWaitToRead = true;
-                }
-                finally
-                {
-                    lockWaitToRead.Release();
-                }
                 byte[] buffer = new byte[BufferToRead];
-                System.Diagnostics.Debug.WriteLine($"try to ReadAsync {buffer.Length}");
                 int readCount = await Stream.ReadAsync(buffer, 0, buffer.Length);
-
-                System.Diagnostics.Debug.WriteLine($"done ReadAsync {buffer.Length}");
                 if (readCount <= 0)
                 {
-                    IsClosed = true;
-                    IsWaitToRead = false;
                     await BlockBuffers.AddAsync(new BufferSegment() { Buffer = null, Position = 0 });
                     await BlockBuffers.CancelAsync();
+                    ReadBufferAsyncAction = EmptyMethod;
                     return;
-                    //throw new Exception("read zero buffer! client disconnected: " + readCount);
                 }
                 else if (readCount != buffer.Length)
                 {
                     Array.Resize(ref buffer, readCount);
                 }
-                IsWaitToRead = false;
-                await BlockBuffers.AddAsync(new BufferSegment() { Buffer = buffer, Position = 0 });
+
+                await BlockBuffers.AddAsync(new BufferSegment()
+                {
+                    Buffer = buffer,
+                    Position = 0
+                });
             }
-            catch (Exception ex)
+            catch
             {
-                //Console.WriteLine(ex);
-                IsClosed = true;
-                IsWaitToRead = false;
                 await BlockBuffers.AddAsync(new BufferSegment() { Buffer = null, Position = 0 });
                 await BlockBuffers.CancelAsync();
+                ReadBufferAsyncAction = EmptyMethod;
             }
         }
-#endif
 
 
         private void ReadBuffer()
         {
             try
             {
-                try
-                {
-                    lockWaitToRead.Wait();
-                    if (IsWaitToRead || IsClosed)
-                        return;
-                    IsWaitToRead = true;
-                }
-                finally
-                {
-                    lockWaitToRead.Release();
-                }
                 byte[] buffer = new byte[BufferToRead];
-                System.Diagnostics.Debug.WriteLine($"try to ReadAsync {buffer.Length}");
                 int readCount = Stream.Read(buffer, 0, buffer.Length);
-                System.Diagnostics.Debug.WriteLine($"done ReadAsync {buffer.Length}");
                 if (readCount <= 0)
                 {
-                    IsClosed = true;
-                    IsWaitToRead = false;
                     BlockBuffers.Add(new BufferSegment() { Buffer = null, Position = 0 });
                     BlockBuffers.Cancel();
+                    ReadBufferAsyncAction = EmptyMethod;
                     return;
-                    //throw new Exception("read zero buffer! client disconnected: " + readCount);
                 }
                 else if (readCount != buffer.Length)
                 {
                     Array.Resize(ref buffer, readCount);
                 }
-                IsWaitToRead = false;
                 BlockBuffers.Add(new BufferSegment() { Buffer = buffer, Position = 0 });
-
             }
             catch (Exception ex)
             {
-                //Console.WriteLine(ex);
-                IsClosed = true;
-                IsWaitToRead = false;
                 BlockBuffers.Add(new BufferSegment() { Buffer = null, Position = 0 });
                 BlockBuffers.Cancel();
+                ReadBufferAsyncAction = EmptyMethod;
             }
         }
 
-#if (!NET35 && !NET40)
-        public async Task<int> ReadAsync(byte[] bytes, int count)
+        private async Task<int> ReadAsync(byte[] bytes, int count)
         {
             if (IsClosed && QueueBuffers.IsEmpty && BlockBuffers.Count == 0)
                 throw new Exception("read zero buffer! client disconnected");
-            if (bytes != null && bytes.Length < count)
-                throw new Exception("count size is greater than bytes.length");
-            BufferSegment result = null;
+            BufferSegment result;
             if (QueueBuffers.IsEmpty)
             {
                 if (BlockBuffers.Count == 0)
-                    ReadBufferAsync();
-
+                    ReadBufferAsyncAction();
 
                 result = await BlockBuffers.TakeAsync();
-                if (IsClosed && BlockBuffers.Count == 0)
+                if (BlockBuffers.Count == 0)
                     throw new Exception("read zero buffer! client disconnected");
                 QueueBuffers.Enqueue(result);
             }
@@ -173,21 +167,17 @@ namespace SignalGo.Shared.IO
             }
             else
             {
-                byte[] readBytes = result.ReadBufferSegment(count, out int readCount);
+                var readBytes = result.ReadBufferSegment(ref count);
                 if (result.IsFinished)
                     QueueBuffers.TryDequeue(out result);
-                Array.Copy(readBytes, bytes, readCount);
-                return readCount;
+                Array.Copy(readBytes, bytes, readBytes.Length);
+                return readBytes.Length;
             }
         }
-#endif
+
         public int Read(byte[] bytes, int count)
         {
-            if (IsClosed && QueueBuffers.IsEmpty && BlockBuffers.Count == 0)
-                throw new Exception("read zero buffer! client disconnected");
-            if (bytes != null && bytes.Length < count)
-                throw new Exception("count size is greater than bytes.length");
-            BufferSegment result = null;
+            BufferSegment result;
             if (QueueBuffers.IsEmpty)
             {
                 if (BlockBuffers.Count == 0)
@@ -429,10 +419,17 @@ namespace SignalGo.Shared.IO
         {
             return new PipeNormalStream(pipeNetworkStream);
         }
+        /// <summary>
+        /// this method help us to override actions without check it with if always
+        /// </summary>
+        void EmptyMethod()
+        {
+
+        }
 
         public void Dispose()
         {
-            Stream.Dispose();
+            System.IO.Stream.Dispose();
         }
     }
 }
