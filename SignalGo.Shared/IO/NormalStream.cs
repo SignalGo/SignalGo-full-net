@@ -1,90 +1,131 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Threading.Tasks;
 
 namespace SignalGo.Shared.IO
 {
+    /// <summary>
+    /// normal read and write stream
+    /// </summary>
     public class NormalStream : IStream
     {
-        private Stream _stream;
-        public NormalStream(Stream stream)
+        PipeLineStream PipeLineStream { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="pipeLineStream"></param>
+        public NormalStream(PipeLineStream pipeLineStream)
         {
-            _stream = stream;
+            PipeLineStream = pipeLineStream;
+            FlushAction = PipeLineStream.FlushAction;
+            FlushAsync = PipeLineStream.FlushAsyncAction;
+            Read = PipeLineStream.ReadAction;
+            ReadAsync = PipeLineStream.ReadAsyncAction;
+            Write = PipeLineStream.WriteAction;
+            WriteAsync = PipeLineStream.WriteAsyncAction;
+            ReadOneByte = PipeLineStream.ReadOneByte;
+            ReadOneByteAsync = PipeLineStream.ReadOneByteAsync;
+            ReadLine = PipeLineStream.ReadLine;
+            ReadLineAsync = PipeLineStream.ReadLineAsync;
+        }
+        /// <summary>
+        /// receive data timeouts
+        /// </summary>
+        public int ReceiveTimeout { get; set; } = -1;
+        /// <summary>
+        /// send data timeouts
+        /// </summary>
+        public int SendTimeout { get; set; } = -1;
+        /// <summary>
+        /// flush data of stream
+        /// </summary>
+        public Action FlushAction { get; set; }
+        /// <summary>
+        /// flush data of stream
+        /// </summary>
+        public Func<Task> FlushAsync { get; set; }
+
+        /// <summary>
+        /// read data from stream
+        /// </summary>
+        /// <returns>readed count</returns>
+        public ReadFunction Read { get; set; }
+        /// <summary>
+        /// read data from stream by async
+        /// </summary>
+        /// <returns>readed count</returns>
+        public ReadAsyncFunction ReadAsync { get; set; }
+
+        /// <summary>
+        /// write data to stream
+        /// </summary>
+        public WriteAction Write { get; set; }
+
+        /// <summary>
+        /// write data to stream async
+        /// </summary>
+        public WriteAsyncAction WriteAsync { get; set; }
+
+        /// <summary>
+        /// read one byte from stream async
+        /// </summary>
+        /// <returns>byte readed</returns>
+        public Func<Task<byte>> ReadOneByteAsync { get; set; }
+        /// <summary>
+        /// read one byte from stream
+        /// </summary>
+        /// <returns>byte readed</returns>
+        public Func<byte> ReadOneByte { get; set; }
+
+
+        /// <summary>
+        /// read new line from stream
+        /// </summary>
+        /// <returns>line</returns>
+        public Func<string> ReadLine { get; set; }
+
+        /// <summary>
+        /// read new line from stream async
+        /// </summary>
+        /// <returns>line</returns>
+        public Func<Task<string>> ReadLineAsync { get; set; }
+
+
+        public byte[] ReadBlockToEnd(ref int maximum)
+        {
+            throw new NotImplementedException();
         }
 
-        public int ReceiveTimeout
+        public void WriteBlockToStream(ref byte[] bytes)
         {
-            get
-            {
-                return _stream.ReadTimeout;
-            }
-            set
-            {
-                _stream.ReadTimeout = value;
-            }
+            throw new NotImplementedException();
         }
 
-        public int SendTimeout
+        public byte[] ReadBlockSize()
         {
-            get
-            {
-                return _stream.WriteTimeout;
-            }
-            set
-            {
-                _stream.WriteTimeout = value;
-            }
+            throw new NotImplementedException();
         }
 
+        public Task<byte[]> ReadBlockToEndAsync(ref int maximum)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task WriteBlockToStreamAsync(ref byte[] bytes)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<byte[]> ReadBlockSizeAsync()
+        {
+            throw new NotImplementedException();
+        }
+        /// <summary>
+        /// dispose the stream
+        /// </summary>
         public void Dispose()
         {
-            _stream.Dispose();
+            PipeLineStream.Dispose();
         }
-
-
-        public void Flush()
-        {
-            _stream.Flush();
-        }
-#if (!NET35 && !NET40)
-        public Task FlushAsync()
-        {
-            return _stream.FlushAsync();
-        }
-#endif
-
-        public int Read(byte[] buffer, int offset, int count)
-        {
-            return _stream.Read(buffer, offset, count);
-        }
-#if (!NET35 && !NET40)
-        public async Task<int> ReadAsync(byte[] buffer, int offset, int count)
-        {
-            if (_stream.CanTimeout && _stream.ReadTimeout > 0)
-            {
-                int ReciveCount = 0;
-                Task receiveTask = Task.Run(async () => { ReciveCount = await _stream.ReadAsync(buffer, offset, count); });
-                bool isReceived = await Task.WhenAny(receiveTask, Task.Delay(_stream.ReadTimeout)) == receiveTask;
-                if (!isReceived)
-                    return -1;
-                return ReciveCount;
-            }
-            else
-            {
-                return await _stream.ReadAsync(buffer, offset, count);
-            }
-        }
-#endif
-
-
-        public void Write(byte[] buffer, int offset, int count)
-        {
-            _stream.Write(buffer, offset, count);
-        }
-#if (!NET35 && !NET40)
-        public Task WriteAsync(byte[] buffer, int offset, int count)
-        {
-            return _stream.WriteAsync(buffer, offset, count);
-        }
-#endif
     }
 }

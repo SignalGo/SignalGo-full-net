@@ -18,20 +18,43 @@ namespace SignalGo.Shared.IO
         /// <summary>
         /// flush data of stream
         /// </summary>
-        void Flush();
+        Action FlushAction { get; set; }
+        /// <summary>
+        /// flush data of stream
+        /// </summary>
+        Func<Task> FlushAsync { get; set; }
+        
         /// <summary>
         /// read data from stream
         /// </summary>
-        /// <param name="buffer">buffer to read</param>
-        /// <param name="count">count to read</param>
         /// <returns>readed count</returns>
-        int Read(ref byte[] buffer, ref int count);
+        ReadFunction Read { get; set; }
+        /// <summary>
+        /// read data from stream by async
+        /// </summary>
+        /// <returns>readed count</returns>
+        ReadAsyncFunction ReadAsync { get; set; }
+
         /// <summary>
         /// write data to stream
         /// </summary>
-        /// <param name="buffer">buffer to write</param>
-        /// <param name="count">count to write stream</param>
-        void Write(ref byte[] buffer, ref int count);
+        WriteAction Write { get; set; }
+
+        /// <summary>
+        /// write data to stream async
+        /// </summary>
+        WriteAsyncAction WriteAsync { get; set; }
+
+        /// <summary>
+        /// read one byte from stream async
+        /// </summary>
+        /// <returns>byte readed</returns>
+        Func<Task<byte>> ReadOneByteAsync { get; set; }
+        /// <summary>
+        /// read one byte from stream
+        /// </summary>
+        /// <returns>byte readed</returns>
+        Func<byte> ReadOneByte { get; set; }
         /// <summary>
         /// receive data timeouts
         /// </summary>
@@ -40,31 +63,9 @@ namespace SignalGo.Shared.IO
         /// send data timeouts
         /// </summary>
         int SendTimeout { get; set; }
-        /// <summary>
-        /// flush async stream
-        /// </summary>
-        /// <returns></returns>
-        Task FlushAsync();
-        /// <summary>
-        /// read data from stream by async
-        /// </summary>
-        /// <param name="buffer">buffer to read</param>
-        /// <param name="count">count to read</param>
-        /// <returns>readed count</returns>
-        Task<int> ReadAsync(ref byte[] buffer, ref int count);
-        /// <summary>
-        /// write data to stream async
-        /// </summary>
-        /// <param name="buffer">buffer to write</param>
-        /// <param name="count">count to write stream</param>
-        Task WriteAsync(ref byte[] buffer, ref int count);
 
         #region signalgo protocol block system
-        /// <summary>
-        /// write byte array to stream
-        /// </summary>
-        /// <param name="bytes">byte array to write</param>
-        void Write(ref byte[] bytes);
+
         /// <summary>
         /// read block of signalgo packet to end of packet
         /// </summary>
@@ -77,20 +78,10 @@ namespace SignalGo.Shared.IO
         /// <param name="bytes">bytes to write</param>
         void WriteBlockToStream(ref byte[] bytes);
         /// <summary>
-        /// read one byte from stream
-        /// </summary>
-        /// <returns>byte readed</returns>
-        byte ReadOneByte();
-        /// <summary>
         /// read size of block every blocks has size,this method return size of block to read
         /// </summary>
         /// <returns>array of block size is int32</returns>
         byte[] ReadBlockSize();
-        /// <summary>
-        /// write byte array to stream async
-        /// </summary>
-        /// <param name="bytes">byte array to write</param>
-        Task WriteAsync(ref byte[] bytes);
         /// <summary>
         /// read block of signalgo packet to end of packet async
         /// </summary>
@@ -102,11 +93,7 @@ namespace SignalGo.Shared.IO
         /// </summary>
         /// <param name="bytes">bytes to write</param>
         Task WriteBlockToStreamAsync(ref byte[] bytes);
-        /// <summary>
-        /// read one byte from stream async
-        /// </summary>
-        /// <returns>byte readed</returns>
-        Task<byte> ReadOneByteAsync();
+        
         /// <summary>
         /// read size of block every blocks has size,this method return size of block to read
         /// </summary>
@@ -115,42 +102,18 @@ namespace SignalGo.Shared.IO
         #endregion
 
         #region pipline
-        /// <summary>
-        /// read bytes from existing byte for example for newline
-        /// </summary>
-        /// <param name="exitBytes">existing bytes</param>
-        /// <returns>readed bytes</returns>
-        byte[] Read(ref byte[] exitBytes);
+      
         /// <summary>
         /// read new line from stream
         /// </summary>
         /// <returns>line</returns>
-        string ReadLine();
-        /// <summary>
-        /// read new line from stream with endofline chars
-        /// </summary>
-        /// <param name="endOfLine">end of line chars</param>
-        /// <returns>new line</returns>
-        string ReadLine(ref string endOfLine);
-
-        /// <summary>
-        /// read bytes from existing byte for example for newline async
-        /// </summary>
-        /// <param name="exitBytes">existing bytes</param>
-        /// <returns>readed bytes</returns>
-        Task<byte[]> ReadAsync(ref byte[] exitBytes);
+        Func<string> ReadLine { get; set; }
 
         /// <summary>
         /// read new line from stream async
         /// </summary>
         /// <returns>line</returns>
-        Task<string> ReadLineAsync();
-        /// <summary>
-        /// read new line from stream with endofline chars async
-        /// </summary>
-        /// <param name="endOfLine">end of line chars</param>
-        /// <returns>new line</returns>
-        Task<string> ReadLineAsync(ref string endOfLine);
+        Func<Task<string>>  ReadLineAsync { get; set; }
 
         #endregion
     }
