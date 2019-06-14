@@ -1,2 +1,119 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<ClassDiagram /> 
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="SignalGo.Shared.Helpers.ConcurrentList&lt;T&gt;" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="0.75" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AEIAAEAAAAAAABAQCQAAJAQAAAAIAAAECAEAAABQIAA=</HashCode>
+      <FileName>Collections\ConcurrentList.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="SignalGo.Shared.DataTypes.ActivityReferenceResolverAttribute" Collapsed="true">
+    <Position X="0.75" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAARAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>DataTypes\ActivityReferenceResolverAttribute.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="SignalGo.Shared.DataTypes.ExpireAttribute" Collapsed="true">
+    <Position X="2.5" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAA=</HashCode>
+      <FileName>DataTypes\ExpireAttribute.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="SignalGo.Shared.DataTypes.HttpKeyAttribute" Collapsed="true">
+    <Position X="4.25" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAABAAAAAAAUAAAQAAAAAAAAABAAAAAIAAQAA=</HashCode>
+      <FileName>DataTypes\HttpKeyAttribute.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="SignalGo.Shared.AsyncActions" Collapsed="true">
+    <Position X="2.5" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>ACAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAgAAAAAAAAAA=</HashCode>
+      <FileName>Helpers\AsyncActions.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="SignalGo.Shared.Helpers.TextHelper" Collapsed="true">
+    <Position X="4.25" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAAA=</HashCode>
+      <FileName>Helpers\TextHelper.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="SignalGo.Shared.IO.NormalStream" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="0.75" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>CANgAgAAFCAAAQAAAAAgACgkACAAIAAAAAAAAAEgQAA=</HashCode>
+      <FileName>IO\NormalStream.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="SignalGo.Shared.IO.PipeLineStream" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="2.5" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>CIJCAgBAICgAAAAACAQAASgEAAAIAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>IO\PipeNetworkStream.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="SignalGo.Shared.Logs.AutoLogger" Collapsed="true">
+    <Position X="4.25" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAQAAAAAAAABAAAAEAIAAAIAABgAgAAAAAAABAEAA=</HashCode>
+      <FileName>Logs\AutoLogger.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Interface Name="SignalGo.Shared.IO.IStream" Collapsed="true">
+    <Position X="0.75" Y="3.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>CANgAgAAFAAAAQAAAAAgACgkACAAIAAAAAAAAAEAQAA=</HashCode>
+      <FileName>IO\IStream.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Delegate Name="SignalGo.Shared.IO.ReadAsyncFunction" Collapsed="true">
+    <Position X="0.75" Y="4.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAABAAAAAAAAAAAAAAAAABAAAAAACAAAAAAAAAA=</HashCode>
+      <FileName>IO\IODelegates.cs</FileName>
+    </TypeIdentifier>
+  </Delegate>
+  <Delegate Name="SignalGo.Shared.IO.ReadFunction" Collapsed="true">
+    <Position X="2.5" Y="4.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAABAAAAAAAAAAAAAAAAABAAAAAACAAAAAAAAAA=</HashCode>
+      <FileName>IO\IODelegates.cs</FileName>
+    </TypeIdentifier>
+  </Delegate>
+  <Delegate Name="SignalGo.Shared.IO.ReadToEndFunction" Collapsed="true">
+    <Position X="0.75" Y="5.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>IO\IODelegates.cs</FileName>
+    </TypeIdentifier>
+  </Delegate>
+  <Delegate Name="SignalGo.Shared.IO.ReadToEndAsyncFunction" Collapsed="true">
+    <Position X="4.25" Y="4.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>IO\IODelegates.cs</FileName>
+    </TypeIdentifier>
+  </Delegate>
+  <Delegate Name="SignalGo.Shared.IO.WriteAction" Collapsed="true">
+    <Position X="2.5" Y="5.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAABAAAAAAAAAAAAAAAAABAAAAAACAAAAAAAAAA=</HashCode>
+      <FileName>IO\IODelegates.cs</FileName>
+    </TypeIdentifier>
+  </Delegate>
+  <Delegate Name="SignalGo.Shared.IO.WriteAsyncAction" Collapsed="true">
+    <Position X="4.25" Y="5.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAABAAAAAAAAAAAAAAAAABAAAAAACAAAAAAAAAA=</HashCode>
+      <FileName>IO\IODelegates.cs</FileName>
+    </TypeIdentifier>
+  </Delegate>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>

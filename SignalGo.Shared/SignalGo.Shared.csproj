@@ -16,8 +16,16 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Remove="Olds\**" />
+    <EmbeddedResource Remove="Olds\**" />
+    <None Remove="Olds\**" />
+  </ItemGroup>
+  <ItemGroup>
     <Compile Remove="IO\ArrayPipe.cs" />
     <Compile Remove="IO\BufferSegment.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Models\" />
   </ItemGroup>
 
   <!--<ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">

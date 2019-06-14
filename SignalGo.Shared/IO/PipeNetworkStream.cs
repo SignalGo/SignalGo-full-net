@@ -1,4 +1,9 @@
-﻿using SignalGo.Shared.Models;
+﻿// Licensed to the ali.visual.studio@gmail.com under one or more agreements.
+// The license this file to you under the GNU license.
+// See the LICENSE file in the project root for more information.
+//https://github.com/Ali-YousefiTelori
+//https://github.com/SignalGo/SignalGo-full-net
+
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -19,6 +24,10 @@ namespace SignalGo.Shared.IO
     public class PipeLineStream : IDisposable
     {
         /// <summary>
+        /// size of buffer to read data from stream
+        /// </summary>
+        public int BufferSize { get; set; } = 2048;
+        /// <summary>
         /// read buffer from stream
         /// the action help us to override dispose exception without check it with if always
         /// </summary>
@@ -36,7 +45,14 @@ namespace SignalGo.Shared.IO
         /// write data to stream
         /// </summary>
         public WriteAction WriteAction { get; set; }
-        
+        /// <summary>
+        /// read a bytes array to end with a count you want to read
+        /// </summary>
+        public ReadToEndFunction ReadToEndFunction { get; set; }
+        /// <summary>
+        /// read a bytes array to end with a count you want to read async
+        /// </summary>
+        public ReadToEndAsyncFunction ReadToEndAsyncFunction { get; set; }
         /// <summary>
         /// flush the stream
         /// </summary>
@@ -58,6 +74,8 @@ namespace SignalGo.Shared.IO
             FlushAsyncAction = Stream.FlushAsync;
             ReadAction = Stream.Read;
             WriteAction = Stream.Write;
+            ReadToEndFunction = ReadToEnd;
+            ReadToEndAsyncFunction = ReadToEndAsync;
         }
 
         /// <summary>
@@ -141,6 +159,56 @@ namespace SignalGo.Shared.IO
                 builder.Append((char)bytes[0]);
             } while (true);
         }
+
+        /// <summary>
+        /// read count of data
+        /// </summary>
+        /// <param name="count">count to read from stream</param>
+        /// <returns>bytes readed from stream</returns>
+        private byte[] ReadToEnd(int count)
+        {
+            List<byte> result = new List<byte>();
+            int readedSize = 0;
+            do
+            {
+                int remaning = count - readedSize;
+                int countToRead = BufferSize > remaning ? remaning : BufferSize;
+                byte[] bytes = new byte[countToRead];
+                var readedCount = ReadAction(bytes, 0, countToRead);
+                if (readedCount <= 0)
+                    throw new Exception("read zero buffer! client disconnected");
+
+                result.AddRange(bytes.Take(readedCount));
+                readedSize += readedCount;
+
+            } while (readedSize != count);
+            return result.ToArray();
+        }
+        /// <summary>
+        /// read count of data
+        /// </summary>
+        /// <param name="count">count to read from stream</param>
+        /// <returns>bytes readed from stream</returns>
+        private async Task<byte[]> ReadToEndAsync(int count)
+        {
+            List<byte> result = new List<byte>();
+            int readedSize = 0;
+            do
+            {
+                int remaning = count - readedSize;
+                int countToRead = BufferSize > remaning ? remaning : BufferSize;
+                byte[] bytes = new byte[countToRead];
+                var readedCount = await ReadAsyncAction(bytes, 0, countToRead);
+                if (readedCount <= 0)
+                    throw new Exception("read zero buffer! client disconnected");
+
+                result.AddRange(bytes.Take(readedCount));
+                readedSize += readedCount;
+
+            } while (readedSize != count);
+            return result.ToArray();
+        }
+
         /// <summary>
         /// dispose the stream
         /// </summary>

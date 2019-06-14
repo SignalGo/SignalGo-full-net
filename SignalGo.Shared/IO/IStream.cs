@@ -6,6 +6,7 @@
 
 
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace SignalGo.Shared.IO
@@ -69,40 +70,46 @@ namespace SignalGo.Shared.IO
         /// <summary>
         /// read block of signalgo packet to end of packet
         /// </summary>
-        /// <param name="maximum">maximum size of read</param>
-        /// <returns></returns>
-        byte[] ReadBlockToEnd(ref int maximum);
+        /// <returns>return block bytes data</returns>
+        byte[] ReadBlockToEnd();
+
+        /// <summary>
+        /// read block of signalgo packet to end of packet async
+        /// </summary>
+        /// <returns>bytes readed</returns>
+        Task<byte[]> ReadBlockToEndAsync();
         /// <summary>
         /// write block of signalgo packet bytes array to stream
         /// </summary>
         /// <param name="bytes">bytes to write</param>
-        void WriteBlockToStream(ref byte[] bytes);
-        /// <summary>
-        /// read size of block every blocks has size,this method return size of block to read
-        /// </summary>
-        /// <returns>array of block size is int32</returns>
-        byte[] ReadBlockSize();
-        /// <summary>
-        /// read block of signalgo packet to end of packet async
-        /// </summary>
-        /// <param name="maximum">maximum size of read</param>
-        /// <returns></returns>
-        Task<byte[]> ReadBlockToEndAsync(ref int maximum);
+        void WriteBlockToStream(byte[] bytes);
         /// <summary>
         /// write block of signalgo packet bytes array to stream async
         /// </summary>
         /// <param name="bytes">bytes to write</param>
-        Task WriteBlockToStreamAsync(ref byte[] bytes);
-        
+        Task WriteBlockToStreamAsync(byte[] bytes);
         /// <summary>
         /// read size of block every blocks has size,this method return size of block to read
         /// </summary>
         /// <returns>array of block size is int32</returns>
-        Task<byte[]> ReadBlockSizeAsync();
+        int ReadBlockSize();
+        /// <summary>
+        /// read size of block every blocks has size,this method return size of block to read
+        /// </summary>
+        /// <returns>array of block size is int32</returns>
+        Task<int> ReadBlockSizeAsync();
+        /// <summary>
+        /// read a bytes array to end with a count you want to read
+        /// </summary>
+        ReadToEndFunction ReadToEndFunction { get; set; }
+        /// <summary>
+        /// read a bytes array to end with a count you want to read async
+        /// </summary>
+        ReadToEndAsyncFunction ReadToEndAsyncFunction { get; set; }
         #endregion
 
         #region pipline
-      
+
         /// <summary>
         /// read new line from stream
         /// </summary>
