@@ -91,7 +91,7 @@ namespace ServerConsoleTest
     {
         public string Name { get; set; }
 
-        [HttpKey(ResponseHeaderName = "Set-Cookie", RequestHeaderName = "Cookie", Perfix = "; path=/", KeyName = "_session", HeaderValueSeparate = ";", HeaderKeyValueSeparate = "=")]
+        [HttpKey(ResponseHeaderName = "Set-Cookie", RequestHeaderName = "Cookie", Prefix = "; path=/", KeyName = "_session", HeaderValueSeparate = ";", HeaderKeyValueSeparate = "=")]
         public string Session { get; set; }
 
         [HttpKey(KeyType = HttpKeyType.ExpireField)]

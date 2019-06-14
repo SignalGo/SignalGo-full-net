@@ -1,172 +1,34 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup Label="Globals">
-    <SccProjectName>SAK</SccProjectName>
-    <SccProvider>SAK</SccProvider>
-    <SccAuxPath>SAK</SccAuxPath>
-    <SccLocalPath>SAK</SccLocalPath>
-  </PropertyGroup>
   <PropertyGroup>
-    <!---->
-    <TargetFrameworks>net45;netstandard1.6;netstandard2.0;</TargetFrameworks>
+    <!--<TargetFrameworks>net45;netstandard1.6;netstandard2.0;</TargetFrameworks>-->
+    <TargetFramework>netstandard2.0</TargetFramework>
     <MinimumVisualStudioVersion>10.0</MinimumVisualStudioVersion>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <AssemblyVersion>5.5.2</AssemblyVersion>
-    <FileVersion>5.5.2</FileVersion>
-    <!--<VersionPrefix>4.1</VersionPrefix>-->
-    <Version>5.5.2</Version>
-    <!--<VersionSuffix>beta1</VersionSuffix>-->
+    <AssemblyVersion>6.0</AssemblyVersion>
+    <FileVersion>6.0</FileVersion>
+    <Version>6.0</Version>
+    <VersionSuffix>beta1</VersionSuffix>
     <Authors>Ali Yousefi</Authors>
-    <Company></Company>
     <DebugType>full</DebugType>
     <Copyright>Copyright © ali.visual.studio@gmail.com 2016</Copyright>
-    <Description>
-      SignalGo is a library for Cross-Platform developers that makes it incredibly simple to add real-time web functionality to your applications. What is "real-time web" functionality? It's the ability to have your server-side code push content to the connected clients as it happens, in real-time. like WCF and SignalR
-      Features:
-
-      1.Send and receive any data like class,object,struct and complex object
-
-      2.Send(upload) and receive(download) stream like file stream
-
-      3.Send and receive data with UDP connection for sound and video streamming
-
-      4.Return data from a method (client and server)
-
-      5.Linq query to Clients for send or receive data
-
-      6.Setting for maximum and minimum and timeout data transport
-
-      7.Using best security algoritm for send or receive data
-
-      8.Call methods from http GET and POST protocol (like call from browser) or upload and download files and manage Controllers like asp.net MVC
-
-      9. full support async await methods
-
-      10.Full logging systeam
-
-      11.Manage data exchanger to customize model properties in send and receive data without create new class
-
-      12.Ip limitation for call methods
-
-      13.Easy to manage permissions with attribute you can customize your permissions before client call methods
-
-      14.Automatic handle object references and pointers in serialize and deserialize system
-
-      15.Add service reference with visual studio for client side NuGet
-
-      16.Support Owin to host on IIS
-    </Description>
-    <PackageLicenseUrl>https://github.com/SignalGo/SignalGo-full-net/blob/master/LICENSE</PackageLicenseUrl>
-    <PackageProjectUrl>https://github.com/SignalGo/SignalGo-full-net</PackageProjectUrl>
-    <PackageIconUrl>http://cdn.persiangig.com/preview/v14ukL88fq/SignalGo.png</PackageIconUrl>
-    <PackageTags>SignalGo SignalR WCF Server Client Signal Sig RealTime Real-Time</PackageTags>
-    <AssemblyName>SignalGo.Server</AssemblyName>
-    <PackageReleaseNotes>
-      1.fix bugs and more improvement
-      2.added HttpKeyAttribute for method parameters
-      3.support for SOAP protocol
-      4.support for http calls on add signalgoservice references (easy to call http services)
-      read document examples here:
-      https://github.com/SignalGo/SignalGo-full-net
-    </PackageReleaseNotes>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net45|AnyCPU'">
-    <WarningLevel>4</WarningLevel>
-    <!--<TreatWarningsAsErrors>true</TreatWarningsAsErrors>-->
-    <!--<WarningsAsErrors />-->
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
   <PropertyGroup>
     <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\SignalGo.Server.xml</DocumentationFile>
   </PropertyGroup>
-  <ItemGroup Condition="'$(TargetFramework)' == 'net35'">
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
-    <PackageReference Include="TaskParallelLibrary" Version="1.0.2856" />
-    <PackageReference Include="NetLegacySupport.Tuple" Version="1.1.1" />
-  </ItemGroup>
-
-
-  <!-- Need to conditionally bring in references for the .NET Framework 4.0 target -->
-  <ItemGroup Condition="'$(TargetFramework)' == 'net40'">
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
-  </ItemGroup>
-  <ItemGroup Condition="'$(TargetFramework)' == 'net45'">
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
-  </ItemGroup>
-  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard1.6'">
+  
+  <!--<ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
     <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
     <PackageReference Include="System.Diagnostics.StackTrace" Version="4.3.0" />
     <PackageReference Include="System.Xml.XmlSerializer" Version="4.3.0" />
     <PackageReference Include="System.Threading.Thread" Version="4.3.0" />
     <PackageReference Include="System.Reflection.TypeExtensions" Version="4.5.1" />
     <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
-    <PackageReference Include="System.Net.Security" Version="4.3.2" />
-    <!--<PackageReference Include="NETStandard.Library" Version="1.6.1" />-->
-  </ItemGroup>
-  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
-    <PackageReference Include="System.Diagnostics.StackTrace" Version="4.3.0" />
-    <PackageReference Include="System.Xml.XmlSerializer" Version="4.3.0" />
-    <PackageReference Include="System.Threading.Thread" Version="4.3.0" />
-    <PackageReference Include="System.Reflection.TypeExtensions" Version="4.5.1" />
-    <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
-    <!--<PackageReference Include="NETStandard.Library" Version="2.0.3" />-->
-    <!--<PackageReference Include="NETStandard.Library" Version="2.0.0" />-->
-  </ItemGroup>
-  <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp1.0'">
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
-    <PackageReference Include="System.Diagnostics.StackTrace" Version="4.3.0" />
-    <PackageReference Include="System.Xml.XmlSerializer" Version="4.3.0" />
-    <PackageReference Include="System.Threading.Thread" Version="4.3.0" />
-    <PackageReference Include="System.Reflection.TypeExtensions" Version="4.5.1" />
-    <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
-    <PackageReference Include="Microsoft.NETCore.App" Version="1.0.0" />
-  </ItemGroup>
-  <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp2.0'">
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
-    <PackageReference Include="System.Diagnostics.StackTrace" Version="4.3.0" />
-    <PackageReference Include="System.Xml.XmlSerializer" Version="4.3.0" />
-    <PackageReference Include="System.Threading.Thread" Version="4.3.0" />
-    <PackageReference Include="System.Reflection.TypeExtensions" Version="4.5.1" />
-    <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
-    <PackageReference Include="Microsoft.NETCore.App" Version="2.0.0" />
-    <!--<Reference Include="netstandard" />-->
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Remove="%24tf\**" />
-    <EmbeddedResource Remove="%24tf\**" />
-    <None Remove="%24tf\**" />
-  </ItemGroup>
+  </ItemGroup>-->
+  
   <ItemGroup>
     <ProjectReference Include="..\SignalGo.Shared\SignalGo.Shared.csproj" />
   </ItemGroup>
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
 </Project>

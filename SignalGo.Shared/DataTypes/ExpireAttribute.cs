@@ -21,7 +21,7 @@ namespace SignalGo.Shared.DataTypes
         /// </summary>
         /// <param name="dateTime"></param>
         /// <returns></returns>
-        public bool CheckIsExpired(DateTime dateTime)
+        public bool CheckExpired(DateTime dateTime)
         {
             if (dateTime > DateTime.Now)
                 return false;

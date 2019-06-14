@@ -5,7 +5,6 @@
     <MinimumVisualStudioVersion>10.0</MinimumVisualStudioVersion>
     <AssemblyVersion>6.0</AssemblyVersion>
     <FileVersion>6.0</FileVersion>
-    <!--<VersionPrefix>4.0</VersionPrefix>-->
     <Version>6.0</Version>
     <VersionSuffix>beta1</VersionSuffix>
     <Authors>Ali Yousefi</Authors>

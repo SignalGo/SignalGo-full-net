@@ -16,5 +16,9 @@ namespace SignalGo.Shared.Helpers
         /// becasue in android we have \n and in windows we have \r\n for Enviorment.NewLine so we have to use this from everywhere
         /// </summary>
         public const string NewLine = "\r\n";
+        /// <summary>
+        /// 
+        /// </summary>
+        public const string SignalGoVersion_4_FirstLine = "SignalGo/4.0";
     }
 }

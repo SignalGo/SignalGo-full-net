@@ -37,7 +37,7 @@ namespace SignalGo.Shared.DataTypes
         /// <summary>
         /// add perfix to last of header value
         /// </summary>
-        public string Perfix { get; set; } = "; path=/";
+        public string Prefix { get; set; } = "; path=/";
         /// <summary>
         /// name of key parameter when your keytype is ParameterName
         /// </summary>

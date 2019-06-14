@@ -125,7 +125,7 @@ namespace SignalGo.Shared.Logs
             builder.AppendLine("<------------------------------StackTrace One End------------------------------>");
         }
 #endif
-        private readonly SemaphoreSlim lockWaitToRead = new SemaphoreSlim(1, 1);
+        private readonly SemaphoreSlim LockWaitToRead = new SemaphoreSlim(1, 1);
         /// <summary>
         /// log text message
         /// </summary>
@@ -166,7 +166,7 @@ namespace SignalGo.Shared.Logs
 #if (NET35 || NET40)
                 lockWaitToRead.Wait();
 #else
-                await lockWaitToRead.WaitAsync();
+                await LockWaitToRead.WaitAsync();
 #endif
                 using (FileStream stream = new FileStream(fileName, FileMode.OpenOrCreate, FileAccess.ReadWrite))
                 {
@@ -181,7 +181,7 @@ namespace SignalGo.Shared.Logs
             }
             finally
             {
-                lockWaitToRead.Release();
+                LockWaitToRead.Release();
             }
         }
 
@@ -215,7 +215,7 @@ namespace SignalGo.Shared.Logs
 #if (NET35 || NET40)
                     lockWaitToRead.Wait();
 #else
-                    await lockWaitToRead.WaitAsync();
+                    await LockWaitToRead.WaitAsync();
 #endif
                     using (FileStream stream = new FileStream(fileName, FileMode.OpenOrCreate, FileAccess.ReadWrite))
                     {
@@ -230,7 +230,7 @@ namespace SignalGo.Shared.Logs
                 }
                 finally
                 {
-                    lockWaitToRead.Release();
+                    LockWaitToRead.Release();
                 }
             }
             catch

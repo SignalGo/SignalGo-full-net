@@ -3,9 +3,11 @@
 // See the LICENSE file in the project root for more information.
 //https://github.com/Ali-YousefiTelori
 //https://github.com/SignalGo/SignalGo-full-net
+
 using SignalGo.Server.Models;
 using SignalGo.Server.ServiceManager.Providers;
 using SignalGo.Shared.Converters;
+using SignalGo.Shared.Helpers;
 using SignalGo.Shared.IO;
 using System;
 using System.Linq;
@@ -181,6 +183,28 @@ namespace SignalGo.Server.ServiceManager.Versions
                 string firstLineString = await streamReader.ReadLineAsync();
 
                 //check the client protocol is connecting to server
+
+                //if the protocol is http
+                if (firstLineString.Contains("HTTP/"))
+                {
+                    await HttpProvider.StartToReadingClientData(tcpClient, serverBase, streamReader, new StringBuilder(firstLineString));
+                }
+                //if the protocol is signalgo duplex
+                else if (firstLineString.Contains("SignalGo/6.0"))
+                {
+                    client = CreateClientFunc(serverBase, client, tcpClient, streamReader);
+                    client.ProtocolType = ClientProtocolType.SignalGoDuplex;
+                    client.StreamHelper = SignalGoStreamBase.CurrentBase;
+                    await SignalGoDuplexServiceProvider.StartToReadingClientData(client, serverBase);
+                }
+                //if the protocol is signalgo duplex
+                else if (firstLineString.Contains(TextHelper.SignalGoVersion_4_FirstLine))
+                {
+                    client = CreateClientFunc(serverBase, client, tcpClient, streamReader);
+                    client.ProtocolType = ClientProtocolType.SignalGoDuplex;
+                    client.StreamHelper = SignalGoStreamBase.CurrentBase;
+                    await SignalGoDuplexServiceProvider.StartToReadingClientData(client, serverBase);
+                }
                 //if the protocol is signalgo stream
                 if (firstLineString.Contains("SignalGo-Stream/4.0"))
                 {
@@ -196,19 +220,6 @@ namespace SignalGo.Server.ServiceManager.Versions
                     client.ProtocolType = ClientProtocolType.SignalGoOneWay;
                     client.StreamHelper = SignalGoStreamBase.CurrentBase;
                     OneWayServiceProvider.StartToReadingClientData(client, serverBase);
-                }
-                //if the protocol is signalgo duplex
-                else if (firstLineString.Contains("SignalGo/4.0"))
-                {
-                    client = CreateClientFunc(serverBase, client, tcpClient, streamReader);
-                    client.ProtocolType = ClientProtocolType.SignalGoDuplex;
-                    client.StreamHelper = SignalGoStreamBase.CurrentBase;
-                    await SignalGoDuplexServiceProvider.StartToReadingClientData(client, serverBase);
-                }
-                //if the protocol is http
-                else if (firstLineString.Contains("HTTP/"))
-                {
-                    await HttpProvider.StartToReadingClientData(tcpClient, serverBase, streamReader, new StringBuilder(firstLineString));
                 }
                 else
                 {
