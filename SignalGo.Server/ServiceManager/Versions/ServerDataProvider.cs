@@ -6,7 +6,6 @@
 
 using SignalGo.Server.Models;
 using SignalGo.Server.ServiceManager.Providers;
-using SignalGo.Shared.Converters;
 using SignalGo.Shared.Helpers;
 using SignalGo.Shared.IO;
 using System;
@@ -114,7 +113,7 @@ namespace SignalGo.Server.ServiceManager.Versions
                     tcpClient.GetStream().ReadTimeout = 5000;
                     tcpClient.GetStream().WriteTimeout = 5000;
                     //create client stream for read and write to socket
-                    PipeNetworkStream stream = new PipeNetworkStream(new NormalStream(await tcpClient.GetTcpStream(serverBase)), (int)serverBase.ProviderSetting.ReceiveDataTimeout.TotalMilliseconds);
+                    PipeLineStream stream = new PipeLineStream(await tcpClient.GetTcpStream(serverBase));
                     await ExchangeClientFunc(serverBase, stream, tcpClient);
                 }
                 catch (Exception)
@@ -136,7 +135,7 @@ namespace SignalGo.Server.ServiceManager.Versions
         /// <param name="serverBase">serverbase for this provider</param>
         /// <param name="client">the client</param>
         /// <returns>new client information</returns>
-        public virtual ClientInfo CreateClient(ServerBase serverBase, ClientInfo client, TcpClient tcpClient, PipeNetworkStream stream)
+        public virtual ClientInfo CreateClient(ServerBase serverBase, ClientInfo client, TcpClient tcpClient, PipeLineStream stream)
         {
             //set connected time of client
             client.ConnectedDateTime = DateTime.Now;
@@ -161,7 +160,7 @@ namespace SignalGo.Server.ServiceManager.Versions
         /// <param name="tcpClient"></param>
         /// <param name="stream"></param>
         /// <returns></returns>
-        public ClientInfo CreateClientInfoOnConnectionStatusChanged(ServerBase serverBase, ClientInfo client, TcpClient tcpClient, PipeNetworkStream stream)
+        public ClientInfo CreateClientInfoOnConnectionStatusChanged(ServerBase serverBase, ClientInfo client, TcpClient tcpClient, PipeLineStream stream)
         {
             var result = CreateClient(serverBase, client, tcpClient, stream);
             serverBase.OnClientConnectedAction?.Invoke(client);
@@ -174,7 +173,7 @@ namespace SignalGo.Server.ServiceManager.Versions
         /// <param name="serverBase">serverbase for this provider</param>
         /// <param name="streamReader">stream of client</param>
         /// <param name="tcpClient">tcp client connected</param>
-        internal async Task ExchangeClient(ServerBase serverBase, PipeNetworkStream streamReader, TcpClient tcpClient)
+        internal async Task ExchangeClient(ServerBase serverBase, PipeLineStream streamReader, TcpClient tcpClient)
         {
             ClientInfo client = new ClientInfo(serverBase);
             try
@@ -243,7 +242,7 @@ namespace SignalGo.Server.ServiceManager.Versions
         /// <param name="streamReader"></param>
         /// <param name="tcpClient"></param>
         /// <returns></returns>
-        internal Task ExchangeClientTimeOut(ServerBase serverBase, PipeNetworkStream streamReader, TcpClient tcpClient)
+        internal Task ExchangeClientTimeOut(ServerBase serverBase, PipeLineStream streamReader, TcpClient tcpClient)
         {
             var result = ExchangeClient(serverBase, streamReader, tcpClient);
             //set client timeouts
