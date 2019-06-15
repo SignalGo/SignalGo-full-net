@@ -39,10 +39,7 @@ namespace SignalGo.Client.ClientManager
         }
 
 
-        /// <summary>
-        /// call method wait for complete response from clients
-        /// </summary>
-        internal static ConcurrentDictionary<string, TaskCompletionSource<MethodCallbackInfo>> WaitedMethodsForResponse { get; set; } = new ConcurrentDictionary<string, TaskCompletionSource<MethodCallbackInfo>>();
+       
         /// <summary>
         /// send data to client
         /// </summary>
@@ -223,7 +220,7 @@ namespace SignalGo.Client.ClientManager
                 CancellationTokenSource ct = new CancellationTokenSource((int)connector.ProviderSetting.ReceiveDataTimeout.TotalMilliseconds);
                 ct.Token.Register(() => valueData.TrySetCanceled(), useSynchronizationContext: false);
 
-                bool added = WaitedMethodsForResponse.TryAdd(callInfo.Guid, valueData);
+                bool added = connector.WaitedMethodsForResponse.TryAdd(callInfo.Guid, valueData);
                 object service = connector.Services.ContainsKey(callInfo.ServiceName) ? connector.Services[callInfo.ServiceName] : null;
                 //#if (PORTABLE)
                 MethodInfo method = service?.GetType().FindMethod(callInfo.MethodName);
@@ -264,7 +261,7 @@ namespace SignalGo.Client.ClientManager
             }
             finally
             {
-                WaitedMethodsForResponse.Remove(callInfo.Guid);
+                connector.WaitedMethodsForResponse.Remove(callInfo.Guid);
             }
         }
 #endif
@@ -279,7 +276,7 @@ namespace SignalGo.Client.ClientManager
                 CancellationTokenSource ct = new CancellationTokenSource();
                 ct.Token.Register(() => valueData.TrySetCanceled(), useSynchronizationContext: false);
 
-                bool added = WaitedMethodsForResponse.TryAdd(callInfo.Guid, valueData);
+                bool added = connector.WaitedMethodsForResponse.TryAdd(callInfo.Guid, valueData);
                 object service = connector.Services.ContainsKey(callInfo.ServiceName) ? connector.Services[callInfo.ServiceName] : null;
                 //#if (PORTABLE)
                 MethodInfo method = service?.GetType().FindMethod(callInfo.MethodName);
@@ -320,7 +317,7 @@ namespace SignalGo.Client.ClientManager
             }
             finally
             {
-                WaitedMethodsForResponse.Remove(callInfo.Guid);
+                connector.WaitedMethodsForResponse.Remove(callInfo.Guid);
             }
         }
 

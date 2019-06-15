@@ -58,6 +58,11 @@ namespace SignalGo.Client.ClientManager
         {
             JsonSettingHelper.Initialize();
         }
+
+        /// <summary>
+        /// call method wait for complete response from clients
+        /// </summary>
+        internal ConcurrentDictionary<string, TaskCompletionSource<MethodCallbackInfo>> WaitedMethodsForResponse { get; set; } = new ConcurrentDictionary<string, TaskCompletionSource<MethodCallbackInfo>>();
         /// <summary>
         /// protocol of signalgo client to connect server
         /// if your server is hosted on iis use httpduplex
@@ -1241,7 +1246,7 @@ namespace SignalGo.Client.ClientManager
 
                                 MethodCallbackInfo callback = ClientSerializationHelper.DeserializeObject<MethodCallbackInfo>(json);
 
-                                bool geted = ConnectorExtensions.WaitedMethodsForResponse.TryGetValue(callback.Guid, out TaskCompletionSource<MethodCallbackInfo> keyValue);
+                                bool geted = WaitedMethodsForResponse.TryGetValue(callback.Guid, out TaskCompletionSource<MethodCallbackInfo> keyValue);
                                 if (geted)
                                 {
                                     if (callback.IsException)
@@ -1438,7 +1443,7 @@ namespace SignalGo.Client.ClientManager
             {
                 try
                 {
-                    if (ConnectorExtensions.WaitedMethodsForResponse.TryGetValue(callback.Guid, out TaskCompletionSource<MethodCallbackInfo> keyValue))
+                    if (WaitedMethodsForResponse.TryGetValue(callback.Guid, out TaskCompletionSource<MethodCallbackInfo> keyValue))
                     {
                         keyValue.SetException(ex);
                     }
@@ -1698,11 +1703,11 @@ namespace SignalGo.Client.ClientManager
             {
                 IsConnected = false;
             }
-            foreach (KeyValuePair<string, TaskCompletionSource<MethodCallbackInfo>> item in ConnectorExtensions.WaitedMethodsForResponse)
+            foreach (KeyValuePair<string, TaskCompletionSource<MethodCallbackInfo>> item in WaitedMethodsForResponse)
             {
                 item.Value.TrySetCanceled();
             }
-            ConnectorExtensions.WaitedMethodsForResponse.Clear();
+            WaitedMethodsForResponse.Clear();
 
             OnConnectionChanged?.Invoke(ConnectionStatus.Disconnected);
 
