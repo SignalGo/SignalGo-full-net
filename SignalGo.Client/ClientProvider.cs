@@ -71,7 +71,7 @@ namespace SignalGo.Client
             if (ProtocolType != ClientProtocolType.HttpDuplex)
                 throw new NotSupportedException();
 #endif
-            
+
             if (!Uri.TryCreate(url, UriKind.Absolute, out Uri uri))
             {
                 throw new Exception("url is not valid");
@@ -165,11 +165,20 @@ namespace SignalGo.Client
                 try
                 {
                     await ConnectAsync(url);
-                    connectedAction(true);
+                    try
+                    {
+                        connectedAction(true);
+                    }
+                    catch
+                    {
+
+                    }
                     await AutoReconnectWaitToDisconnectTaskResult.Task;
                     await Task.Delay(1000);
                     AutoReconnectWaitToDisconnectTaskResult = new TaskCompletionSource<object>();
+
                     ConnectAsyncAutoReconnect(url, connectedAction);
+
                 }
                 catch (Exception ex)
                 {
@@ -277,7 +286,7 @@ namespace SignalGo.Client
 #if (NET40 || NET35)
             StreamHelper.WriteToStream(_clientStream, firstBytes);
 #else
-            return StreamHelper.WriteToStreamAsync(_clientStream,firstBytes);
+            return StreamHelper.WriteToStreamAsync(_clientStream, firstBytes);
 #endif
         }
 
