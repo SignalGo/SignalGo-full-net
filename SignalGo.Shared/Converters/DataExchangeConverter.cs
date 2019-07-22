@@ -1298,7 +1298,7 @@ namespace SignalGo.Shared.Converters
             if (!SerializedObjects.Contains(value))
                 SerializedObjects.Add(value);
             Type type = value.GetType();
-            if (HasJsonIgnore(type) || type.FullName.StartsWith("System.Reflection."))
+            if (HasJsonIgnore(type) || type.FullName.StartsWith("System.Reflection.") || typeof(Delegate).IsAssignableFrom(type))
                 return;
             if (SerializeHelper.GetTypeCodeOfObject(type) != SerializeObjectType.Object)
             {
@@ -1559,7 +1559,7 @@ namespace SignalGo.Shared.Converters
             try
             {
                 CustomDataExchangerAttribute implementICollection = GetCustomDataExchanger(baseType, instance);
-                if (CanIgnoreCustomDataExchanger(baseType, instance))
+                if (CanIgnoreCustomDataExchanger(baseType, instance) || typeof(Delegate).IsAssignableFrom(baseType))
                     return;
 
                 foreach (PropertyInfo property in baseType.GetListOfProperties())
