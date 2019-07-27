@@ -12,6 +12,20 @@ using System.Xml.Serialization;
 
 namespace SignalGo.Client
 {
+    [XmlRoot(ElementName = "Envelope", Namespace = "http://schemas.xmlsoap.org/soap/envelope/")]
+    public class Envelope
+    {
+        [XmlElement(ElementName = "Header", Namespace = "http://schemas.xmlsoap.org/soap/envelope/")]
+        public string Header { get; set; }
+        [XmlElement(ElementName = "Body", Namespace = "http://schemas.xmlsoap.org/soap/envelope/")]
+        public object Body { get; set; }
+        [XmlAttribute(AttributeName = "soap", Namespace = "http://www.w3.org/2000/xmlns/")]
+        public string Soap { get; set; }
+        [XmlAttribute(AttributeName = "xsd", Namespace = "http://www.w3.org/2000/xmlns/")]
+        public string Xsd { get; set; }
+        [XmlAttribute(AttributeName = "xsi", Namespace = "http://www.w3.org/2000/xmlns/")]
+        public string Xsi { get; set; }
+    }
     public static class WebServiceProtocolHelper
     {
         public static T CallWebServiceMethod<T>(string headerTemplate, string url, string actionUrl, string targetNamespace, string methodName, ParameterInfo[] args)
@@ -24,14 +38,13 @@ namespace SignalGo.Client
                     stringBuilder.AppendLine(item.Value.Replace("<?xml version=\"1.0\" encoding=\"utf-8\"?>", ""));
                 }
             }
-            string defaultData = $@"<?xml version=""1.0"" encoding=""utf-8""?><soap:Envelope xmlns:soap=""http://schemas.xmlsoap.org/soap/envelope/"" xmlns:xsd=""http://www.w3.org/2001/XMLSchema"" xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"">
-<soap:Header>
-{headerTemplate}
-</soap:Header>
-              <soap:Body>
-{stringBuilder.ToString()}
-              </soap:Body>
-            </soap:Envelope>";
+  string defaultData = $@"<?xml version=""1.0"" encoding=""utf-8""?>
+<soap:Envelope xmlns:soap=""http://schemas.xmlsoap.org/soap/envelope/"" xmlns:xsd=""http://www.w3.org/2001/XMLSchema"" xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"">
+	<soap:Header>
+          {headerTemplate}
+	</soap:Header>
+	<soap:Body>{stringBuilder.ToString().Trim()}</soap:Body>
+</soap:Envelope>";
 #if (!NETSTANDARD1_6)
             using (WebClient client = new WebClient())
             {
@@ -65,7 +78,7 @@ namespace SignalGo.Client
             // Creates a DataSet; adds a table, column, and ten rows.
             using (var baseStream = new MemoryStream())
             {
-                using (var stream = new StreamWriter(baseStream, Encoding.UTF8))
+                using (var stream = new StreamWriter(baseStream))
                 {
                     ser.Serialize(stream, data);
                     baseStream.Seek(0, SeekOrigin.Begin);
