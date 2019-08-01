@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
 using System.Xml.Serialization;
@@ -38,7 +39,7 @@ namespace SignalGo.Client
                     stringBuilder.AppendLine(item.Value.Replace("<?xml version=\"1.0\" encoding=\"utf-8\"?>", ""));
                 }
             }
-  string defaultData = $@"<?xml version=""1.0"" encoding=""utf-8""?>
+            string defaultData = $@"<?xml version=""1.0"" encoding=""utf-8""?>
 <soap:Envelope xmlns:soap=""http://schemas.xmlsoap.org/soap/envelope/"" xmlns:xsd=""http://www.w3.org/2001/XMLSchema"" xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"">
 	<soap:Header>
           {headerTemplate}
@@ -63,6 +64,40 @@ namespace SignalGo.Client
             throw new NotSupportedException();
 #endif
         }
+#if (!NETSTANDARD1_6 && !NET35 && !NET40)
+
+        public static async Task<T> CallWebServiceMethodAsync<T>(string headerTemplate, string url, string actionUrl, string targetNamespace, string methodName, ParameterInfo[] args)
+        {
+            StringBuilder stringBuilder = new StringBuilder();
+            if (args != null)
+            {
+                foreach (ParameterInfo item in args)
+                {
+                    stringBuilder.AppendLine(item.Value.Replace("<?xml version=\"1.0\" encoding=\"utf-8\"?>", ""));
+                }
+            }
+            string defaultData = $@"<?xml version=""1.0"" encoding=""utf-8""?>
+<soap:Envelope xmlns:soap=""http://schemas.xmlsoap.org/soap/envelope/"" xmlns:xsd=""http://www.w3.org/2001/XMLSchema"" xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"">
+	<soap:Header>
+          {headerTemplate}
+	</soap:Header>
+	<soap:Body>{stringBuilder.ToString().Trim()}</soap:Body>
+</soap:Envelope>";
+            using (WebClient client = new WebClient())
+            {
+                if (!string.IsNullOrEmpty(actionUrl))
+                    client.Headers["SOAPAction"] = actionUrl;
+                client.Headers.Add(HttpRequestHeader.ContentType, "text/xml; charset=utf-8;");
+                string data = await client.UploadStringTaskAsync(url, defaultData);
+                if (typeof(T) == typeof(object))
+                    return default;
+                XDocument doc = XDocument.Parse(data);
+                List<XElement> elements = new List<XElement>();
+                var element = FindElement(doc.Elements(), typeof(T).Name);
+                return (T)Deserialize(element, typeof(T));
+            }
+        }
+#endif
         public static string Serialize(object data, string targetNamespace)
         {
             var attribute = data.GetType().GetCustomAttributes<XmlTypeAttribute>();
