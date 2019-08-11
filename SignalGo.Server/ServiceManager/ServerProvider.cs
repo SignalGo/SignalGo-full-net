@@ -211,5 +211,8 @@ namespace SignalGo.Server.ServiceManager
         //    //IPHostEntry server = Dns.Resolve(uri.Host);
         //    ConnectWebSocket(uri.Port, new string[] { uri.AbsolutePath });
         //}
+
+
+
     }
 }

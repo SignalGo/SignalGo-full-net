@@ -170,20 +170,20 @@ namespace SignalGo.Server.ServiceManager.Providers
             {
                 if (client.RequestHeaders.ContainsKey("origin"))
                 {
-                    client.ResponseHeaders.Add("Access-Control-Allow-Origin", client.RequestHeaders["origin"]);
+                    client.ResponseHeaders["Access-Control-Allow-Origin"] = client.RequestHeaders["origin"];
                 }
                 else
-                    client.ResponseHeaders.Add("Access-Control-Allow-Origin", "*");
+                    client.ResponseHeaders["Access-Control-Allow-Origin"] = new string[] { "*" };
             }
             else
-                client.ResponseHeaders.Add("Access-Control-Allow-Origin", serverBase.ProviderSetting.HttpSetting.GetCustomOriginFunction(client));
+                client.ResponseHeaders["Access-Control-Allow-Origin"] = new string[] { serverBase.ProviderSetting.HttpSetting.GetCustomOriginFunction(client) };
 
-            client.ResponseHeaders.Add("Access-Control-Allow-Credentials", "true");
+            client.ResponseHeaders["Access-Control-Allow-Credentials"] = new string[] { "true" };
             if (!string.IsNullOrEmpty(client.GetRequestHeaderValue("Access-Control-Request-Headers")))
-                client.ResponseHeaders.Add("Access-Control-Allow-Headers", client.RequestHeaders["Access-Control-Request-Headers"]);
+                client.ResponseHeaders["Access-Control-Allow-Headers"] = client.RequestHeaders["Access-Control-Request-Headers"];
             else
-                client.ResponseHeaders.Add("Access-Control-Allow-Headers", "*");
-            client.ResponseHeaders.Add("Access-Control-Allow-Methods", "*");
+                client.ResponseHeaders["Access-Control-Allow-Headers"] = new string[] { "*" };
+            client.ResponseHeaders["Access-Control-Allow-Methods"] = new string[] { "*" };
         }
 
         /// <summary>
@@ -247,7 +247,16 @@ namespace SignalGo.Server.ServiceManager.Providers
                         resultBytes.AddRange(buffer.ToList().GetRange(0, readCount));
                         readedCount += readCount;
                     }
-                    string postResponse = Encoding.UTF8.GetString(resultBytes.ToArray(), 0, resultBytes.Count);
+                    byte[] bytes = resultBytes.ToArray();
+                    if (serverBase.DecryptRequest != null)
+                    {
+                        var temp = serverBase.DecryptRequest(client, bytes);
+                        if (temp != null || serverBase.ProviderSetting.IsForceEncryption)
+                        {
+                            bytes = temp;
+                        }
+                    }
+                    string postResponse = Encoding.UTF8.GetString(bytes, 0, bytes.Count());
                     content = postResponse;
                 }
 
@@ -630,6 +639,22 @@ namespace SignalGo.Server.ServiceManager.Providers
                         controller.ResponseHeaders.Add("Connection", "close".Split(','));
 
                     byte[] dataBytes = Encoding.UTF8.GetBytes(data);
+                    if (serverBase.EncryptResponse != null)
+                    {
+                        SignalGo.Shared.Log.AutoLogger.Default.LogText("EncryptResponse : " + dataBytes.Length);
+                        var bytes = serverBase.EncryptResponse(client, dataBytes);
+
+                        if (bytes != null)
+                        {
+
+                            try { controller.ResponseHeaders.Remove("Content-Type"); }
+                            catch (Exception e) { }
+                            dataBytes = bytes;
+                            controller.ResponseHeaders.Add("Content-Type", "application/text; charset=utf-8".Split(','));
+                        }
+
+                        SignalGo.Shared.Log.AutoLogger.Default.LogText("EncryptResponse2 : " + dataBytes.Length);
+                    }
                     await SendResponseHeadersToClient(controller.Status, controller.ResponseHeaders, client, dataBytes.Length);
                     await SendResponseDataToClient(dataBytes, client);
                 }

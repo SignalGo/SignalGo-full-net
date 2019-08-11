@@ -119,5 +119,10 @@ namespace SignalGo.Shared.Models
         ///  enable $ref 
         /// </summary>
         public bool IsEnabledReferenceResolverForArray { get; set; } = true;
+        /// <summary>
+        ///  if enable it, you should Encrypt and decrypt and if is not throw exception
+        /// </summary>
+        public bool IsForceEncryption { get; set; } = false;
+
     }
 }
