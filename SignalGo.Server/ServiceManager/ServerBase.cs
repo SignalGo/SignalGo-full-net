@@ -133,6 +133,17 @@ namespace SignalGo.Server.ServiceManager
         /// </summary>
         public Func<List<BaseValidationRuleInfoAttribute>, object, MethodInfo, object> ValidationResultHandlingFunction { get; set; }
         /// <summary>
+        /// if you want your response become encrypt you should use this for your algoritm
+        /// </summary>
+        public Func<ClientInfo,byte[],byte[]> EncryptResponse { get; set; }
+        /// <summary>
+        /// if you want Decrypt response, you should use this for your algoritm, if you can't decrypt you should return null
+        /// </summary>
+        public Func<ClientInfo, byte[], byte[]> DecryptRequest { get; set; }
+
+
+
+        /// <summary>
         /// Register server service
         /// </summary>
         /// <param name="serviceType"></param>
