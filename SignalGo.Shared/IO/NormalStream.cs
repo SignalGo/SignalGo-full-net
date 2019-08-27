@@ -59,19 +59,19 @@ namespace SignalGo.Shared.IO
 #if (!NET35 && !NET40)
         public async Task<int> ReadAsync(byte[] buffer, int offset, int count)
         {
-            if (_stream.CanTimeout && _stream.ReadTimeout > 0)
-            {
-                int ReciveCount = 0;
-                Task receiveTask = Task.Run(async () => { ReciveCount = await _stream.ReadAsync(buffer, offset, count); });
-                bool isReceived = await Task.WhenAny(receiveTask, Task.Delay(_stream.ReadTimeout)) == receiveTask;
-                if (!isReceived)
-                    return -1;
-                return ReciveCount;
-            }
-            else
-            {
-                return await _stream.ReadAsync(buffer, offset, count);
-            }
+            //if (_stream.CanTimeout && _stream.ReadTimeout > 0)
+            //{
+            //    int ReciveCount = 0;
+            //    Task receiveTask = Task.Run(async () => { ReciveCount = await _stream.ReadAsync(buffer, offset, count); });
+            //    bool isReceived = await Task.WhenAny(receiveTask, Task.Delay(_stream.ReadTimeout)) == receiveTask;
+            //    if (!isReceived)
+            //        return -1;
+            //    return ReciveCount;
+            //}
+            //else
+            //{
+            return await _stream.ReadAsync(buffer, offset, count);
+            //}
         }
 #endif
 

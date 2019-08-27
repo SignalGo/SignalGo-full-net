@@ -69,13 +69,16 @@ namespace SignalGoTest
             //client.Connect("http://localhost:1132/SignalGoTestService");
         }
 
-        public static ClientProvider InitializeAndConnecteClient()
+        public static ClientProvider InitializeAndConnecteClient(bool isWebSocket = false)
         {
             ClientProvider provider = new ClientProvider();
             client = provider;
+            if (isWebSocket)
+                provider.ProtocolType = SignalGo.Client.ClientManager.ClientProtocolType.WebSocket;
             //connect to your server must have full address that your server is listen
             provider.Connect("http://localhost:1132/SignalGoTestService");
             provider.RegisterClientService<TestClientServiceModel>();
+
             return provider;
         }
     }

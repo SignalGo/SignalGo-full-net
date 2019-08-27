@@ -293,7 +293,7 @@ namespace SignalGo.Client
 #if (!NET40 && !NET35)
         private async Task GetClientIdIfNeedAsync()
         {
-            if (ProviderSetting.AutoDetectRegisterServices && ProtocolType != ClientProtocolType.HttpDuplex)
+            if (ProviderSetting.AutoDetectRegisterServices && ProtocolType != ClientProtocolType.HttpDuplex && ProtocolType != ClientProtocolType.WebSocket)
             {
                 byte[] data = new byte[]
                 {
@@ -308,7 +308,7 @@ namespace SignalGo.Client
 
         private void GetClientIdIfNeed()
         {
-            if (ProviderSetting.AutoDetectRegisterServices && ProtocolType != ClientProtocolType.HttpDuplex)
+            if (ProviderSetting.AutoDetectRegisterServices && ProtocolType != ClientProtocolType.HttpDuplex && ProtocolType !=  ClientProtocolType.WebSocket)
             {
                 byte[] data = new byte[]
                 {
