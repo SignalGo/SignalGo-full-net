@@ -234,6 +234,7 @@ namespace SignalGo.Shared.IO
             else
             {
                 byte[] encode = WebcoketDatagramBase.Current.Encode(buffer.Take(count).ToArray());
+                //byte[] decode = WebcoketDatagramBase.Current.Dencode(encode);
                 await _stream.WriteAsync(encode, 0, encode.Length);
             }
         }

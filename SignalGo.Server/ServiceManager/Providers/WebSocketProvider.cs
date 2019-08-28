@@ -22,14 +22,19 @@ namespace SignalGo.Server.ServiceManager.Providers
                 {
                     byte oneByteOfDataType = await client.StreamHelper.ReadOneByteAsync(stream);
                     //type of data
-                    DataType dataType = (DataType)oneByteOfDataType;
+                    DataType dataType = (DataType)int.Parse(((char)oneByteOfDataType).ToString());
                     if (dataType == DataType.PingPong)
                     {
                         await client.StreamHelper.WriteToStreamAsync(client.ClientStream, new byte[] { 5 });
                         continue;
                     }
+                    // ',' char
+                    var oneByteOfCompressMode = await client.StreamHelper.ReadOneByteAsync(stream);
+                    oneByteOfCompressMode = await client.StreamHelper.ReadOneByteAsync(stream);
                     //compress mode of data
-                    CompressMode compressMode = (CompressMode)await client.StreamHelper.ReadOneByteAsync(stream);
+                    CompressMode compressMode = (CompressMode)int.Parse(((char)oneByteOfCompressMode).ToString());
+                    // read '/'
+                    oneByteOfCompressMode = await client.StreamHelper.ReadOneByteAsync(stream);
                     //a server service method called from client
                     if (dataType == DataType.CallMethod)
                     {
@@ -243,7 +248,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 }
                 else
                 {
-                    json = (int)DataType.ResponseCallMethod + "," + (int)CompressMode.None + "/" + json;
+                    json = (int)DataType.ResponseCallMethod + "," + (int)CompressMode.None + "/" + json + "#end";
                     byte[] result = Encoding.UTF8.GetBytes(json);
                     //if (ClientsSettings.ContainsKey(client))
                     //    result = EncryptBytes(result, client);

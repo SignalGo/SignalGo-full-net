@@ -183,7 +183,7 @@ namespace SignalGo.Server.ServiceManager
             }
             else
             {
-                json = (int)DataType.CallMethod + "," + (int)CompressMode.None + "/" + json;
+                json = (int)DataType.CallMethod + "," + (int)CompressMode.None + "/" + json + "#end";
                 byte[] bytes = Encoding.UTF8.GetBytes(json);
                 await client.StreamHelper.WriteToStreamAsync(client.ClientStream, bytes);
             }

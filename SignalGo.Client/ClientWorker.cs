@@ -147,8 +147,6 @@ namespace SignalGo.Client
             string newLine = TextHelper.NewLine;
             string headData = $@"GET / HTTP/1.1
 Host: {host}:{port}
-User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:64.0) Gecko/20100101 Firefox/64.0
-Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
 Accept-Language: en-US,en;q=0.5
 Accept-Encoding: gzip, deflate
 Sec-WebSocket-Version: 13
@@ -161,7 +159,7 @@ Connection: keep-alive, Upgrade
 Pragma: no-cache
 Cache-Control: no-cache
 Upgrade: websocket{newLine + newLine}";
-            return Encoding.UTF8.GetBytes(headData);
+            return Encoding.ASCII.GetBytes(headData);
         }
 
 #if (!NET35 && !NET40)

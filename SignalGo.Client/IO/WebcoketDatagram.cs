@@ -10,55 +10,8 @@ namespace SignalGo.Client.IO
 {
     public class WebcoketDatagram : WebcoketDatagramBase
     {
-        public byte[] Dencode2(byte[] bytes)
-        {
-            List<byte> ret = new List<byte>();
-            int offset = 0;
-            while (offset + 6 < bytes.Length)
-            {
-                // format: 0==ascii/binary 1=length-0x80, byte 2,3,4,5=key, 6+len=message, repeat with offset for next...
-                int len = bytes[offset + 1] - 0x80;
-
-                if (len <= 125)
-                {
-
-                    //String data = Encoding.UTF8.GetString(bytes);
-                    //Debug.Log("len=" + len + "bytes[" + bytes.Length + "]=" + ByteArrayToString(bytes) + " data[" + data.Length + "]=" + data);
-                    //Debug.Log("len=" + len + " offset=" + offset);
-                    byte[] key = new byte[] { bytes[offset + 2], bytes[offset + 3], bytes[offset + 4], bytes[offset + 5] };
-                    byte[] decoded = new byte[len];
-                    for (int i = 0; i < len; i++)
-                    {
-                        int realPos = offset + 6 + i;
-                        decoded[i] = (byte)(bytes[realPos] ^ key[i % 4]);
-                    }
-                    offset += 6 + len;
-                    ret.AddRange(decoded);
-                }
-                else
-                {
-                    int a = bytes[offset + 2];
-                    int b = bytes[offset + 3];
-                    len = (a << 8) + b;
-                    //Debug.Log("Length of ws: " + len);
-
-                    byte[] key = new byte[] { bytes[offset + 4], bytes[offset + 5], bytes[offset + 6], bytes[offset + 7] };
-                    byte[] decoded = new byte[len];
-                    for (int i = 0; i < len; i++)
-                    {
-                        int realPos = offset + 8 + i;
-                        decoded[i] = (byte)(bytes[realPos] ^ key[i % 4]);
-                    }
-
-                    offset += 8 + len;
-                    ret.AddRange(decoded);
-                }
-            }
-            return ret.ToArray();
-        }
         public override byte[] Dencode(byte[] bytes)
         {
-            string incomingData = string.Empty;
             byte secondByte = bytes[1];
             int dataLength = secondByte & 127;
             int indexFirstMask = 2;
@@ -68,35 +21,17 @@ namespace SignalGo.Client.IO
                 indexFirstMask = 10;
 
             IEnumerable<byte> keys = bytes.Skip(indexFirstMask).Take(4);
-            //int indexFirstDataByte = indexFirstMask + 4;
+            int indexFirstDataByte = indexFirstMask + 4;
 
-            byte[] decoded = new byte[bytes.Length - indexFirstMask];
-            for (int i = indexFirstMask, j = 0; i < bytes.Length; i++, j++)
+            byte[] decoded = new byte[bytes.Length - indexFirstDataByte];
+            for (int i = indexFirstDataByte, j = 0; i < bytes.Length; i++, j++)
             {
                 decoded[j] = (byte)(bytes[i] ^ keys.ElementAt(j % 4));
             }
 
             return decoded;
         }
-        //public override byte[] Dencode(byte[] bytes)
-        //{
-        //    byte secondByte = bytes[1];
-        //    int dataLength = secondByte & 127;
-        //    int indexFirstMask = 2;
-        //    if (dataLength == 126)
-        //        indexFirstMask = 4;
-        //    else if (dataLength == 127)
-        //        indexFirstMask = 10;
 
-
-        //    byte[] decoded = new byte[bytes.Length - indexFirstMask];
-        //    for (int i = indexFirstMask, j = 0; i < bytes.Length; i++, j++)
-        //    {
-        //        decoded[j] = bytes[i];
-        //    }
-
-        //    return Dencode2(decoded);
-        //}
 
         private static Random m_Random = new Random();
 
@@ -187,7 +122,9 @@ namespace SignalGo.Client.IO
                 int b = bytes[3];
                 len = (a << 8) + b;
             }
-            return len;
+            //else
+            //    len += 4;
+            return len+4;
         }
 
         public override Tuple<int, byte[]> GetBlockLength(Stream stream, Func<int, byte[]> readBlockSize)

@@ -1,16 +1,12 @@
 ﻿#if (NETSTANDARD)
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.Features;
-using Microsoft.AspNetCore.Http.Internal;
 using Microsoft.Extensions.Primitives;
-using SignalGo.Server.Models;
 using SignalGo.Server.ServiceManager;
 using SignalGo.Server.ServiceManager.Providers;
 using SignalGo.Shared.IO;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Net.WebSockets;
 using System.Threading.Tasks;
@@ -41,7 +37,6 @@ namespace SignalGo.Server.Owin
             //    context.Response.StatusCode = (int)HttpStatusCode.OK;
             //    return _next.Invoke(context);
             //}
-
             string uri = context.Request.Path.Value + context.Request.QueryString.ToString();
             string serviceName = uri.Contains('/') ? uri.Substring(0, uri.LastIndexOf('/')).Trim('/') : "";
             bool isWebSocketd = context.Request.Headers.ContainsKey("Sec-WebSocket-Key");
@@ -50,6 +45,7 @@ namespace SignalGo.Server.Owin
                 await _next.Invoke(context);
                 return;
             }
+            context.Response.Headers.Add("IsSignalGoOverIIS", "true");
 
             OwinClientInfo owinClientInfo = new OwinClientInfo(CurrentServerBase);
             owinClientInfo.ChangeStatusAction = (code) =>
@@ -67,20 +63,20 @@ namespace SignalGo.Server.Owin
             owinClientInfo.ResponseHeaders = new HttpHeaderCollection(context.Response.Headers);
             if (context.Request.Headers.ContainsKey("signalgo") && context.Request.Headers["signalgo"] == "SignalGoHttpDuplex")
             {
-                context.Response.Headers["Content-Length"] = "170";
-                context.Request.EnableRewind();
-                context.Request.EnableBuffering();
-                owinClientInfo.StreamHelper = SignalGoStreamBase.CurrentBase;
-                owinClientInfo.ClientStream = new PipeNetworkStream(new DuplexStream(context.Request.Body, context.Response.Body));
-                owinClientInfo.ProtocolType = ClientProtocolType.HttpDuplex;
-                if (context.Request.Headers["SignalgoDuplexWebSocket"] == "true")
-                {
-                    owinClientInfo.StreamHelper = SignalGoStreamWebSocketLlight.CurrentWebSocket;
-                    await HttpProvider.AddSignalGoWebSocketHttpClient(owinClientInfo, CurrentServerBase);
-                }
-                else
-                    await HttpProvider.AddSignalGoWebSocketHttpClient(owinClientInfo, CurrentServerBase);
-                await Task.FromResult<object>(null);
+                //context.Response.Headers["Content-Length"] = "170";
+                //context.Request.EnableRewind();
+                //context.Request.EnableBuffering();
+                //owinClientInfo.StreamHelper = SignalGoStreamBase.CurrentBase;
+                //owinClientInfo.ClientStream = new PipeNetworkStream(new DuplexStream(context.Request.Body, context.Response.Body));
+                //owinClientInfo.ProtocolType = ClientProtocolType.HttpDuplex;
+                //if (context.Request.Headers["SignalgoDuplexWebSocket"] == "true")
+                //{
+                //    owinClientInfo.StreamHelper = SignalGoStreamWebSocketLlight.CurrentWebSocket;
+                //    await HttpProvider.AddSignalGoWebSocketHttpClient(owinClientInfo, CurrentServerBase);
+                //}
+                //else
+                //    await HttpProvider.AddSignalGoWebSocketHttpClient(owinClientInfo, CurrentServerBase);
+                //await Task.FromResult<object>(null);
             }
             else if (isWebSocketd)
             {
@@ -88,12 +84,13 @@ namespace SignalGo.Server.Owin
                 bool web = context.WebSockets.IsWebSocketRequest;
                 WebSocket webSocket = await context.WebSockets.AcceptWebSocketAsync();
                 owinClientInfo.ClientStream = new PipeNetworkStream(new WebsocketStream(webSocket));
-                if (context.Request.Headers["SignalgoDuplexWebSocket"] == "true")
-                {
-                    owinClientInfo.StreamHelper = SignalGoStreamWebSocketLlight.CurrentWebSocket;
-                    await HttpProvider.AddSignalGoWebSocketHttpClient(owinClientInfo, CurrentServerBase);
-                }
-                else
+                //if (context.Request.Headers["SignalgoDuplexWebSocket"] == "true")
+                //{
+                //    //owinClientInfo.StreamHelper = SignalGoStreamWebSocketLlight.CurrentWebSocket;
+                //    //await HttpProvider.AddSignalGoWebSocketHttpClient(owinClientInfo, CurrentServerBase);
+                //    await HttpProvider.AddWebSocketHttpClient(owinClientInfo, CurrentServerBase);
+                //}
+                //else
                     await HttpProvider.AddWebSocketHttpClient(owinClientInfo, CurrentServerBase);
                 await Task.FromResult<object>(null);
             }
