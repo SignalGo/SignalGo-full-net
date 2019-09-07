@@ -4,6 +4,8 @@ using System.Linq;
 using System.Net;
 #if (!NETSTANDARD)
 using Microsoft.Owin;
+#else
+using Microsoft.AspNetCore.Http;
 #endif
 using SignalGo.Server.Models;
 using SignalGo.Server.ServiceManager;
@@ -25,8 +27,15 @@ namespace SignalGo.Server.Owin
                 return true;
             }
         }
+
+
 #if (!NETSTANDARD)
         public IOwinContext OwinContext { get; set; }
+#else
+        /// <summary>
+        /// http context of 
+        /// </summary>
+        public HttpContext HttpContext { get; set; }
 #endif
         public override IDictionary<string, string[]> ResponseHeaders { get; set; }
         public override IDictionary<string, string[]> RequestHeaders { get; set; }
