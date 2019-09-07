@@ -1,5 +1,6 @@
 ﻿#if (!NETSTANDARD)
 using Microsoft.Owin;
+using SignalGo.Server.IO;
 using SignalGo.Server.ServiceManager;
 using SignalGo.Server.ServiceManager.Providers;
 using SignalGo.Shared.IO;
@@ -39,6 +40,7 @@ namespace SignalGo.Server.Owin
             bool isWebSocketd = context.Request.Headers.ContainsKey("Sec-WebSocket-Key");
             if (!BaseProvider.ExistService(serviceName, CurrentServerBase) && !isWebSocketd && !context.Request.Headers.ContainsKey("signalgo") && !context.Request.Headers.ContainsKey("signalgo-servicedetail") && context.Request.Headers["content-type"] != "SignalGo Service Reference")
                 return Next.Invoke(context);
+            context.Response.Headers.Add("IsSignalGoOverIIS", new string[] { "true" });
 
             OwinClientInfo owinClientInfo = new OwinClientInfo(CurrentServerBase);
             owinClientInfo.ConnectedDateTime = DateTime.Now;
@@ -84,15 +86,18 @@ namespace SignalGo.Server.Owin
             {
                 WebSocket webSocket = ((WebSocketContext)value).WebSocket;
                 ClientInfo.ClientStream = new PipeNetworkStream(new WebsocketStream(webSocket));
-                if (((WebSocketContext)value).Headers["SignalgoDuplexWebSocket"] == "true")
-                {
-                    ClientInfo.StreamHelper = SignalGoStreamWebSocketLlight.CurrentWebSocket;
-                    await HttpProvider.AddSignalGoWebSocketHttpClient(ClientInfo, CurrentServerBase);
-                }
-                else
-                {
-                    await HttpProvider.AddWebSocketHttpClient(ClientInfo, CurrentServerBase);
-                }
+                WebcoketDatagramBase.Current = new WebcoketIISDatagram();
+                await HttpProvider.AddWebSocketHttpClient(ClientInfo, CurrentServerBase);
+
+                //if (((WebSocketContext)value).Headers["SignalgoDuplexWebSocket"] == "true")
+                //{
+                //    //ClientInfo.StreamHelper = SignalGoStreamWebSocketLlight.CurrentWebSocket;
+                //    await HttpProvider.AddWebSocketHttpClient(ClientInfo, CurrentServerBase);
+                //}
+                //else
+                //{
+                //    await HttpProvider.AddWebSocketHttpClient(ClientInfo, CurrentServerBase);
+                //}
             }
             else
             {

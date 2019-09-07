@@ -120,28 +120,29 @@ namespace SignalGo.Server.ServiceManager.Providers
                     string acceptKey = AcceptKey(ref key);
                     string newLine = TextHelper.NewLine;
 
-                    //var response = "HTTP/1.1 101 Switching Protocols" + newLine
-                    string response = "HTTP/1.0 101 Switching Protocols" + newLine
+                    var response = "HTTP/1.1 101 Switching Protocols" + newLine
+                    //string response = "HTTP/1.0 101 Switching Protocols" + newLine
                      + "Upgrade: websocket" + newLine
                      + "Connection: Upgrade" + newLine
                      + "Sec-WebSocket-Accept: " + acceptKey + newLine + newLine;
-                    byte[] bytes = System.Text.Encoding.UTF8.GetBytes(response);
+                    byte[] bytes = System.Text.Encoding.ASCII.GetBytes(response);
                     await client.ClientStream.WriteAsync(bytes, 0, bytes.Length);
                     client.StreamHelper = SignalGoStreamBase.CurrentBase;
                     client.ClientStream = new PipeNetworkStream(new WebSocketStream(client.TcpClient.GetStream()));
-                    if (requestHeaders.Contains("SignalgoDuplexWebSocket"))
-                    {
-                        
-                        await SignalGoDuplexServiceProvider.StartToReadingClientData(client, serverBase);
-                    }
-                    else
-                    {
-                        //client.StreamHelper = SignalGoStreamWebSocketLlight.CurrentWebSocket;
-                        //client.ClientStream = new PipeNetworkStream(new WebSocketStream(client.TcpClient.GetStream()));
-                        //await WebSocketProvider.StartToReadingClientData(client, serverBase);
-                        
-                        await HttpProvider.AddWebSocketHttpClient(client, serverBase);
-                    }
+                    await AddWebSocketHttpClient(client, serverBase);
+                    //if (requestHeaders.Contains("SignalgoDuplexWebSocket"))
+                    //{
+                    //    await WebSocketProvider.StartToReadingClientData(client, serverBase);
+                    //}
+                    //else
+                    //{
+                    //    await WebSocketProvider.StartToReadingClientData(client, serverBase);
+                    //    //client.StreamHelper = SignalGoStreamWebSocketLlight.CurrentWebSocket;
+                    //    //client.ClientStream = new PipeNetworkStream(new WebSocketStream(client.TcpClient.GetStream()));
+                    //    //await WebSocketProvider.StartToReadingClientData(client, serverBase);
+
+                    //    //await HttpProvider.AddWebSocketHttpClient(client, serverBase);
+                    //}
                 }
                 else if (requestHeaders.Contains("SignalGoHttpDuplex"))
                 {

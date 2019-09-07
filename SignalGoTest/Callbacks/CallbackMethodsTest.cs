@@ -60,21 +60,13 @@ namespace SignalGoTest.Callbacks
         [TestMethod]
         public void TestWebSocketCallbacks()
         {
-            try
-            {
-                GlobalInitalization.Initialize();
-                SignalGo.Client.ClientProvider client = GlobalInitalization.InitializeAndConnecteClient(true);
-                AuthenticationService service = client.RegisterServerService<AuthenticationService>(client);
-                //Task.Delay(1000).GetAwaiter().GetResult();
-                SignalGoTest2.Models.MessageContract result = service.TestCallbacksAsync();
-                //Assert.IsTrue(result.IsSuccess);
-                //SignalGoTest2.Models.MessageContract result2 = service.TestCallbacksSync();
-                //Assert.IsTrue(result2.IsSuccess);
-            }
-            catch (System.Exception ex)
-            {
-
-            }
+            GlobalInitalization.Initialize();
+            SignalGo.Client.ClientProvider client = GlobalInitalization.InitializeAndConnecteClient(true);
+            AuthenticationService service = client.RegisterServerService<AuthenticationService>(client);
+            SignalGoTest2.Models.MessageContract result = service.TestCallbacksAsync();
+            Assert.IsTrue(result.IsSuccess);
+            SignalGoTest2.Models.MessageContract result2 = service.TestCallbacksSync();
+            Assert.IsTrue(result2.IsSuccess);
         }
     }
 }

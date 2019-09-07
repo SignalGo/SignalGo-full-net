@@ -68,10 +68,14 @@ namespace SignalGo.Shared.Converters
         /// <param name="property">properties to ignore</param>
         public static void Ignore(object instance, params string[] property)
         {
-            if (Task.CurrentId == null)
+            Ignore(Task.CurrentId, instance, property);
+        }
+        public static void Ignore(int? taskId,object instance, params string[] property)
+        {
+            if (taskId == null)
                 throw new Exception("current context is null please don't call this method inside of another thread!");
-            if (!ListOfContextsDataExchangers.ContainsKey(Task.CurrentId.GetValueOrDefault()))
-                ListOfContextsDataExchangers.Add(Task.CurrentId.GetValueOrDefault(), new List<CustomDataExchangerAttribute>());
+            if (!ListOfContextsDataExchangers.ContainsKey(taskId.GetValueOrDefault()))
+                ListOfContextsDataExchangers.Add(taskId.GetValueOrDefault(), new List<CustomDataExchangerAttribute>());
             CustomDataExchangerAttribute result = new CustomDataExchangerAttribute
             {
                 ExchangeType = CustomDataExchangerType.Ignore,
@@ -79,9 +83,8 @@ namespace SignalGo.Shared.Converters
                 Instance = instance,
                 LimitationMode = LimitExchangeType.Both
             };
-            ListOfContextsDataExchangers[Task.CurrentId.GetValueOrDefault()].Add(result);
+            ListOfContextsDataExchangers[taskId.GetValueOrDefault()].Add(result);
         }
-
 
         public static void Take(Type type, params string[] property)
         {
