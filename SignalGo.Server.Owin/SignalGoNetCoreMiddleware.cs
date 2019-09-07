@@ -27,6 +27,8 @@ namespace SignalGo.Server.Owin
             CurrentServerBase = serverBase;
             _next = next;
         }
+        public static Func<HttpContext, object> BeginInvokeConext { get; set; }
+        public static Func<object, HttpContext, Task> EndInvokeConext { get; set; }
 
         public async Task Invoke(HttpContext context)
         {
@@ -50,8 +52,11 @@ namespace SignalGo.Server.Owin
                 await _next.Invoke(context);
                 return;
             }
+            //await _next.Invoke(context);
 
+            var instance = BeginInvokeConext?.Invoke(context);
             OwinClientInfo owinClientInfo = new OwinClientInfo(CurrentServerBase);
+            owinClientInfo.HttpContext = context;
             owinClientInfo.ChangeStatusAction = (code) =>
             {
                 context.Response.StatusCode = code;
@@ -103,6 +108,8 @@ namespace SignalGo.Server.Owin
                 owinClientInfo.ClientStream = new PipeNetworkStream(new DuplexStream(context.Request.Body, context.Response.Body));
                 await HttpProvider.AddHttpClient(owinClientInfo, CurrentServerBase, uri, context.Request.Method, null, null);
             }
+
+            EndInvokeConext?.Invoke(instance, context);
         }
 
 
