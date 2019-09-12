@@ -34,6 +34,7 @@ namespace SignalGo.Server.ServiceManager
         {
             JsonSettingHelper.Initialize();
         }
+
         /// <summary>
         /// lock for this server
         /// </summary>
@@ -278,7 +279,7 @@ namespace SignalGo.Server.ServiceManager
             }
         }
 
-        internal void RemoveTask(int TaskId)
+        public void RemoveTask(int TaskId)
         {
             DataExchanger.Clear(TaskId);
             TaskOfClientInfoes.Remove(TaskId);
@@ -286,7 +287,7 @@ namespace SignalGo.Server.ServiceManager
             ValidationRuleInfoManager.RemoveTask(TaskId);
         }
 
-        internal void AddTask(int TaskId, string clientId)
+        public void AddTask(int TaskId, string clientId)
         {
             DataExchanger.Clear(TaskId);
             TaskOfClientInfoes.TryAdd(TaskId, clientId);
