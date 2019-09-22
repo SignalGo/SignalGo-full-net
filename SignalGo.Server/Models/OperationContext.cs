@@ -374,7 +374,7 @@ namespace SignalGo.Server.Models
                 result.Clear();
             }
         }
-        private static string ExtractValue(string data, string keyName, string valueSeparateChar, string keyValueSeparateChar)
+        public static string ExtractValue(string data, string keyName, string valueSeparateChar, string keyValueSeparateChar)
         {
             if (string.IsNullOrEmpty(data) || string.IsNullOrEmpty(keyName) || (string.IsNullOrEmpty(valueSeparateChar) && string.IsNullOrEmpty(keyValueSeparateChar)))
                 return data;
@@ -400,7 +400,7 @@ namespace SignalGo.Server.Models
             return "";
         }
 
-        internal static string IncludeValue(string value, string keyName, string valueSeparateChar, string keyValueSeparateChar)
+        public static string IncludeValue(string value, string keyName, string valueSeparateChar, string keyValueSeparateChar)
         {
             if (string.IsNullOrEmpty(value) || string.IsNullOrEmpty(keyName) || string.IsNullOrEmpty(keyValueSeparateChar))
                 return value;

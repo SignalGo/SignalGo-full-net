@@ -102,7 +102,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                             httpClientInfo.SetFirstFile(fileInfo);
                         }
                     }
-                    List<SecurityContractAttribute> securityAttributes = new List<SecurityContractAttribute>();
+                    List<ISecurityContract> securityAttributes = new List<ISecurityContract>();
                     List<CustomDataExchangerAttribute> customDataExchanger = new List<CustomDataExchangerAttribute>();
                     List<ClientLimitationAttribute> clientLimitationAttribute = new List<ClientLimitationAttribute>();
                     List<ConcurrentLockAttribute> concurrentLockAttributes = new List<ConcurrentLockAttribute>();
@@ -247,7 +247,7 @@ namespace SignalGo.Server.ServiceManager.Providers
 
                         //check if client have permissions for call method
                         bool canCall = true;
-                        foreach (SecurityContractAttribute attrib in securityAttributes)
+                        foreach (ISecurityContract attrib in securityAttributes)
                         {
                             if (!attrib.CheckPermission(client, service, method, parametersValues))
                             {
@@ -641,7 +641,7 @@ namespace SignalGo.Server.ServiceManager.Providers
             , Shared.Models.ParameterInfo[] parameters
             , Type serviceType
             , List<CustomDataExchangerAttribute> customDataExchangerAttributes
-            , List<SecurityContractAttribute> securityContractAttributes
+            , List<ISecurityContract> securityContractAttributes
             , List<ClientLimitationAttribute> clientLimitationAttributes
             , List<ConcurrentLockAttribute> concurrentLockAttributes
             , Func<MethodInfo, bool> canTakeMethod)
@@ -654,7 +654,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 {
                     if (canTakeMethod != null && !canTakeMethod(method))
                         continue;
-                    securityContractAttributes.AddRange(method.GetCustomAttributes(typeof(SecurityContractAttribute), true).Cast<SecurityContractAttribute>());
+                    securityContractAttributes.AddRange(method.GetCustomAttributes(typeof(ISecurityContract), true).Cast<ISecurityContract>());
                     customDataExchangerAttributes.AddRange(method.GetCustomAttributes(typeof(CustomDataExchangerAttribute), true).Cast<CustomDataExchangerAttribute>().Where(x => x.GetExchangerByUserCustomization(client)));
                     clientLimitationAttributes.AddRange(method.GetCustomAttributes(typeof(ClientLimitationAttribute), true).Cast<ClientLimitationAttribute>());
                     concurrentLockAttributes.AddRange(method.GetCustomAttributes(typeof(ConcurrentLockAttribute), true).Cast<ConcurrentLockAttribute>());
@@ -663,7 +663,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                         MethodInfo newMethod = FindMethod(serviceType, methodName, parameters, canTakeMethod);
                         if (newMethod != null)
                         {
-                            securityContractAttributes.AddRange(newMethod.GetCustomAttributes(typeof(SecurityContractAttribute), true).Cast<SecurityContractAttribute>());
+                            securityContractAttributes.AddRange(newMethod.GetCustomAttributes(typeof(ISecurityContract), true).Cast<ISecurityContract>());
                             customDataExchangerAttributes.AddRange(newMethod.GetCustomAttributes(typeof(CustomDataExchangerAttribute), true).Cast<CustomDataExchangerAttribute>().Where(x => x.GetExchangerByUserCustomization(client)));
                             clientLimitationAttributes.AddRange(newMethod.GetCustomAttributes(typeof(ClientLimitationAttribute), true).Cast<ClientLimitationAttribute>());
                             concurrentLockAttributes.AddRange(newMethod.GetCustomAttributes(typeof(ConcurrentLockAttribute), true).Cast<ConcurrentLockAttribute>());

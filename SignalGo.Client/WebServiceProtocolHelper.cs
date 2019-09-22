@@ -1,4 +1,5 @@
 ﻿using SignalGo.Shared.DataTypes;
+using SignalGo.Shared.Helpers;
 using SignalGo.Shared.Models;
 using System;
 using System.Collections.Generic;
@@ -100,10 +101,31 @@ namespace SignalGo.Client
 #endif
         public static string Serialize(object data, string targetNamespace)
         {
-            var attribute = data.GetType().GetCustomAttributes<XmlTypeAttribute>();
+            var type = data.GetType();
+            var attribute = type.GetCustomAttributes<XmlTypeAttribute>();
             string nameSpace = targetNamespace;
             if (attribute.Length > 0)
                 nameSpace = attribute.FirstOrDefault().Namespace;
+            if (nameSpace == "SignalGoStuff")
+            {
+                StringBuilder stringBuilder = new StringBuilder();
+                foreach (var item in type.GetListOfProperties())
+                {
+                    var propertyAttributes = item.PropertyType.GetCustomAttributes<XmlTypeAttribute>();
+                    if (propertyAttributes.Length > 0)
+                    {
+                        nameSpace = propertyAttributes.FirstOrDefault().Namespace;
+                        var value = item.GetValue(data, null);
+                        if (value != null)
+                        {
+                            stringBuilder.AppendLine(Serialize(value, nameSpace));
+                        }
+                    }
+                }
+                stringBuilder.Replace("<?xml version=\"1.0\" encoding=\"utf-8\"?>", "");
+                stringBuilder.Insert(0, "<?xml version=\"1.0\" encoding=\"utf-8\"?>");
+                return stringBuilder.ToString();
+            }
             XmlSerializer ser = null;
             if (string.IsNullOrEmpty(nameSpace))
                 ser = new XmlSerializer(data.GetType());
