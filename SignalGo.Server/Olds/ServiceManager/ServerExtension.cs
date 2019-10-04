@@ -2,7 +2,6 @@
 using SignalGo.Server.Models;
 using SignalGo.Server.ServiceManager.Providers;
 using SignalGo.Shared.Helpers;
-using SignalGo.Shared.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -15,7 +14,7 @@ namespace SignalGo.Server.ServiceManager
 {
     public static class ServerExtensions
     {
-        public static Task<Stream> GetTcpStream(this TcpClient tcpClient, ServerBase serverBase)
+        public static Stream GetTcpStream(this TcpClient tcpClient, ServerBase serverBase)
         {
             if (serverBase.ProviderSetting.HttpSetting.IsHttps)
             {
@@ -23,7 +22,7 @@ namespace SignalGo.Server.ServiceManager
             }
             else
             {
-                return Task.Run(() => (Stream)tcpClient.GetStream());
+                return (Stream)tcpClient.GetStream();
             }
         }
         //static ServerExtension()

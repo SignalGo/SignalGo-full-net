@@ -26,10 +26,10 @@ namespace SignalGo.Server.ServiceManager.Versions
         /// <summary>
         /// exchange and generate client function
         /// </summary>
-        public Func<ServerBase, PipeNetworkStream, TcpClient, Task> ExchangeClientFunc { get; set; }
+        public Func<ServerBase, PipeLineStream, TcpClient, Task> ExchangeClientFunc { get; set; }
         /// <summary>
         /// create client function
         /// </summary>
-        public Func<ServerBase, ClientInfo, TcpClient, PipeNetworkStream, ClientInfo> CreateClientFunc { get; set; }
+        public Func<ServerBase, ClientInfo, TcpClient, PipeLineStream, ClientInfo> CreateClientFunc { get; set; }
     }
 }

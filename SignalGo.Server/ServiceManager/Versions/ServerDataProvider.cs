@@ -110,10 +110,10 @@ namespace SignalGo.Server.ServiceManager.Versions
                 try
                 {
                     //set the timeout of client
-                    tcpClient.GetStream().ReadTimeout = 5000;
-                    tcpClient.GetStream().WriteTimeout = 5000;
+                    //tcpClient.GetStream().ReadTimeout = 5000;
+                    //tcpClient.GetStream().WriteTimeout = 5000;
                     //create client stream for read and write to socket
-                    PipeLineStream stream = new PipeLineStream(await tcpClient.GetTcpStream(serverBase));
+                    PipeLineStream stream = new PipeLineStream(tcpClient.GetTcpStream(serverBase));
                     await ExchangeClientFunc(serverBase, stream, tcpClient);
                 }
                 catch (Exception)
@@ -189,41 +189,41 @@ namespace SignalGo.Server.ServiceManager.Versions
                     await HttpProvider.StartToReadingClientData(tcpClient, serverBase, streamReader, new StringBuilder(firstLineString));
                 }
                 //if the protocol is signalgo duplex
-                else if (firstLineString.Contains("SignalGo/6.0"))
-                {
-                    client = CreateClientFunc(serverBase, client, tcpClient, streamReader);
-                    client.ProtocolType = ClientProtocolType.SignalGoDuplex;
-                    client.StreamHelper = SignalGoStreamBase.CurrentBase;
-                    await SignalGoDuplexServiceProvider.StartToReadingClientData(client, serverBase);
-                }
-                //if the protocol is signalgo duplex
-                else if (firstLineString.Contains(TextHelper.SignalGoVersion_4_FirstLine))
-                {
-                    client = CreateClientFunc(serverBase, client, tcpClient, streamReader);
-                    client.ProtocolType = ClientProtocolType.SignalGoDuplex;
-                    client.StreamHelper = SignalGoStreamBase.CurrentBase;
-                    await SignalGoDuplexServiceProvider.StartToReadingClientData(client, serverBase);
-                }
-                //if the protocol is signalgo stream
-                if (firstLineString.Contains("SignalGo-Stream/4.0"))
-                {
-                    client = CreateClientFunc(serverBase, client, tcpClient, streamReader);
-                    client.ProtocolType = ClientProtocolType.SignalGoStream;
-                    client.StreamHelper = SignalGoStreamBase.CurrentBase;
-                    SignalGoStreamProvider.StartToReadingClientData(client, serverBase);
-                }
-                //if the protocol is signalgo oneway
-                else if (firstLineString.Contains("SignalGo-OneWay/4.0"))
-                {
-                    client = CreateClientFunc(serverBase, client, tcpClient, streamReader);
-                    client.ProtocolType = ClientProtocolType.SignalGoOneWay;
-                    client.StreamHelper = SignalGoStreamBase.CurrentBase;
-                    OneWayServiceProvider.StartToReadingClientData(client, serverBase);
-                }
-                else
-                {
-                    serverBase.DisposeClient(client, tcpClient, "AddClient header not support");
-                }
+                //else if (firstLineString.Contains("SignalGo/6.0"))
+                //{
+                //    client = CreateClientFunc(serverBase, client, tcpClient, streamReader);
+                //    client.ProtocolType = ClientProtocolType.SignalGoDuplex;
+                //    client.StreamHelper = SignalGoStreamBase.CurrentBase;
+                //    await SignalGoDuplexServiceProvider.StartToReadingClientData(client, serverBase);
+                //}
+                ////if the protocol is signalgo duplex
+                //else if (firstLineString.Contains(TextHelper.SignalGoVersion_4_FirstLine))
+                //{
+                //    client = CreateClientFunc(serverBase, client, tcpClient, streamReader);
+                //    client.ProtocolType = ClientProtocolType.SignalGoDuplex;
+                //    client.StreamHelper = SignalGoStreamBase.CurrentBase;
+                //    await SignalGoDuplexServiceProvider.StartToReadingClientData(client, serverBase);
+                //}
+                ////if the protocol is signalgo stream
+                //if (firstLineString.Contains("SignalGo-Stream/4.0"))
+                //{
+                //    client = CreateClientFunc(serverBase, client, tcpClient, streamReader);
+                //    client.ProtocolType = ClientProtocolType.SignalGoStream;
+                //    client.StreamHelper = SignalGoStreamBase.CurrentBase;
+                //    SignalGoStreamProvider.StartToReadingClientData(client, serverBase);
+                //}
+                ////if the protocol is signalgo oneway
+                //else if (firstLineString.Contains("SignalGo-OneWay/4.0"))
+                //{
+                //    client = CreateClientFunc(serverBase, client, tcpClient, streamReader);
+                //    client.ProtocolType = ClientProtocolType.SignalGoOneWay;
+                //    client.StreamHelper = SignalGoStreamBase.CurrentBase;
+                //    OneWayServiceProvider.StartToReadingClientData(client, serverBase);
+                //}
+                //else
+                //{
+                //    serverBase.DisposeClient(client, tcpClient, "AddClient header not support");
+                //}
             }
             catch (Exception ex)
             {
