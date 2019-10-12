@@ -390,12 +390,17 @@ namespace SignalGo.Server.ServiceManager.Providers
                             }
                             catch (Exception ex)
                             {
-                                if (serverBase.ErrorHandlingFunction != null)
-                                    result = serverBase.ErrorHandlingFunction(ex, serviceType, method, client);
                                 exception = ex;
                                 serverBase.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase CallMethod: {methodName}");
-                                callback.IsException = true;
-                                callback.Data = ServerSerializationHelper.SerializeObject(ex.ToString(), serverBase, isEnabledReferenceResolver: isEnabledReferenceResolver, isEnabledReferenceResolverForArray: isEnabledReferenceResolverForArray);
+                                if (serverBase.ErrorHandlingFunction != null)
+                                {
+                                    callback.Data = ServerSerializationHelper.SerializeObject(serverBase.ErrorHandlingFunction(ex, serviceType, method, client));
+                                }
+                                else
+                                {
+                                    callback.Data = ServerSerializationHelper.SerializeObject(ex.ToString(), serverBase, isEnabledReferenceResolver: isEnabledReferenceResolver, isEnabledReferenceResolverForArray: isEnabledReferenceResolverForArray);
+                                    callback.IsException = true;
+                                }
                             }
                         }
                     }
@@ -404,13 +409,15 @@ namespace SignalGo.Server.ServiceManager.Providers
                 {
                     exception = ex;
                     serverBase.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase CallMethod 2: {methodName} serviceName: {serviceName}");
-                    callback.IsException = true;
                     if (serverBase.ErrorHandlingFunction != null)
                     {
                         callback.Data = ServerSerializationHelper.SerializeObject(serverBase.ErrorHandlingFunction(ex, serviceType, method, client));
                     }
                     else
+                    {
+                        callback.IsException = true;
                         callback.Data = ServerSerializationHelper.SerializeObject(ex.ToString(), serverBase);
+                    }
                 }
                 finally
                 {
