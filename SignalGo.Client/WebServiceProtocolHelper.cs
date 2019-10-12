@@ -15,12 +15,12 @@ using System.Xml.Serialization;
 namespace SignalGo.Client
 {
     [XmlRoot(ElementName = "Envelope", Namespace = "http://schemas.xmlsoap.org/soap/envelope/")]
-    public class Envelope
+    public class Envelope<T>
     {
         [XmlElement(ElementName = "Header", Namespace = "http://schemas.xmlsoap.org/soap/envelope/")]
         public string Header { get; set; }
         [XmlElement(ElementName = "Body", Namespace = "http://schemas.xmlsoap.org/soap/envelope/")]
-        public object Body { get; set; }
+        public T Body { get; set; }
         [XmlAttribute(AttributeName = "soap", Namespace = "http://www.w3.org/2000/xmlns/")]
         public string Soap { get; set; }
         [XmlAttribute(AttributeName = "xsd", Namespace = "http://www.w3.org/2000/xmlns/")]
@@ -28,19 +28,43 @@ namespace SignalGo.Client
         [XmlAttribute(AttributeName = "xsi", Namespace = "http://www.w3.org/2000/xmlns/")]
         public string Xsi { get; set; }
     }
+
+    public class WebServiceProtocolSettings
+    {
+        public string EncodingName { get; set; } = "utf-8";
+        public Encoding Encoding { get; set; } = Encoding.UTF8;
+    }
+
+    /// <summary>ISO-8859-1
+    /// log service
+    /// </summary>
+    public interface IWebServiceProtocolLogger
+    {
+        /// <summary>
+        /// before method call
+        /// </summary>
+        LoggerAction BeforeCallAction { get; set; }
+        /// <summary>
+        /// after method call
+        /// </summary>
+        LoggerAction AfterCallAction { get; set; }
+
+        WebServiceProtocolSettings Settings { get; set; }
+    }
+    public delegate void LoggerAction(string url, string actionUrl, string methodName, ParameterInfo[] args, string data);
     public static class WebServiceProtocolHelper
     {
-        public static T CallWebServiceMethod<T>(string headerTemplate, string url, string actionUrl, string targetNamespace, string methodName, ParameterInfo[] args)
+        public static T CallWebServiceMethod<T>(IWebServiceProtocolLogger logger, string headerTemplate, string url, string actionUrl, string targetNamespace, string methodName, ParameterInfo[] args)
         {
             StringBuilder stringBuilder = new StringBuilder();
             if (args != null)
             {
                 foreach (ParameterInfo item in args)
                 {
-                    stringBuilder.AppendLine(item.Value.Replace("<?xml version=\"1.0\" encoding=\"utf-8\"?>", ""));
+                    stringBuilder.AppendLine(item.Value.Replace($"<?xml version=\"1.0\" encoding=\"{logger.Settings.EncodingName}\"?>", ""));
                 }
             }
-            string defaultData = $@"<?xml version=""1.0"" encoding=""utf-8""?>
+            string defaultData = $@"<?xml version=""1.0"" encoding=""{logger.Settings.EncodingName}""?>
 <soap:Envelope xmlns:soap=""http://schemas.xmlsoap.org/soap/envelope/"" xmlns:xsd=""http://www.w3.org/2001/XMLSchema"" xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"">
 	<soap:Header>
           {headerTemplate}
@@ -48,18 +72,25 @@ namespace SignalGo.Client
 	<soap:Body>{stringBuilder.ToString().Trim()}</soap:Body>
 </soap:Envelope>";
 #if (!NETSTANDARD1_6)
-            using (WebClient client = new WebClient())
+            using (IO.TimeoutWebClient client = new IO.TimeoutWebClient())
             {
                 if (!string.IsNullOrEmpty(actionUrl))
                     client.Headers["SOAPAction"] = actionUrl;
-                client.Headers.Add(HttpRequestHeader.ContentType, "text/xml; charset=utf-8;");
+                client.Headers.Add(HttpRequestHeader.ContentType, $"text/xml; charset={logger.Settings.EncodingName};");
+                logger?.BeforeCallAction?.Invoke(url, actionUrl, methodName, args, defaultData);
                 string data = client.UploadString(url, defaultData);
                 if (typeof(T) == typeof(object))
                     return default;
+                logger?.AfterCallAction?.Invoke(url, actionUrl, methodName, args, data);
                 XDocument doc = XDocument.Parse(data);
                 List<XElement> elements = new List<XElement>();
-                var element = FindElement(doc.Elements(), typeof(T).Name);
-                return (T)Deserialize(element, typeof(T));
+                var firstElement = doc.Elements().First();//
+                var findElement = FindElement(doc.Elements(), typeof(T).Name);
+                var attributes = firstElement.Attributes().ToList();
+                attributes.AddRange(findElement.Attributes());
+                findElement.ReplaceAttributes(attributes);
+                var myResult = (T)Deserialize(logger, findElement, typeof(T));
+                return myResult;
             }
 #else
             throw new NotSupportedException();
@@ -67,39 +98,47 @@ namespace SignalGo.Client
         }
 #if (!NETSTANDARD1_6 && !NET35 && !NET40)
 
-        public static async Task<T> CallWebServiceMethodAsync<T>(string headerTemplate, string url, string actionUrl, string targetNamespace, string methodName, ParameterInfo[] args)
+        public static async Task<T> CallWebServiceMethodAsync<T>(IWebServiceProtocolLogger logger, string headerTemplate, string url, string actionUrl, string targetNamespace, string methodName, ParameterInfo[] args)
         {
             StringBuilder stringBuilder = new StringBuilder();
             if (args != null)
             {
                 foreach (ParameterInfo item in args)
                 {
-                    stringBuilder.AppendLine(item.Value.Replace("<?xml version=\"1.0\" encoding=\"utf-8\"?>", ""));
+                    stringBuilder.AppendLine(item.Value.Replace($"<?xml version=\"1.0\" encoding=\"{logger.Settings.EncodingName}\"?>", ""));
                 }
             }
-            string defaultData = $@"<?xml version=""1.0"" encoding=""utf-8""?>
+            string defaultData = $@"<?xml version=""1.0"" encoding=""{logger.Settings.EncodingName}""?>
 <soap:Envelope xmlns:soap=""http://schemas.xmlsoap.org/soap/envelope/"" xmlns:xsd=""http://www.w3.org/2001/XMLSchema"" xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"">
 	<soap:Header>
           {headerTemplate}
 	</soap:Header>
 	<soap:Body>{stringBuilder.ToString().Trim()}</soap:Body>
 </soap:Envelope>";
-            using (WebClient client = new WebClient())
+            using (IO.TimeoutWebClient client = new IO.TimeoutWebClient())
             {
                 if (!string.IsNullOrEmpty(actionUrl))
                     client.Headers["SOAPAction"] = actionUrl;
-                client.Headers.Add(HttpRequestHeader.ContentType, "text/xml; charset=utf-8;");
+                client.Headers.Add(HttpRequestHeader.ContentType, "application/xml");// $"text/xml; charset={logger.Settings.EncodingName};");
+                logger?.BeforeCallAction?.Invoke(url, actionUrl, methodName, args, defaultData);
                 string data = await client.UploadStringTaskAsync(url, defaultData);
+                System.Diagnostics.Debug.WriteLine(defaultData, $"Request: {actionUrl}");
+                System.Diagnostics.Debug.WriteLine(data, $"Response: {url} ac:{actionUrl}");
                 if (typeof(T) == typeof(object))
                     return default;
+                logger?.AfterCallAction?.Invoke(url, actionUrl, methodName, args, data);
                 XDocument doc = XDocument.Parse(data);
-                List<XElement> elements = new List<XElement>();
-                var element = FindElement(doc.Elements(), typeof(T).Name);
-                return (T)Deserialize(element, typeof(T));
+                var firstElement = doc.Elements().First();//
+                var findElement = FindElement(doc.Elements(), typeof(T).Name);
+                var attributes = firstElement.Attributes().ToList();
+                attributes.AddRange(findElement.Attributes());
+                findElement.ReplaceAttributes(attributes);
+                var myResult = (T)Deserialize(logger, findElement, typeof(T));
+                return myResult;
             }
         }
 #endif
-        public static string Serialize(object data, string targetNamespace)
+        public static string Serialize(IWebServiceProtocolLogger logger, object data, string targetNamespace)
         {
             var type = data.GetType();
             var attribute = type.GetCustomAttributes<XmlTypeAttribute>();
@@ -118,12 +157,13 @@ namespace SignalGo.Client
                         var value = item.GetValue(data, null);
                         if (value != null)
                         {
-                            stringBuilder.AppendLine(Serialize(value, nameSpace));
+                            stringBuilder.AppendLine(Serialize(logger, value, nameSpace));
                         }
                     }
                 }
-                stringBuilder.Replace("<?xml version=\"1.0\" encoding=\"utf-8\"?>", "");
-                stringBuilder.Insert(0, "<?xml version=\"1.0\" encoding=\"utf-8\"?>");
+                stringBuilder.Replace($"<?xml version=\"1.0\" encoding=\"{logger.Settings.EncodingName}\"?>", "");
+                stringBuilder.Replace($"<?xml version=\"1.0\" encoding=\"utf-8\"?>", "");
+                stringBuilder.Insert(0, $"<?xml version=\"1.0\" encoding=\"{logger.Settings.EncodingName}\"?>");
                 return stringBuilder.ToString();
             }
             XmlSerializer ser = null;
@@ -131,24 +171,28 @@ namespace SignalGo.Client
                 ser = new XmlSerializer(data.GetType());
             else
                 ser = new XmlSerializer(data.GetType(), nameSpace);
-
             // Creates a DataSet; adds a table, column, and ten rows.
             using (var baseStream = new MemoryStream())
             {
-                using (var stream = new StreamWriter(baseStream))
+                using (var stream = new StreamWriter(baseStream, logger.Settings.Encoding))
                 {
+
                     ser.Serialize(stream, data);
                     baseStream.Seek(0, SeekOrigin.Begin);
-                    return Encoding.UTF8.GetString(baseStream.ToArray());
+                    var result = logger.Settings.Encoding.GetString(baseStream.ToArray());
+                    //result = result.Replace($"<?xml version=\"1.0\" encoding=\"{logger.Settings.EncodingName}\"?>", "");
+                    //result = result.Replace($"<?xml version=\"1.0\" encoding=\"utf-8\"?>", "");
+                    //result = $"<?xml version=\"1.0\" encoding=\"{logger.Settings.EncodingName}\"?>" + result;
+                    return result;
                 }
             }
         }
-        public static object Deserialize(XElement element, Type type)
+        public static object Deserialize(IWebServiceProtocolLogger logger, XElement element, Type type)
         {
             var xml = element.ToString();
-            xml = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" + xml;
+            xml = $"<?xml version=\"1.0\" encoding=\"{logger.Settings.EncodingName}\"?>" + xml;
             XmlSerializer ser = new XmlSerializer(type);
-            using (var stream = new MemoryStream(Encoding.UTF8.GetBytes(xml)))
+            using (var stream = new MemoryStream(logger.Settings.Encoding.GetBytes(xml)))
             {
                 stream.Seek(0, SeekOrigin.Begin);
                 return ser.Deserialize(stream);
