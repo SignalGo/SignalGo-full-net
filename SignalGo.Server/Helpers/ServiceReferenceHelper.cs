@@ -400,6 +400,9 @@ namespace SignalGo.Server.Helpers
                     i++;
                 }
             }
+            var protocolAttribute = methodInfo.GetCustomAttribute<ProtocolAttribute>(true);
+            if (protocolAttribute != null)
+                methodReferenceInfo.ProtocolType = protocolAttribute.Type;
             methodReferenceInfo.ReturnTypeName = returnType;
             methodReferenceInfo.Name = methodInfo.Name;
             methodReferenceInfo.DuplicateName = methodName;
