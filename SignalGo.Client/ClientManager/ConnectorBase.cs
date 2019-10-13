@@ -250,6 +250,9 @@ namespace SignalGo.Client.ClientManager
                 if (string.IsNullOrEmpty(line) || line == TextHelper.NewLine)
                     break;
             }
+            var all = stringBuilder.ToString();
+            if (all.Contains("IsSignalGoOverIIS"))
+                WebcoketDatagramBase.Current = new WebcoketIISDatagram();
             if (!stringBuilder.ToString().Contains("101 Switching Protocols"))
                 throw new Exception(stringBuilder.ToString());
         }

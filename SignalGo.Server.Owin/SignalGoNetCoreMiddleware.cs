@@ -95,7 +95,7 @@ namespace SignalGo.Server.Owin
                 //    await HttpProvider.AddWebSocketHttpClient(owinClientInfo, CurrentServerBase);
                 //}
                 //else
-                    await HttpProvider.AddWebSocketHttpClient(owinClientInfo, CurrentServerBase);
+                await HttpProvider.AddWebSocketHttpClient(owinClientInfo, CurrentServerBase);
                 await Task.FromResult<object>(null);
             }
             else
