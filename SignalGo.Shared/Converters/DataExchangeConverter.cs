@@ -755,7 +755,13 @@ namespace SignalGo.Shared.Converters
             if (canIgnore)
                 return null;
             if (instance == null)
+            {
                 instance = CreateInstance(objectType, isIgnore);
+                foreach (var item in instance.GetType().GetListOfProperties())
+                {
+                    AddPropertyValidationRuleInfoAttribute(item, instance, null);
+                }
+            }
             return instance;
         }
 
