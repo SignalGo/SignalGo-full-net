@@ -1,51 +1,13 @@
 ﻿using SignalGo.Server.ServiceManager;
-using SignalGo.Shared.DataTypes;
-using SignalGo.Shared.Http;
+using SignalGo.Shared.Enums;
 using SignalGo.Shared.IO;
-using SignalGo.Shared.Models;
 using System;
 using System.Collections.Generic;
 using System.Net;
-using System.Net.Sockets;
 using System.Threading;
 
 namespace SignalGo.Server.Models
 {
-    /// <summary>
-    /// client protocol
-    /// </summary>
-    public enum ClientProtocolType : byte
-    {
-        /// <summary>
-        /// unknown
-        /// </summary>
-        None = 0,
-        /// <summary>
-        /// http protocol
-        /// </summary>
-        Http = 1,
-        /// <summary>
-        /// signalgo duplex
-        /// </summary>
-        SignalGoDuplex = 2,
-        /// <summary>
-        /// one way protocol of signalgo
-        /// </summary>
-        SignalGoOneWay = 3,
-        /// <summary>
-        /// stream protocol
-        /// </summary>
-        SignalGoStream = 4,
-        /// <summary>
-        /// web socket protocol
-        /// </summary>
-        WebSocket = 5,
-        /// <summary>
-        /// http duplex client
-        /// </summary>
-        HttpDuplex = 6
-    }
-
     /// <summary>
     /// information of tcp client
     /// </summary>
@@ -55,9 +17,11 @@ namespace SignalGo.Server.Models
         /// 
         /// </summary>
         /// <param name="serverBase"></param>
-        public ClientInfo(ServerBase serverBase)
+        /// <param name="tcpClient"></param>
+        public ClientInfo(ServerBase serverBase, System.Net.Sockets.TcpClient tcpClient)
         {
             CurrentClientServer = serverBase;
+            TcpClient = tcpClient;
         }
         /// <summary>
         /// current client server
@@ -67,7 +31,7 @@ namespace SignalGo.Server.Models
         /// client id
         /// </summary>
         public Guid ClientId { get; set; }
-        
+
         /// <summary>
         /// ip address of client
         /// </summary>
@@ -101,7 +65,7 @@ namespace SignalGo.Server.Models
         /// <summary>
         /// tcp client
         /// </summary>
-        internal TcpClient TcpClient { get; set; }
+        internal System.Net.Sockets.TcpClient TcpClient { get; set; }
         /// <summary>
         /// date of connected
         /// </summary>
@@ -109,11 +73,11 @@ namespace SignalGo.Server.Models
         /// <summary>
         /// stream of client to read and write
         /// </summary>
-        public PipeNetworkStream ClientStream { get; set; }
-        /// <summary>
-        /// client Stream
-        /// </summary>
-        public ISignalGoStream StreamHelper { get; set; } = null;
+        public PipeLineStream ClientStream { get; set; }
+        ///// <summary>
+        ///// client Stream
+        ///// </summary>
+        //public ISignalGoStream StreamHelper { get; set; } = null;
 
         /// <summary>
         /// is client of owin client
@@ -132,7 +96,7 @@ namespace SignalGo.Server.Models
         /// <summary>
         /// type of client protocol
         /// </summary>
-        public ClientProtocolType ProtocolType { get; set; } = ClientProtocolType.None;
+        public ProtocolType ProtocolType { get; set; } = ProtocolType.None;
         /// <summary>
         /// lock for this client
         /// </summary>
@@ -143,13 +107,13 @@ namespace SignalGo.Server.Models
     /// <summary>
     /// information of http client
     /// </summary>
-    public class HttpClientInfo : ClientInfo, IHttpClientInfo
+    public class HttpClientInfo : ClientInfo
     {
         /// <summary>
         /// current server base
         /// </summary>
         /// <param name="serverBase"></param>
-        public HttpClientInfo(ServerBase serverBase) : base(serverBase)
+        public HttpClientInfo(ServerBase serverBase) : base(serverBase, null)
         {
         }
         /// <summary>
@@ -163,7 +127,7 @@ namespace SignalGo.Server.Models
         /// <summary>
         /// reponse headers to client
         /// </summary>
-        public virtual IDictionary<string, string[]> ResponseHeaders { get; set; } = new WebHeaderCollection();
+        public virtual IDictionary<string, string[]> ResponseHeaders { get; set; } //= new WebHeaderCollection();
         /// <summary>
         /// key parameter value
         /// </summary>
@@ -171,16 +135,16 @@ namespace SignalGo.Server.Models
         /// <summary>
         /// file of http posted file
         /// </summary>
-        private HttpPostedFileInfo _currentFile = null;
-        public void SetFirstFile(HttpPostedFileInfo fileInfo)
-        {
-            _currentFile = fileInfo;
-        }
+        //private HttpPostedFileInfo _currentFile = null;
+        //public void SetFirstFile(HttpPostedFileInfo fileInfo)
+        //{
+        //    _currentFile = fileInfo;
+        //}
 
-        public HttpPostedFileInfo TakeNextFile()
-        {
-            return _currentFile;
-        }
+        //public HttpPostedFileInfo TakeNextFile()
+        //{
+        //    return _currentFile;
+        //}
 
         public virtual string GetRequestHeaderValue(string header)
         {

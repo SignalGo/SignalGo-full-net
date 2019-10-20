@@ -175,18 +175,19 @@ namespace SignalGo.Server.ServiceManager.Versions
         /// <param name="tcpClient">tcp client connected</param>
         internal async Task ExchangeClient(ServerBase serverBase, PipeLineStream streamReader, TcpClient tcpClient)
         {
-            ClientInfo client = new ClientInfo(serverBase);
+            ClientInfo client = new ClientInfo(serverBase, tcpClient);
             try
             {
-                //read first line from server provider
-                string firstLineString = await streamReader.ReadLineAsync();
+                //read all of the lines in connection
+                //this will show us headers and protocol type
+                await streamReader.ReadAllLinesAsync();
 
                 //check the client protocol is connecting to server
 
                 //if the protocol is http
-                if (firstLineString.Contains("HTTP/"))
+                if (streamReader.ProtocolType == Shared.Enums.ProtocolType.Http)
                 {
-                    await HttpProvider.StartToReadingClientData(tcpClient, serverBase, streamReader, new StringBuilder(firstLineString));
+                    await HttpProvider.StartToReadingClientData(tcpClient, serverBase, streamReader, client);
                 }
                 //if the protocol is signalgo duplex
                 //else if (firstLineString.Contains("SignalGo/6.0"))

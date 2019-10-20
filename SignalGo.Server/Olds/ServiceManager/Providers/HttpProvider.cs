@@ -95,93 +95,84 @@ namespace SignalGo.Server.ServiceManager.Providers
             });
         }
 
-        public static async Task StartToReadingClientData(TcpClient tcpClient, ServerBase serverBase, PipeLineStream reader, StringBuilder builder)
+        public static async Task StartToReadingClientData(TcpClient tcpClient, ServerBase serverBase, PipeLineStream reader, ClientInfo client)
         {
             //Console.WriteLine($"Http Client Connected: {((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address.ToString().Replace("::ffff:", "")}");
-            ClientInfo client = null;
             try
             {
-                while (true)
-                {
-                    string line = await reader.ReadLineAsync();
-                    builder.Append(line);
-                    if (line == TextHelper.NewLine)
-                        break;
-                }
-                string requestHeaders = builder.ToString();
-                if (requestHeaders.Contains("Sec-WebSocket-Key"))
-                {
-                    //tcpClient.ReceiveTimeout = -1;
-                    //tcpClient.SendTimeout = -1;
-                    client = serverBase.ServerDataProvider.c(serverBase, tcpClient, reader);
-                    client.ProtocolType = ClientProtocolType.WebSocket;
-                    client.IsWebSocket = true;
-                    string key = requestHeaders.Replace("ey:", "`").Split('`')[1].Replace("\r", "").Split('\n')[0].Trim();
-                    string acceptKey = AcceptKey(ref key);
-                    string newLine = TextHelper.NewLine;
+                //if (reader.Contains("Sec-WebSocket-Key"))
+                //{
+                //    ////tcpClient.ReceiveTimeout = -1;
+                //    ////tcpClient.SendTimeout = -1;
+                //    //client = serverBase.ServerDataProvider.c(serverBase, tcpClient, reader);
+                //    //client.ProtocolType = ClientProtocolType.WebSocket;
+                //    //client.IsWebSocket = true;
+                //    //string key = requestHeaders.Replace("ey:", "`").Split('`')[1].Replace("\r", "").Split('\n')[0].Trim();
+                //    //string acceptKey = AcceptKey(ref key);
+                //    //string newLine = TextHelper.NewLine;
 
-                    //var response = "HTTP/1.1 101 Switching Protocols" + newLine
-                    string response = "HTTP/1.0 101 Switching Protocols" + newLine
-                     + "Upgrade: websocket" + newLine
-                     + "Connection: Upgrade" + newLine
-                     + "Sec-WebSocket-Accept: " + acceptKey + newLine + newLine;
-                    byte[] bytes = System.Text.Encoding.UTF8.GetBytes(response);
-                    await client.ClientStream.WriteAsync(bytes, 0, bytes.Length);
-                    client.StreamHelper = SignalGoStreamBase.CurrentBase;
-                    client.ClientStream = new PipeNetworkStream(new WebSocketStream(client.TcpClient.GetStream()));
-                    if (requestHeaders.Contains("SignalgoDuplexWebSocket"))
+                //    ////var response = "HTTP/1.1 101 Switching Protocols" + newLine
+                //    //string response = "HTTP/1.0 101 Switching Protocols" + newLine
+                //    // + "Upgrade: websocket" + newLine
+                //    // + "Connection: Upgrade" + newLine
+                //    // + "Sec-WebSocket-Accept: " + acceptKey + newLine + newLine;
+                //    //byte[] bytes = System.Text.Encoding.UTF8.GetBytes(response);
+                //    //await client.ClientStream.WriteAsync(bytes, 0, bytes.Length);
+                //    //client.StreamHelper = SignalGoStreamBase.CurrentBase;
+                //    //client.ClientStream = new PipeNetworkStream(new WebSocketStream(client.TcpClient.GetStream()));
+                //    //if (requestHeaders.Contains("SignalgoDuplexWebSocket"))
+                //    //{
+
+                //    //    await SignalGoDuplexServiceProvider.StartToReadingClientData(client, serverBase);
+                //    //}
+                //    //else
+                //    //{
+                //    //    //client.StreamHelper = SignalGoStreamWebSocketLlight.CurrentWebSocket;
+                //    //    //client.ClientStream = new PipeNetworkStream(new WebSocketStream(client.TcpClient.GetStream()));
+                //    //    //await WebSocketProvider.StartToReadingClientData(client, serverBase);
+
+                //    //    await HttpProvider.AddWebSocketHttpClient(client, serverBase);
+                //    //}
+                //}
+                //else if (requestHeaders.Contains("SignalGoHttpDuplex"))
+                //{
+                //    client = serverBase.ServerDataProvider.CreateClientInfo(false, tcpClient, reader);
+                //    client.ProtocolType = ClientProtocolType.HttpDuplex;
+                //    client.StreamHelper = SignalGoStreamBase.CurrentBase;
+                //    await SignalGoDuplexServiceProvider.StartToReadingClientData(client, serverBase);
+                //}
+                //else
+                //{
+                try
+                {
+                    client.ClientStream = reader;
+                    //serverBase.TaskOfClientInfoes
+                    //client = (HttpClientInfo)serverBase.ServerDataProvider.CreateClientFunc(true, tcpClient, reader);
+                    client.ProtocolType = Shared.Enums.ProtocolType.Http;
+
+                    string[] lines = null;
+                    if (requestHeaders.Contains(TextHelper.NewLine + TextHelper.NewLine))
+                        lines = requestHeaders.Substring(0, requestHeaders.IndexOf(TextHelper.NewLine + TextHelper.NewLine)).Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                    else
+                        lines = requestHeaders.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                    if (lines.Length > 0)
                     {
-                        
-                        await SignalGoDuplexServiceProvider.StartToReadingClientData(client, serverBase);
+
+                        string methodName = GetHttpMethodName(lines[0]);
+                        string address = GetHttpAddress(lines[0]);
+                        if (requestHeaders != null)
+                            ((HttpClientInfo)client).RequestHeaders = SignalGo.Shared.Http.WebHeaderCollection.GetHttpHeaders(lines.Skip(1).ToArray());
+
+                        await HandleHttpRequest(methodName, address, serverBase, (HttpClientInfo)client);
                     }
                     else
-                    {
-                        //client.StreamHelper = SignalGoStreamWebSocketLlight.CurrentWebSocket;
-                        //client.ClientStream = new PipeNetworkStream(new WebSocketStream(client.TcpClient.GetStream()));
-                        //await WebSocketProvider.StartToReadingClientData(client, serverBase);
-                        
-                        await HttpProvider.AddWebSocketHttpClient(client, serverBase);
-                    }
+                        serverBase.DisposeClient(client, tcpClient, "HttpProvider StartToReadingClientData no line detected");
                 }
-                else if (requestHeaders.Contains("SignalGoHttpDuplex"))
+                catch
                 {
-                    client = serverBase.ServerDataProvider.CreateClientInfo(false, tcpClient, reader);
-                    client.ProtocolType = ClientProtocolType.HttpDuplex;
-                    client.StreamHelper = SignalGoStreamBase.CurrentBase;
-                    await SignalGoDuplexServiceProvider.StartToReadingClientData(client, serverBase);
+                    serverBase.DisposeClient(client, tcpClient, "HttpProvider StartToReadingClientData exception");
                 }
-                else
-                {
-                    try
-                    {
-                        //serverBase.TaskOfClientInfoes
-                        client = (HttpClientInfo)serverBase.ServerDataProvider.CreateClientInfo(true, tcpClient, reader);
-                        client.ProtocolType = ClientProtocolType.Http;
-                        client.StreamHelper = SignalGoStreamBase.CurrentBase;
-
-                        string[] lines = null;
-                        if (requestHeaders.Contains(TextHelper.NewLine + TextHelper.NewLine))
-                            lines = requestHeaders.Substring(0, requestHeaders.IndexOf(TextHelper.NewLine + TextHelper.NewLine)).Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-                        else
-                            lines = requestHeaders.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-                        if (lines.Length > 0)
-                        {
-
-                            string methodName = GetHttpMethodName(lines[0]);
-                            string address = GetHttpAddress(lines[0]);
-                            if (requestHeaders != null)
-                                ((HttpClientInfo)client).RequestHeaders = SignalGo.Shared.Http.WebHeaderCollection.GetHttpHeaders(lines.Skip(1).ToArray());
-
-                            await HandleHttpRequest(methodName, address, serverBase, (HttpClientInfo)client);
-                        }
-                        else
-                            serverBase.DisposeClient(client, tcpClient, "HttpProvider StartToReadingClientData no line detected");
-                    }
-                    catch
-                    {
-                        serverBase.DisposeClient(client, tcpClient, "HttpProvider StartToReadingClientData exception");
-                    }
-                }
+                //}
             }
             catch (Exception ex)
             {
@@ -241,30 +232,30 @@ namespace SignalGo.Server.ServiceManager.Providers
             return "";
         }
 
-        private bool IsMethodInfoOfJsonParameters(IEnumerable<MethodInfo> methods, List<string> names)
-        {
-            bool isFind = false;
-            foreach (MethodInfo method in methods)
-            {
-                int fakeParameterCount = 0;
-                int findCount = method.GetCustomAttributes<FakeParameterAttribute>().Count();
-                fakeParameterCount += findCount;
-                if (method.GetParameters().Length == names.Count - fakeParameterCount)
-                {
-                    for (int i = 0; i < fakeParameterCount; i++)
-                    {
-                        if (names.Count > 0)
-                            names.RemoveAt(names.Count - 1);
-                    }
-                }
-                if (method.GetParameters().Count(x => names.Any(y => y.ToLower() == x.Name.ToLower())) == names.Count)
-                {
-                    isFind = true;
-                    break;
-                }
-            }
-            return isFind;
-        }
+        //private bool IsMethodInfoOfJsonParameters(IEnumerable<MethodInfo> methods, List<string> names)
+        //{
+        //    bool isFind = false;
+        //    foreach (MethodInfo method in methods)
+        //    {
+        //        int fakeParameterCount = 0;
+        //        int findCount = method.GetCustomAttributes<FakeParameterAttribute>().Count();
+        //        fakeParameterCount += findCount;
+        //        if (method.GetParameters().Length == names.Count - fakeParameterCount)
+        //        {
+        //            for (int i = 0; i < fakeParameterCount; i++)
+        //            {
+        //                if (names.Count > 0)
+        //                    names.RemoveAt(names.Count - 1);
+        //            }
+        //        }
+        //        if (method.GetParameters().Count(x => names.Any(y => y.ToLower() == x.Name.ToLower())) == names.Count)
+        //        {
+        //            isFind = true;
+        //            break;
+        //        }
+        //    }
+        //    return isFind;
+        //}
 
 
     }

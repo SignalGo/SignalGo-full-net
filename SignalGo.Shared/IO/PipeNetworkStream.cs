@@ -4,6 +4,7 @@
 //https://github.com/Ali-YousefiTelori
 //https://github.com/SignalGo/SignalGo-full-net
 
+using SignalGo.Shared.Enums;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -23,6 +24,20 @@ namespace SignalGo.Shared.IO
     /// </summary>
     public class PipeLineStream : IDisposable
     {
+        /// <summary>
+        /// request headers
+        /// </summary>
+        public IDictionary<string, string[]> RequestHeaders { get; set; } = new Dictionary<string, string[]>();
+
+        static readonly char[] SplitHeader = { ':' };
+        /// <summary>
+        /// procol type of this stream
+        /// </summary>
+        public ProtocolType ProtocolType { get; set; } = ProtocolType.None;
+        /// <summary>
+        /// encoding system of pipelines
+        /// </summary>
+        public Encoding Encoding { get; set; } = Encoding.UTF8;
         /// <summary>
         /// size of buffer to read data from stream
         /// </summary>
@@ -112,7 +127,7 @@ namespace SignalGo.Shared.IO
         /// reda one line from server
         /// </summary>
         /// <returns></returns>
-        public async Task<string> ReadLineAsync()
+        public async Task<StringBuilder> ReadLineAsync()
         {
             StringBuilder builder = new StringBuilder();
             do
@@ -127,11 +142,71 @@ namespace SignalGo.Shared.IO
                     if (readCount <= 0)
                         throw new Exception("read zero buffer! client disconnected");
                     if (bytes[0] == 10)
-                        return builder.ToString();
+                        return builder;
                     builder.Append((char)bytes[0]);
                 }
                 builder.Append((char)bytes[0]);
             } while (true);
+        }
+
+        /// <summary>
+        /// read all of the lines and detect headers
+        /// </summary>
+        /// <returns></returns>
+        public async Task ReadAllLinesAsync()
+        {
+            //read all of the lines
+            var firstLine = await ReadLineAsync();
+            var firstLineText = firstLine.ToString();
+            if (firstLineText.IndexOf("http/", StringComparison.OrdinalIgnoreCase) >= 0)
+                ProtocolType = ProtocolType.Http;
+            do
+            {
+                StringBuilder builder = new StringBuilder();
+                //read one line
+                //one header
+                do
+                {
+                    var bytes = new byte[1];
+                    var readCount = await ReadAsyncAction(bytes, 0, 1);
+                    if (readCount <= 0)
+                        throw new Exception("read zero buffer! client disconnected");
+                    if (bytes[0] == 13)
+                    {
+                        readCount = await ReadAsyncAction(bytes, 0, 1);
+                        if (readCount <= 0)
+                            throw new Exception("read zero buffer! client disconnected");
+                        if (bytes[0] == 10)
+                            break;
+                        builder.Append((char)bytes[0]);
+                    }
+                    builder.Append((char)bytes[0]);
+                } while (true);
+                if (builder.Length == 0)
+                    break;
+                //header to string
+                var text = builder.ToString();
+                //split header
+                var header = text.Split(SplitHeader, 1);
+                try
+                {
+                    RequestHeaders.Add(header[0], header[1].Split(';'));
+                }
+                catch (Exception ex)
+                {
+                    //throw user friendly exception for add header exception
+                    if (string.IsNullOrEmpty(header[0]))
+                        throw new Exception("header key is null or empty", ex);
+                    else if (RequestHeaders.ContainsKey(header[0]))
+                        throw new Exception($"header {header[0]} is duplicate", ex);
+                    else
+                        throw;
+                }
+                //change protocol if its websocket
+                if (ProtocolType == ProtocolType.Http && header[0].IndexOf("", StringComparison.OrdinalIgnoreCase) >= 0)
+                    ProtocolType = ProtocolType.Websocket;
+            }
+            while (true);
         }
 
         /// <summary>
