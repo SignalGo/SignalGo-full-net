@@ -149,24 +149,12 @@ namespace SignalGo.Server.ServiceManager.Providers
                     //serverBase.TaskOfClientInfoes
                     //client = (HttpClientInfo)serverBase.ServerDataProvider.CreateClientFunc(true, tcpClient, reader);
                     client.ProtocolType = Shared.Enums.ProtocolType.Http;
+                    string firstLine = reader.FirstLine;
+                    string methodName = GetHttpMethodName(firstLine);
+                    string address = GetHttpAddress(firstLine);
+                        ((HttpClientInfo)client).RequestHeaders = reader.RequestHeaders;
 
-                    string[] lines = null;
-                    if (requestHeaders.Contains(TextHelper.NewLine + TextHelper.NewLine))
-                        lines = requestHeaders.Substring(0, requestHeaders.IndexOf(TextHelper.NewLine + TextHelper.NewLine)).Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-                    else
-                        lines = requestHeaders.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-                    if (lines.Length > 0)
-                    {
-
-                        string methodName = GetHttpMethodName(lines[0]);
-                        string address = GetHttpAddress(lines[0]);
-                        if (requestHeaders != null)
-                            ((HttpClientInfo)client).RequestHeaders = SignalGo.Shared.Http.WebHeaderCollection.GetHttpHeaders(lines.Skip(1).ToArray());
-
-                        await HandleHttpRequest(methodName, address, serverBase, (HttpClientInfo)client);
-                    }
-                    else
-                        serverBase.DisposeClient(client, tcpClient, "HttpProvider StartToReadingClientData no line detected");
+                    await HandleHttpRequest(methodName, address, serverBase, (HttpClientInfo)client);
                 }
                 catch
                 {

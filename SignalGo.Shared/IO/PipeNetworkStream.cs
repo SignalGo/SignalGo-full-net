@@ -31,6 +31,10 @@ namespace SignalGo.Shared.IO
 
         static readonly char[] SplitHeader = { ':' };
         /// <summary>
+        /// first line of reading data
+        /// </summary>
+        public string FirstLine { get; private set; }
+        /// <summary>
         /// procol type of this stream
         /// </summary>
         public ProtocolType ProtocolType { get; set; } = ProtocolType.None;
