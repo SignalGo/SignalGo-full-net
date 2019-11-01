@@ -64,11 +64,21 @@ namespace SignalGo.Client
         /// </summary>
         public string Data { get; set; }
     }
+    public interface IHttpClient
+    {
+        Encoding Encoding { get; set; }
+        SignalGo.Shared.Http.WebHeaderCollection RequestHeaders { get; set; }
 
+        T Deserialize<T>(string json);
+        HttpClientResponse Post(string url, ParameterInfo[] parameterInfoes, BaseStreamInfo streamInfo = null);
+#if (!NET35 && !NET40 && !NETSTANDARD1_6)
+        Task<HttpClientResponse> PostAsync(string url, ParameterInfo[] parameterInfoes, BaseStreamInfo streamInfo = null);
+#endif
+    }
     /// <summary>
     /// http clinet over tcp
     /// </summary>
-    public class HttpClient
+    public class HttpClient : IHttpClient
     {
         /// <summary>
         /// encoding system
@@ -230,31 +240,34 @@ namespace SignalGo.Client
             }
 #endif
         }
-
+        public T Deserialize<T>(string json)
+        {
+            return SignalGo.Client.ClientSerializationHelper.DeserializeObject<T>(json);
+        }
 #if (!NET35 && !NET40 && !NETSTANDARD1_6)
         public async Task<HttpClientResponseBase> PostHeadAsync(string url, ParameterInfo[] parameterInfoes, BaseStreamInfo streamInfo = null)
         {
             string newLine = TextHelper.NewLine;
             Uri uri = new Uri(url);
             TcpClient tcpClient = new TcpClient();
-//#if (__ANDROID__)
-//            var cancelSource = new CancellationTokenSource();
-//            cancelSource.Token.ThrowIfCancellationRequested();
-//            _ = Task.Run(async () =>
-//                {
-//                    for (int i = 0; i < 6; i++)
-//                    {
-//                        await Task.Delay(1000);
-//                    }
-//                    cancelSource.Cancel();
-//                });
-//            await Task.Run(async () =>
-//            {
-//                await tcpClient.ConnectAsync(uri.Host, uri.Port);
-//            }, cancelSource.Token);
-//#else
+            //#if (__ANDROID__)
+            //            var cancelSource = new CancellationTokenSource();
+            //            cancelSource.Token.ThrowIfCancellationRequested();
+            //            _ = Task.Run(async () =>
+            //                {
+            //                    for (int i = 0; i < 6; i++)
+            //                    {
+            //                        await Task.Delay(1000);
+            //                    }
+            //                    cancelSource.Cancel();
+            //                });
+            //            await Task.Run(async () =>
+            //            {
+            //                await tcpClient.ConnectAsync(uri.Host, uri.Port);
+            //            }, cancelSource.Token);
+            //#else
             await tcpClient.ConnectAsync(uri.Host, uri.Port);
-//#endif
+            //#endif
             try
             {
                 if (streamInfo != null && (!streamInfo.Length.HasValue || streamInfo.Length <= 0))
@@ -383,5 +396,5 @@ namespace SignalGo.Client
             }
         }
 #endif
-        }
+    }
 }
