@@ -33,6 +33,8 @@ namespace SignalGo.Client
     {
         public string EncodingName { get; set; } = "utf-8";
         public Encoding Encoding { get; set; } = Encoding.UTF8;
+        public WebHeaderCollection ResponseHeaders { get; set; }
+        public WebHeaderCollection RequestHeaders { get; set; } = new WebHeaderCollection();
     }
 
     /// <summary>ISO-8859-1
@@ -77,8 +79,13 @@ namespace SignalGo.Client
                 if (!string.IsNullOrEmpty(actionUrl))
                     client.Headers["SOAPAction"] = actionUrl;
                 client.Headers.Add(HttpRequestHeader.ContentType, $"text/xml; charset={logger.Settings.EncodingName};");
+                foreach (var item in logger.Settings.RequestHeaders.AllKeys)
+                {
+                    client.Headers.Add(item, logger.Settings.RequestHeaders[item]);
+                }
                 logger?.BeforeCallAction?.Invoke(url, actionUrl, methodName, args, defaultData);
                 string data = client.UploadString(url, defaultData);
+                logger.Settings.ResponseHeaders = client.ResponseHeaders;
                 if (typeof(T) == typeof(object))
                     return default;
                 logger?.AfterCallAction?.Invoke(url, actionUrl, methodName, args, data);
@@ -120,8 +127,14 @@ namespace SignalGo.Client
                 if (!string.IsNullOrEmpty(actionUrl))
                     client.Headers["SOAPAction"] = actionUrl;
                 client.Headers.Add(HttpRequestHeader.ContentType, "application/xml");// $"text/xml; charset={logger.Settings.EncodingName};");
+                foreach (var item in logger.Settings.RequestHeaders.AllKeys)
+                {
+                    client.Headers.Add(item, logger.Settings.RequestHeaders[item]);
+                    System.Diagnostics.Debug.WriteLine(logger.Settings.RequestHeaders[item], $"Header: {item}");
+                }
                 logger?.BeforeCallAction?.Invoke(url, actionUrl, methodName, args, defaultData);
                 string data = await client.UploadStringTaskAsync(url, defaultData);
+                logger.Settings.ResponseHeaders = client.ResponseHeaders;
                 System.Diagnostics.Debug.WriteLine(defaultData, $"Request: {actionUrl}");
                 System.Diagnostics.Debug.WriteLine(data, $"Response: {url} ac:{actionUrl}");
                 if (typeof(T) == typeof(object))
