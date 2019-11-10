@@ -7,6 +7,55 @@ using System;
 namespace SignalGo.Shared.Helpers
 {
     /// <summary>
+    /// convert date time to utc
+    /// </summary>
+    public class ToUniverseDateTimeConvertor : DateTimeConverterBase
+    {
+        public AutoLogger AutoLogger { get; set; }
+        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+        {
+            try
+            {
+                if (reader.Value is DateTime dateTime)
+                {
+                    if (dateTime.Kind != DateTimeKind.Utc)
+                        return dateTime.ToUniversalTime();
+                    else
+                        return dateTime;
+                }
+                return default(DateTime);
+            }
+            catch (Exception ex)
+            {
+                AutoLogger.LogError(ex, "ToUniverseDateTimeConvertor ReadJson");
+                AutoLogger.LogText(reader.Value == null ? "null" : reader.Value.ToString());
+            }
+            return default(DateTime);
+        }
+
+        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+        {
+            try
+            {
+                if (value is DateTime dateTime)
+                {
+                    if (dateTime.Kind != DateTimeKind.Utc)
+                        writer.WriteValue(dateTime.ToUniversalTime());
+                    else
+                        writer.WriteValue(dateTime);
+                }
+                else
+                    writer.WriteValue(default(DateTime));
+            }
+            catch (Exception ex)
+            {
+                AutoLogger.LogError(ex, "ToUniverseDateTimeConvertor WriteJson");
+                AutoLogger.LogText(value == null ? "null" : value.ToString());
+            }
+        }
+    }
+
+    /// <summary>
     /// convert datetime to localtime
     /// </summary>
     public class ToLocalDateTimeConvertor : DateTimeConverterBase
@@ -54,6 +103,7 @@ namespace SignalGo.Shared.Helpers
     /// </summary>
     public class JsonSettingHelper
     {
+        public DateTimeConverterBase CurrentDateTimeSetting { get; set; }
         /// <summary>
         /// log erros and warnings
         /// </summary>
@@ -69,7 +119,10 @@ namespace SignalGo.Shared.Helpers
                     NullValueHandling = NullValueHandling.Ignore,
                     ReferenceLoopHandling = ReferenceLoopHandling.Ignore
                 };
-                setting.Converters.Add(new ToLocalDateTimeConvertor() { AutoLogger = AutoLogger });
+                if (CurrentDateTimeSetting == null)
+                    setting.Converters.Add(new ToLocalDateTimeConvertor() { AutoLogger = AutoLogger });
+                else
+                    setting.Converters.Add(CurrentDateTimeSetting);
                 return setting;
             };
         }

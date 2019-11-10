@@ -54,7 +54,7 @@ namespace SignalGo.Server.ServiceManager
         /// <summary>
         /// json serialize and deserialize error handling
         /// </summary>
-        private JsonSettingHelper JsonSettingHelper { get; set; } = new JsonSettingHelper();
+        public JsonSettingHelper JsonSettingHelper { get; set; } = new JsonSettingHelper();
 
         /// <summary>
         /// Server is started or not
