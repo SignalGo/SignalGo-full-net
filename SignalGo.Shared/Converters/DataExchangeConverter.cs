@@ -16,6 +16,13 @@ namespace SignalGo.Shared.Converters
 {
     public class DataExchanger
     {
+        static DataExchanger()
+        {
+            CreateInstance = Activator.CreateInstance;
+            CreateInstanceParams = Activator.CreateInstance;
+        }
+        public static Func<Type, object> CreateInstance { get; set; }
+        public static Func<Type, object[], object> CreateInstanceParams { get; set; }
         /// <summary>
         /// 
         /// </summary>
@@ -70,7 +77,7 @@ namespace SignalGo.Shared.Converters
         {
             Ignore(Task.CurrentId, instance, property);
         }
-        public static void Ignore(int? taskId,object instance, params string[] property)
+        public static void Ignore(int? taskId, object instance, params string[] property)
         {
             if (taskId == null)
                 throw new Exception("current context is null please don't call this method inside of another thread!");
@@ -291,7 +298,7 @@ namespace SignalGo.Shared.Converters
         public object Create(Type objectType)
         {
             Type generic = objectType.GetListOfGenericArguments().FirstOrDefault();
-            return Activator.CreateInstance(typeof(List<>).MakeGenericType(generic));
+            return DataExchanger.CreateInstance(typeof(List<>).MakeGenericType(generic));
         }
 
         /// <summary>
@@ -678,19 +685,19 @@ namespace SignalGo.Shared.Converters
             if (canIgnore)
                 return null;
             if (type.IsArray)
-                return Activator.CreateInstance(type, 0);
+                return DataExchanger.CreateInstanceParams(type, new object[] { 0 });
             else
             {
                 if (type.GetIsGenericType() && (type.GetGenericTypeDefinition() == typeof(ICollection<>) || type.GetGenericTypeDefinition() == typeof(IEnumerable<>)))
                 {
                     Type generic = type.GetListOfGenericArguments().FirstOrDefault();
-                    return Activator.CreateInstance(typeof(List<>).MakeGenericType(generic));
+                    return DataExchanger.CreateInstance(typeof(List<>).MakeGenericType(generic));
                 }
                 try
                 {
                     ConstructorInfo[] ctors = type.GetListOfConstructors();
-                    if (ctors.Any(x => x.GetParameters().Length == 0))
-                        return Activator.CreateInstance(type);
+                    if (ctors.Any(x => x.GetParameters().Length == 0) || ctors.Length == 0)
+                        return DataExchanger.CreateInstance(type);
                     else
                     {
                         System.Reflection.ParameterInfo[] parameters = ctors[0].GetParameters();
@@ -699,7 +706,7 @@ namespace SignalGo.Shared.Converters
                         {
                             args[i] = GetDefault(parameters[i].ParameterType);
                         }
-                        return Activator.CreateInstance(type, args);
+                        return DataExchanger.CreateInstanceParams(type, args);
                     }
                 }
                 catch (Exception ex)
@@ -757,6 +764,8 @@ namespace SignalGo.Shared.Converters
             if (instance == null)
             {
                 instance = CreateInstance(objectType, isIgnore);
+                if (instance == null)
+                    Console.WriteLine($"instance is null of type{objectType}");
                 foreach (var item in instance.GetType().GetListOfProperties())
                 {
                     AddPropertyValidationRuleInfoAttribute(item, instance, null);
@@ -1034,8 +1043,15 @@ namespace SignalGo.Shared.Converters
                     {
                         canIgnore = canIgnore ? true : CanIgnoreCustomDataExchanger(objectType, property, instance);
                         object array = ReadNewArray(null, reader, property.PropertyType, existingValue, serializer, canIgnore);
+
                         if (!canIgnore)
-                            property.SetValue(instance, array, null);
+                        {
+                            if (property.CanWrite)
+                                property.SetValue(instance, array, null);
+                            else
+                                Console.WriteLine($"property {property.Name} cannot write");
+                        }
+                            
                         AddPropertyValidationRuleInfoAttribute(property, instance, array);
                     }
                     else

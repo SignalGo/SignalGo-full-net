@@ -26,6 +26,10 @@ namespace SignalGo.Shared.DataTypes
         /// </summary>
         public string[] IgnoreProperties { get; set; }
         /// <summary>
+        /// do data for all classes
+        /// </summary>
+        public bool ForAllClassess { get; set; }
+        /// <summary>
         /// 
         /// </summary>
         public ModelMappAttribute(Type mapToType)
