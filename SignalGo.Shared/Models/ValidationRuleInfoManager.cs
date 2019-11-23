@@ -510,11 +510,11 @@ namespace SignalGo.Shared.Models
                 {
                     if (validation.TaskType == ValidationRuleInfoTaskType.Error)
                     {
+                        validation.PropertyInfo = property;
+                        validation.Object = instance;
+                        validation.CurrentValue = currentValue;
                         if (!BaseValidationRuleInfoAttribute.CheckIsValidate(validation))
                         {
-                            validation.PropertyInfo = property;
-                            validation.Object = instance;
-                            validation.CurrentValue = currentValue;
                             yield return validation;
                         }
                     }

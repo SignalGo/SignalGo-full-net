@@ -93,6 +93,11 @@ namespace System
 
         private static object[] TryAddCach(object type, bool inherit)
         {
+#if (NETSTANDARD || NETCOREAPP || PORTABLE)
+            return ((MemberInfo)type).GetCustomAttributes(inherit).Cast<object>().ToArray();
+#else
+            return ((MemberInfo)type).GetCustomAttributes(inherit).Cast<object>().ToArray();
+#endif
 
             if (inherit)
             {
