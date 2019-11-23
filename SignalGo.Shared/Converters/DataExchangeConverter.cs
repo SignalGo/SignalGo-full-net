@@ -407,6 +407,8 @@ namespace SignalGo.Shared.Converters
 
         private bool CanIgnoreCustomDataExchanger(Type type, object instance)
         {
+            if (type == null)
+                return false;
             if (DataExchanger.ExistContext())
             {
                 List<CustomDataExchangerAttribute> items = DataExchanger.GetContextAttributes();
