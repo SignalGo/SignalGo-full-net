@@ -3,6 +3,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace SignalGo.Shared
 {
@@ -62,6 +63,49 @@ namespace SignalGo.Shared
                     AutoLogger.LogError(ex, "AsyncActions RunOnUI");
                 }
             }, null);
+        }
+
+#endif
+#if (NET45 || NETSTANDARD2_0)
+
+        public static Task<T> RunOnUI<T>(Func<Task<T>> action)
+        {
+            if (UIThread == null)
+                throw new Exception("UI thread not initialized please call AsyncActions.InitializeUIThread in your ui thread to initialize");
+            TaskCompletionSource<T> tcs1 = new TaskCompletionSource<T>();
+            UIThread.Post(async (state) =>
+            {
+                try
+                {
+                    var result = await action();
+                    tcs1.SetResult(result);
+                }
+                catch (Exception ex)
+                {
+                    AutoLogger.LogError(ex, "AsyncActions RunOnUI");
+                    tcs1.SetException(ex);
+                }
+            }, null);
+            return tcs1.Task;
+        }
+
+        public static T RunOnUI<T>(Func<T> action)
+        {
+            if (UIThread == null)
+                throw new Exception("UI thread not initialized please call AsyncActions.InitializeUIThread in your ui thread to initialize");
+            T result = default;
+            UIThread.Send((state) =>
+            {
+                try
+                {
+                    result = action();
+                }
+                catch (Exception ex)
+                {
+                    AutoLogger.LogError(ex, "AsyncActions RunOnUI");
+                }
+            }, null);
+            return result;
         }
 #endif
         /// <summary>
