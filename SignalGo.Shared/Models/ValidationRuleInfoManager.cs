@@ -492,21 +492,36 @@ namespace SignalGo.Shared.Models
             }
             else
             {
-                foreach (BaseValidationRuleInfoAttribute validation in CalculateObject(instance, properties, currentTaskId))
+                foreach (BaseValidationRuleInfoAttribute validation in CalculateObject(instance, properties, currentTaskId, new List<object>()))
                 {
                     yield return validation;
                 }
             }
         }
 
-        private IEnumerable<BaseValidationRuleInfoAttribute> CalculateObject(object instance, List<string> properties, int? currentTaskId)
+        private List<BaseValidationRuleInfoAttribute> CalculateObject(object instance, List<string> properties, int? currentTaskId, List<object> checkedObjects)
         {
-            foreach (System.Reflection.PropertyInfo property in instance.GetType().GetListOfProperties())
+            var type = instance.GetType();
+
+            List<BaseValidationRuleInfoAttribute> result = new List<BaseValidationRuleInfoAttribute>();
+            if (checkedObjects.Contains(instance))
+                return result;
+            checkedObjects.Add(instance);
+            if (typeof(IEnumerable).IsAssignableFrom(type))
+            {
+                foreach (var item in (IEnumerable)instance)
+                {
+                    if (item != null)
+                        result.AddRange(CalculateObject(item, new List<string>(), currentTaskId, checkedObjects));
+                }
+                return result;
+            }
+            foreach (System.Reflection.PropertyInfo property in type.GetListOfProperties())
             {
                 if (properties.Contains(property.Name))
                     continue;
                 object currentValue = property.GetValue(instance, null);
-                foreach (BaseValidationRuleInfoAttribute validation in GetPropertyBaseValidationRuleInfoAttributes(instance.GetType(), property, instance, currentValue, currentTaskId))
+                foreach (BaseValidationRuleInfoAttribute validation in GetPropertyBaseValidationRuleInfoAttributes(type, property, instance, currentValue, currentTaskId))
                 {
                     if (validation.TaskType == ValidationRuleInfoTaskType.Error)
                     {
@@ -515,7 +530,7 @@ namespace SignalGo.Shared.Models
                         validation.CurrentValue = currentValue;
                         if (!BaseValidationRuleInfoAttribute.CheckIsValidate(validation))
                         {
-                            yield return validation;
+                            result.Add(validation);
                         }
                     }
                     else if (validation.TaskType == ValidationRuleInfoTaskType.ChangeValue)
@@ -523,14 +538,22 @@ namespace SignalGo.Shared.Models
                         if (!BaseValidationRuleInfoAttribute.CheckIsValidate(validation))
                         {
                             object changedValue = BaseValidationRuleInfoAttribute.GetChangedValue(validation);
-                            System.Reflection.PropertyInfo findProperty = instance.GetType().GetPropertyInfo(property.Name);
+                            System.Reflection.PropertyInfo findProperty = type.GetPropertyInfo(property.Name);
                             findProperty.SetValue(instance, changedValue, null);
                         }
                     }
                     else
                         throw new NotSupportedException();
                 }
+                if (currentValue != null)
+                {
+                    foreach (var item in CalculateObject(currentValue, new List<string>(), currentTaskId, checkedObjects))
+                    {
+                        result.Add(item);
+                    }
+                }
             }
+            return result;
         }
 
         private IEnumerable<BaseValidationRuleInfoAttribute> GetPropertyBaseValidationRuleInfoAttributes(Type type, PropertyInfo propertyInfo, object instance, object currentValue, int? currentTaskId)
