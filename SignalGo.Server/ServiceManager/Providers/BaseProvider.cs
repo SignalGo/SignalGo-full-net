@@ -63,6 +63,14 @@ namespace SignalGo.Server.ServiceManager.Providers
                 bool? isEnabledReferenceResolverForArray = null;
                 try
                 {
+                    serverBase.OnBeforeCallMethodAction?.Invoke(serviceName, guid, methodName, parameters, jsonParameters, client, json, serverBase, fileInfo, canTakeMethod, null);
+                }
+                catch
+                {
+
+                }
+                try
+                {
                     serviceName = serviceName.ToLower();
                     OperationContext.CurrentTaskServer = serverBase;
 
@@ -373,7 +381,14 @@ namespace SignalGo.Server.ServiceManager.Providers
                                     await task;
                                     result = task.GetType().GetProperty("Result").GetValue(task, null);
                                 }
+                                try
+                                {
+                                    serverBase.OnBeforeCallMethodAction?.Invoke(serviceName, guid, methodName, parameters, jsonParameters, client, json, serverBase, fileInfo, canTakeMethod, result);
+                                }
+                                catch
+                                {
 
+                                }
                                 if (result is FileActionResult fResult)
                                     fileActionResult = fResult;
                                 else

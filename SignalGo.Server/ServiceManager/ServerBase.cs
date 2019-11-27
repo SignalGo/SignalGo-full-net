@@ -19,6 +19,21 @@ using System.Threading;
 namespace SignalGo.Server.ServiceManager
 {
     /// <summary>
+    /// when method is calling or called you can log full data
+    /// </summary>
+    /// <param name="serviceName"></param>
+    /// <param name="guid"></param>
+    /// <param name="methodName"></param>
+    /// <param name="parameters"></param>
+    /// <param name="jsonParameters"></param>
+    /// <param name="client"></param>
+    /// <param name="json"></param>
+    /// <param name="serverBase"></param>
+    /// <param name="fileInfo"></param>
+    /// <param name="canTakeMethod"></param>
+    /// <param name="result"></param>
+    public delegate void OnCallMethod(string serviceName, string guid, string methodName, SignalGo.Shared.Models.ParameterInfo[] parameters, string jsonParameters, ClientInfo client, string json, ServerBase serverBase, Shared.Http.HttpPostedFileInfo fileInfo, Func<MethodInfo, bool> canTakeMethod, object result);
+    /// <summary>
     /// base of server
     /// </summary>
     public abstract class ServerBase : IDisposable, IValidationRuleInfo
@@ -119,6 +134,14 @@ namespace SignalGo.Server.ServiceManager
         /// all of the clients service call methods from server those wait for recevice data from client and set result to task that waited
         /// </summary>
         internal ConcurrentDictionary<string, KeyValue<Type, object>> ClientServiceCallMethodsResult { get; set; } = new ConcurrentDictionary<string, KeyValue<Type, object>>();
+        /// <summary>
+        /// before method calls
+        /// </summary>
+        public OnCallMethod OnBeforeCallMethodAction { get; set; }
+        /// <summary>
+        /// after method calls
+        /// </summary>
+        public OnCallMethod OnAfterCallMethodAction { get; set; }
 
         /// <summary>
         /// Error handling methods that return types (not void)
