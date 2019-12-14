@@ -80,6 +80,12 @@ namespace SignalGo.Client
     /// </summary>
     public class HttpClient : IHttpClient
     {
+        public HttpClient()
+        {
+            JsonSettingHelper.Initialize();
+        }
+
+        internal JsonSettingHelper JsonSettingHelper { get; set; } = new JsonSettingHelper();
         /// <summary>
         /// encoding system
         /// </summary>

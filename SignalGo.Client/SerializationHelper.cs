@@ -20,6 +20,10 @@ namespace SignalGo.Client
         {
             if (obj == null)
                 return "";
+            if (!IsEnabledReferenceResolver && !IsEnabledReferenceResolverForArray)
+            {
+                return JsonConvert.SerializeObject(obj);
+            }
             //if (serverBase != null && serverBase.InternalSetting.IsEnabledDataExchanger)
             return JsonConvert.SerializeObject(obj, Formatting.None, new JsonSerializerSettings()
             {
@@ -52,6 +56,10 @@ namespace SignalGo.Client
         {
             if (string.IsNullOrEmpty(json))
                 return null;
+            if (!IsEnabledReferenceResolver && !IsEnabledReferenceResolverForArray)
+            {
+                return JsonConvert.DeserializeObject(json, type);
+            }
             return JsonConvert.DeserializeObject(json, type, new JsonSerializerSettings()
             {
                 Formatting = Formatting.None,

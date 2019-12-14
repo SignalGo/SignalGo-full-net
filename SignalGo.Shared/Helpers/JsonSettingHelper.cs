@@ -3,6 +3,7 @@ using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
 using SignalGo.Shared.Log;
 using System;
+using System.Collections.Generic;
 
 namespace SignalGo.Shared.Helpers
 {
@@ -97,7 +98,46 @@ namespace SignalGo.Shared.Helpers
 
         }
     }
+    public class ToRealDateTimeConvertor : DateTimeConverterBase
+    {
+        public AutoLogger AutoLogger { get; set; }
+        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+        {
+            try
+            {
+                if (reader.Value == null)
+                    return default(DateTime);
+                var result = DateTime.SpecifyKind((DateTime)reader.Value, DateTimeKind.Local);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                AutoLogger.LogError(ex, "ToLocalDateTimeConvertor ReadJson");
+                AutoLogger.LogText(reader.Value == null ? "null" : reader.Value.ToString());
+            }
+            return default(DateTime);
+        }
 
+        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+        {
+            try
+            {
+                if (value == null)
+                    writer.WriteValue(default(DateTime));
+                else
+                {
+                    DateTime dt = DateTime.SpecifyKind((DateTime)value, DateTimeKind.Local);
+                    writer.WriteValue(dt);
+                }
+            }
+            catch (Exception ex)
+            {
+                AutoLogger.LogError(ex, "ToLocalDateTimeConvertor WriteJson");
+                AutoLogger.LogText(value == null ? "null" : value.ToString());
+            }
+
+        }
+    }
     /// <summary>
     /// json serialize and deserialize error handling
     /// </summary>
@@ -119,10 +159,12 @@ namespace SignalGo.Shared.Helpers
                     NullValueHandling = NullValueHandling.Ignore,
                     ReferenceLoopHandling = ReferenceLoopHandling.Ignore
                 };
-                if (CurrentDateTimeSetting == null)
-                    setting.Converters.Add(new ToLocalDateTimeConvertor() { AutoLogger = AutoLogger });
-                else
+
+                if (CurrentDateTimeSetting != null)
                     setting.Converters.Add(CurrentDateTimeSetting);
+                else
+                    setting.Converters.Add(new ToRealDateTimeConvertor() { AutoLogger = AutoLogger });
+
                 return setting;
             };
         }
