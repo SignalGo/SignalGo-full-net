@@ -207,7 +207,7 @@ namespace SignalGo.Server.Models
         /// <param name="statusCode"></param>
         public virtual void ChangeStatusCode(System.Net.HttpStatusCode statusCode)
         {
-
+            Status = statusCode;
         }
 
     }
