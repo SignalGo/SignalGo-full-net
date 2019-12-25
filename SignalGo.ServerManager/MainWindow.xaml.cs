@@ -3,6 +3,7 @@ using SignalGo.ServerManager.Models;
 using SignalGo.ServerManager.Services;
 using SignalGo.ServerManager.ViewModels;
 using SignalGo.ServerManager.Views;
+using SignalGo.Shared.Log;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -36,14 +37,22 @@ namespace SignalGo.ServerManager
             InitializeComponent();
             mainframe.Navigate(new FirstPage());
             Closing += MainWindow_Closing;
-
             ServerProvider serverProvider = new ServerProvider();
             serverProvider.RegisterServerService<ServerManagerService>();
             serverProvider.Start("http://localhost:5468/ServerManager/SignalGo");
         }
 
+
         private void MainWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
+            AutoLogger.Default.LogText("Try to close happens.");
+            if (MessageBox.Show("Are you sure to close server manager? this will close all of servers.","Close application", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.No)
+            {
+                AutoLogger.Default.LogText("Manualy user cancel closing.");
+                e.Cancel = true;
+                return;
+            }
+            AutoLogger.Default.LogText("Manualy user closed the server manager.");
             foreach (var server in SettingInfo.Current.ServerInfoes)
             {
                 try
