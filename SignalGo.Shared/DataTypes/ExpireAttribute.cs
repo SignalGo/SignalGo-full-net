@@ -12,7 +12,7 @@ using System.Text;
 namespace SignalGo.Shared.DataTypes
 {
     /// <summary>
-    /// expire key will help developers to check client session is expired or no
+    /// expire key will help developers to check client session is expired or not
     /// </summary>
     public class ExpireAttribute : Attribute
     {
