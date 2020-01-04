@@ -39,6 +39,7 @@ namespace SignalGo.Shared
         /// </summary>
         public static void InitializeUIThread()
         {
+            var thread = Thread.CurrentThread;
             if (SynchronizationContext.Current == null)
                 SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());
             UIThread = SynchronizationContext.Current;
@@ -106,6 +107,26 @@ namespace SignalGo.Shared
                 }
             }, null);
             return result;
+        }
+
+        public static Task RunOnUIAsync(Action action)
+        {
+            if (UIThread == null)
+                throw new Exception("UI thread not initialized please call AsyncActions.InitializeUIThread in your ui thread to initialize");
+            return Task.Run(() =>
+            {
+                UIThread.Send((state) =>
+                {
+                    try
+                    {
+                        action();
+                    }
+                    catch (Exception ex)
+                    {
+                        AutoLogger.LogError(ex, "AsyncActions RunOnUI");
+                    }
+                }, null);
+            });
         }
 #endif
         /// <summary>
