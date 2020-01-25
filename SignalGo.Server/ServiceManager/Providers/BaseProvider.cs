@@ -890,7 +890,7 @@ namespace SignalGo.Server.ServiceManager.Providers
         /// <param name="callback"></param>
         /// <param name="client"></param>
         /// <param name="serverBase"></param>
-        internal static Task SendCallbackData(MethodCallbackInfo callback, ClientInfo client, ServerBase serverBase)
+        internal static async Task SendCallbackData(MethodCallbackInfo callback, ClientInfo client, ServerBase serverBase)
         {
             string json = ServerSerializationHelper.SerializeObject(callback, serverBase);
             byte[] bytes = Encoding.UTF8.GetBytes(json);
@@ -907,7 +907,7 @@ namespace SignalGo.Server.ServiceManager.Providers
             if (data.Count > serverBase.ProviderSetting.MaximumSendDataBlock)
                 throw new Exception($"{client.IPAddress} {client.ClientId} SendCallbackData data length exceeds MaximumSendDataBlock");
 
-            return client.StreamHelper.WriteToStreamAsync(client.ClientStream, data.ToArray());
+            await client.StreamHelper.WriteToStreamAsync(client.ClientStream, data.ToArray());
         }
     }
 }

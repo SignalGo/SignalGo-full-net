@@ -61,7 +61,6 @@ namespace SignalGoTest.Download
         public async Task TestUploadAsync()
         {
             GlobalInitalization.Initialize();
-            SignalGo.Client.ClientProvider client = GlobalInitalization.InitializeAndConnecteClient();
             using (MemoryStream memoryStream = new MemoryStream())
             {
                 byte[] bytes = new byte[1024 * 512];
@@ -71,7 +70,7 @@ namespace SignalGoTest.Download
                 }
                 memoryStream.Write(bytes, 0, bytes.Length);
                 memoryStream.Seek(0, SeekOrigin.Begin);
-                ITestServerStreamModel service = client.RegisterStreamServiceInterfaceWrapper<ITestServerStreamModel>();
+                ITestServerStreamModel service = new SignalGoTest2Services.StreamServices.TestServerStreamModel("http://localhost:1132");
                 string result = await service.UploadImageAsync("hello world", new SignalGo.Shared.Models.StreamInfo()
                 {
                     Length = memoryStream.Length,

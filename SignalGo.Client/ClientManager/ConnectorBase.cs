@@ -722,6 +722,12 @@ namespace SignalGo.Client.ClientManager
         public static async Task<T> UploadStreamAsync<T>(ClientProvider clientProvider, string serverAddress, int? port, string serviceName, string methodName, Shared.Models.ParameterInfo[] parameters, IStreamInfo iStream)
 #endif
         {
+            if (Uri.TryCreate(serverAddress, UriKind.Absolute, out Uri uri))
+            {
+                serverAddress = uri.Host;
+                if (port == null)
+                    port = uri.Port;
+            }
             ISignalGoStream streamHelper = clientProvider == null ? SignalGoStreamBase.CurrentBase : clientProvider.StreamHelper;
             int maximumReceiveStreamHeaderBlock = clientProvider == null ? int.MaxValue : clientProvider.ProviderSetting.MaximumReceiveStreamHeaderBlock;
             Type returnType = typeof(T);
@@ -801,107 +807,139 @@ namespace SignalGo.Client.ClientManager
             await streamHelper.WriteBlockToStreamAsync(stream, jsonBytes);
 #endif
             CompressMode compressMode = CompressMode.None;
+#if (!NET40 && !NET35)
+            TaskCompletionSource<bool> sendComeplete = new TaskCompletionSource<bool>();
+#endif
             if (isUpload)
             {
-                KeyValue<DataType, CompressMode> firstData = null;
-#if (NET40 || NET35)
-                iStream.GetPositionFlush = () =>
-#else
-                iStream.GetPositionFlush = async () =>
-#endif
+#if (!NET40 && !NET35)
+                _ = Task.Run(async () =>
                 {
-                    if (firstData != null && firstData.Key != DataType.FlushStream)
-                        return -1;
-#if (NET40 || NET35)
-                    firstData = iStream.ReadFirstData(stream, maximumReceiveStreamHeaderBlock);
-#else
-                    firstData = await iStream.ReadFirstDataAsync(stream, maximumReceiveStreamHeaderBlock);
 #endif
-                    if (firstData.Key == DataType.FlushStream)
+                    try
                     {
-#if (NET40 || NET35)
-                        byte[] data = streamHelper.ReadBlockToEnd(stream, firstData.Value, maximumReceiveStreamHeaderBlock);
-#else
-                        byte[] data = await streamHelper.ReadBlockToEndAsync(stream, firstData.Value, maximumReceiveStreamHeaderBlock);
+#if (!NET40 && !NET35)
+                        await Task.Delay(1000);
 #endif
-                        return BitConverter.ToInt64(data, 0);
-                    }
-                    return -1;
-                };
-                if (iStream.WriteManually != null && iStream.WriteManuallyAsync != null)
-                    throw new Exception("don't set both of WriteManually and WriteManuallyAsync");
-                if (iStream.WriteManually != null)
-                    iStream.WriteManually(stream);
-                else if (iStream.WriteManuallyAsync != null)
-                {
+                        KeyValue<DataType, CompressMode> firstData = null;
 #if (NET40 || NET35)
-                    iStream.WriteManuallyAsync(stream).Wait();
+                        iStream.GetPositionFlush = () =>
 #else
-                    await iStream.WriteManuallyAsync(stream);
+                        iStream.GetPositionFlush = async () =>
 #endif
-                }
-                else
-                {
-                    long length = iStream.Length.Value;
-                    long position = 0;
-                    int blockOfRead = 1024 * 10;
-                    while (length != position)
-                    {
-
-                        if (position + blockOfRead > length)
-                            blockOfRead = (int)(length - position);
-                        if (bytes.Length < blockOfRead)
-                            bytes = new byte[blockOfRead];
+                        {
+                            if (firstData != null && firstData.Key != DataType.FlushStream)
+                                return -1;
 #if (NET40 || NET35)
-                        int readCount = iStream.Stream.Read(bytes, blockOfRead);
+                            firstData = iStream.ReadFirstData(stream, maximumReceiveStreamHeaderBlock);
 #else
-                        int readCount = await iStream.Stream.ReadAsync(bytes, blockOfRead);
+                            firstData = await iStream.ReadFirstDataAsync(stream, maximumReceiveStreamHeaderBlock);
 #endif
-                        position += readCount;
-                        byte[] data = bytes.Take(readCount).ToArray();
+                            if (firstData.Key == DataType.FlushStream)
+                            {
 #if (NET40 || NET35)
-                        stream.Write(data, 0, data.Length);
+                                byte[] data = streamHelper.ReadBlockToEnd(stream, firstData.Value, maximumReceiveStreamHeaderBlock);
 #else
-                        await stream.WriteAsync(data, 0, data.Length);
+                                byte[] data = await streamHelper.ReadBlockToEndAsync(stream, firstData.Value, maximumReceiveStreamHeaderBlock);
 #endif
-                    }
-                }
-                if (firstData == null || firstData.Key == DataType.FlushStream)
-                {
-                    while (true)
-                    {
-#if (NET40 || NET35)
-                        firstData = iStream.ReadFirstData(stream, maximumReceiveStreamHeaderBlock);
-#else
-                        firstData = await iStream.ReadFirstDataAsync(stream, maximumReceiveStreamHeaderBlock);
-#endif
-                        if (firstData.Key == DataType.FlushStream)
+                                return BitConverter.ToInt64(data, 0);
+                            }
+                            return -1;
+                        };
+                        if (iStream.WriteManually != null && iStream.WriteManuallyAsync != null)
+                            throw new Exception("don't set both of WriteManually and WriteManuallyAsync");
+                        if (iStream.WriteManually != null)
+                            iStream.WriteManually(stream);
+                        else if (iStream.WriteManuallyAsync != null)
                         {
 #if (NET40 || NET35)
-                            byte[] data = streamHelper.ReadBlockToEnd(stream, firstData.Value, maximumReceiveStreamHeaderBlock);
+                            iStream.WriteManuallyAsync(stream).Wait();
 #else
-                            byte[] data = await streamHelper.ReadBlockToEndAsync(stream, firstData.Value, maximumReceiveStreamHeaderBlock);
+                            await iStream.WriteManuallyAsync(stream);
 #endif
                         }
                         else
-                            break;
+                        {
+                            long length = iStream.Length.Value;
+                            long position = 0;
+                            int blockOfRead = 1024 * 10;
+                            while (length != position)
+                            {
+
+                                if (position + blockOfRead > length)
+                                    blockOfRead = (int)(length - position);
+                                if (bytes.Length < blockOfRead)
+                                    bytes = new byte[blockOfRead];
+#if (NET40 || NET35)
+                                int readCount = iStream.Stream.Read(bytes, blockOfRead);
+#else
+                                int readCount = await iStream.Stream.ReadAsync(bytes, blockOfRead);
+#endif
+                                position += readCount;
+                                byte[] data = bytes.Take(readCount).ToArray();
+#if (NET40 || NET35)
+                                stream.Write(data, 0, data.Length);
+#else
+                                await stream.WriteAsync(data, 0, data.Length);
+#endif
+                            }
+                        }
+//                        if (firstData == null || firstData.Key == DataType.FlushStream)
+//                        {
+//                            while (true)
+//                            {
+//#if (NET40 || NET35)
+//                                firstData = iStream.ReadFirstData(stream, maximumReceiveStreamHeaderBlock);
+//#else
+//                                firstData = await iStream.ReadFirstDataAsync(stream, maximumReceiveStreamHeaderBlock);
+//#endif
+//                                if (firstData.Key == DataType.FlushStream)
+//                                {
+//#if (NET40 || NET35)
+//                                    byte[] data = streamHelper.ReadBlockToEnd(stream, firstData.Value, maximumReceiveStreamHeaderBlock);
+//#else
+//                                    byte[] data = await streamHelper.ReadBlockToEndAsync(stream, firstData.Value, maximumReceiveStreamHeaderBlock);
+//#endif
+//                                }
+//                                else
+//                                    break;
+//                            }
+//                        }
+#if (!NET40 && !NET35)
+                        sendComeplete.SetResult(true);
+#endif
                     }
-                }
+                    catch (Exception ex)
+                    {
+#if (!NET40 && !NET35)
+                        sendComeplete.SetResult(false);
+#endif
+                    }
+#if (!NET40 && !NET35)
+                });
+#endif
             }
             else
             {
-#if (NET40 || NET35)
-                byte dataTypeByte = streamHelper.ReadOneByte(stream);
-                byte compressModeByte = streamHelper.ReadOneByte(stream);
-#else
-                byte dataTypeByte = await streamHelper.ReadOneByteAsync(stream);
-                byte compressModeByte = await streamHelper.ReadOneByteAsync(stream);
+#if (!NET40 && !NET35)
+                sendComeplete.SetResult(true);
 #endif
             }
+#if (NET40 || NET35)
+            byte dataTypeByte = streamHelper.ReadOneByte(stream);
+            byte compressModeByte = streamHelper.ReadOneByte(stream);
+#else
+            byte dataTypeByte = await streamHelper.ReadOneByteAsync(stream);
+            byte compressModeByte = await streamHelper.ReadOneByteAsync(stream);
+#endif
+
 #if (NET40 || NET35)
             byte[] callBackBytes = streamHelper.ReadBlockToEnd(stream, compressMode, maximumReceiveStreamHeaderBlock);
 #else
             byte[] callBackBytes = await streamHelper.ReadBlockToEndAsync(stream, compressMode, maximumReceiveStreamHeaderBlock);
+#endif
+#if (!NET40 && !NET35)
+            var isSend = await sendComeplete.Task;
 #endif
             MethodCallbackInfo callbackInfo = ClientSerializationHelper.DeserializeObject<MethodCallbackInfo>(Encoding.UTF8.GetString(callBackBytes, 0, callBackBytes.Length));
             if (callbackInfo.IsException)

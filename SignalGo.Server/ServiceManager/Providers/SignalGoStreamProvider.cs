@@ -40,7 +40,7 @@ namespace SignalGo.Server.ServiceManager.Providers
         /// <summary>
         /// this method call when client want to upload file or stream to your server
         /// </summary>
-        /// <param name="stream">client stream</param>
+        /// <param name="serverBase">client stream</param>
         /// <param name="client">client</param>
         private static async Task DownloadStreamFromClient(ClientInfo client, ServerBase serverBase)
         {
@@ -111,14 +111,11 @@ namespace SignalGo.Server.ServiceManager.Providers
                 }
                 userStream.Dispose();
                 Console.WriteLine("user stream finished");
-                stream.Dispose();
-
             }
             catch (Exception ex)
             {
                 if (streamInfo != null)
                     streamInfo.Dispose();
-                stream.Dispose();
                 if (userStream != null)
                 {
                     userStream.Dispose();
