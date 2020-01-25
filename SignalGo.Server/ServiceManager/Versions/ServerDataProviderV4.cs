@@ -239,9 +239,9 @@ namespace SignalGo.Server.ServiceManager.Versions
             stringBuilder.AppendLine("TaskOfClientInfoes Count: " + _serverBase.TaskOfClientInfoes.Count);
             stringBuilder.AppendLine("CustomClientSavedSettings Count: " + OperationContextBase.CustomClientSavedSettings.Count);
             stringBuilder.AppendLine("CustomClientSavedSettings Count: " + OperationContextBase.SavedSettings.Count);
-            stringBuilder.AppendLine("CachedCustomAttributes Count: " + AttributeHelper.CachedCustomAttributes.Count);
+            //stringBuilder.AppendLine("CachedCustomAttributes Count: " + AttributeHelper.CachedCustomAttributes.Count);
             stringBuilder.AppendLine("CachedTypesOfAttribute Count: " + AttributeHelper.CachedTypesOfAttribute.Count);
-            stringBuilder.AppendLine("InheritCachedCustomAttributes Count: " + AttributeHelper.InheritCachedCustomAttributes.Count);
+            //stringBuilder.AppendLine("InheritCachedCustomAttributes Count: " + AttributeHelper.InheritCachedCustomAttributes.Count);
             stringBuilder.AppendLine("CachedMethods Count: " + BaseProvider.CachedMethods.Count);
             stringBuilder.AppendLine("ListOfContextsDataExchangers Count: " + DataExchanger.ListOfContextsDataExchangers.Count);
             stringBuilder.AppendLine("CurrentTaskServerTasks Count: " + OperationContext.CurrentTaskServerTasks.Count);

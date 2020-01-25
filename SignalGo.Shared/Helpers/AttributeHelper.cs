@@ -88,75 +88,96 @@ namespace System
             return GetCustomAttributes(type, typeof(T), inherit).Select(arg => (T)arg).ToArray();
         }
 
-        public static ConcurrentDictionary<object, object[]> InheritCachedCustomAttributes = new ConcurrentDictionary<object, object[]>();
-        public static ConcurrentDictionary<object, object[]> CachedCustomAttributes = new ConcurrentDictionary<object, object[]>();
+        //public static ConcurrentDictionary<object, object[]> InheritCachedCustomAttributes = new ConcurrentDictionary<object, object[]>();
+        //public static ConcurrentDictionary<object, object[]> CachedCustomAttributes = new ConcurrentDictionary<object, object[]>();
 
         private static object[] TryAddCach(object type, bool inherit)
         {
+            List<object> allAttributes = new List<object>();
 #if (NETSTANDARD || NETCOREAPP || PORTABLE)
-            return ((MemberInfo)type).GetCustomAttributes(inherit).Cast<object>().ToArray();
+            var result = ((MemberInfo)type).GetCustomAttributes(inherit).Cast<object>().ToArray();
 #else
-            return ((MemberInfo)type).GetCustomAttributes(inherit).Cast<object>().ToArray();
-#endif
+            var result = ((MemberInfo)type).GetCustomAttributes(inherit).Cast<object>().ToArray();
 
-            if (inherit)
+#endif
+            allAttributes.AddRange(result);
+            if (type is Type typeInfo)
             {
-                if (InheritCachedCustomAttributes.TryGetValue(type, out object[] result))
-                    return result;
-                if (type is Type resultType)
-                {
-                    List<object> items = new List<object>();
-                    Type baseType = resultType;
-                    do
-                    {
-#if (NETSTANDARD || NETCOREAPP || PORTABLE)
-                        items.AddRange(baseType.GetTypeInfo().GetCustomAttributes().Cast<object>());
-#else
-                        items.AddRange(baseType.GetCustomAttributes(true).Cast<object>());
-#endif
-
-                        baseType = baseType.GetBaseType();
-                    }
-                    while (baseType != null);
-
-                    foreach (Type interfaceType in resultType.GetListOfInterfaces())
-                    {
-#if (NETSTANDARD || NETCOREAPP || PORTABLE)
-                        items.AddRange(interfaceType.GetTypeInfo().GetCustomAttributes().Cast<object>());
-#else
-                        items.AddRange(interfaceType.GetCustomAttributes(true).Cast<object>());
-#endif
-                    }
-                    InheritCachedCustomAttributes.TryAdd(type, items.ToArray());
-                }
-                else if (type is MethodInfo resultMethodInfo)
-                    InheritCachedCustomAttributes.TryAdd(type, resultMethodInfo.GetCustomAttributes(true).Cast<object>().ToArray());
-                else if (type is PropertyInfo resultPropertyInfo)
-                    InheritCachedCustomAttributes.TryAdd(type, resultPropertyInfo.GetCustomAttributes(true).Cast<object>().ToArray());
-                else if (type is FieldInfo resultFieldInfo)
-                    InheritCachedCustomAttributes.TryAdd(type, resultFieldInfo.GetCustomAttributes(true).Cast<object>().ToArray());
-            }
-            else
-            {
-                if (CachedCustomAttributes.TryGetValue(type, out object[] result))
-                    return result;
-                if (type is Type resultType)
+                foreach (Type interfaceType in typeInfo.GetListOfInterfaces())
                 {
 #if (NETSTANDARD || NETCOREAPP || PORTABLE)
-                    CachedCustomAttributes.TryAdd(type, resultType.GetTypeInfo().GetCustomAttributes().Cast<object>().ToArray());
+                    allAttributes.AddRange(interfaceType.GetTypeInfo().GetCustomAttributes().ToArray());
 #else
-                    CachedCustomAttributes.TryAdd(type, resultType.GetCustomAttributes(false).Cast<object>().ToArray());
+                    allAttributes.AddRange(interfaceType.GetCustomAttributes(true).ToArray());
 #endif
-
                 }
-                else if (type is MethodInfo resultMethodInfo)
-                    CachedCustomAttributes.TryAdd(type, resultMethodInfo.GetCustomAttributes(false).Cast<object>().ToArray());
-                else if (type is PropertyInfo resultPropertyInfo)
-                    CachedCustomAttributes.TryAdd(type, resultPropertyInfo.GetCustomAttributes(false).Cast<object>().ToArray());
-                else if (type is FieldInfo resultFieldInfo)
-                    CachedCustomAttributes.TryAdd(type, resultFieldInfo.GetCustomAttributes(false).Cast<object>().ToArray());
             }
-            return TryAddCach(type, inherit);
+
+            return allAttributes.ToArray();
+            //#if (NETSTANDARD || NETCOREAPP || PORTABLE)
+            //            return ((MemberInfo)type).GetCustomAttributes(inherit).Cast<object>().ToArray();
+            //#else
+            //            return ((MemberInfo)type).GetCustomAttributes(inherit).Cast<object>().ToArray();
+            //#endif
+
+//            if (inherit)
+//            {
+//                if (InheritCachedCustomAttributes.TryGetValue(type, out object[] result))
+//                    return result;
+//                if (type is Type resultType)
+//                {
+//                    List<object> items = new List<object>();
+//                    Type baseType = resultType;
+//                    do
+//                    {
+//#if (NETSTANDARD || NETCOREAPP || PORTABLE)
+//                        items.AddRange(baseType.GetTypeInfo().GetCustomAttributes().Cast<object>());
+//#else
+//                        items.AddRange(baseType.GetCustomAttributes(true).Cast<object>());
+//#endif
+
+//                        baseType = baseType.GetBaseType();
+//                    }
+//                    while (baseType != null);
+
+//                    foreach (Type interfaceType in resultType.GetListOfInterfaces())
+//                    {
+//#if (NETSTANDARD || NETCOREAPP || PORTABLE)
+//                        items.AddRange(interfaceType.GetTypeInfo().GetCustomAttributes().Cast<object>());
+//#else
+//                        items.AddRange(interfaceType.GetCustomAttributes(true).Cast<object>());
+//#endif
+//                    }
+//                    InheritCachedCustomAttributes.TryAdd(type, items.ToArray());
+//                }
+//                else if (type is MethodInfo resultMethodInfo)
+//                    InheritCachedCustomAttributes.TryAdd(type, resultMethodInfo.GetCustomAttributes(true).Cast<object>().ToArray());
+//                else if (type is PropertyInfo resultPropertyInfo)
+//                    InheritCachedCustomAttributes.TryAdd(type, resultPropertyInfo.GetCustomAttributes(true).Cast<object>().ToArray());
+//                else if (type is FieldInfo resultFieldInfo)
+//                    InheritCachedCustomAttributes.TryAdd(type, resultFieldInfo.GetCustomAttributes(true).Cast<object>().ToArray());
+//            }
+//            else
+//            {
+//                if (CachedCustomAttributes.TryGetValue(type, out object[] result))
+//                    return result;
+//                if (type is Type resultType)
+//                {
+//#if (NETSTANDARD || NETCOREAPP || PORTABLE)
+//                    CachedCustomAttributes.TryAdd(type, resultType.GetTypeInfo().GetCustomAttributes().Cast<object>().ToArray());
+//#else
+//                    CachedCustomAttributes.TryAdd(type, resultType.GetCustomAttributes(false).Cast<object>().ToArray());
+//#endif
+
+//                }
+//                else if (type is MethodInfo resultMethodInfo)
+//                    CachedCustomAttributes.TryAdd(type, resultMethodInfo.GetCustomAttributes(false).Cast<object>().ToArray());
+//                else if (type is PropertyInfo resultPropertyInfo)
+//                    CachedCustomAttributes.TryAdd(type, resultPropertyInfo.GetCustomAttributes(false).Cast<object>().ToArray());
+//                else if (type is FieldInfo resultFieldInfo)
+//                    CachedCustomAttributes.TryAdd(type, resultFieldInfo.GetCustomAttributes(false).Cast<object>().ToArray());
+//            }
+//            return TryAddCach(type, inherit);
         }
 
         //static bool ContainsCachKey(object type, bool inherit)
