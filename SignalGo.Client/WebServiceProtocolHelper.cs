@@ -129,8 +129,9 @@ namespace SignalGo.Client
                 client.Headers.Add(HttpRequestHeader.ContentType, "application/xml");// $"text/xml; charset={logger.Settings.EncodingName};");
                 foreach (var item in logger.Settings.RequestHeaders.AllKeys)
                 {
-                    client.Headers.Add(item, logger.Settings.RequestHeaders[item]);
-                    System.Diagnostics.Debug.WriteLine(logger.Settings.RequestHeaders[item], $"Header: {item}");
+                    var value = logger.Settings.RequestHeaders[item];
+                    client.Headers.Add(item, value);
+                    System.Diagnostics.Debug.WriteLine(value, $"Header: {item}");
                 }
                 logger?.BeforeCallAction?.Invoke(url, actionUrl, methodName, args, defaultData);
                 string data = await client.UploadStringTaskAsync(url, defaultData);
@@ -143,6 +144,35 @@ namespace SignalGo.Client
                 XDocument doc = XDocument.Parse(data);
                 var firstElement = doc.Elements().First();//
                 var findElement = FindElement(doc.Elements(), typeof(T).Name);
+                if (findElement == null)
+                {
+                    findElement = doc.Elements().FirstOrDefault(x => x.Name.LocalName.EndsWith("envelope", StringComparison.OrdinalIgnoreCase));
+                    findElement = findElement.Elements().FirstOrDefault(x => x.Name.LocalName.EndsWith("body", StringComparison.OrdinalIgnoreCase));
+                    findElement = findElement.Elements().FirstOrDefault();
+                    XmlDocument node = new XmlDocument();
+                    node.LoadXml(findElement.Elements().First().ToString());
+                    //var name = findElement.Name.LocalName;
+                    //data = data.Replace(name, typeof(T).Name);
+                    //doc = XDocument.Parse(data);
+                    //firstElement = doc.Elements().First();//
+                    //findElement = FindElement(doc.Elements(), typeof(T).Name);
+                    string json = Newtonsoft.Json.JsonConvert.SerializeXmlNode(node);
+                    return Newtonsoft.Json.JsonConvert.DeserializeObject<T>(json);
+                    //if (typeof(T).GetListOfProperties().Count() == 2)
+                    //{
+                    //    var property = typeof(T).GetListOfProperties().First();
+                    //    findElement = FindElement(doc.Elements(), property.Name);
+                    //    var obj = Activator.CreateInstance(typeof(T));
+                    //    try
+                    //    {
+                    //        property.SetValue(obj, Convert.ChangeType(findElement.Value, property.PropertyType));
+                    //        return (T)obj;
+                    //    }
+                    //    catch (Exception)
+                    //    {
+                    //    }
+                    //}
+                }
                 var attributes = firstElement.Attributes().ToList();
                 attributes.AddRange(findElement.Attributes());
                 findElement.ReplaceAttributes(attributes);
@@ -171,6 +201,15 @@ namespace SignalGo.Client
                         if (value != null)
                         {
                             stringBuilder.AppendLine(Serialize(logger, value, nameSpace));
+                        }
+                    }
+                    else
+                    {
+                        nameSpace = attribute.FirstOrDefault().Namespace;
+                        var value = item.GetValue(data, null);
+                        if (value != null)
+                        {
+                            stringBuilder.AppendLine($"<{item.Name}>{value}<{item.Name}/>");
                         }
                     }
                 }
