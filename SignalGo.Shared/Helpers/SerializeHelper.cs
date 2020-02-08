@@ -268,7 +268,7 @@ namespace SignalGo.Shared.Helpers
                     return null;
                 }
             }
-            else if (targetPropertyType == SerializeObjectType.Guid)
+            else if (targetPropertyType == SerializeObjectType.Guid || targetPropertyType == SerializeObjectType.GuidNullable)
             {
 #if (NET35)
                 return new Guid(value.ToString());
