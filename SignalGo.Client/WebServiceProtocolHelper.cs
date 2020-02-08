@@ -87,7 +87,7 @@ namespace SignalGo.Client
                 string data = client.UploadString(url, defaultData);
                 logger.Settings.ResponseHeaders = client.ResponseHeaders;
                 if (typeof(T) == typeof(object))
-                    return default;
+                    return default(T);
                 logger?.AfterCallAction?.Invoke(url, actionUrl, methodName, args, data);
                 XDocument doc = XDocument.Parse(data);
                 List<XElement> elements = new List<XElement>();
@@ -139,7 +139,7 @@ namespace SignalGo.Client
                 System.Diagnostics.Debug.WriteLine(defaultData, $"Request: {actionUrl}");
                 System.Diagnostics.Debug.WriteLine(data, $"Response: {url} ac:{actionUrl}");
                 if (typeof(T) == typeof(object))
-                    return default;
+                    return default(T);
                 logger?.AfterCallAction?.Invoke(url, actionUrl, methodName, args, data);
                 XDocument doc = XDocument.Parse(data);
                 var firstElement = doc.Elements().First();//
