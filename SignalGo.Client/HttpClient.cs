@@ -303,9 +303,20 @@ namespace SignalGo.Client
                         valueData.Append(string.Format(formdataTemplate, item.Name, item.Value));
                     }
                 }
-
+                if (streamInfo != null)
+                {
+                    string boundaryinsert = TextHelper.NewLine + "--" + boundary + TextHelper.NewLine;
+                    valueData.AppendLine(boundaryinsert);
+                    valueData.AppendLine($"Content-Disposition: file; filename=\"{streamInfo.FileName}\"");
+                    valueData.AppendLine($"Content-Length: {streamInfo.Length}"); 
+                    valueData.AppendLine($"Content-Type: {streamInfo.ContentType}");
+                    valueData.AppendLine();
+                }
                 byte[] dataBytes = Encoding.GetBytes(valueData.ToString());
-                headData += $"Content-Length: {dataBytes.Length}" + newLine + newLine;
+                long fullLength = dataBytes.Length;
+                if (streamInfo != null)
+                    fullLength += streamInfo.Length.GetValueOrDefault();
+                headData += $"Content-Length: {fullLength}" + newLine + newLine;
 
                 byte[] headBytes = Encoding.GetBytes(headData);
 
