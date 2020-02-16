@@ -383,7 +383,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                                 }
                                 try
                                 {
-                                    serverBase.OnBeforeCallMethodAction?.Invoke(serviceName, guid, methodName, parameters, jsonParameters, client, json, serverBase, fileInfo, canTakeMethod, result);
+                                    serverBase.OnAfterCallMethodAction?.Invoke(serviceName, guid, methodName, parameters, jsonParameters, client, json, serverBase, fileInfo, canTakeMethod, result);
                                 }
                                 catch
                                 {
