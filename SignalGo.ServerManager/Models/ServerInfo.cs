@@ -164,7 +164,7 @@ namespace SignalGo.ServerManager.Models
                         Status = ServerInfoStatus.Started;
                         CurrentServerBase = new ServerProcessInfoBase();
                         CurrentServerBase.Start("App_" + Name, AssemblyPath);
-                        ServerInfoPage.SendToMainHostForHidden(CurrentServerBase.BaseProcess);
+                        ServerInfoPage.SendToMainHostForHidden(CurrentServerBase.BaseProcess,null);
                         ProcessStarted?.Invoke();
                     }
                     catch (Exception ex)
