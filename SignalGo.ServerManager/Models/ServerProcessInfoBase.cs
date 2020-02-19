@@ -1,18 +1,17 @@
-﻿using SignalGo.Shared.Log;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
+﻿using System;
 using System.IO;
 using System.IO.Pipes;
-using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
+using System.Diagnostics;
+using SignalGo.Shared.Log;
 
 namespace SignalGo.ServerManager.Models
 {
     public class ServerProcessInfoBase : IDisposable
     {
+        /// <summary>
+        /// buffer
+        /// </summary>
         public const int BUFFER_SIZE = 1024 * 5;
 
         private string m_PipeID;
@@ -20,13 +19,11 @@ namespace SignalGo.ServerManager.Models
         private NamedPipeServerStream m_PipeServerStream;
         private bool IsDisposing { get; set; }
         private Thread m_PipeMessagingThread;
-        /// <summary>
-        /// Constructor
-        /// </summary>
-        public ServerProcessInfoBase()
-        {
 
-        }
+        /// <summary>
+        /// ServerProcessInfoBase Constructor
+        /// </summary>
+        public ServerProcessInfoBase() { }
 
         /// <summary>
         /// Starts the IPC server and run the child process
@@ -75,13 +72,14 @@ namespace SignalGo.ServerManager.Models
         {
             if (m_PipeServerStream == null)
             {
-                m_PipeServerStream = new NamedPipeServerStream(m_PipeID,
-                                                              PipeDirection.InOut,
-                                                              1,
-                                                              PipeTransmissionMode.Byte,
-                                                              PipeOptions.Asynchronous,
-                                                              BUFFER_SIZE,
-                                                              BUFFER_SIZE);
+                m_PipeServerStream = new NamedPipeServerStream(
+                    m_PipeID,
+                    PipeDirection.InOut,
+                    1,
+                    PipeTransmissionMode.Byte,
+                    PipeOptions.Asynchronous,
+                    BUFFER_SIZE,
+                    BUFFER_SIZE);
 
             }
 

@@ -1,7 +1,7 @@
-﻿using SignalGo.ServerManager.Models;
-using SignalGo.Shared.DataTypes;
-using System;
+﻿using System;
 using System.Linq;
+using SignalGo.Shared.DataTypes;
+using SignalGo.ServerManager.Models;
 
 namespace SignalGo.ServerManager.Services
 {

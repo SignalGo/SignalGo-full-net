@@ -1,20 +1,9 @@
-﻿using SignalGo.ServerManager.ViewModels;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
+using System.Runtime.InteropServices;
 using System.Windows.Forms.Integration;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+using SignalGo.ServerManager.ViewModels;
 
 namespace SignalGo.ServerManager.Views
 {
@@ -38,7 +27,9 @@ namespace SignalGo.ServerManager.Views
             var vm = tabItem.DataContext as ServerInfoViewModel;
             tabItem.LayoutUpdated += (x, ee) =>
             {
-                SetWindowPos(vm.ServerInfo.CurrentServerBase.BaseProcess.MainWindowHandle, IntPtr.Zero, 0, 0, (int)this.ActualWidth, (int)this.ActualHeight, SWP_NOZORDER | SWP_NOACTIVATE);
+                // to fix show console window error/bug
+                if (vm.ServerInfo.CurrentServerBase != null)
+                    SetWindowPos(vm.ServerInfo.CurrentServerBase.BaseProcess.MainWindowHandle, IntPtr.Zero, 0, 0, (int)this.ActualWidth, (int)this.ActualHeight, SWP_NOZORDER | SWP_NOACTIVATE);
             };
             WindowsFormsHost host = new WindowsFormsHost();
             System.Windows.Forms.Panel p = new System.Windows.Forms.Panel();

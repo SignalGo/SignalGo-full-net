@@ -1,27 +1,15 @@
-﻿using SignalGo.Server.ServiceManager;
+﻿using System;
+using System.Windows;
+using System.Diagnostics;
+using SignalGo.Shared.Log;
+using System.Windows.Controls;
+using System.Windows.Navigation;
+using SignalGo.ServerManager.Views;
 using SignalGo.ServerManager.Models;
+using System.Windows.Media.Animation;
+using SignalGo.Server.ServiceManager;
 using SignalGo.ServerManager.Services;
 using SignalGo.ServerManager.ViewModels;
-using SignalGo.ServerManager.Views;
-using SignalGo.Shared.Log;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Animation;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace SignalGo.ServerManager
 {

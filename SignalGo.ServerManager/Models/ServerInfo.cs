@@ -1,11 +1,11 @@
-﻿using MvvmGo.ViewModels;
-using Newtonsoft.Json;
-using SignalGo.ServerManager.Views;
-using SignalGo.Shared.Log;
-using System;
-using System.Collections.ObjectModel;
+﻿using System;
 using System.IO;
 using System.Text;
+using Newtonsoft.Json;
+using MvvmGo.ViewModels;
+using SignalGo.Shared.Log;
+using SignalGo.ServerManager.Views;
+using System.Collections.ObjectModel;
 
 namespace SignalGo.ServerManager.Models
 {
