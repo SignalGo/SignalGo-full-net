@@ -1,0 +1,24 @@
+name: .NET Core
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v1
+      - name: Build DotNET472
+        run:
+           cd "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\MSBuild\Current\Bin\"
+           .\MSBuild.exe $Env:GITHUB_WORKSPACE\SignalGo.sln
+      - name: Setup .NET Core 2.1
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 2.1.607
+          run: dotnet build --configuration Release
+      - name: Setup .NET Core 3.1.101
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 3.1.101
+          run: dotnet build --configuration Release

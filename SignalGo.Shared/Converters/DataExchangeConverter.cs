@@ -24,7 +24,7 @@ namespace SignalGo.Shared.Converters
         public static Func<Type, object> CreateInstance { get; set; }
         public static Func<Type, object[], object> CreateInstanceParams { get; set; }
         /// <summary>
-        /// 
+        /// ListOfContextsDataExchangers
         /// </summary>
         public static Dictionary<int, List<CustomDataExchangerAttribute>> ListOfContextsDataExchangers { get; set; } = new Dictionary<int, List<CustomDataExchangerAttribute>>();
 

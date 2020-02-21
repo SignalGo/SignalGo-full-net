@@ -22,7 +22,7 @@ namespace SignalGo.Shared.Models
         /// </summary>
         string ContentType { get; set; }
         /// <summary>
-        /// content type of stream
+        /// name of file
         /// </summary>
         string FileName { get; set; }
         /// <summary>
