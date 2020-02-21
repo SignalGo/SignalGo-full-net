@@ -6,6 +6,7 @@ using SignalGo.Shared.Converters;
 using SignalGo.Shared.DataTypes;
 using SignalGo.Shared.Helpers;
 using SignalGo.Shared.IO;
+using SignalGo.Shared.IO.Compressions;
 using SignalGo.Shared.Log;
 using SignalGo.Shared.Models;
 using System;
@@ -49,6 +50,15 @@ namespace SignalGo.Server.ServiceManager
         {
             JsonSettingHelper.Initialize();
         }
+
+        /// <summary>
+        /// get custom compression of client
+        /// </summary>
+        public Func<ICompression> GetCustomCompression { get; set; }
+        /// <summary>
+        /// current Compress mode
+        /// </summary>
+        public CompressMode CurrentCompressionMode { get; set; } = CompressMode.None;
 
         /// <summary>
         /// lock for this server

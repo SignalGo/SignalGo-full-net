@@ -1,5 +1,6 @@
 ﻿using SignalGo.Server.Helpers;
 using SignalGo.Server.Models;
+using SignalGo.Shared.IO.Compressions;
 using SignalGo.Shared.Models;
 using System;
 using System.Text;
@@ -36,7 +37,7 @@ namespace SignalGo.Server.ServiceManager.Providers
             MethodCallbackInfo callback = null;
             try
             {
-                byte[] bytes = await client.StreamHelper.ReadBlockToEndAsync(client.ClientStream, CompressMode.None, serverBase.ProviderSetting.MaximumReceiveStreamHeaderBlock);
+                byte[] bytes = await client.StreamHelper.ReadBlockToEndAsync(client.ClientStream, CompressionHelper.GetCompression(serverBase.CurrentCompressionMode, serverBase.GetCustomCompression), serverBase.ProviderSetting.MaximumReceiveStreamHeaderBlock);
                 string json = Encoding.UTF8.GetString(bytes);
                 MethodCallInfo callInfo = ServerSerializationHelper.Deserialize<MethodCallInfo>(json, serverBase);
                 //MethodsCallHandler.BeginStreamCallAction?.Invoke(client, guid, serviceName, methodName, values);

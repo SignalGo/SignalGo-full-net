@@ -6,6 +6,7 @@ using SignalGo.Shared.DataTypes;
 using SignalGo.Shared.Events;
 using SignalGo.Shared.Helpers;
 using SignalGo.Shared.Http;
+using SignalGo.Shared.IO.Compressions;
 using SignalGo.Shared.Models;
 using System;
 using System.Collections.Concurrent;
@@ -896,11 +897,12 @@ namespace SignalGo.Server.ServiceManager.Providers
             byte[] bytes = Encoding.UTF8.GetBytes(json);
             //if (ClientsSettings.ContainsKey(client))
             //    bytes = EncryptBytes(bytes, client);
+            bytes = CompressionHelper.GetCompression(serverBase.CurrentCompressionMode, serverBase.GetCustomCompression).Compress(ref bytes);
             byte[] len = BitConverter.GetBytes(bytes.Length);
             List<byte> data = new List<byte>
             {
                  (byte)DataType.ResponseCallMethod,
-                 (byte)CompressMode.None
+                 (byte)serverBase.CurrentCompressionMode
             };
             data.AddRange(len);
             data.AddRange(bytes);
