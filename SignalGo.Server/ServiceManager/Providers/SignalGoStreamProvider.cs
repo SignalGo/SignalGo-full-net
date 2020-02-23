@@ -1,6 +1,7 @@
 ﻿using SignalGo.Server.Helpers;
 using SignalGo.Server.Models;
 using SignalGo.Shared.IO;
+using SignalGo.Shared.IO.Compressions;
 using SignalGo.Shared.Models;
 using System;
 using System.IO;
@@ -48,7 +49,7 @@ namespace SignalGo.Server.ServiceManager.Providers
             string guid = Guid.NewGuid().ToString();
             try
             {
-                byte[] bytes = await client.StreamHelper.ReadBlockToEndAsync(client.ClientStream, CompressMode.None, serverBase.ProviderSetting.MaximumReceiveStreamHeaderBlock);
+                byte[] bytes = await client.StreamHelper.ReadBlockToEndAsync(client.ClientStream, CompressionHelper.GetCompression(CompressMode.None, serverBase.GetCustomCompression), serverBase.ProviderSetting.MaximumReceiveStreamHeaderBlock) ;
                 string json = Encoding.UTF8.GetString(bytes);
                 MethodCallInfo callInfo = ServerSerializationHelper.Deserialize<MethodCallInfo>(json, serverBase);
 
@@ -89,7 +90,7 @@ namespace SignalGo.Server.ServiceManager.Providers
             bool isCallbackSended = false;
             try
             {
-                byte[] bytes = await client.StreamHelper.ReadBlockToEndAsync(client.ClientStream, CompressMode.None, serverBase.ProviderSetting.MaximumReceiveStreamHeaderBlock);
+                byte[] bytes = await client.StreamHelper.ReadBlockToEndAsync(client.ClientStream, CompressionHelper.GetCompression(CompressMode.None, serverBase.GetCustomCompression), serverBase.ProviderSetting.MaximumReceiveStreamHeaderBlock);
                 string json = Encoding.UTF8.GetString(bytes);
                 MethodCallInfo callInfo = ServerSerializationHelper.Deserialize<MethodCallInfo>(json, serverBase);
                 CallMethodResultInfo<OperationContext> result = await CallMethod(callInfo.ServiceName, callInfo.Guid, callInfo.MethodName,

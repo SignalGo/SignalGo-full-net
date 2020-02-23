@@ -57,9 +57,13 @@
         /// </summary>
         None = 0,
         /// <summary>
-        /// zip compress
+        /// custom compress
         /// </summary>
-        Zip = 1
+        Custom = 1,
+        /// <summary>
+        /// GZipStream compress
+        /// </summary>
+        Zip = 2
     }
 
     /// <summary>

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SignalGo.Shared.IO.Compressions;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -65,20 +66,21 @@ namespace SignalGo.Shared.IO
         }
 
 #if (NET35 || NET40)
-        public override byte[] ReadBlockToEnd(PipeNetworkStream stream, CompressMode compress, int maximum)
+        public override byte[] ReadBlockToEnd(PipeNetworkStream stream, ICompression compression, int maximum)
 #else
-        public override async Task<byte[]> ReadBlockToEndAsync(PipeNetworkStream stream, CompressMode compress, int maximum)
+        public override async Task<byte[]> ReadBlockToEndAsync(PipeNetworkStream stream, ICompression compression, int maximum)
 #endif
         {
 #if (NET35 || NET40)
             byte[] lenBytes = ReadBlockSize(stream, 4);
             int len = BitConverter.ToInt32(lenBytes, 0);
-            return ReadBlockSize(stream, len);
+            var result = ReadBlockSize(stream, len);
 #else
             byte[] lenBytes = await ReadBlockSizeAsync(stream, 4);
             int len = BitConverter.ToInt32(lenBytes, 0);
-            return await ReadBlockSizeAsync(stream, len);
+            var result = await ReadBlockSizeAsync(stream, len);
 #endif
+            return compression.Decompress(ref result);
         }
 
 #if (NET35 || NET40)

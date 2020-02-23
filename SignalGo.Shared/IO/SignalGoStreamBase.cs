@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SignalGo.Shared.IO.Compressions;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -30,7 +31,7 @@ namespace SignalGo.Shared.IO
         /// <returns>return a block byte array</returns>
 
 #if (!NET35 &&!NET40)
-        public virtual async Task<byte[]> ReadBlockToEndAsync(PipeNetworkStream stream, CompressMode compress, int maximum)
+        public virtual async Task<byte[]> ReadBlockToEndAsync(PipeNetworkStream stream, ICompression compression, int maximum)
         {
             //first 4 bytes are size of block
             byte[] dataLenByte = await ReadBlockSizeAsync(stream, 4);
@@ -40,11 +41,11 @@ namespace SignalGo.Shared.IO
                 throw new Exception("dataLength is upper than maximum :" + dataLength);
             //read a block
             byte[] dataBytes = await ReadBlockSizeAsync(stream, dataLength);
-            return dataBytes;
+            return compression.Decompress(ref dataBytes);
         }
 #endif
 
-        public virtual byte[] ReadBlockToEnd(PipeNetworkStream stream, CompressMode compress, int maximum)
+        public virtual byte[] ReadBlockToEnd(PipeNetworkStream stream, ICompression compression, int maximum)
         {
             //first 4 bytes are size of block
             byte[] dataLenByte = ReadBlockSize(stream, 4);
@@ -54,7 +55,7 @@ namespace SignalGo.Shared.IO
                 throw new Exception("dataLength is upper than maximum :" + dataLength);
             //read a block
             byte[] dataBytes = ReadBlockSize(stream, dataLength);
-            return dataBytes;
+            return compression.Decompress(ref dataBytes);
         }
 
 #if (!NET35 && !NET40)
