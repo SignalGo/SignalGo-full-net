@@ -6,6 +6,7 @@ using MvvmGo.ViewModels;
 using SignalGo.Shared.Log;
 using SignalGo.ServerManager.Views;
 using System.Collections.ObjectModel;
+using System.Threading.Tasks;
 
 namespace SignalGo.ServerManager.Models
 {
@@ -30,6 +31,10 @@ namespace SignalGo.ServerManager.Models
             }
         }
 
+        /// <summary>
+        /// write action
+        /// </summary>
+        /// <param name="value"></param>
         public override void Write(string value)
         {
             try
@@ -52,7 +57,9 @@ namespace SignalGo.ServerManager.Models
     {
         Started = 1,
         Stopped = 2,
-        Updating = 3
+        Updating = 3,
+        Restarting = 4,
+        Disabled = 5
     }
 
     public class TextLogInfo : BaseViewModel
@@ -134,15 +141,21 @@ namespace SignalGo.ServerManager.Models
                 {
                     try
                     {
+                        // release resources
                         CurrentServerBase.Dispose();
+                        // null current server base process info
                         CurrentServerBase = null;
+                        // ser server status to stopped
                         Status = ServerInfoStatus.Stopped;
+                        // get out
                         break;
                     }
                     catch (Exception ex)
                     {
+                        // if any exception occured
                         AutoLogger.Default.LogError(ex, "Stop Server");
                     }
+                    // at last, call Grabage Collector to free memory
                     finally
                     {
                         GC.Collect();
@@ -157,14 +170,18 @@ namespace SignalGo.ServerManager.Models
         {
             MainWindow.This.Dispatcher.Invoke(() =>
             {
+                // if server status is Stopped
                 if (Status == ServerInfoStatus.Stopped)
                 {
                     try
                     {
+                        // set server status to Started
                         Status = ServerInfoStatus.Started;
                         CurrentServerBase = new ServerProcessInfoBase();
+                        // start the server from the path
                         CurrentServerBase.Start("App_" + Name, AssemblyPath);
-                        ServerInfoPage.SendToMainHostForHidden(CurrentServerBase.BaseProcess,null);
+                        // Insert/Merge Servers Console Window to Server manager Windows Tab
+                        ServerInfoPage.SendToMainHostForHidden(CurrentServerBase.BaseProcess, null);
                         ProcessStarted?.Invoke();
                     }
                     catch (Exception ex)

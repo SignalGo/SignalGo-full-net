@@ -28,7 +28,7 @@
 			<Label Content="Guid:" VerticalContentAlignment="Center"/>
 			<TextBox Text="{Binding CurrentSettingInfo.ServerKey}" Grid.Column="1" VerticalAlignment="Center" Height="27"/>
 		</Grid>
-		<ListView Grid.Row="1" ItemsSource="{Binding CurrentSettingInfo.ServerInfoes}" SelectedItem="{Binding SelectedServerInfo}">
+		<ListView Grid.Row="1" ItemsSource="{Binding CurrentSettingInfo.ServerInfo}" SelectedItem="{Binding SelectedServerInfo}">
 			<ListView.ItemTemplate>
 				<DataTemplate>
 					<TextBlock Text="{Binding Name}"/>

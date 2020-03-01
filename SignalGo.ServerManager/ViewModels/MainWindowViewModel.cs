@@ -60,7 +60,7 @@ namespace SignalGo.ServerManager.ViewModels
         {
             try
             {
-                foreach (ServerInfo server in SettingInfo.Current.ServerInfoes)
+                foreach (ServerInfo server in SettingInfo.Current.ServerInfo)
                 {
                     server.Status = ServerInfoStatus.Stopped;
                     ServerInfoViewModel.StartServer(server);

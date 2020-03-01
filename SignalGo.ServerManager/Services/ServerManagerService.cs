@@ -12,7 +12,7 @@ namespace SignalGo.ServerManager.Services
         {
             if (serverKey != SettingInfo.Current.ServerKey)
                 return false;
-            var find =  SettingInfo.Current.ServerInfoes.FirstOrDefault(x => x.Name == name);
+            var find = SettingInfo.Current.ServerInfo.FirstOrDefault(x => x.Name == name);
             if (find == null)
                 return false;
             find.Stop();
@@ -23,11 +23,29 @@ namespace SignalGo.ServerManager.Services
         {
             if (serverKey != SettingInfo.Current.ServerKey)
                 return false;
-            var find = SettingInfo.Current.ServerInfoes.FirstOrDefault(x => x.Name == name);
+            var find = SettingInfo.Current.ServerInfo.FirstOrDefault(x => x.Name == name);
             if (find == null)
                 return false;
             find.Start();
             return true;
+        }
+
+        public bool RestartServer(Guid serverKey, string name, bool force = false)
+        {
+            // find server
+            if (serverKey != SettingInfo.Current.ServerKey)
+                return false;
+            var find = SettingInfo.Current.ServerInfo.FirstOrDefault(x => x.Name == name);
+            if (find == null)
+                return false;
+            // stop 
+            find.Stop();
+
+            // start 
+            find.Start();
+
+            return true;
+
         }
     }
 }

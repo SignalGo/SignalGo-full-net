@@ -41,7 +41,7 @@ namespace SignalGo.ServerManager
                 return;
             }
             AutoLogger.Default.LogText("Manualy user closed the server manager.");
-            foreach (var server in SettingInfo.Current.ServerInfoes)
+            foreach (var server in SettingInfo.Current.ServerInfo)
             {
                 try
                 {
@@ -75,14 +75,6 @@ namespace SignalGo.ServerManager
             }
 
             (e.Content as Page).BeginAnimation(MarginProperty, ta);
-
-            //if (e.Content.GetType() == typeof(ManagePersonInfoes))
-            //{
-            //    var page = e.Content as ManagePersonInfoes;
-            //    var vm = page.DataContext as ManagePersonInfoesViewModel;
-            //    if (vm.DefaultPersonInfoes == null)
-            //        vm.RefreshPersons(0, 10);
-            //}
         }
 
         private void Frame_Loaded(object sender, RoutedEventArgs e)

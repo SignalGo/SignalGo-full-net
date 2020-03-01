@@ -1,15 +1,6 @@
 ﻿using MvvmGo.Commands;
 using MvvmGo.ViewModels;
-using SignalGo.Server.ServiceManager;
 using SignalGo.ServerManager.Models;
-using SignalGo.ServerManager.Views;
-using SignalGo.Shared.Log;
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 
 namespace SignalGo.ServerManager.ViewModels
@@ -50,7 +41,7 @@ namespace SignalGo.ServerManager.ViewModels
 
         private void Delete()
         {
-            SettingInfo.Current.ServerInfoes.Remove(ServerInfo);
+            SettingInfo.Current.ServerInfo.Remove(ServerInfo);
             SettingInfo.SaveSettingInfo();
             MainWindowViewModel.MainFrame.GoBack();
         }

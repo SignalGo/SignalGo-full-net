@@ -19,7 +19,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServerConsoleTest", "Server
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SignalGo.Client", "SignalGo.Client\SignalGo.Client.csproj", "{DA4F99A9-69E4-48F1-8850-5298F7762AB9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SignalGo.ServerManager", "SignalGo.ServerManager\SignalGo.ServerManager.csproj", "{1380D040-51EB-4E03-BA87-78020071FB7A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SignalGo.ServerManager", "SignalGo.ServerManager\SignalGo.ServerManager.csproj", "{1380D040-51EB-4E03-BA87-78020071FB7A}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SignalGo.Server.Owin", "SignalGo.Server.Owin\SignalGo.Server.Owin.csproj", "{D2EDF2E0-8691-40A0-A0EF-1895B72C3DE7}"
 EndProject
@@ -36,6 +36,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MvvmGo", "..\MvvmGo\MvvmGo\MvvmGo.csproj", "{65C01428-B14B-4CFD-B372-C4AC8F50887F}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MvvmGo.WindowsWPF", "..\MvvmGo\MvvmGo.WindowsWPF\MvvmGo.WindowsWPF.csproj", "{5B774642-B4CA-47CD-AD8E-EB69A0239A71}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SignalGo.Publisher", "SignalGo.Publisher\SignalGo.Publisher.csproj", "{478B2128-7640-4300-BA78-714D039D11C6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -91,6 +93,10 @@ Global
 		{5B774642-B4CA-47CD-AD8E-EB69A0239A71}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5B774642-B4CA-47CD-AD8E-EB69A0239A71}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5B774642-B4CA-47CD-AD8E-EB69A0239A71}.Release|Any CPU.Build.0 = Release|Any CPU
+		{478B2128-7640-4300-BA78-714D039D11C6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{478B2128-7640-4300-BA78-714D039D11C6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{478B2128-7640-4300-BA78-714D039D11C6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{478B2128-7640-4300-BA78-714D039D11C6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -108,6 +114,7 @@ Global
 		{05441E12-5F66-4A61-8733-07EFACB9C6B3} = {87B3E1DF-14EC-4B4E-BF30-A153F905A599}
 		{65C01428-B14B-4CFD-B372-C4AC8F50887F} = {AEB66D21-3D4D-420A-A8E6-E2929ED6923F}
 		{5B774642-B4CA-47CD-AD8E-EB69A0239A71} = {AEB66D21-3D4D-420A-A8E6-E2929ED6923F}
+		{478B2128-7640-4300-BA78-714D039D11C6} = {EFF12755-71DE-414C-8F37-A760158FD6C0}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {BA45D984-D832-4852-8459-2B21C09E673C}

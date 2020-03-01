@@ -2,20 +2,20 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Runtime.InteropServices;
+using SignalGo.Publisher.ViewModels;
 using System.Windows.Forms.Integration;
-using SignalGo.ServerManager.ViewModels;
 
-namespace SignalGo.ServerManager.Views
+namespace SignalGo.Publisher.Views
 {
     /// <summary>
-    /// Interaction logic for ServerInfoPage.xaml
+    /// Interaction logic for ProjectInfoPage.xaml
     /// </summary>
-    public partial class ServerInfoPage : Page
+    public partial class ProjectInfoPage : Page
     {
         /// <summary>
         /// Server Manager Servers Information Page
         /// </summary>
-        public ServerInfoPage()
+        public ProjectInfoPage()
         {
             InitializeComponent();
         }
@@ -28,24 +28,24 @@ namespace SignalGo.ServerManager.Views
         {
             // Tab
             var tabItem = (TabItem)sender;
-            var vm = tabItem.DataContext as ServerInfoViewModel;
+            var vm = tabItem.DataContext as ProjectInfoViewModel;
 
             tabItem.LayoutUpdated += (x, ee) =>
             {
                 // to fix show console window error/bug
-                if (vm.ServerInfo.CurrentServerBase != null)
-                    SetWindowPos(vm.ServerInfo.CurrentServerBase.BaseProcess.MainWindowHandle, IntPtr.Zero, 0, 0, (int)this.ActualWidth, (int)this.ActualHeight, SWP_NOZORDER | SWP_NOACTIVATE);
+                if (vm.ProjectInfo.CurrentServerBase != null)
+                    SetWindowPos(vm.ProjectInfo.CurrentServerBase.BaseProcess.MainWindowHandle, IntPtr.Zero, 0, 0, (int)this.ActualWidth, (int)this.ActualHeight, SWP_NOZORDER | SWP_NOACTIVATE);
             };
             // instance of windows form host
             WindowsFormsHost host = new WindowsFormsHost();
             System.Windows.Forms.Panel p = new System.Windows.Forms.Panel();
             host.Child = p;
             tabItem.Content = host;
-            if (vm.ServerInfo.CurrentServerBase != null)
-                ChangeParent(vm.ServerInfo.CurrentServerBase.BaseProcess.MainWindowHandle, p.Handle, vm.ServerInfo.CurrentServerBase.BaseProcess, p);
-            vm.ServerInfo.ProcessStarted = () =>
+            if (vm.ProjectInfo.CurrentServerBase != null)
+                ChangeParent(vm.ProjectInfo.CurrentServerBase.BaseProcess.MainWindowHandle, p.Handle, vm.ProjectInfo.CurrentServerBase.BaseProcess, p);
+            vm.ProjectInfo.ProcessStarted = () =>
             {
-                ChangeParent(vm.ServerInfo.CurrentServerBase.BaseProcess.MainWindowHandle, p.Handle, vm.ServerInfo.CurrentServerBase.BaseProcess, p);
+                ChangeParent(vm.ProjectInfo.CurrentServerBase.BaseProcess.MainWindowHandle, p.Handle, vm.ProjectInfo.CurrentServerBase.BaseProcess, p);
             };
         }
 

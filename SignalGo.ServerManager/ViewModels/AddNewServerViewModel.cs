@@ -75,11 +75,11 @@ namespace SignalGo.ServerManager.ViewModels
                 MessageBox.Show("Plase set name of server");
             else if (!File.Exists(AssemblyPath))
                 MessageBox.Show("Assembly file not exist on disk");
-            else if (SettingInfo.Current.ServerInfoes.Any(x => x.Name == Name))
+            else if (SettingInfo.Current.ServerInfo.Any(x => x.Name == Name))
                 MessageBox.Show("Server name exist on list, please set a different name");
             else
             {
-                SettingInfo.Current.ServerInfoes.Add(new Models.ServerInfo() { AssemblyPath = AssemblyPath, Name = Name });
+                SettingInfo.Current.ServerInfo.Add(new Models.ServerInfo() { AssemblyPath = AssemblyPath, Name = Name });
                 SettingInfo.SaveSettingInfo();
                 MainWindowViewModel.MainFrame.GoBack();
             }

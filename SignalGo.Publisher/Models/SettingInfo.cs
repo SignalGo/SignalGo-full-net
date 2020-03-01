@@ -3,7 +3,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Text;
 
-namespace SignalGo.ServerManager.Models
+namespace SignalGo.Publisher.Models
 {
     public class SettingInfo
     {
@@ -17,18 +17,18 @@ namespace SignalGo.ServerManager.Models
                 return _Current;
             }
         }
-        public Guid ServerKey { get; set; }
-        public ObservableCollection<ServerInfo> ServerInfo { get; set; } = new ObservableCollection<ServerInfo>();
+        public Guid ProjectKey { get; set; }
+        public ObservableCollection<ProjectInfo> ProjectInfo { get; set; } = new ObservableCollection<ProjectInfo>();
 
         public static SettingInfo LoadSettingInfo()
         {
             try
             {
-                string path = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data.db");
+                string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "PublisherData.db");
                 if (!File.Exists(path))
                     return new SettingInfo()
                     {
-                        ServerInfo = new ObservableCollection<ServerInfo>()
+                        ProjectInfo = new ObservableCollection<ProjectInfo>()
                     };
                 return Newtonsoft.Json.JsonConvert.DeserializeObject<SettingInfo>(File.ReadAllText(path, Encoding.UTF8));
             }
@@ -36,14 +36,14 @@ namespace SignalGo.ServerManager.Models
             {
                 return new SettingInfo()
                 {
-                    ServerInfo = new ObservableCollection<ServerInfo>()
+                    ProjectInfo = new ObservableCollection<ProjectInfo>()
                 };
             }
         }
 
         public static void SaveSettingInfo()
         {
-            string path = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data.db");
+            string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "PublisherData.db");
             File.WriteAllText(path, Newtonsoft.Json.JsonConvert.SerializeObject(Current), Encoding.UTF8);
         }
     }
