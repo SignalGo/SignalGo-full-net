@@ -57,7 +57,15 @@ namespace SignalGo.Publisher.Models
         {
             get
             {
-                return _ProjectKey;
+                if (_ProjectKey != Guid.Empty)
+                {
+                    return _ProjectKey;
+                }
+                else
+                {
+                    _ProjectKey = Guid.NewGuid();
+                    return _ProjectKey;
+                }
             }
             set
             {

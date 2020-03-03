@@ -1,4 +1,6 @@
 ﻿using SignalGo.Publisher.Helpers;
+using SignalGo.Publisher.Models;
+using SignalGo.Publisher.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,29 +13,30 @@ namespace SignalGo.Publisher.Views
     /// </summary>
     public partial class AddNewProjectPage : Page
     {
-        List<string> Projects = new List<string>();
+        //List<string> Projects = new List<string>();
         public AddNewProjectPage()
         {
             InitializeComponent();
-            AddProjectBase addProject = null;
-            addProject = new AddProjectBase()
-            {
-                AddProjectCommand = new Helpers.RelayCommand(() =>
-                {
-                    AddProject(addProject.ProjectName);
-                }, () =>
-                {
-                    return !string.IsNullOrEmpty(addProject.ProjectName) && (from x in Projects where x.ToLower() == addProject.ProjectName.ToLower() select x).FirstOrDefault() == null;
-                })
-            };
-            foreach (var item in System.IO.Directory.GetFiles(AppDomain.CurrentDomain.BaseDirectory))
-            {
-                var ext = System.IO.Path.GetExtension(item);
-                if (ext == ".pdt")
-                {
-                    AddProject(System.IO.Path.GetFileNameWithoutExtension(item));
-                }
-            }
+            
+            //AddProjectBase addProject = null;
+            //addProject = new AddProjectBase()
+            //{
+            //    AddProjectCommand = new Helpers.RelayCommand(() =>
+            //    {
+            //        AddProject(addProject.ProjectName);
+            //    }, () =>
+            //    {
+            //        return !string.IsNullOrEmpty(addProject.ProjectName) && (from x in Projects where x.ToLower() == addProject.ProjectName.ToLower() select x).FirstOrDefault() == null;
+            //    })
+            //};
+            //foreach (var item in System.IO.Directory.GetFiles(AppDomain.CurrentDomain.BaseDirectory))
+            //{
+            //    var ext = System.IO.Path.GetExtension(item);
+            //    if (ext == ".pdt")
+            //    {
+            //        AddProject(System.IO.Path.GetFileNameWithoutExtension(item));
+            //    }
+            //}
             //addProjectStack.DataContext = addProject;
         }
 
@@ -48,24 +51,42 @@ namespace SignalGo.Publisher.Views
         {
             //System.Diagnostics.Process.GetCurrentProcess().Kill();
         }
-    }
 
-    public class AddProjectBase
-    {
-        string _ProjectName = "";
-
-        public string ProjectName
+        private void Page_Initialized(object sender, EventArgs e)
         {
-            get
-            {
-                return _ProjectName;
-            }
-            set
-            {
-                _ProjectName = value;
-            }
+            
         }
-
-        public RelayCommand AddProjectCommand { get; set; }
     }
+
+    //public class AddProjectBase
+    //{
+    //    string _ProjectName = "";
+    //    Guid _ProjectKey = Guid.Empty;
+
+    //    public string ProjectName
+    //    {
+    //        get
+    //        {
+    //            return _ProjectName;
+    //        }
+    //        set
+    //        {
+    //            _ProjectName = value;
+    //        }
+    //    }
+
+    //    public Guid ProjectKey
+    //    {
+    //        get
+    //        {
+    //            return _ProjectKey;
+    //        }
+    //        set
+    //        {
+    //            _ProjectKey = value;
+    //        }
+    //    }
+
+    //    public RelayCommand AddProjectCommand { get; set; }
+    //}
 }

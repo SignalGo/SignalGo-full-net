@@ -27,9 +27,11 @@
 
     <TabControl>
         <TabItem Header="Setting" >
+
             <Grid Margin="10">
 
                 <Grid.RowDefinitions>
+                    <RowDefinition Height="auto"/>
                     <RowDefinition Height="auto"/>
                     <RowDefinition/>
                 </Grid.RowDefinitions>
@@ -38,12 +40,17 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="auto"/>
                 </Grid.ColumnDefinitions>
-
-                <TextBlock Text="Project Folder Path:"/>
-                <TextBox Text="{Binding ProjectInfo.AssemblyPath}" Grid.Column="1"/>
-                <Button Content="..." Grid.Column="3" Margin="10,0,0,0" Width="100"/>
-
-                <StackPanel Grid.Row="1" Grid.ColumnSpan="3" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <!--project guid key-->
+                <StackPanel Grid.Row="0" Orientation="Horizontal">
+                    <Label Content="Guid:" VerticalContentAlignment="Center"/>
+                    <TextBox Text="{Binding CurrentSettingInfo.ProjectKey}" Grid.Column="1" VerticalAlignment="Center" Height="27" />
+                </StackPanel>
+                <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,20">
+                    <TextBlock Text="Project Folder Path:"/>
+                    <TextBox Text="{Binding ProjectInfo.AssemblyPath}" Grid.Column="1"/>
+                    <Button Content="..." Grid.Column="3" Margin="10,0,0,0" Width="100"/>
+                </StackPanel>
+                <StackPanel Grid.Row="2" Grid.ColumnSpan="3" HorizontalAlignment="Center" VerticalAlignment="Center">
 
                     <StackPanel Orientation="Horizontal"  HorizontalAlignment="Center">
                         <TextBlock Text="Status: " Margin="10"/>
@@ -58,7 +65,7 @@
 
                 </StackPanel>
 
-                <Button Command="{Binding DeleteCommand}" Grid.Row="1" Grid.Column="2" VerticalAlignment="Bottom" Content="Delete" Width="100" Height="30" Margin="10,0,0,0"/>
+                <Button Command="{Binding DeleteCommand}" Grid.Column="2" VerticalAlignment="Bottom" Content="Delete" Width="100" Height="30" Margin="10,0,0,0" Grid.Row="2"/>
 
             </Grid>
         </TabItem>

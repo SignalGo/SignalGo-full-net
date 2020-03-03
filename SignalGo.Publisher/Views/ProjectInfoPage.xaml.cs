@@ -86,5 +86,6 @@ namespace SignalGo.Publisher.Views
 
         [DllImport("user32.dll", SetLastError = true)]
         private static extern int ShowWindow(IntPtr hwnd, int nCmdShow);
+
     }
 }

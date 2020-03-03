@@ -63,11 +63,11 @@ namespace SignalGo.Publisher.ViewModels
 
         public void Load()
         {
+
             try
             {
                 foreach (ProjectInfo project in SettingInfo.Current.ProjectInfo)
                 {
-
                 }
             }
             catch (Exception ex)

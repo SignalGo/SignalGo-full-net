@@ -18,6 +18,7 @@ namespace SignalGo.ServerManager.ViewModels
             CancelCommand = new Command(Cancel);
             SaveCommand = new Command(Save);
             BrowsePathCommand = new Command(BrowsePath);
+            
         }
 
         public Command CancelCommand { get; set; }
@@ -53,6 +54,7 @@ namespace SignalGo.ServerManager.ViewModels
             }
         }
 
+
         private void Cancel()
         {
             ProjectManagerWindowViewModel.MainFrame.GoBack();
@@ -70,14 +72,14 @@ namespace SignalGo.ServerManager.ViewModels
             folderBrowserDialog.SelectedPath = folderBrowserDialog.SelectedPath;
             if (folderBrowserDialog.ShowDialog() == DialogResult.OK)
             {
-                AssemblyPath = folderBrowserDialog.SelectedPath;
+                this.AssemblyPath = folderBrowserDialog.SelectedPath;
             }
         }
 
         private void Save()
         {
 
-            if (string.IsNullOrEmpty(Name))
+            if (string.IsNullOrEmpty(this.Name))
                 System.Windows.MessageBox.Show("Plase set name of project");
             else if (!Directory.Exists(AssemblyPath))
                 System.Windows.MessageBox.Show("files not exist on disk");

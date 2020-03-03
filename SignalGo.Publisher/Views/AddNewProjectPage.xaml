@@ -8,7 +8,7 @@
       xmlns:vm="clr-namespace:SignalGo.ServerManager.ViewModels"
       mc:Ignorable="d" Background="White"
       d:DesignHeight="450" d:DesignWidth="800"
-      Title="AddNewProjectPage">
+      Title="AddNewProjectPage" Initialized="Page_Initialized">
     <Page.DataContext>
         <vm:AddNewProjectViewModel/>
     </Page.DataContext>
@@ -21,27 +21,85 @@
             <Setter Property="Margin" Value="10,0,0,0"/>
         </Style>
     </Page.Resources>
-    <Grid Margin="10" VerticalAlignment="Center">
+
+    <!--#region Page Layout -->
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition/>
+            <ColumnDefinition/>
+        </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
-            <RowDefinition Height="auto"/>
-            <RowDefinition Height="auto"/>
+            <RowDefinition/>
+            <RowDefinition/>
             <RowDefinition/>
         </Grid.RowDefinitions>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="auto"/>
-            <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="auto"/>
-        </Grid.ColumnDefinitions>
-        <TextBlock Text="Project Name:" Margin="0,0,0,10"/>
-        <TextBox Text="{Binding Name}" Grid.Column="1" Margin="10,0,0,10"/>
 
-        <TextBlock Grid.Row="1" Text="Project Path:"/>
-        <TextBox Text="{Binding AssemblyPath}" Grid.Row="1" Grid.Column="1"/>
-        <Button Command="{Binding BrowsePathCommand}" Grid.Row="1" Content="Browse" Grid.Column="3" Margin="10,0,0,0" Width="100"/>
 
-        <StackPanel Margin="0,10,0,0" Orientation="Horizontal"  Grid.Row="2" Grid.ColumnSpan="3" HorizontalAlignment="Center" VerticalAlignment="Center">
-            <Button Command="{Binding SaveCommand}" Content="Save" Width="100" Height="30"/>
-            <Button Command="{Binding CancelCommand}" Content="Cancel" Width="100" Height="30" Margin="10,0,0,0"/>
-        </StackPanel>
+        <Grid Grid.ColumnSpan="2" Grid.Row="0" Margin="10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition/>
+                <RowDefinition/>
+            </Grid.RowDefinitions>
+            <WrapPanel Grid.Row="0" Grid.Column="0" Orientation="Vertical" Grid.RowSpan="2">
+                <CheckBox Content="Personal"/>
+                <CheckBox Content="Test"/>
+                <CheckBox Content="Core"/>
+                <CheckBox Content="MicroService"/>
+            </WrapPanel>
+            <WrapPanel Grid.Row="0" Grid.Column="1" Orientation="Vertical" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" UseLayoutRounding="False" Grid.RowSpan="2">
+                <CheckBox Content=".Net Framework"/>
+                <CheckBox Content=".Net Core"/>
+                <CheckBox Content=".Net Standard"/>
+                <CheckBox Content="No .Net"/>
+            </WrapPanel>
+        </Grid>
+
+        <Grid Grid.Row="1" Grid.ColumnSpan="2" Margin="10,0,10,0" VerticalAlignment="Top" HorizontalAlignment="Stretch" Grid.RowSpan="2">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="auto"/>
+                <RowDefinition/>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="auto"/>
+            </Grid.ColumnDefinitions>
+
+            <!--project guid key-->
+            <!--<StackPanel Grid.Row="0" Orientation="Horizontal">-->
+
+            <Label Content="Guid:" Grid.Row="0" VerticalContentAlignment="Center"/>
+            <TextBox Grid.Row="0" Text="{Binding CurrentSettingInfo.ProjectKey}" Grid.Column="1" VerticalAlignment="Center" Height="27" />
+            <!--</StackPanel>-->
+
+            <!--<StackPanel Orientation="Horizontal" Grid.Row="1">-->
+            <TextBlock Text="Project Name:" Grid.Row="1" Margin="0,0,0,10"/>
+            <TextBox Text="{Binding Name}" Grid.Row="1" Grid.Column="1" Margin="10,10,0,10" VerticalAlignment="Stretch" HorizontalAlignment="Stretch"/>
+            <!--</StackPanel>-->
+
+
+            <TextBlock Grid.Row="2" Text="Project Path:"/>
+            <TextBox Grid.Row="2" Text="{Binding AssemblyPath}" Grid.Column="1"/>
+
+            <!--path warning text-->
+            <!--<TextBlock Text="&#x26A0;" FontSize="20" Grid.Row="2" Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Left" />-->
+
+            <!--path correct text-->
+            <TextBlock Text="&#x2714;" FontSize="20" Grid.Row="2" Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Left" />
+            <Button Grid.Row="2" Command="{Binding BrowsePathCommand}" Content="Browse" Grid.Column="3" Margin="25,0,0,0" Width="100"/>
+
+            <StackPanel Margin="0,10,0,0" Orientation="Horizontal"  Grid.Row="3" Grid.ColumnSpan="3" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Button Command="{Binding SaveCommand}" Content="Save" Width="100" Height="30"/>
+                <Button Command="{Binding CancelCommand}" Content="Cancel" Width="100" Height="30" Margin="10,0,0,0"/>
+            </StackPanel>
+        </Grid>
     </Grid>
+    <!--#endregion-->
 </Page>
