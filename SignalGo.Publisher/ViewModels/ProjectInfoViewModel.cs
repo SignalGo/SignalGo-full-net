@@ -1,8 +1,12 @@
 ﻿using MvvmGo.Commands;
 using MvvmGo.ViewModels;
+using SignalGo.Publisher.Engines.Commands;
+using SignalGo.Publisher.Engines.Interfaces;
 using SignalGo.Publisher.Models;
+using SignalGo.Publisher.Views;
+using System;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Windows;
 using static SignalGo.Publisher.Models.ProjectInfo;
@@ -20,7 +24,7 @@ namespace SignalGo.Publisher.ViewModels
             BuildCommand = new Command(Build);
             RunTestsCommand = new Command(RunTests);
             ApplyMigrationsCommand = new Command(ApplyMigrations);
-            PushToServerCommand = new Command(PushToServer);
+            PublishCommand = new Command(PublishToServers);
             RestorePackagesCommand = new Command(RestorePackages);
             UpdateDatabaseCommand = new Command(UpdateDatabase);
             DeleteCommand = new Command(Delete);
@@ -43,7 +47,7 @@ namespace SignalGo.Publisher.ViewModels
         /// <summary>
         /// push/upload changes to remote servers
         /// </summary>
-        public Command PushToServerCommand { get; set; }
+        public Command PublishCommand { get; set; }
         /// <summary>
         /// Execute Test Cases of Project
         /// </summary>
@@ -67,9 +71,15 @@ namespace SignalGo.Publisher.ViewModels
         /// <summary>
         /// push/update projects and related assemblies
         /// </summary>
-        private void PushToServer()
+        private void PublishToServers()
         {
-            PushChangesToServers(ProjectInfo);
+            if (!ProjectInfo.Commands.Any(x => x is BuildCommandInfo))
+                ProjectInfo.AddCommand(new BuildCommandInfo());
+            //if (!ProjectInfo.Commands.Any(x => x is TestsCommandInfo))
+            //    ProjectInfo.AddCommand(new TestsCommandInfo());
+            if (!ProjectInfo.Commands.Any(x => x is PublishCommandInfo))
+                ProjectInfo.AddCommand(new PublishCommandInfo());
+
         }
 
         /// <summary>
@@ -77,11 +87,13 @@ namespace SignalGo.Publisher.ViewModels
         /// </summary>
         private void Build()
         {
-            //BuildProjectAssemblies(ProjectInfo);
+            //if (!page.lst_CommandsQueue.Items.Contains("build"))
+            //page.lst_CommandsQueue.Items.Add("build");
+
             BuildProjectAssemblies(new ProjectInfo
             {
                 AssemblyPath = ProjectInfo.AssemblyPath,
-                Name = "Logger"
+                Name = ProjectInfo.Name
             });
         }
         /// <summary>
@@ -126,18 +138,26 @@ namespace SignalGo.Publisher.ViewModels
 
         // 
 
-        public static void RunCustomCommand(ProjectInfo ProjectInfo)
+        public static async void RunCustomCommand(ProjectInfo ProjectInfo)
         {
-            ProjectInfo.RunCommands();
+            try
+            {
+                await ProjectInfo.RunCommands();
+            }
+            catch (Exception ex)
+            {
+
+            }
+
         }
         public static void RestoreProjectPackages(ProjectInfo ProjectInfo)
         {
             ProjectInfo.RestorePackages();
         }
 
-        public static void PushChangesToServers(ProjectInfo ProjectInfo)
+        public static void Publish(ProjectInfo ProjectInfo)
         {
-            ProjectInfo.PushToServer();
+            ProjectInfo.Publish();
         }
 
         /// <summary>

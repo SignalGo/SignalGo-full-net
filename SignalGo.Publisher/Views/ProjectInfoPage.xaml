@@ -34,23 +34,31 @@
                     <RowDefinition Height="auto"/>
                     <RowDefinition Height="auto"/>
                     <RowDefinition/>
+                    <RowDefinition Height="auto"/>
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="auto"/>
+                    <ColumnDefinition Width="auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="0.3*" />
                 </Grid.ColumnDefinitions>
+
                 <!--project guid key-->
-                <StackPanel Grid.Row="0" Orientation="Horizontal">
-                    <Label Content="Guid:" VerticalContentAlignment="Center"/>
-                    <TextBox Text="{Binding CurrentSettingInfo.ProjectKey}" Grid.Column="1" VerticalAlignment="Center" Height="27" />
-                </StackPanel>
-                <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,20">
-                    <TextBlock Text="Project Folder Path:"/>
-                    <TextBox Text="{Binding ProjectInfo.AssemblyPath}" Grid.Column="1"/>
-                    <Button Content="..." Grid.Column="3" Margin="10,0,0,0" Width="100"/>
-                </StackPanel>
-                <StackPanel Grid.Row="2" Grid.ColumnSpan="3" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <!--<StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Left">-->
+                <Label Grid.Row="0" Content="Guid:" VerticalContentAlignment="Center" HorizontalAlignment="Left"/>
+                <TextBox Text="{Binding ProjectInfo.ProjectKey}" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Stretch" />
+                <!--</StackPanel>-->
+                <!--  -->
+                <!--<StackPanel  Orientation="Horizontal" Margin="0,0,0,20" HorizontalAlignment="Left">-->
+                <TextBlock Text="Project Folder Path:" Grid.Row="1"/>
+                <TextBox Text="{Binding ProjectInfo.AssemblyPath}" Grid.Column="1" HorizontalAlignment="Stretch" Grid.Row="1" VerticalAlignment="Stretch"/>
+                <Button Content="..." Grid.Column="3" Margin="10,0,0,0" Width="100" Grid.Row="1" FontWeight="Normal"/>
+
+                <ListBox x:Name="lst_CommandsQueue" ItemsSource="{Binding ProjectInfo.Commands}" DisplayMemberPath="Name" Grid.Column="2" Grid.Row="2" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
+                    
+                </ListBox>
+                <!--</StackPanel>-->
+                <!--  -->
+                <StackPanel Grid.Row="3" Grid.ColumnSpan="3" HorizontalAlignment="Center" VerticalAlignment="Center">
 
                     <StackPanel Orientation="Horizontal"  HorizontalAlignment="Center">
                         <TextBlock Text="Status: " Margin="10"/>
@@ -59,13 +67,13 @@
 
                     <StackPanel Orientation="Horizontal" >
                         <Button Command="{Binding BuildCommand}" Content="Build" Width="100" Height="30"/>
-                        <Button Command="{Binding PushToServerCommand}" Content="Publish" Width="100" Height="30" Margin="10,0,0,0"/>
+                        <Button Command="{Binding PublishCommand}" Content="Publish" Width="100" Height="30" Margin="10,0,0,0"/>
                         <Button Command="{Binding RunCommand}" Content="Run Command" Width="100" Height="30" Margin="10,0,0,0"/>
                     </StackPanel>
 
                 </StackPanel>
 
-                <Button Command="{Binding DeleteCommand}" Grid.Column="2" VerticalAlignment="Bottom" Content="Delete" Width="100" Height="30" Margin="10,0,0,0" Grid.Row="2"/>
+                <Button Command="{Binding DeleteCommand}" Grid.Column="2" VerticalAlignment="Bottom" Content="Delete" Width="100" Height="30" Margin="10,0,0,0" Grid.Row="3"/>
 
             </Grid>
         </TabItem>
@@ -78,9 +86,9 @@
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
-                <StackPanel Orientation="Horizontal">
+                <!--<StackPanel Orientation="Horizontal">
                     <Button Command="{Binding ClearLogCommand}" Content="Clear" Padding="10"/>
-                </StackPanel>
+                </StackPanel>-->
 
                 <ListView Grid.Row="1" ItemsSource="{Binding ProjectInfo.Logs}">
                     <ListView.Resources>
@@ -102,7 +110,6 @@
                         </DataTemplate>
                     </ListView.ItemTemplate>
                 </ListView>
-
             </Grid>
         </TabItem>
     </TabControl>

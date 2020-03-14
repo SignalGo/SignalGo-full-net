@@ -18,7 +18,7 @@ namespace SignalGo.ServerManager.ViewModels
             CancelCommand = new Command(Cancel);
             SaveCommand = new Command(Save);
             BrowsePathCommand = new Command(BrowsePath);
-            
+
         }
 
         public Command CancelCommand { get; set; }
@@ -27,6 +27,7 @@ namespace SignalGo.ServerManager.ViewModels
 
         string _Name;
         string _AssemblyPath;
+        Guid _ProjectKey = Guid.NewGuid();
 
         public string Name
         {
@@ -54,6 +55,15 @@ namespace SignalGo.ServerManager.ViewModels
             }
         }
 
+        public Guid ProjectKey
+        {
+            get => _ProjectKey;
+            set
+            {
+                _ProjectKey = value;
+                OnPropertyChanged(nameof(ProjectKey));
+            }
+        }
 
         private void Cancel()
         {
@@ -68,6 +78,7 @@ namespace SignalGo.ServerManager.ViewModels
             //{
             //    AssemblyPath = fileDialog.FileName;
             //}
+
             FolderBrowserDialog folderBrowserDialog = new FolderBrowserDialog();
             folderBrowserDialog.SelectedPath = folderBrowserDialog.SelectedPath;
             if (folderBrowserDialog.ShowDialog() == DialogResult.OK)
@@ -89,7 +100,7 @@ namespace SignalGo.ServerManager.ViewModels
             {
                 SettingInfo.Current.ProjectInfo.Add(new ProjectInfo()
                 {
-                    ProjectKey = Guid.NewGuid(),
+                    ProjectKey = this.ProjectKey,
                     AssemblyPath = AssemblyPath,
                     Name = Name,
                 });

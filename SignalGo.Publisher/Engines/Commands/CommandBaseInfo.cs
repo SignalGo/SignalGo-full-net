@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace SignalGo.Publisher.Engines.Commands
 {
-    public abstract class CommandBase : ICommand
+    public abstract class CommandBaseInfo : ICommand
     {
 
         public RunStatusType Status { get; set; } = RunStatusType.None;

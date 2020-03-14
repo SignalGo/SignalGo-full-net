@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 
 namespace SignalGo.Publisher.Engines.Commands
 {
-    public class TestsCommand : CommandBase
+    public class TestsCommandInfo : CommandBaseInfo
     {
-        public TestsCommand()
+        public TestsCommandInfo()
         {
             Name = "run tests of project";
             ExecutableFile = "cmd.exe";

@@ -76,7 +76,7 @@
             <!--<StackPanel Grid.Row="0" Orientation="Horizontal">-->
 
             <Label Content="Guid:" Grid.Row="0" VerticalContentAlignment="Center"/>
-            <TextBox Grid.Row="0" Text="{Binding CurrentSettingInfo.ProjectKey}" Grid.Column="1" VerticalAlignment="Center" Height="27" />
+            <TextBox Grid.Row="0" Text="{Binding ProjectKey}" Grid.Column="1" VerticalAlignment="Center" Height="27" />
             <!--</StackPanel>-->
 
             <!--<StackPanel Orientation="Horizontal" Grid.Row="1">-->

@@ -17,11 +17,19 @@ namespace SignalGo.Publisher.Models
 {
     public class ProjectInfo : BaseViewModel
     {
-
-
         public ProjectInfo()
         {
-            RunCommmands = new Command(RunCommands);
+            RunCommmands = new Command(async () =>
+            {
+                try
+                {
+                    await RunCommands();
+                }
+                catch (Exception ex)
+                {
+
+                }
+            });
         }
 
         public Command<ICommand> RunCommmand { get; set; }
@@ -106,8 +114,7 @@ namespace SignalGo.Publisher.Models
         /// </summary>
         public async void Build()
         {
-
-            var cmd = new BuildCommand()
+            var cmd = new BuildCommandInfo()
             {
                 Path = AssemblyPath
             };
@@ -115,13 +122,18 @@ namespace SignalGo.Publisher.Models
 
         }
 
-        public void RunCommands()
+        public async Task RunCommands()
         {
-            foreach (var item in Commands.Where(x => x.IsEnabled))
-            {
-                item.Run();
-            }
+            QueueCommandInfo queueCommandInfo = new QueueCommandInfo(Commands.ToList());
+            await queueCommandInfo.Run();
         }
+
+        public void AddCommand(ICommand command)
+        {
+            command.Path = AssemblyPath;
+            Commands.Add(command);
+        }
+
         public void UpdateDatabase()
         {
 
@@ -132,16 +144,26 @@ namespace SignalGo.Publisher.Models
 
         }
 
-        public void PushToServer()
+        public void Publish()
         {
             List<ICommand> buildCommands = new List<ICommand>();
-            buildCommands.Add(new BuildCommand());
-            buildCommands.Add(new TestsCommand());
-            //buildCommands.Add(new PushToServerCommand());
+            // call compiler
+            buildCommands.Add(new BuildCommandInfo
+            {
+                Path = AssemblyPath
+            });
+            //buildCommands.Add(new TestsCommand());
+            // call publish tool
+            buildCommands.Add(new PublishCommandInfo
+            {
+                Path = AssemblyPath
+            });
+
             foreach (var item in buildCommands)
             {
                 item.Run();
             }
+
         }
 
         public void RunTests()

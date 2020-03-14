@@ -4,6 +4,7 @@ using System.Windows.Controls;
 using System.Runtime.InteropServices;
 using System.Windows.Forms.Integration;
 using SignalGo.ServerManager.ViewModels;
+using System.Windows.Threading;
 
 namespace SignalGo.ServerManager.Views
 {
@@ -26,10 +27,10 @@ namespace SignalGo.ServerManager.Views
 
         private void TabItem_Loaded(object sender, RoutedEventArgs e)
         {
+
             // Tab
             var tabItem = (TabItem)sender;
             var vm = tabItem.DataContext as ServerInfoViewModel;
-
             tabItem.LayoutUpdated += (x, ee) =>
             {
                 // to fix show console window error/bug
@@ -41,6 +42,7 @@ namespace SignalGo.ServerManager.Views
             System.Windows.Forms.Panel p = new System.Windows.Forms.Panel();
             host.Child = p;
             tabItem.Content = host;
+
             if (vm.ServerInfo.CurrentServerBase != null)
                 ChangeParent(vm.ServerInfo.CurrentServerBase.BaseProcess.MainWindowHandle, p.Handle, vm.ServerInfo.CurrentServerBase.BaseProcess, p);
             vm.ServerInfo.ProcessStarted = () =>
@@ -55,6 +57,7 @@ namespace SignalGo.ServerManager.Views
         {
             mainHost.Child = mainPannel;
             ChangeParent(process.MainWindowHandle, mainPannel.Handle, process, panel);
+
         }
 
         static void ChangeParent(IntPtr main, IntPtr panelHanle, System.Diagnostics.Process process, System.Windows.Forms.Panel panel)
@@ -83,8 +86,16 @@ namespace SignalGo.ServerManager.Views
         private const int WS_CAPTION = 0x00C00000;
         private const int WS_THICKFRAME = 0x00040000;
 
-
         [DllImport("user32.dll", SetLastError = true)]
         private static extern int ShowWindow(IntPtr hwnd, int nCmdShow);
     }
+    //public static class MyExtensions
+    //{
+    //    private static Action EmptyDelegate = delegate () { };
+
+    //    public static void Refresh(this UIElement uiElement)
+    //    {
+    //        uiElement.Dispatcher.Invoke(DispatcherPriority.Render, EmptyDelegate);
+    //    }
+    //}
 }

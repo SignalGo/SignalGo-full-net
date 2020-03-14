@@ -4,12 +4,12 @@ using System.Text;
 
 namespace SignalGo.Publisher.Engines.Commands
 {
-    class RestoreCommand : CommandBase
+    class RestoreCommandInfo : CommandBaseInfo
     {
         /// <summary>
         /// run package restore for project
         /// </summary>
-        public RestoreCommand()
+        public RestoreCommandInfo()
         {
             Name = "run package restore for project";
             ExecutableFile = "cmd.exe";
