@@ -8,6 +8,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using static SignalGo.Publisher.Models.ProjectInfo;
 
@@ -30,12 +31,17 @@ namespace SignalGo.Publisher.ViewModels
             DeleteCommand = new Command(Delete);
             ClearLogCommand = new Command(ClearLog);
             CopyCommand = new Command<TextLogInfo>(Copy);
+            RemoveCommand = new Command<ICommand>((x) =>
+            {
+                ProjectInfo.Commands.Remove(x);
+            });
         }
 
         /// <summary>
         /// compile and check project assemblies for build
         /// </summary>
         public Command BuildCommand { get; set; }
+        public Command<ICommand> RemoveCommand { get; set; }
         /// <summary>
         /// run a custome command/expression
         /// </summary>
@@ -52,6 +58,26 @@ namespace SignalGo.Publisher.ViewModels
         /// Execute Test Cases of Project
         /// </summary>
         public Command RunTestsCommand { get; set; }
+
+        private ProjectInfo _SelectedCommandInfo;
+
+        public ProjectInfo SelectedCommandInfo
+        {
+            get
+            {
+                return _SelectedCommandInfo;
+            }
+            set
+            {
+                _SelectedCommandInfo = value;
+                OnPropertyChanged(nameof(SelectedCommandInfo));
+                ProjectInfoPage page = new ProjectInfoPage();
+                ProjectInfoViewModel vm = page.DataContext as ProjectInfoViewModel;
+                vm.ProjectInfo = value;
+                //MainFrame.Navigate(page);
+            }
+        }
+
         /// <summary>
         /// Check/Add New Migrations of project models
         /// </summary>
@@ -87,21 +113,25 @@ namespace SignalGo.Publisher.ViewModels
         /// </summary>
         private void Build()
         {
-            //if (!page.lst_CommandsQueue.Items.Contains("build"))
-            //page.lst_CommandsQueue.Items.Add("build");
 
-            BuildProjectAssemblies(new ProjectInfo
-            {
-                AssemblyPath = ProjectInfo.AssemblyPath,
-                Name = ProjectInfo.Name
-            });
+            if (!ProjectInfo.Commands.Any(x => x is BuildCommandInfo))
+                ProjectInfo.AddCommand(new BuildCommandInfo());
+
+            //BuildProjectAssemblies(new ProjectInfo
+            //{
+            //    AssemblyPath = ProjectInfo.AssemblyPath,
+            //    Name = ProjectInfo.Name
+            //});
         }
         /// <summary>
         /// 
         /// </summary>
         private void RunCMD()
         {
-            RunCustomCommand(ProjectInfo);
+            Task.Run(async () =>
+            {
+                await RunCustomCommand(ProjectInfo);
+            });
         }
 
         /// <summary>
@@ -138,7 +168,7 @@ namespace SignalGo.Publisher.ViewModels
 
         // 
 
-        public static async void RunCustomCommand(ProjectInfo ProjectInfo)
+        public static async Task RunCustomCommand(ProjectInfo ProjectInfo)
         {
             try
             {

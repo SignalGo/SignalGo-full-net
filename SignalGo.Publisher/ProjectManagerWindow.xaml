@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:SignalGo.Publisher"
         xmlns:vm="clr-namespace:SignalGo.Publisher.ViewModels"
         mc:Ignorable="d"
-        Title="ProjectManagerWindow" Height="450" Width="800" Background="White">
+        Title="ProjectManagerWindow" Height="450" Width="800" Topmost="True" Background="White">
 
     <Window.DataContext>
         <vm:ProjectManagerWindowViewModel/>

@@ -1,4 +1,5 @@
-﻿using SignalGo.Publisher.Engines.Interfaces;
+﻿using MvvmGo.ViewModels;
+using SignalGo.Publisher.Engines.Interfaces;
 using SignalGo.Publisher.Engines.Models;
 using System;
 using System.Collections.Generic;
@@ -8,10 +9,19 @@ using System.Threading.Tasks;
 
 namespace SignalGo.Publisher.Engines.Commands
 {
-    public abstract class CommandBaseInfo : ICommand
+    public abstract class CommandBaseInfo : PropertyChangedViewModel, ICommand
     {
 
-        public RunStatusType Status { get; set; } = RunStatusType.None;
+        private RunStatusType _Status;
+        public RunStatusType Status
+        {
+            get => _Status; set
+            {
+                _Status = value;
+                OnPropertyChanged(nameof(Status));
+            }
+        }
+
         public string Name { get; set; }
         public string ExecutableFile { get; set; }
         public string Command { get; set; }
