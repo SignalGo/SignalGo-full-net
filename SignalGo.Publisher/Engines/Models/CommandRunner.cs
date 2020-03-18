@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using SignalGo.Publisher.Engines.Interfaces;
 using SignalGo.Shared.Log;
 using System.Text;
+using System.IO;
 
 namespace SignalGo.Publisher.Engines.Models
 {
@@ -32,8 +33,12 @@ namespace SignalGo.Publisher.Engines.Models
             //process.OutputDataReceived += Process_OutputDataReceived;
             try
             {
-                var outStr = process.StandardOutput.ReadToEnd();
-                Debug.WriteLine(outStr);
+                //var outStr = process.StandardOutput.ReadToEnd();
+                //File.WriteAllText(
+                //    Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CommandRunnerLogs.txt"),
+                //    outStr);
+                //Console.WriteLine(outStr);
+                
             }
             catch (Exception ex)
             {
@@ -43,9 +48,5 @@ namespace SignalGo.Publisher.Engines.Models
             return process;
         }
 
-        private static void Process_OutputDataReceived(object sender, DataReceivedEventArgs e)
-        {
-            Console.WriteLine(e.Data);
-        }
     }
 }

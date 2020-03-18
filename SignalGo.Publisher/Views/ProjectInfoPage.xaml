@@ -26,7 +26,7 @@
     </Page.DataContext>
 
     <TabControl>
-        <TabItem Header="Setting" >
+        <TabItem Header="☰ Setting" >
 
             <Grid Margin="10">
 
@@ -39,7 +39,7 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="auto" />
                     <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="auto" />
+                    <ColumnDefinition Width="1*" />
                 </Grid.ColumnDefinitions>
 
                 <!--project guid key-->
@@ -51,27 +51,30 @@
                 <!--<StackPanel  Orientation="Horizontal" Margin="0,0,0,20" HorizontalAlignment="Left">-->
                 <TextBlock Text="Project Folder Path:" Grid.Row="1"/>
                 <TextBox Text="{Binding ProjectInfo.AssemblyPath}" Grid.Column="1" HorizontalAlignment="Stretch" Grid.Row="1" VerticalAlignment="Stretch"/>
-                <Button Content="..." Grid.Column="3" Width="100" Grid.Row="1" FontWeight="Normal"/>
-
-                <ListBox x:Name="lst_CommandsQueue" ItemsSource="{Binding ProjectInfo.Commands}" MinWidth="150" Grid.Column="2" Grid.Row="2" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Margin="5,5,5,5">
+                <Button Command="{Binding BrowsePathCommand}" Content="..." Grid.Column="3" Width="100" Grid.Row="1" FontWeight="Normal"/>
+                <TextBox TextWrapping="WrapWithOverflow" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Top" Text="{Binding CmdLogs}" Height="Auto" Margin="0,0,0,0" ScrollViewer.CanContentScroll="True" VerticalScrollBarVisibility="Auto"/>
+                <ListBox x:Name="lst_CommandsQueue" ItemsSource="{Binding ProjectInfo.Commands}" MinWidth="150" Grid.Column="2" Grid.Row="2" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Margin="0,5,0,5">
                     <ListBox.ItemTemplate>
                         <HierarchicalDataTemplate>
                             <Grid>
                                 <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="150"/>
                                     <ColumnDefinition/>
-                                    <ColumnDefinition Width="auto"/>
                                 </Grid.ColumnDefinitions>
                                 <StackPanel>
                                     <TextBlock Text="{Binding Name}">
-                                <!--<TextBlock.InputBindings>
-                                    <MouseBinding MouseAction="LeftDoubleClick"
-                                  Command="{Binding DataContext.MyCommand, RelativeSource={RelativeSource AncestorType={x:Type ListBox}}}"
-                                  CommandParameter="{Binding MySourceItemId}" />
-                                </TextBlock.InputBindings>-->
                                     </TextBlock>
-                                    <TextBlock Foreground="Green" Text="{Binding Status}"/>
+                                    <TextBlock Foreground="Green">
+                                        <Run Text="⌛"/>
+                                        <Run Text="{Binding Status}"/>
+                                    </TextBlock>
                                 </StackPanel>
-                                <Button Grid.Column="1" Cursor="Hand" Command="{Binding RemoveCommand,Source={StaticResource ProjectInfoViewModel}}" CommandParameter="{Binding}" Content="X" Padding="10"/>
+                                <StackPanel Orientation="Horizontal" Grid.Column="1">
+                                    <Button FontSize="14" Background="Transparent" HorizontalAlignment="Stretch" Cursor="Hand" Command="{Binding RemoveCommand,Source={StaticResource ProjectInfoViewModel}}" CommandParameter="{Binding}" BorderThickness="0" Content="✘" Padding="5" Foreground="Red"/>
+                                    <Button FontSize="14" Background="Transparent" HorizontalAlignment="Stretch" Cursor="Hand" Command="{Binding RetryCommand,Source={StaticResource ProjectInfoViewModel}}" CommandParameter="{Binding}" BorderThickness="0" Content="⟲" Padding="5" Foreground="DodgerBlue"/>
+                                    <Button FontSize="14" HorizontalAlignment="Stretch" Cursor="Hand" Command="{Binding ToDownCommand,Source={StaticResource ProjectInfoViewModel}}" CommandParameter="{Binding}" BorderThickness="0" Content="↓" Padding="5" Background="Transparent" Foreground="Green"/>
+                                    <Button FontSize="14" HorizontalAlignment="Stretch" Cursor="Hand" Command="{Binding ToUpCommand,Source={StaticResource ProjectInfoViewModel}}" CommandParameter="{Binding}" BorderThickness="0" Content="↑" Padding="5" Background="Transparent" Foreground="Green"/>
+                                </StackPanel>
                             </Grid>
                         </HierarchicalDataTemplate>
                     </ListBox.ItemTemplate>
@@ -82,18 +85,19 @@
 
                     <StackPanel Orientation="Horizontal"  HorizontalAlignment="Center">
                         <TextBlock Text="Status: " Margin="10"/>
-                        <TextBlock Text="{Binding ProjectInfo.Status}" Margin="10"/>
+                        <TextBlock x:Name="cmdStatus" Text="{Binding ProjectInfo.Status}" Margin="10"/>
                     </StackPanel>
 
-                    <StackPanel Orientation="Horizontal" >
-                        <Button Command="{Binding BuildCommand}" Content="Build" Width="100" Height="30"/>
-                        <Button Command="{Binding PublishCommand}" Content="Publish" Width="100" Height="30" Margin="10,0,0,0"/>
-                        <Button Command="{Binding RunCommand}" Content="Run Command" Width="100" Height="30" Margin="10,0,0,0"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" >
+                        <Button Command="{Binding BuildCommand}" Content="Build ♻" Width="60" Height="30"/>
+                        <Button Command="{Binding RunTestsCommand}" Content="Tests ☑" Width="60" Height="30" Margin="10,0,0,0"/>
+                        <Button Command="{Binding PublishCommand}" Content="Publish ☢" Width="auto" Height="30" Margin="10,0,0,0"/>
+                        <Button Command="{Binding RunCommand}" Content="Run Commands ▶" Width="auto" Height="30" Margin="10,0,0,0"/>
                     </StackPanel>
 
                 </StackPanel>
 
-                <Button Command="{Binding DeleteCommand}" Grid.Column="2" VerticalAlignment="Bottom" Content="Delete" Width="100" Height="30" Margin="10,0,0,0" Grid.Row="3"/>
+                <Button Command="{Binding DeleteCommand}" Grid.Column="2" VerticalAlignment="Bottom" Content="Delete" Width="100" Height="30" Grid.Row="3" HorizontalAlignment="Right"/>
 
             </Grid>
         </TabItem>

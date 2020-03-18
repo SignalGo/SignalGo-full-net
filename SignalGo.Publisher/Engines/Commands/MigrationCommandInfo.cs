@@ -6,19 +6,20 @@ using System.Threading.Tasks;
 
 namespace SignalGo.Publisher.Engines.Commands
 {
-    class RestoreCommandInfo : CommandBaseInfo
+    public class MigrationCommandInfo : CommandBaseInfo
     {
         /// <summary>
-        /// run package restore for project
+        /// MsBuild
         /// </summary>
-        public RestoreCommandInfo()
+        public MigrationCommandInfo()
         {
-            Name = "packages restore";
+            Name = "add/apply db migrations";
             ExecutableFile = "cmd.exe";
-            Command = "dotnet";
-            Arguments = "restore";
+            Command = "dotnet  ";
+            Arguments = $"ef add migrations";
             IsEnabled = true;
         }
+
         public override async Task<Process> Run()
         {
             var result = await base.Run();

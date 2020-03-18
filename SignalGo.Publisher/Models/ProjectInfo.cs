@@ -4,13 +4,11 @@ using System.Text;
 using Newtonsoft.Json;
 using MvvmGo.ViewModels;
 using SignalGo.Shared.Log;
-using SignalGo.Publisher.Views;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using SignalGo.Publisher.Engines.Interfaces;
 using MvvmGo.Commands;
 using System.Linq;
-using System.Collections.Generic;
 using SignalGo.Publisher.Engines.Commands;
 
 namespace SignalGo.Publisher.Models
@@ -27,7 +25,7 @@ namespace SignalGo.Publisher.Models
                 }
                 catch (Exception ex)
                 {
-
+                    AutoLogger.Default.LogError(ex, "ProjectInfo Constructor, Commands Initialize");
                 }
             });
         }
@@ -61,6 +59,10 @@ namespace SignalGo.Publisher.Models
                 OnPropertyChanged(nameof(Name));
             }
         }
+
+        /// <summary>
+        /// unique key of project
+        /// </summary>
         public Guid ProjectKey
         {
             get
@@ -82,6 +84,9 @@ namespace SignalGo.Publisher.Models
             }
         }
 
+        /// <summary>
+        /// project files path
+        /// </summary>
         public string AssemblyPath
         {
             get
@@ -95,6 +100,9 @@ namespace SignalGo.Publisher.Models
             }
         }
 
+        /// <summary>
+        /// status of server
+        /// </summary>
         [JsonIgnore]
         public ServerInfoStatus Status
         {
@@ -114,95 +122,100 @@ namespace SignalGo.Publisher.Models
         /// </summary>
         public async void Build()
         {
-            var cmd = new BuildCommandInfo()
+            try
             {
-                Path = AssemblyPath
-            };
-            await cmd.Run();
+                var cmd = new BuildCommandInfo()
+                {
+                    Path = AssemblyPath
+                };
+                await cmd.Run();
+            }
+            catch (Exception ex)
+            {
+                AutoLogger.Default.LogError(ex, "Build Command");
+            }
 
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
         public async Task RunCommands()
         {
-            QueueCommandInfo queueCommandInfo = new QueueCommandInfo(Commands.ToList());
-            await queueCommandInfo.Run();
+            try
+            {
+                QueueCommandInfo queueCommandInfo = new QueueCommandInfo(Commands.ToList());
+                await queueCommandInfo.Run();
+            }
+            catch (Exception ex)
+            {
+                AutoLogger.Default.LogError(ex, "Run Command Task");
+            }
         }
 
+        /// <summary>
+        /// add this to commands list
+        /// </summary>
+        /// <param name="command"></param>
         public void AddCommand(ICommand command)
         {
             command.Path = AssemblyPath;
             Commands.Add(command);
         }
 
-        public void UpdateDatabase()
-        {
+        //public void UpdateDatabase()
+        //{
 
-        }
+        //}
 
-        public void ApplyMigrations()
-        {
+        //public void ApplyMigrations()
+        //{
 
-        }
+        //}
 
-        public void Publish()
-        {
-            List<ICommand> buildCommands = new List<ICommand>();
-            // call compiler
-            buildCommands.Add(new BuildCommandInfo
-            {
-                Path = AssemblyPath
-            });
-            //buildCommands.Add(new TestsCommand());
-            // call publish tool
-            buildCommands.Add(new PublishCommandInfo
-            {
-                Path = AssemblyPath
-            });
+        //public void Publish()
+        //{
+        //    List<ICommand> multipleCommands = new List<ICommand>();
+        //    // call compiler
+        //    multipleCommands.Add(new BuildCommandInfo
+        //    {
+        //        Path = AssemblyPath
+        //    });
+        //    //buildCommands.Add(new TestsCommand());
+        //    // call publish tool
+        //    multipleCommands.Add(new PublishCommandInfo
+        //    {
+        //        Path = AssemblyPath
+        //    });
 
-            foreach (var item in buildCommands)
-            {
-                item.Run();
-            }
+        //    foreach (var item in multipleCommands)
+        //    {
+        //        item.Run();
+        //    }
 
-        }
+        //}
 
-        public void RunTests()
-        {
-
-        }
+        //public async Task RunTestsAsync()
+        //{
+        //    var cmd = new TestsCommandInfo()
+        //    {
+        //        Path = AssemblyPath
+        //    };
+        //    await cmd.Run();
+        //}
 
         /// <summary>
         /// dotnet restore
         /// </summary>
-        public void RestorePackages()
-        {
-            // if server status is Stopped
-            if (Status == ServerInfoStatus.Stable)
-            {
-                try
-                {
-                    // set server status to Started
-                    Status = ServerInfoStatus.Updating;
-                    CurrentServerBase = new ProjectProcessInfoBase();
-                    // start the server from the path
-                    CurrentServerBase.Start("dotnet restore" + Name, AssemblyPath);
-                    // Insert/Merge Servers Console Window to Server manager Windows Tab
-                    ProjectInfoPage.SendToMainHostForHidden(CurrentServerBase.BaseProcess, null);
-                    ProcessStarted?.Invoke();
-                }
-                catch (Exception ex)
-                {
-                    AutoLogger.Default.LogError(ex, "BuildProject");
-                    if (CurrentServerBase != null)
-                    {
-                        CurrentServerBase.Dispose();
-                        CurrentServerBase = null;
-                    }
-                    Status = ServerInfoStatus.NotStable;
-                }
-                SettingInfo.SaveSettingInfo();
-            }
-        }
+        //public async Task RestorePackagesAsync()
+        //{
+        //    var cmd = new RestoreCommandInfo()
+        //    {
+        //        Path = AssemblyPath
+        //    };
+        //    await cmd.Run();
+        //}
 
         public class ConsoleWriter : TextWriter
         {

@@ -8,7 +8,7 @@ namespace SignalGo.Publisher.Engines.Commands
     {
         public PublishCommandInfo()
         {
-            Name = "upload projects to servers";
+            Name = "upload to servers";
             ExecutableFile = "cmd.exe";
             Command = "dotnet ";
             Arguments = $"publish -nologo";

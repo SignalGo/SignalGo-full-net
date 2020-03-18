@@ -1,9 +1,9 @@
 ﻿using SignalGo.Publisher.Engines.Interfaces;
+using SignalGo.Shared.Log;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace SignalGo.Publisher.Engines.Commands
@@ -21,11 +21,26 @@ namespace SignalGo.Publisher.Engines.Commands
         {
             var proc = new Process();
             Status = Models.RunStatusType.Running;
-            foreach (var item in Commands)
+            try
             {
-                proc = await item.Run();
-                if (proc.ExitCode == 0)
-                    IsSuccess = true;
+                foreach (var item in Commands)
+                {
+                    proc = await item.Run();
+                    if (proc.ExitCode != 0)
+                    {
+                        IsSuccess = false;
+                        Status = Models.RunStatusType.Error;
+                    }
+                    var outStr = proc.StandardOutput.ReadToEnd();
+                    Console.WriteLine(outStr);
+                    await System.IO.File.AppendAllTextAsync(System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory,
+                                     "CommandRunnerLogs.txt"),
+                        outStr);
+                }
+            }
+            catch (Exception ex)
+            {
+                AutoLogger.Default.LogError(ex, "QueueRunner");
             }
             Status = Models.RunStatusType.Done;
             return proc;
