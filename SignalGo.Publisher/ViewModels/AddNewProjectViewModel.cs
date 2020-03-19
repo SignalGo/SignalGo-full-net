@@ -9,7 +9,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Forms;
 
-namespace SignalGo.ServerManager.ViewModels
+namespace SignalGo.Publisher.ViewModels
 {
     public class AddNewProjectViewModel : BaseViewModel
     {

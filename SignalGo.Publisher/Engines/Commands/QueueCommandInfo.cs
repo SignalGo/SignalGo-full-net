@@ -31,11 +31,6 @@ namespace SignalGo.Publisher.Engines.Commands
                         IsSuccess = false;
                         Status = Models.RunStatusType.Error;
                     }
-                    var outStr = proc.StandardOutput.ReadToEnd();
-                    Console.WriteLine(outStr);
-                    await System.IO.File.AppendAllTextAsync(System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory,
-                                     "CommandRunnerLogs.txt"),
-                        outStr);
                 }
             }
             catch (Exception ex)

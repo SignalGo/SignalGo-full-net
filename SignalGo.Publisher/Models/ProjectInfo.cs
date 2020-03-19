@@ -1,15 +1,15 @@
-﻿using System;
-using System.IO;
-using System.Text;
-using Newtonsoft.Json;
+﻿using MvvmGo.Commands;
 using MvvmGo.ViewModels;
-using SignalGo.Shared.Log;
-using System.Collections.ObjectModel;
-using System.Threading.Tasks;
-using SignalGo.Publisher.Engines.Interfaces;
-using MvvmGo.Commands;
-using System.Linq;
+using Newtonsoft.Json;
 using SignalGo.Publisher.Engines.Commands;
+using SignalGo.Publisher.Engines.Interfaces;
+using SignalGo.Shared.Log;
+using System;
+using System.Collections.ObjectModel;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace SignalGo.Publisher.Models
 {
@@ -22,6 +22,7 @@ namespace SignalGo.Publisher.Models
                 try
                 {
                     await RunCommands();
+                    
                 }
                 catch (Exception ex)
                 {
@@ -30,23 +31,45 @@ namespace SignalGo.Publisher.Models
             });
         }
 
+        /// <summary>
+        /// Run Command Prop
+        /// </summary>
         public Command<ICommand> RunCommmand { get; set; }
         public Command RunCommmands { get; set; }
 
         [JsonIgnore]
         public ObservableCollection<TextLogInfo> Logs { get; set; } = new ObservableCollection<TextLogInfo>();
 
-        [JsonIgnore]
-        public ProjectProcessInfoBase CurrentServerBase { get; set; }
-        [JsonIgnore]
-        public Action ProcessStarted { get; set; }
+        //[JsonIgnore]
+        //public ProjectProcessInfoBase CurrentServerBase { get; set; }
 
+        //[JsonIgnore]
+        //public Action ProcessStarted { get; set; }
+        /// <summary>
+        /// List of Commands
+        /// </summary>
         public ObservableCollection<ICommand> Commands { get; set; } = new ObservableCollection<ICommand>();
+
+
+        public ObservableCollection<SignalGo.ServerManager.ViewModels.ServerInfoViewModel> ServersInfo { get; set; } = new ObservableCollection<ServerManager.ViewModels.ServerInfoViewModel>();
+        
+        private ObservableCollection<string> _servers;
+        public ObservableCollection<string> Servers
+        {
+            get { return _servers; ; }
+            set
+            {
+                _servers = value;
+                OnPropertyChanged(nameof(Servers));
+            }
+        }
+
 
         private string _Name;
         private Guid _ProjectKey;
         private string _AssemblyPath;
         private ServerInfoStatus _status = ServerInfoStatus.Stable;
+
         public string Name
         {
             get
@@ -138,7 +161,7 @@ namespace SignalGo.Publisher.Models
         }
 
         /// <summary>
-        /// 
+        /// run each commands in queue async
         /// </summary>
         /// <returns></returns>
         public async Task RunCommands()
@@ -155,12 +178,14 @@ namespace SignalGo.Publisher.Models
         }
 
         /// <summary>
-        /// add this to commands list
+        /// add a command to commands list
         /// </summary>
         /// <param name="command"></param>
         public void AddCommand(ICommand command)
         {
             command.Path = AssemblyPath;
+            Commands.Add(command);
+            // extra command item for test ui
             Commands.Add(command);
         }
 
@@ -217,6 +242,7 @@ namespace SignalGo.Publisher.Models
         //    await cmd.Run();
         //}
 
+        ///Console Writer
         public class ConsoleWriter : TextWriter
         {
             public string ProjectName { get; set; }
@@ -259,7 +285,9 @@ namespace SignalGo.Publisher.Models
                 get { return Encoding.UTF8; }
             }
         }
-
+        /// <summary>
+        /// status if server
+        /// </summary>
         public enum ServerInfoStatus : byte
         {
             Stable = 1,
@@ -268,7 +296,9 @@ namespace SignalGo.Publisher.Models
             Restarting = 4,
             Disabled = 5
         }
-
+        /// <summary>
+        /// TextLog
+        /// </summary>
         public class TextLogInfo : BaseViewModel
         {
             private string _Text;

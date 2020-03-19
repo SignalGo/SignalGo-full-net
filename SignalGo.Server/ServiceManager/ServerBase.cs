@@ -22,8 +22,8 @@ namespace SignalGo.Server.ServiceManager
     /// <summary>
     /// when method is calling or called you can log full data
     /// </summary>
-    /// <param name="serviceName"></param>
-    /// <param name="guid"></param>
+    /// <param name="serviceName">Name of Service</param>
+    /// <param name="guid">Unique Identity</param>
     /// <param name="methodName"></param>
     /// <param name="parameters"></param>
     /// <param name="jsonParameters"></param>
@@ -44,7 +44,7 @@ namespace SignalGo.Server.ServiceManager
             WebcoketDatagramBase.Current = new WebcoketDatagram();
         }
         /// <summary>
-        /// default constructor
+        /// default constructor and initializer
         /// </summary>
         public ServerBase()
         {
@@ -92,7 +92,7 @@ namespace SignalGo.Server.ServiceManager
         public ProviderSetting ProviderSetting { get; set; } = new ProviderSetting();
 
         /// <summary>
-        /// Action raised when when server disconnects
+        /// Action raised when server disconnects
         /// </summary>
         public Action OnServerDisconnectedAction { get; set; }
         /// <summary>
@@ -109,7 +109,7 @@ namespace SignalGo.Server.ServiceManager
         public Action<ClientInfo> OnClientDisconnectedAction { get; set; }
 
         /// <summary>
-        /// all of registred services like server services, client services, http services etc
+        /// all of registred services like server services, client services, http services and etc
         /// key is service name and value is service type
         /// </summary>
         internal ConcurrentDictionary<string, Type> RegisteredServiceTypes { get; set; } = new ConcurrentDictionary<string, Type>();
@@ -155,7 +155,7 @@ namespace SignalGo.Server.ServiceManager
 
         /// <summary>
         /// Error handling methods that return types (not void)
-        /// exception is exception trow
+        /// exception is exception throw
         /// Type is service Type
         /// MethodInfo method of service
         /// client is the calling client
@@ -190,7 +190,7 @@ namespace SignalGo.Server.ServiceManager
         /// Register server service
         /// </summary>
         /// <param name="serviceType"></param>
-        /// <param name="name">custom service name when servie hasn't attribute</param>
+        /// <param name="name">custom service name when serviec hasn't attribute</param>
         public void RegisterServerService(Type serviceType, string name = null)
         {
             if (serviceType.HasServiceAttribute())

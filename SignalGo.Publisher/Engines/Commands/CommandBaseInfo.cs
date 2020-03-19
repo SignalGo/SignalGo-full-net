@@ -1,6 +1,7 @@
 ﻿using MvvmGo.ViewModels;
 using SignalGo.Publisher.Engines.Interfaces;
 using SignalGo.Publisher.Engines.Models;
+using SignalGo.Shared.Log;
 using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
@@ -43,6 +44,7 @@ namespace SignalGo.Publisher.Engines.Commands
             }
             catch (Exception ex)
             {
+                AutoLogger.Default.LogError(ex, "Run CommandBaseInfo");
                 Status = RunStatusType.Error;
                 return null;
             }

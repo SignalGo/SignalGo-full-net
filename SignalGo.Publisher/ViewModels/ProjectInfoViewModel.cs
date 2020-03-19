@@ -1,19 +1,20 @@
-﻿using MvvmGo.Commands;
-using MvvmGo.ViewModels;
-using SignalGo.Publisher.Engines.Commands;
-using SignalGo.Publisher.Engines.Interfaces;
-using SignalGo.Publisher.Models;
-using SignalGo.Publisher.Views;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
+using MvvmGo.Commands;
+using MvvmGo.ViewModels;
 using System.Windows.Forms;
-using static SignalGo.Publisher.Models.ProjectInfo;
+using System.Threading.Tasks;
+using SignalGo.Publisher.Views;
+using SignalGo.Publisher.Models;
+using SignalGo.Publisher.Engines.Commands;
+using SignalGo.Publisher.Engines.Interfaces;
 
 namespace SignalGo.Publisher.ViewModels
 {
+    /// <summary>
+    /// View Model Logics For ProjectInfo Page
+    /// </summary>
     public class ProjectInfoViewModel : BaseViewModel
     {
         /// <summary>
@@ -29,17 +30,13 @@ namespace SignalGo.Publisher.ViewModels
             RestorePackagesCommand = new Command(RestorePackages);
             ToDownCommand = new Command<ICommand>((x) =>
             {
-                MoveDownCmd(x);
+                MoveCommandLower(x);
             });
-            //ToUpCommand = new Command(ToUp);
             ToUpCommand = new Command<ICommand>((x) =>
             {
-                MoveUpCmd(x);
+                MoveCommandUpper(x);
             });
-            //UpdateDatabaseCommand = new Command(UpdateDatabase);
             DeleteCommand = new Command(Delete);
-            ClearLogCommand = new Command(ClearLog);
-            CopyCommand = new Command<TextLogInfo>(Copy);
             RemoveCommand = new Command<ICommand>((x) =>
             {
                 ProjectInfo.Commands.Remove(x);
@@ -49,11 +46,22 @@ namespace SignalGo.Publisher.ViewModels
                 x.Run();
             });
             BrowsePathCommand = new Command(BrowsePath);
+            //ClearLogCommand = new Command(ClearLog);
+            //CopyCommand = new Command<TextLogInfo>(Copy);
         }
+
+        /// <summary>
+        /// read log of excecuted commands
+        /// </summary>
+        /// <returns></returns>
         public async Task<string> ReadCommandLog()
         {
             return await File.ReadAllTextAsync(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CommandRunnerLogs.txt"));
         }
+
+        /// <summary>
+        /// browse directory for path
+        /// </summary>
         private void BrowsePath()
         {
 
@@ -72,20 +80,40 @@ namespace SignalGo.Publisher.ViewModels
             //SettingInfo.SaveSettingInfo();
         }
 
-        public void MoveDownCmd(ICommand x)
+        /// <summary>
+        /// move a command lower/down in Commands Queue List
+        /// </summary>
+        /// <param name="x"></param>
+        public void MoveCommandLower(ICommand x)
         {
             var index = ProjectInfo.Commands.IndexOf(x);
-            //ProjectInfo.Commands.Remove(x);
             if (index + 1 != ProjectInfo.Commands.Count())
                 ProjectInfo.Commands.Move(index + 1, index);
         }
-        public void MoveUpCmd(ICommand x)
+
+        /// <summary>
+        /// move a command top/upper in Commands Queue List
+        /// </summary>
+        /// <param name="x"></param>
+        public void MoveCommandUpper(ICommand x)
         {
             var index = ProjectInfo.Commands.IndexOf(x);
-            //ProjectInfo.Commands.Remove(x);
             if (index != 0)
                 ProjectInfo.Commands.Move(index - 1, index);
         }
+
+        /// <summary>
+        /// Move a command to topest of Queue List.
+        /// that will run first
+        /// </summary>
+        /// <param name="x"></param>
+        public void MoveCommandToppest(ICommand x)
+        {
+            var index = ProjectInfo.Commands.IndexOf(x);
+            if (index != 0)
+                ProjectInfo.Commands.Move(index - 1, 0);
+        }
+
         /// <summary>
         /// compile and check project assemblies for build
         /// </summary>
@@ -156,7 +184,7 @@ namespace SignalGo.Publisher.ViewModels
         public Command UpdateDatabaseCommand { get; set; }
         public Command DeleteCommand { get; set; }
         public Command ClearLogCommand { get; set; }
-        public Command<TextLogInfo> CopyCommand { get; set; }
+        //public Command<TextLogInfo> CopyCommand { get; set; }
 
         private void Delete()
         {
@@ -173,10 +201,9 @@ namespace SignalGo.Publisher.ViewModels
             if (!ProjectInfo.Commands.Any(x => x is BuildCommandInfo))
                 ProjectInfo.AddCommand(new BuildCommandInfo());
             //if (!ProjectInfo.Commands.Any(x => x is TestsCommandInfo))
-            //    ProjectInfo.AddCommand(new TestsCommandInfo());
+            //ProjectInfo.AddCommand(new TestsCommandInfo());
             if (!ProjectInfo.Commands.Any(x => x is PublishCommandInfo))
                 ProjectInfo.AddCommand(new PublishCommandInfo());
-
         }
 
         /// <summary>
@@ -216,6 +243,7 @@ namespace SignalGo.Publisher.ViewModels
         /// </summary>
         private void RunTests()
         {
+            // TODO: add test runner logics
             if (!ProjectInfo.Commands.Any(x => x is TestsCommandInfo))
                 ProjectInfo.AddCommand(new TestsCommandInfo());
         }
@@ -242,6 +270,26 @@ namespace SignalGo.Publisher.ViewModels
 
         }
 
+        /// <summary>
+        /// field of ProjectInfo instance
+        /// </summary>
+        ProjectInfo _ProjectInfo;
+
+        /// <summary>
+        /// a property instance of ProjectInfo Model
+        /// </summary>
+        public ProjectInfo ProjectInfo
+        {
+            get
+            {
+                return _ProjectInfo;
+            }
+            set
+            {
+                _ProjectInfo = value;
+                OnPropertyChanged(nameof(ProjectInfo));
+            }
+        }
 
         /// <summary>
         /// ef update database
@@ -303,36 +351,19 @@ namespace SignalGo.Publisher.ViewModels
         /// <summary>
         /// clear logs
         /// </summary>
-        private void ClearLog()
-        {
-            ProjectInfo.Logs.Clear();
-        }
+        //private void ClearLog()
+        //{
+        //    ProjectInfo.Logs.Clear();
+        //}
 
-        private void Copy(TextLogInfo textLogInfo)
-        {
-            System.Windows.Clipboard.SetText(textLogInfo.Text);
-        }
+        //private void Copy(TextLogInfo textLogInfo)
+        //{
+        //    System.Windows.Clipboard.SetText(textLogInfo.Text);
+        //}
 
         /// <summary>
         /// field of ProjectInfo Model
         /// </summary>
-        ProjectInfo _ProjectInfo;
-
-        /// <summary>
-        /// instance of ProjectInfo Model
-        /// </summary>
-        public ProjectInfo ProjectInfo
-        {
-            get
-            {
-                return _ProjectInfo;
-            }
-            set
-            {
-                _ProjectInfo = value;
-                OnPropertyChanged(nameof(ProjectInfo));
-            }
-        }
 
     }
 }

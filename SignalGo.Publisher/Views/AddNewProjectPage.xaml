@@ -5,7 +5,7 @@
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
       xmlns:converters="system.windows.controls"
       xmlns:local="clr-namespace:SignalGo.Publisher.Views"
-      xmlns:vm="clr-namespace:SignalGo.ServerManager.ViewModels"
+      xmlns:vm="clr-namespace:SignalGo.Publisher.ViewModels"
       mc:Ignorable="d" Background="White"
       d:DesignHeight="450" d:DesignWidth="800"
       Title="AddNewProjectPage" Initialized="Page_Initialized">
@@ -49,11 +49,11 @@
                 <CheckBox Content="Personal"/>
                 <CheckBox Content="Test"/>
                 <CheckBox Content="Core"/>
-                <CheckBox Content="MicroService"/>
+                <CheckBox Content="MicroService" IsChecked="True"/>
             </WrapPanel>
             <WrapPanel Grid.Row="0" Grid.Column="1" Orientation="Vertical" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" UseLayoutRounding="False" Grid.RowSpan="2">
                 <CheckBox Content=".Net Framework"/>
-                <CheckBox Content=".Net Core"/>
+                <CheckBox Content=".Net Core" IsChecked="True"/>
                 <CheckBox Content=".Net Standard"/>
                 <CheckBox Content="No .Net"/>
             </WrapPanel>

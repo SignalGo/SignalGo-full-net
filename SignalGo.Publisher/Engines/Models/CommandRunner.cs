@@ -12,7 +12,7 @@ namespace SignalGo.Publisher.Engines.Models
     public static class CommandRunner
     {
         /// <summary>
-        /// 
+        /// Runner Of Commands
         /// </summary>
         /// <param name="command"></param>
         /// <returns></returns>
@@ -21,24 +21,20 @@ namespace SignalGo.Publisher.Engines.Models
             ProcessStartInfo processInfo = new ProcessStartInfo
             {
                 //CreateNoWindow = true,
-                RedirectStandardOutput = true,
                 //RedirectStandardInput = true,
                 //StandardOutputEncoding = Encoding.UTF8,
+                RedirectStandardOutput = true,
                 FileName = command.ExecutableFile,
                 Arguments = $"/c {command.Command} {command.Arguments}",
                 WorkingDirectory = command.Path
             };
             var process = Process.Start(processInfo);
-            //process.BeginOutputReadLine();
-            //process.OutputDataReceived += Process_OutputDataReceived;
             try
             {
-                //var outStr = process.StandardOutput.ReadToEnd();
-                //File.WriteAllText(
-                //    Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CommandRunnerLogs.txt"),
-                //    outStr);
-                //Console.WriteLine(outStr);
-                
+                var outStr = process.StandardOutput.ReadToEnd();
+                File.WriteAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CommandRunnerLogs.txt"), outStr);
+                Debug.WriteLine(outStr);
+
             }
             catch (Exception ex)
             {
