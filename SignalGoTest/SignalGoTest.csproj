@@ -1,10 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\packages\NUnitTestAdapter.2.2.0\build\NUnitTestAdapter.props" Condition="Exists('..\packages\NUnitTestAdapter.2.2.0\build\NUnitTestAdapter.props')" />
+  <!--<Import Project="..\packages\NUnitTestAdapter.2.2.0\build\NUnitTestAdapter.props" Condition="Exists('..\packages\NUnitTestAdapter.2.2.0\build\NUnitTestAdapter.props')" />-->
   <Import Project="..\packages\NUnit3TestAdapter.3.16.1\build\net35\NUnit3TestAdapter.props" Condition="Exists('..\packages\NUnit3TestAdapter.3.16.1\build\net35\NUnit3TestAdapter.props')" />
-  <Import Project="..\packages\MSTest.TestAdapter.2.1.0\build\net45\MSTest.TestAdapter.props" Condition="Exists('..\packages\MSTest.TestAdapter.2.1.0\build\net45\MSTest.TestAdapter.props')" />
-  <Import Project="..\packages\xunit.runner.visualstudio.2.4.1\build\net20\xunit.runner.visualstudio.props" Condition="Exists('..\packages\xunit.runner.visualstudio.2.4.1\build\net20\xunit.runner.visualstudio.props')" />
-  <Import Project="I:\nuget\packages\MSTest.TestAdapter.1.1.18\build\net45\MSTest.TestAdapter.props" Condition="Exists('I:\nuget\packages\MSTest.TestAdapter.1.1.18\build\net45\MSTest.TestAdapter.props')" />
+  <!--<Import Project="..\packages\MSTest.TestAdapter.2.1.0\build\net45\MSTest.TestAdapter.props" Condition="Exists('..\packages\MSTest.TestAdapter.2.1.0\build\net45\MSTest.TestAdapter.props')" />-->
+  <!--<Import Project="..\packages\xunit.runner.visualstudio.2.4.1\build\net20\xunit.runner.visualstudio.props" Condition="Exists('..\packages\xunit.runner.visualstudio.2.4.1\build\net20\xunit.runner.visualstudio.props')" />-->
+  <!--<Import Project="I:\nuget\packages\MSTest.TestAdapter.1.1.18\build\net45\MSTest.TestAdapter.props" Condition="Exists('I:\nuget\packages\MSTest.TestAdapter.1.1.18\build\net45\MSTest.TestAdapter.props')" />-->
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
