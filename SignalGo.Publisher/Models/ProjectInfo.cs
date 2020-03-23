@@ -48,21 +48,21 @@ namespace SignalGo.Publisher.Models
         /// <summary>
         /// List of Commands
         /// </summary>
-        public ObservableCollection<ICommand> Commands { get; set; } = new ObservableCollection<ICommand>();
+        public ObservableCollection<ICommand> Commands { get; set; }// = new ObservableCollection<ICommand>();
 
 
-        public ObservableCollection<SignalGo.ServerManager.ViewModels.ServerInfoViewModel> ServersInfo { get; set; } = new ObservableCollection<ServerManager.ViewModels.ServerInfoViewModel>();
+        //public ObservableCollection<SignalGo.ServerManager.ViewModels.ServerInfoViewModel> ServersInfo { get; set; } = new ObservableCollection<ServerManager.ViewModels.ServerInfoViewModel>();
         
-        private ObservableCollection<string> _servers;
-        public ObservableCollection<string> Servers
-        {
-            get { return _servers; ; }
-            set
-            {
-                _servers = value;
-                OnPropertyChanged(nameof(Servers));
-            }
-        }
+        //private ObservableCollection<string> _servers;
+        //public ObservableCollection<string> Servers
+        //{
+        //    get { return _servers; ; }
+        //    set
+        //    {
+        //        _servers = value;
+        //        OnPropertyChanged(nameof(Servers));
+        //    }
+        //}
 
 
         private string _Name;
