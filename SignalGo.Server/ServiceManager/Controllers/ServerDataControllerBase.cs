@@ -10,23 +10,23 @@ using System;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 
-namespace SignalGo.Server.ServiceManager.Versions
+namespace SignalGo.Server.ServiceManager.Controllers
 {
     /// <summary>
-    /// main structre of your server provider
-    /// server provider has more fuction deleates it will ovverride from developer plan
+    /// main structre of your server controller
+    /// server controller has more fuction delegates it will override from developer plan
     /// the plan will remove no need ifs and remove empty codes and it will make signalgo very fast and powerful
     /// </summary>
-    public abstract class ServerDataProviderBase
+    public abstract class ServerDataControllerBase
     {
         /// <summary>
         /// start server action
         /// </summary>
-        public Action<ServerBase, int> StartAction { get; set; }
+        public abstract void Start(ServerBase serverBase, int port);
         /// <summary>
         /// exchange and generate client function
         /// </summary>
-        public Func<ServerBase, PipeLineStream, TcpClient, Task> ExchangeClientFunc { get; set; }
+        internal abstract Task ExchangeClient(ServerBase serverBase, PipeLineStream streamReader, TcpClient tcpClient);
         /// <summary>
         /// create client function
         /// </summary>

@@ -4,8 +4,8 @@
 //https://github.com/Ali-YousefiTelori
 //https://github.com/SignalGo/SignalGo-full-net
 
+using SignalGo.Server.Helpers;
 using SignalGo.Server.Models;
-using SignalGo.Server.ServiceManager.Providers;
 using SignalGo.Shared.Helpers;
 using SignalGo.Shared.IO;
 using System;
@@ -16,13 +16,12 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace SignalGo.Server.ServiceManager.Versions
+namespace SignalGo.Server.ServiceManager.Controllers
 {
     /// <summary>
-    /// server data provider communication between client and server
-    /// version 4 of signalgo protocol
+    /// server data controller to control and find protocol between client and server
     /// </summary>
-    public class ServerDataProvider : ServerDataProviderBase
+    public class ServerDataController : ServerDataControllerBase
     {
         /// <summary>
         /// server tcp listener waiting for client come from tcp
@@ -37,17 +36,9 @@ namespace SignalGo.Server.ServiceManager.Versions
         /// </summary>
         /// <param name="serverBase">what is your server base comming from</param>
         /// <param name="port">port number to listen</param>
-        public virtual void Start(ServerBase serverBase, int port)
+        public override void Start(ServerBase serverBase, int port)
         {
-            //run listener in a new thread
-            Thread thread = new Thread(Started)
-            {
-                IsBackground = false
-            };
-            thread.Start();
-
-            //start server listener
-            void Started()
+            Task.Run(async () =>
             {
                 try
                 {
@@ -58,11 +49,11 @@ namespace SignalGo.Server.ServiceManager.Versions
                     _server.Start();
 
                     //set time outs when developer enable it in provider serrings
-                    if (serverBase.ProviderSetting.IsEnabledToUseTimeout)
-                    {
-                        _server.Server.SendTimeout = (int)serverBase.ProviderSetting.SendDataTimeout.TotalMilliseconds;
-                        _server.Server.ReceiveTimeout = (int)serverBase.ProviderSetting.ReceiveDataTimeout.TotalMilliseconds;
-                    }
+                    //if (serverBase.ProviderSetting.IsEnabledToUseTimeout)
+                    //{
+                    //    _server.Server.SendTimeout = (int)serverBase.ProviderSetting.SendDataTimeout.TotalMilliseconds;
+                    //    _server.Server.ReceiveTimeout = (int)serverBase.ProviderSetting.ReceiveDataTimeout.TotalMilliseconds;
+                    //}
                     serverBase.IsStarted = true;
 
                     while (!IsDispose)
@@ -70,11 +61,11 @@ namespace SignalGo.Server.ServiceManager.Versions
                         try
                         {
                             //wait and accept new tcp client from newtork
-#if (NETSTANDARD1_6)
-                            TcpClient client = _server.AcceptTcpClientAsync().GetAwaiter().GetResult();
-#else
-                            TcpClient client = _server.AcceptTcpClient();
-#endif
+                            //#if (NETSTANDARD1_6)
+                            //                            TcpClient client = _server.AcceptTcpClientAsync().GetAwaiter().GetResult();
+                            //#else
+                            TcpClient client = await _server.AcceptTcpClientAsync();
+                            //#endif
                             //initialize client to server
                             InitializeClient(client, serverBase);
                         }
@@ -86,17 +77,25 @@ namespace SignalGo.Server.ServiceManager.Versions
                 }
                 catch (Exception ex)
                 {
-                    serverBase.OnServerInternalExceptionAction?.Invoke(ex);
-                    serverBase.AutoLogger.LogError(ex, "Connect Server");
+                    try
+                    {
+                        serverBase.OnServerInternalExceptionAction?.Invoke(ex);
+                    }
+                    catch (Exception ex2)
+                    {
+                        Console.WriteLine(ex2);
+                    }
+                    //serverBase.AutoLogger.LogError(ex, "Connect Server");
                 }
                 finally
                 {
-                    serverBase.Stop();
+                    //serverBase.Stop();
                     serverBase.IsStarted = false;
                     Dispose();
                 }
-            }
+            });
         }
+
 
         /// <summary>
         /// initialzie and read client
@@ -114,9 +113,9 @@ namespace SignalGo.Server.ServiceManager.Versions
                     //tcpClient.GetStream().WriteTimeout = 5000;
                     //create client stream for read and write to socket
                     PipeLineStream stream = new PipeLineStream(tcpClient.GetTcpStream(serverBase));
-                    await ExchangeClientFunc(serverBase, stream, tcpClient);
+                    await ExchangeClient(serverBase, stream, tcpClient);
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
 #if (NET45)
                     tcpClient.Close();
@@ -173,7 +172,7 @@ namespace SignalGo.Server.ServiceManager.Versions
         /// <param name="serverBase">serverbase for this provider</param>
         /// <param name="streamReader">stream of client</param>
         /// <param name="tcpClient">tcp client connected</param>
-        internal async Task ExchangeClient(ServerBase serverBase, PipeLineStream streamReader, TcpClient tcpClient)
+        internal override async Task ExchangeClient(ServerBase serverBase, PipeLineStream streamReader, TcpClient tcpClient)
         {
             ClientInfo client = new ClientInfo(serverBase, tcpClient);
             try
@@ -183,6 +182,8 @@ namespace SignalGo.Server.ServiceManager.Versions
                 await streamReader.ReadAllLinesAsync();
 
                 //check the client protocol is connecting to server
+
+                //start to read data from client
 
                 //if the protocol is http
                 if (streamReader.ProtocolType == Shared.Enums.ProtocolType.Http)
@@ -247,16 +248,16 @@ namespace SignalGo.Server.ServiceManager.Versions
         {
             var result = ExchangeClient(serverBase, streamReader, tcpClient);
             //set client timeouts
-            if (serverBase.ProviderSetting.IsEnabledToUseTimeout)
-            {
-                tcpClient.ReceiveTimeout = (int)serverBase.ProviderSetting.ReceiveDataTimeout.TotalMilliseconds;
-                tcpClient.SendTimeout = (int)serverBase.ProviderSetting.SendDataTimeout.TotalMilliseconds;
-            }
-            else
-            {
-                tcpClient.GetStream().ReadTimeout = -1;
-                tcpClient.GetStream().WriteTimeout = -1;
-            }
+            //if (serverBase.ProviderSetting.IsEnabledToUseTimeout)
+            //{
+            //    tcpClient.ReceiveTimeout = (int)serverBase.ProviderSetting.ReceiveDataTimeout.TotalMilliseconds;
+            //    tcpClient.SendTimeout = (int)serverBase.ProviderSetting.SendDataTimeout.TotalMilliseconds;
+            //}
+            //else
+            //{
+            //    tcpClient.GetStream().ReadTimeout = -1;
+            //    tcpClient.GetStream().WriteTimeout = -1;
+            //}
             return result;
         }
 

@@ -101,13 +101,13 @@ namespace SignalGo.Shared.IO
         /// read one byte from Stream async
         /// </summary>
         /// <returns></returns>
-        public async Task<byte> ReadOneByteAsync()
+        public async Task<Memory<byte>> ReadOneByteAsync()
         {
-            var bytes = new byte[1];
-            var readCount = await ReadAsyncAction(bytes, 0, 1);
+            var bytes = new Memory<byte>(new byte[1]);
+            var readCount = await ReadAsyncAction(bytes);
             if (readCount <= 0)
                 throw new Exception("read zero buffer! client disconnected");
-            return bytes[0];
+            return bytes;
         }
 
         /// <summary>
@@ -124,28 +124,23 @@ namespace SignalGo.Shared.IO
         }
 
         /// <summary>
-        /// reda one line from server
+        /// read one line from server
         /// </summary>
         /// <returns></returns>
-        public async Task<StringBuilder> ReadLineAsync()
+        public async Task<string> ReadLineAsync()
         {
             StringBuilder builder = new StringBuilder();
             do
             {
-                var bytes = new byte[1];
-                var readCount = await ReadAsyncAction(bytes, 0, 1);
-                if (readCount <= 0)
-                    throw new Exception("read zero buffer! client disconnected");
-                if (bytes[0] == 13)
+                var readByte = await ReadOneByteAsync();
+                if (readByte.Span[0] == 13)
                 {
-                    readCount = await ReadAsyncAction(bytes, 0, 1);
-                    if (readCount <= 0)
-                        throw new Exception("read zero buffer! client disconnected");
-                    if (bytes[0] == 10)
-                        return builder;
-                    builder.Append((char)bytes[0]);
+                    readByte = await ReadOneByteAsync();
+                    if (readByte.Span[0] == 10)
+                        return builder.ToString();
+                    builder.Append((char)readByte.Span[0]);
                 }
-                builder.Append((char)bytes[0]);
+                builder.Append((char)readByte.Span[0]);
             } while (true);
         }
 
@@ -160,54 +155,90 @@ namespace SignalGo.Shared.IO
             var firstLineText = firstLine.ToString();
             if (firstLineText.IndexOf("http/", StringComparison.OrdinalIgnoreCase) >= 0)
                 ProtocolType = ProtocolType.Http;
+
+            StringBuilder builder = new StringBuilder();
+            //read one line
+            //one header
+            int readLength = 1024;
+            bool isContinue = true;
             do
             {
-                StringBuilder builder = new StringBuilder();
-                //read one line
-                //one header
-                do
+                var bytes = new Memory<byte>(new byte[readLength]);
+                var readCount = await ReadAsyncAction(bytes);
+                if (readCount <= 0)
+                    throw new Exception("read zero buffer! client disconnected");
+                for (int i = 0; i < readCount; i++)
                 {
-                    var bytes = new byte[1];
-                    var readCount = await ReadAsyncAction(bytes, 0, 1);
-                    if (readCount <= 0)
-                        throw new Exception("read zero buffer! client disconnected");
-                    if (bytes[0] == 13)
+                    if (bytes.Span[i] == 13)
                     {
-                        readCount = await ReadAsyncAction(bytes, 0, 1);
-                        if (readCount <= 0)
-                            throw new Exception("read zero buffer! client disconnected");
-                        if (bytes[0] == 10)
-                            break;
-                        builder.Append((char)bytes[0]);
+                        if (i == readCount)
+                        {
+                            var oneByte = await ReadOneByteAsync();
+                            if (oneByte.Span[0] == 10)
+                            {
+                                //last empty line readed and its done
+                                if (builder.Length == 0)
+                                {
+                                    isContinue = false;
+                                    break;
+                                }
+                                else
+                                {
+                                    CreateHeader(builder);
+                                    continue;
+                                }
+                            }
+                        }
+                        else if (bytes.Span[i + 1] == 10)
+                        {
+                            i++;
+                            //last empty line readed and its done
+                            if (builder.Length == 0)
+                            {
+                                isContinue = false;
+                                break;
+                            }
+                            else
+                            {
+                                CreateHeader(builder);
+                                continue;
+                            }
+                        }
                     }
-                    builder.Append((char)bytes[0]);
-                } while (true);
-                if (builder.Length == 0)
-                    break;
-                //header to string
-                var text = builder.ToString();
-                //split header
-                var header = text.Split(SplitHeader, 1);
-                try
-                {
-                    RequestHeaders.Add(header[0], header[1].Split(';'));
+
+                    builder.Append((char)bytes.Span[i]);
                 }
-                catch (Exception ex)
-                {
-                    //throw user friendly exception for add header exception
-                    if (string.IsNullOrEmpty(header[0]))
-                        throw new Exception("header key is null or empty", ex);
-                    else if (RequestHeaders.ContainsKey(header[0]))
-                        throw new Exception($"header {header[0]} is duplicate", ex);
-                    else
-                        throw;
-                }
-                //change protocol if its websocket
-                if (ProtocolType == ProtocolType.Http && header[0].IndexOf("", StringComparison.OrdinalIgnoreCase) >= 0)
-                    ProtocolType = ProtocolType.Websocket;
-            }
-            while (true);
+            } while (isContinue);
+
+
+            //change protocol if its websocket
+            //if (ProtocolType == ProtocolType.Http && header[0].IndexOf("", StringComparison.OrdinalIgnoreCase) >= 0)
+            //    ProtocolType = ProtocolType.Websocket;
         }
+
+        void CreateHeader(StringBuilder builder)
+        {
+            //header to string
+            var text = builder.ToString();
+            //split header
+            var header = text.Split(SplitHeader, 2);
+            try
+            {
+                RequestHeaders.Add(header[0], header[1].Split(';'));
+            }
+            catch (Exception ex)
+            {
+                //throw user friendly exception for add header exception
+                if (string.IsNullOrEmpty(header[0]))
+                    throw new Exception("header key is null or empty", ex);
+                else if (RequestHeaders.ContainsKey(header[0]))
+                    throw new Exception($"header {header[0]} is duplicate", ex);
+                else
+                    throw;
+            }
+            builder.Clear();
+        }
+
 
         /// <summary>
         /// read one line from server
@@ -273,7 +304,7 @@ namespace SignalGo.Shared.IO
                 int remaning = count - readedSize;
                 int countToRead = BufferSize > remaning ? remaning : BufferSize;
                 byte[] bytes = new byte[countToRead];
-                var readedCount = await ReadAsyncAction(bytes, 0, countToRead);
+                var readedCount = await ReadAsyncAction(bytes);
                 if (readedCount <= 0)
                     throw new Exception("read zero buffer! client disconnected");
 

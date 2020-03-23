@@ -1,14 +1,8 @@
 ﻿
-using SignalGo.Server.IO;
 using SignalGo.Server.Models;
 using SignalGo.Server.ServiceManager.Versions;
 using SignalGo.Shared;
-using SignalGo.Shared.Converters;
 using SignalGo.Shared.DataTypes;
-using SignalGo.Shared.Helpers;
-using SignalGo.Shared.IO;
-using SignalGo.Shared.Log;
-using SignalGo.Shared.Models;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -23,7 +17,7 @@ namespace SignalGo.Server.ServiceManager
     /// base of server provider
     /// everything a server provider need on core and base will write here
     /// </summary>
-    public abstract class ServerBase : IDisposable, IValidationRuleInfo
+    public abstract class ServerBase : IDisposable
     {
         /// <summary>
         /// lock for this server
@@ -36,7 +30,7 @@ namespace SignalGo.Server.ServiceManager
         /// <summary>
         /// validation rules manager
         /// </summary>
-        public ValidationRuleInfoManager ValidationRuleInfoManager { get; set; } = new ValidationRuleInfoManager();
+        //public ValidationRuleInfoManager ValidationRuleInfoManager { get; set; } = new ValidationRuleInfoManager();
         /// <summary>
         /// server data provider communication between client and server
         /// </summary>
@@ -44,11 +38,11 @@ namespace SignalGo.Server.ServiceManager
         /// <summary>
         /// log errors and warnings
         /// </summary>
-        internal AutoLogger AutoLogger { get; private set; } = new AutoLogger() { FileName = "ServerBase Logs.log" };
+        //internal AutoLogger AutoLogger { get; private set; } = new AutoLogger() { FileName = "ServerBase Logs.log" };
         /// <summary>
         /// json serialize and deserialize error handling
         /// </summary>
-        private JsonSettingHelper JsonSettingHelper { get; set; } = new JsonSettingHelper();
+        //private JsonSettingHelper JsonSettingHelper { get; set; } = new JsonSettingHelper();
 
         /// <summary>
         /// Server is started or not
@@ -58,7 +52,7 @@ namespace SignalGo.Server.ServiceManager
         /// <summary>
         /// The server settings
         /// </summary>
-        public ProviderSetting ProviderSetting { get; set; } = new ProviderSetting();
+        //public ProviderSetting ProviderSetting { get; set; } = new ProviderSetting();
 
         /// <summary>
         /// Action raised when when server disconnects
@@ -112,7 +106,7 @@ namespace SignalGo.Server.ServiceManager
         /// <summary>
         /// all of the clients service call methods from server those wait for recevice data from client and set result to task that waited
         /// </summary>
-        internal ConcurrentDictionary<string, KeyValue<Type, object>> ClientServiceCallMethodsResult { get; set; } = new ConcurrentDictionary<string, KeyValue<Type, object>>();
+        //internal ConcurrentDictionary<string, KeyValue<Type, object>> ClientServiceCallMethodsResult { get; set; } = new ConcurrentDictionary<string, KeyValue<Type, object>>();
 
         /// <summary>
         /// Error handling methods that return types (not void)
@@ -126,7 +120,7 @@ namespace SignalGo.Server.ServiceManager
         /// <summary>
         /// if you don't want to trhow exception when method have error validation you can fill this function to customize your result for client
         /// </summary>
-        public Func<List<BaseValidationRuleInfoAttribute>, object, MethodInfo, object> ValidationResultHandlingFunction { get; set; }
+        //public Func<List<BaseValidationRuleInfoAttribute>, object, MethodInfo, object> ValidationResultHandlingFunction { get; set; }
         /// <summary>
         /// Register server service
         /// </summary>
@@ -154,46 +148,46 @@ namespace SignalGo.Server.ServiceManager
         /// <param name="name">custom service name when servie hasn't attribute</param>
         public void RegisterServerService(Type serviceType, string name = null)
         {
-            if (serviceType.HasServiceAttribute())
-            {
-                ServiceContractAttribute[] services = serviceType.GetServiceContractAttributes();
-                foreach (ServiceContractAttribute service in services)
-                {
-                    name = service.GetServiceName(false).ToLower();
-                    if (!RegisteredServiceTypes.ContainsKey(name))
-                        RegisteredServiceTypes.TryAdd(name, serviceType);
-                }
-            }
-            else if (!string.IsNullOrEmpty(name))
-            {
-                if (!RegisteredServiceTypes.ContainsKey(name))
-                    RegisteredServiceTypes.TryAdd(name, serviceType);
-                else
-                    throw new Exception($"service name {name} exist!");
-            }
-            else
-                throw new Exception("service name is null or empty!");
+            //if (serviceType.HasServiceAttribute())
+            //{
+            //    ServiceContractAttribute[] services = serviceType.GetServiceContractAttributes();
+            //    foreach (ServiceContractAttribute service in services)
+            //    {
+            //        name = service.GetServiceName(false).ToLower();
+            //        if (!RegisteredServiceTypes.ContainsKey(name))
+            //            RegisteredServiceTypes.TryAdd(name, serviceType);
+            //    }
+            //}
+            //else if (!string.IsNullOrEmpty(name))
+            //{
+            //    if (!RegisteredServiceTypes.ContainsKey(name))
+            //        RegisteredServiceTypes.TryAdd(name, serviceType);
+            //    else
+            //        throw new Exception($"service name {name} exist!");
+            //}
+            //else
+            //    throw new Exception("service name is null or empty!");
         }
 
-        public void RegisterClientService<T>()
-        {
-            RegisterClientService(typeof(T));
-        }
+        //public void RegisterClientService<T>()
+        //{
+        //    RegisterClientService(typeof(T));
+        //}
 
-        public void RegisterClientService(Type serviceType)
-        {
-            ServiceContractAttribute service = serviceType.GetClientServiceAttribute();
-            if (service != null)
-            {
-                string name = service.GetServiceName(false).ToLower();
-                if (!RegisteredServiceTypes.ContainsKey(name))
-                    RegisteredServiceTypes.TryAdd(name, serviceType);
-            }
-            else
-            {
-                throw new NotSupportedException("your service is not type of ServerService or HttpService or StreamService");
-            }
-        }
+        //public void RegisterClientService(Type serviceType)
+        //{
+        //    ServiceContractAttribute service = serviceType.GetClientServiceAttribute();
+        //    if (service != null)
+        //    {
+        //        string name = service.GetServiceName(false).ToLower();
+        //        if (!RegisteredServiceTypes.ContainsKey(name))
+        //            RegisteredServiceTypes.TryAdd(name, serviceType);
+        //    }
+        //    else
+        //    {
+        //        throw new NotSupportedException("your service is not type of ServerService or HttpService or StreamService");
+        //    }
+        //}
 
         /// <summary>
         /// GetListOfRegistredTypes
@@ -219,7 +213,7 @@ namespace SignalGo.Server.ServiceManager
                     if (tcpClient != null)
                     {
 #if (NETSTANDARD1_6 || NETCOREAPP1_1)
-                        tcpClient.Dispose();
+                                tcpClient.Dispose();
 #else
                         tcpClient.Close();
 #endif
@@ -232,7 +226,7 @@ namespace SignalGo.Server.ServiceManager
                     if (client.TcpClient != null)
                     {
 #if (NETSTANDARD1_6 || NETCOREAPP1_1)
-                        client.TcpClient.Dispose();
+                                client.TcpClient.Dispose();
 #else
                         client.TcpClient.Close();
 #endif
@@ -240,25 +234,25 @@ namespace SignalGo.Server.ServiceManager
                 }
                 catch (Exception ex)
                 {
-                    AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} CloseCllient");
+                    //AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} CloseCllient");
                 }
-                foreach (KeyValuePair<string, ConcurrentDictionary<string, object>> service in MultipleInstanceServices)
-                {
-                    foreach (KeyValuePair<string, object> clientInfo in service.Value.Where(x => x.Key == client.ClientId))
-                    {
-                        service.Value.Remove(clientInfo.Key);
-                    }
-                }
+                //foreach (KeyValuePair<string, ConcurrentDictionary<string, object>> service in MultipleInstanceServices)
+                //{
+                //    foreach (KeyValuePair<string, object> clientInfo in service.Value.Where(x => x.Key == client.ClientId))
+                //    {
+                //        service.Value.Remove(clientInfo.Key);
+                //    }
+                //}
                 //ClientRemove(client);
 
-                OperationContextBase.SavedSettings.Remove(client);
+                //OperationContextBase.SavedSettings.Remove(client);
 
                 client.OnDisconnected?.Invoke();
             }
             catch (Exception ex)
             {
                 Console.WriteLine("DisposeClient " + ex);
-                AutoLogger.LogError(ex, "DisposeClientError");
+                //AutoLogger.LogError(ex, "DisposeClientError");
             }
             finally
             {
@@ -275,17 +269,17 @@ namespace SignalGo.Server.ServiceManager
 
         internal void RemoveTask(int TaskId)
         {
-            DataExchanger.Clear(TaskId);
+            //DataExchanger.Clear(TaskId);
             TaskOfClientInfoes.Remove(TaskId);
-            OperationContext.CurrentTaskServerTasks.Remove(TaskId);
-            ValidationRuleInfoManager.RemoveTask(TaskId);
+            //OperationContext.CurrentTaskServerTasks.Remove(TaskId);
+            //ValidationRuleInfoManager.RemoveTask(TaskId);
         }
 
         internal void AddTask(int TaskId, string clientId)
         {
-            DataExchanger.Clear(TaskId);
+            //DataExchanger.Clear(TaskId);
             TaskOfClientInfoes.TryAdd(TaskId, clientId);
-            OperationContext.CurrentTaskServerTasks.TryAdd(TaskId, this);
+            //OperationContext.CurrentTaskServerTasks.TryAdd(TaskId, this);
         }
 
         /// <summary>
@@ -302,8 +296,15 @@ namespace SignalGo.Server.ServiceManager
         /// <param name="clientId">client session id</param>
         public void CloseClient(string clientId)
         {
-            if (Clients.TryGetValue(clientId, out ClientInfo client))
-                DisposeClient(client, null, "manualy called CloseClient 2");
+            if (Guid.TryParse(clientId, out Guid clientIdResult))
+            {
+                if (Clients.TryGetValue(clientIdResult, out ClientInfo client))
+                    DisposeClient(client, null, "manualy called CloseClient 2");
+            }
+            else
+            {
+                throw new Exception("The string of clientId cannot parse to close client pls check your clientId is a true Guid");
+            }
         }
         /// <summary>
         /// When server is disposed
@@ -320,7 +321,7 @@ namespace SignalGo.Server.ServiceManager
 
         public void Stop()
         {
-            foreach (KeyValuePair<string, ClientInfo> item in Clients.ToList())
+            foreach (KeyValuePair<Guid, ClientInfo> item in Clients.ToList())
             {
                 DisposeClient(item.Value, null, "server stopped");
             }

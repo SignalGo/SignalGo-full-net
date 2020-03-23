@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27130.2027
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29709.97
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SignalGo.Server", "SignalGo.Server\SignalGo.Server.csproj", "{8170E507-F79C-49C4-9EC2-9112C565A98B}"
 EndProject
@@ -29,7 +29,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SignalGo.Utilities", "Signa
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SignalGo.Server.TelegramBot", "SignalGo.Server.TelegramBot\SignalGo.Server.TelegramBot.csproj", "{57DFB697-F9CF-4833-BD77-89FE59311B56}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SignalGo.DataExchanger", "SignalGo.DataExchanger\SignalGo.DataExchanger.csproj", "{05441E12-5F66-4A61-8733-07EFACB9C6B3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SignalGo.DataExchanger", "SignalGo.DataExchanger\SignalGo.DataExchanger.csproj", "{05441E12-5F66-4A61-8733-07EFACB9C6B3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SignalGo.Server.Tests", "SignalGo.Server.Tests\SignalGo.Server.Tests.csproj", "{33E1B1A0-07BB-44D1-8225-9369E77868CA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -77,6 +79,10 @@ Global
 		{05441E12-5F66-4A61-8733-07EFACB9C6B3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{05441E12-5F66-4A61-8733-07EFACB9C6B3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{05441E12-5F66-4A61-8733-07EFACB9C6B3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{33E1B1A0-07BB-44D1-8225-9369E77868CA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{33E1B1A0-07BB-44D1-8225-9369E77868CA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{33E1B1A0-07BB-44D1-8225-9369E77868CA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{33E1B1A0-07BB-44D1-8225-9369E77868CA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -92,6 +98,7 @@ Global
 		{A8D61499-A96B-4C74-A281-51F7367DE808} = {9287AE81-1DFE-42EA-9E8A-D673C98F57FF}
 		{57DFB697-F9CF-4833-BD77-89FE59311B56} = {9287AE81-1DFE-42EA-9E8A-D673C98F57FF}
 		{05441E12-5F66-4A61-8733-07EFACB9C6B3} = {87B3E1DF-14EC-4B4E-BF30-A153F905A599}
+		{33E1B1A0-07BB-44D1-8225-9369E77868CA} = {A22888F1-4263-4605-A06D-8A2AAD8A148F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {BA45D984-D832-4852-8459-2B21C09E673C}

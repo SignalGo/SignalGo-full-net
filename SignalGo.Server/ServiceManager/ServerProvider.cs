@@ -5,6 +5,7 @@
 //https://github.com/SignalGo/SignalGo-full-net
 
 using SignalGo.Shared.DataTypes;
+using SignalGo.Shared.Enums;
 using SignalGo.Shared.Helpers;
 using System;
 using System.Collections.Generic;
@@ -21,7 +22,7 @@ namespace SignalGo.Server.ServiceManager
         /// <summary>
         /// start the server
         /// </summary>
-        /// <param name="url">your server url exmaple : "http://localhost:80/any"</param>
+        /// <param name="url">your server url exmaple : "http://localhost:80/any Don't forgot in server side server address is always localhost"</param>
         public void Start(string url)
         {
             //validate url
@@ -36,7 +37,7 @@ namespace SignalGo.Server.ServiceManager
             }
 
             //start the server listener
-            ServerDataProvider.StartAction(this, uri.Port);
+            ServerDataProvider.Start(this, uri.Port);
         }
 
         /// <summary>
@@ -66,8 +67,8 @@ namespace SignalGo.Server.ServiceManager
             foreach (Type type in allTypes)
             {
                 //find servicecontract attributes over type
-                ServiceContractAttribute[] attributes = type.GetCustomAttributes<ServiceContractAttribute>();
-                if (attributes.Length > 0)
+                var attributes = type.GetCustomAttributes<ServiceContractAttribute>();
+                if (attributes.Count() > 0)
                 {
                     foreach (ServiceContractAttribute att in attributes)
                     {
@@ -79,7 +80,7 @@ namespace SignalGo.Server.ServiceManager
                         //when attribute is client services for duplex protocols like websockets,wss,signalgo etc
                         else if (att.ServiceType == ServiceType.ClientService)
                         {
-                            RegisterClientService(type);
+                            //RegisterClientService(type);
                         }
                         //when attribute is server services for one way protocols like http,https,signalgo etc
                         else if (att.ServiceType == ServiceType.HttpService)

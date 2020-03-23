@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SignalGo.Shared.IO
@@ -14,11 +15,10 @@ namespace SignalGo.Shared.IO
     /// <summary>
     /// function to read bytes from stream
     /// </summary>
-    /// <param name="bytes">bytes space to read, after read stream will fill your bytes array here</param>
-    /// <param name="offset">offset</param>
-    /// <param name="count">count of read from stream</param>
+    /// <param name="buffer">bytes space to read, after read stream will fill your bytes array here</param>
+    /// <param name="cancellationToken">cancellation Token</param>
     /// <returns>count of readed bytes from stream</returns>
-    public delegate Task<int> ReadAsyncFunction(byte[] bytes, int offset, int count);
+    public delegate ValueTask<int> ReadAsyncFunction(Memory<byte> buffer, CancellationToken cancellationToken = default);
     /// <summary>
     /// function to read bytes from stream
     /// </summary>
@@ -49,8 +49,7 @@ namespace SignalGo.Shared.IO
     /// <summary>
     /// write data to stream
     /// </summary>
-    /// <param name="bytes">bytes of data</param>
-    /// <param name="offset">offset</param>
-    /// <param name="count">count of data</param>
-    public delegate Task WriteAsyncAction(byte[] bytes, int offset, int count);
+    /// <param name="buffer">bytes of data</param>
+    /// <param name="cancellationToken">cancellation Token</param>
+    public delegate ValueTask WriteAsyncAction(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default);
 }

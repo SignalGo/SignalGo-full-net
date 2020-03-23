@@ -79,7 +79,7 @@ namespace SignalGo.Shared.IO
         /// read one byte from stream async
         /// </summary>
         /// <returns>byte readed</returns>
-        public Func<Task<byte>> ReadOneByteAsync { get; set; }
+        public Func<Task<Memory<byte>>> ReadOneByteAsync { get; set; }
         /// <summary>
         /// read one byte from stream
         /// </summary>
@@ -162,12 +162,12 @@ namespace SignalGo.Shared.IO
         /// write block of signalgo packet bytes array to stream async
         /// </summary>
         /// <param name="bytes">bytes to write</param>
-        public Task WriteBlockToStreamAsync(byte[] bytes)
+        public async Task WriteBlockToStreamAsync(byte[] bytes)
         {
             var size = BitConverter.ToInt32(bytes, 0);
             var sizeBytes = BitConverter.GetBytes(size);
-            var allBytes = sizeBytes.Concat(bytes).ToArray();
-            return WriteAsync(allBytes, 0, allBytes.Length);
+            var allBytes = new ReadOnlyMemory<byte>(sizeBytes.Concat(bytes).ToArray());
+            await WriteAsync(allBytes);
         }
 
         /// <summary>

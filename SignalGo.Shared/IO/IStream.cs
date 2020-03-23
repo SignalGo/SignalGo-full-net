@@ -50,7 +50,7 @@ namespace SignalGo.Shared.IO
         /// read one byte from stream async
         /// </summary>
         /// <returns>byte readed</returns>
-        Func<Task<byte>> ReadOneByteAsync { get; set; }
+        Func<Task<Memory<byte>>> ReadOneByteAsync { get; set; }
         /// <summary>
         /// read one byte from stream
         /// </summary>
