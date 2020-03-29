@@ -70,6 +70,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     {
                         await RunHttpRequest(serverBase, address, "POST", content, client);
                     }
+                    await Task.Delay(1000);
                     serverBase.DisposeClient(client, null, "AddClient finish post call");
                 }
                 else if (methodName.ToLower() == "options" && !string.IsNullOrEmpty(address) && address != "/")
