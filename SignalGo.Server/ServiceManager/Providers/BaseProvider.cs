@@ -129,6 +129,16 @@ namespace SignalGo.Server.ServiceManager.Providers
                     {
                         //find method with sended parameters
                         method = GetMethods(client, methodName, null, serviceType, customDataExchanger, securityAttributes, clientLimitationAttribute, concurrentLockAttributes, canTakeMethod).FirstOrDefault();
+                        if (method == null)
+                        {
+                            method = GetMethods(client, "-noName-", null, serviceType, customDataExchanger, securityAttributes, clientLimitationAttribute, concurrentLockAttributes, x =>
+                            {
+                                return x.GetCustomAttribute<HomePageAttribute>() != null;
+                            }).FirstOrDefault();
+                            if (parameters == null || parameters.Length == 0)
+                                parameters = new Shared.Models.ParameterInfo[] { new Shared.Models.ParameterInfo() { Value = methodName } };
+                            //parameters = new Shared.Models.ParameterInfo[] { };
+                        }
                     }
 
                     if (method == null)
