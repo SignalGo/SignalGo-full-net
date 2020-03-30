@@ -359,7 +359,7 @@
                 <TextBox Text="{Binding ProjectInfo.AssemblyPath}" Grid.Column="1" HorizontalAlignment="Stretch" Grid.Row="1" VerticalAlignment="Stretch"/>
                 <Button Command="{Binding BrowsePathCommand}" Content="..." Grid.Column="3" Width="100" Grid.Row="1" FontWeight="Normal"/>
                 <TextBox TextWrapping="WrapWithOverflow" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Top" Text="{Binding CmdLogs}" Height="Auto" Margin="0,5,5,0" ScrollViewer.CanContentScroll="True" VerticalScrollBarVisibility="Auto"/>
-
+                
                 <StackPanel Grid.Row="2" Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Bottom" HorizontalAlignment="Stretch">
                     <TextBlock Text="Servers : "/>
                     <Expander Header="Expander" VerticalAlignment="Bottom" ExpandDirection="Up" Margin="0,0,0,-5" Background="{x:Null}">
@@ -380,6 +380,10 @@
                     <ListBox.ItemTemplate>
                         <HierarchicalDataTemplate>
                             <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition/>
+                                    <RowDefinition/>
+                                </Grid.RowDefinitions>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="150"/>
                                     <ColumnDefinition/>
@@ -398,6 +402,9 @@
                                     <Button FontSize="14" HorizontalAlignment="Stretch" Cursor="Hand" Command="{Binding ToDownCommand,Source={StaticResource ProjectInfoViewModel}}" CommandParameter="{Binding}" BorderThickness="0" Content="↓" Padding="5" Background="Transparent" Foreground="Green"/>
                                     <Button FontSize="14" HorizontalAlignment="Stretch" Cursor="Hand" Command="{Binding ToUpCommand,Source={StaticResource ProjectInfoViewModel}}" CommandParameter="{Binding}" BorderThickness="0" Content="↑" Padding="5" Background="Transparent" Foreground="Green"/>
                                 </StackPanel>
+                                <Grid Grid.Row="1" Grid.ColumnSpan="2" VerticalAlignment="Center" HorizontalAlignment="Stretch">
+                                    <ProgressBar Maximum="{Binding Size}" Value="{Binding Position}" />
+                                </Grid>
                             </Grid>
                         </HierarchicalDataTemplate>
                     </ListBox.ItemTemplate>

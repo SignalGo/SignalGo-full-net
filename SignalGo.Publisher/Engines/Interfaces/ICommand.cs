@@ -11,7 +11,8 @@ namespace SignalGo.Publisher.Engines.Interfaces
         /// </summary>
         public string Name { get; set; }
         public string Path { get; set; }
-
+        public long Size { get; set; }
+        public long Position { get; set; }
         public string ExecutableFile { get; set; }
         public string Command { get; set; }
         public string Arguments { get; set; }

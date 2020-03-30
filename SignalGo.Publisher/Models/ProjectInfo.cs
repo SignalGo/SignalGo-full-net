@@ -186,7 +186,7 @@ namespace SignalGo.Publisher.Models
             command.Path = AssemblyPath;
             Commands.Add(command);
             // extra command item for test ui
-            Commands.Add(command);
+            //Commands.Add(command);
         }
 
         //public void UpdateDatabase()

@@ -21,6 +21,33 @@ namespace SignalGo.Publisher.Engines.Commands
             }
         }
 
+        long _Size;
+        long _Position;
+ 
+        public long Size
+        {
+            get
+            {
+                return _Size;
+            }
+            set
+            {
+                _Size = value;
+                OnPropertyChanged("Size");
+            }
+        }
+        public long Position
+        {
+            get
+            {
+                return _Position;
+            }
+            set
+            {
+                _Position = value;
+                OnPropertyChanged("Position");
+            }
+        }
         public string Name { get; set; }
         public string ExecutableFile { get; set; }
         public string Command { get; set; }

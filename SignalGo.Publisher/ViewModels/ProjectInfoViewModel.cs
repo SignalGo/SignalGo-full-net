@@ -142,6 +142,7 @@ namespace SignalGo.Publisher.ViewModels
         public Command RunTestsCommand { get; set; }
         string _CmdLogs;
 
+
         /// <summary>
         /// instance of ProjectInfo Model
         /// </summary>

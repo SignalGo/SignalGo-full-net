@@ -1,9 +1,13 @@
 ﻿using SignalGo.Client;
+using SignalGo.Publisher.Services;
 using SignalGo.Publisher.ViewModels;
 using SignalGo.Publisher.Views;
 using SignalGo.Shared.Log;
 using System;
 using System.Diagnostics;
+using System.IO;
+using System.Net.Sockets;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Animation;
@@ -17,18 +21,19 @@ namespace SignalGo.Publisher
     public partial class ProjectManagerWindow : Window
     {
         public static ProjectManagerWindow This;
+
         public ProjectManagerWindow()
         {
             This = this;
             InitializeComponent();
             mainframe.Navigate(new FirstPage());
-            //Closing += MainWindow_Closing;
+            Closing += MainWindow_Closing;
+            PublisherServiceProvider.Initialize();
         }
-
 
         private void MainWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            
+
         }
 
         private void MainFrame_Navigating(object sender, NavigatingCancelEventArgs e)

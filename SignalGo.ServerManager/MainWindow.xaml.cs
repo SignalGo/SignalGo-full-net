@@ -26,15 +26,20 @@ namespace SignalGo.ServerManager
             mainframe.Navigate(new FirstPage());
             Closing += MainWindow_Closing;
             ServerProvider serverProvider = new ServerProvider();
+
             serverProvider.RegisterServerService<ServerManagerService>();
+            serverProvider.RegisterServerService<ServerManagerStreamService>();
+            serverProvider.ProviderSetting.HttpSetting.HandleCrossOriginAccess = true;
             serverProvider.Start("http://localhost:5468/ServerManager/SignalGo");
+
+            Debug.WriteLine("server is started");
         }
 
 
         private void MainWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             AutoLogger.Default.LogText("Try to close happens.");
-            if (MessageBox.Show("Are you sure to close server manager? this will close all of servers.","Close application", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.No)
+            if (MessageBox.Show("Are you sure to close server manager? this will close all of servers.", "Close application", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.No)
             {
                 AutoLogger.Default.LogText("Manualy user cancel closing.");
                 e.Cancel = true;
