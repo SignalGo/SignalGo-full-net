@@ -1,9 +1,5 @@
 ﻿using MvvmGo.ViewModels;
 using SignalGo.Publisher.Engines.Interfaces;
-using SignalGo.Publisher.ViewModels;
-using System;
-using System.Diagnostics;
-using System.Threading.Tasks;
 
 namespace SignalGo.Publisher.Models
 {
@@ -12,8 +8,7 @@ namespace SignalGo.Publisher.Models
        public ICommand Command { get; set; }
         bool _Status;
         bool _HasProgress;
-
-        //Func<Task<long>> _StreamPosition;
+        
         string _Title;
         string _FileName;
         string _FileExtension;
@@ -23,24 +18,6 @@ namespace SignalGo.Publisher.Models
             Command = command;
         }
 
-
-        //public Func<Task<long>> StreamPosition = new Func<Task<long>>(() =>
-        //{
-        //    Console.WriteLine("...");
-        //    return Task.FromResult(Position);
-        //});
-        //{
-        //    get
-        //    {
-        //        Debug.WriteLine(_StreamPosition);
-        //        return _StreamPosition;
-        //    }
-        //    set
-        //    {
-        //        _StreamPosition = value;
-        //        OnPropertyChanged("StreamPosition");
-        //    }
-        //}
         public string FilePath
         {
             get
@@ -53,7 +30,6 @@ namespace SignalGo.Publisher.Models
                 OnPropertyChanged("FilePath");
             }
         }
-       
 
         /// <summary>
         /// mime type of file, (rar,zip,...)

@@ -44,21 +44,7 @@ namespace SignalGo.Publisher.Services
                 {
                     try
                     {
-                        
                         CheckConnectionQuality();
-                        //var uploadResult = new UploadInfo();
-                        //string fileName = @"uploadme.zip";
-                        //string simpleFilePath = Path.Combine(Directory.GetCurrentDirectory(), fileName);
-
-                        //var uploadInfo = new UploadInfo
-                        //{
-                        //    FileName = fileName,
-                        //    //FileExtension = "zip",
-                        //    Size = new FileInfo(simpleFilePath).Length,
-                        //    HasProgress = true,
-                        //    FilePath = simpleFilePath
-                        //};
-                        //uploadResult = await StreamManagerService.UploadAsync(uploadInfo);
                     }
                     catch (Exception ex)
                     {

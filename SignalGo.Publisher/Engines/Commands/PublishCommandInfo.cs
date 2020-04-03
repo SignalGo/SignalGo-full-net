@@ -1,14 +1,13 @@
-﻿using System.IO;
+﻿using SignalGo.Publisher.Engines.Models;
 using System.Diagnostics;
+using System.IO.Compression;
 using System.Threading.Tasks;
-using SignalGo.Publisher.Models;
-using SignalGo.Publisher.Services;
 
 namespace SignalGo.Publisher.Engines.Commands
 {
     public class PublishCommandInfo : CommandBaseInfo
     {
-        public PublishCommandInfo()
+        public PublishCommandInfo() : base()
         {
             Name = "upload to servers";
             ExecutableFile = "cmd.exe";
@@ -23,31 +22,26 @@ namespace SignalGo.Publisher.Engines.Commands
             //var output = result.StartInfo;
             //Status = Models.RunStatusType.Done;
             //Status = Models.RunStatusType.Error;
-            await Upload();
+            var compressedData = await Compress();
+            await Upload(compressedData);
+
             return result;
         }
 
-        /// <summary>
-        /// test e hanooz
-        /// </summary>
-        /// <returns></returns>
-        public async Task Upload()
+        public override async Task<string> Compress(CompressionMethodType compressionMethod = CompressionMethodType.Zip, bool includeParent = false, CompressionLevel compressionLevel = CompressionLevel.Fastest)
         {
-            string fileName = @"uploadme.zip";
-            //string simpleFilePath = System.IO.Path.Combine(Directory.GetCurrentDirectory(), fileName);
-            string fileDirPath = $"{System.IO.Path.Combine("D", "DevOps", "LoggerCopy", "Utravs.Hub.Logger", "ConsoleApp", "bin", "Debug", "netcoreapp3.1")}";
-            var p = System.IO.Path.Combine(fileName);
-            Size = new FileInfo(p).Length;
-            var uploadInfo = new UploadInfo(this)
-            {
-                FileName = fileName,
-                //FileExtension = "zip",
-                HasProgress = true,
-                FilePath = p
-            };
-            await StreamManagerService.UploadAsync(uploadInfo);
-
+            return await base.Compress();
         }
 
+        /// <summary>
+        /// Call Decompress (for test, naturaly it called by server manager stream service)
+        /// </summary>
+        /// <param name="compressionMethod"></param>
+        /// <returns></returns>
+        public override async Task DeCompress(CompressionMethodType compressionMethod = CompressionMethodType.Zip)
+        {
+            await base.DeCompress();
+
+        }
     }
 }

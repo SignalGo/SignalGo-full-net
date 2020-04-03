@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Compression;
 using System.Threading.Tasks;
 using SignalGo.Shared.DataTypes;
+using SignalGo.Shared.Log;
 
 namespace SignalGo.ServerManager.Services
 {
@@ -29,14 +31,14 @@ namespace SignalGo.ServerManager.Services
                 var lengthWrite = 0;
                 while (lengthWrite != streamInfo.Length)
                 {
-                    byte[] bufferBytes = new byte[1024 * 1024];
+                    byte[] bufferBytes = new byte[1024];
                     int readCount = await streamInfo.Stream.ReadAsync(bufferBytes, bufferBytes.Length);
                     if (readCount <= 0)
                         break;
                     await fileStream.WriteAsync(bufferBytes, 0, readCount);
                     lengthWrite += readCount;
                     progress += lengthWrite * 100.0 / streamInfo.Length;
-                    Debug.WriteLine("progress value: " + progress);
+                    Debug.WriteLine("progress writed value: " + progress);
                     //if you have a progress bar in client side this code will send your server position to client and client can position it if you don't have progressbar just pervent this line
                     //try
                     //{
@@ -46,13 +48,14 @@ namespace SignalGo.ServerManager.Services
                     //{
 
                     //}
-                }
 
+                }
+                Debug.WriteLine("Upload Data Downloaded Successfully");
                 //ExtractArchive(filePath);
             }
             catch (Exception ex)
             {
-
+                SignalGo.Shared.Log.AutoLogger.Default.LogError(ex, "DownloadUploadData");
             }
 
             //make your custom result
@@ -67,7 +70,7 @@ namespace SignalGo.ServerManager.Services
             switch (archive.Split('.')[1])
             {
                 case "zip":
-                    System.IO.Compression.ZipFile.ExtractToDirectory(archive, Path.GetFullPath(Directory.GetCurrentDirectory()));
+                    ZipFile.ExtractToDirectory(archive, Path.GetFullPath(Directory.GetCurrentDirectory()));
                     isExtracted = true;
                     break;
                 case "rar":
@@ -78,6 +81,20 @@ namespace SignalGo.ServerManager.Services
             }
             return isExtracted;
         }
-
+        //public virtual Task DeCompress(CompressionMethodType compressionMethod = CompressionMethodType.Zip)
+        //{
+        //    try
+        //    {
+        //        string zipFilePath = Path.Combine(AssembliesPath, "publishArchive.zip");
+        //        string extractPath = Path.Combine(AssembliesPath, "extracted");
+        //        if (compressionMethod == CompressionMethodType.Zip)
+        //            ZipFile.ExtractToDirectory(zipFilePath, extractPath);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        AutoLogger.Default.LogError(ex, "Publish DeCompression");
+        //    }
+        //    return Task.CompletedTask;
+        //}
     }
 }

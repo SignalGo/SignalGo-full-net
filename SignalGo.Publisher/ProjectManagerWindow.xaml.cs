@@ -1,4 +1,5 @@
 ﻿using SignalGo.Client;
+using SignalGo.Publisher.Engines.Commands;
 using SignalGo.Publisher.Services;
 using SignalGo.Publisher.ViewModels;
 using SignalGo.Publisher.Views;
@@ -30,7 +31,6 @@ namespace SignalGo.Publisher
             Closing += MainWindow_Closing;
             PublisherServiceProvider.Initialize();
         }
-
         private void MainWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
 

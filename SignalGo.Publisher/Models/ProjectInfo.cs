@@ -22,7 +22,7 @@ namespace SignalGo.Publisher.Models
                 try
                 {
                     await RunCommands();
-                    
+
                 }
                 catch (Exception ex)
                 {
@@ -45,14 +45,13 @@ namespace SignalGo.Publisher.Models
 
         //[JsonIgnore]
         //public Action ProcessStarted { get; set; }
+
+
         /// <summary>
         /// List of Commands
         /// </summary>
-        public ObservableCollection<ICommand> Commands { get; set; }// = new ObservableCollection<ICommand>();
+        public ObservableCollection<ICommand> Commands { get; set; } = new ObservableCollection<ICommand>();
 
-
-        //public ObservableCollection<SignalGo.ServerManager.ViewModels.ServerInfoViewModel> ServersInfo { get; set; } = new ObservableCollection<ServerManager.ViewModels.ServerInfoViewModel>();
-        
         //private ObservableCollection<string> _servers;
         //public ObservableCollection<string> Servers
         //{
@@ -67,7 +66,8 @@ namespace SignalGo.Publisher.Models
 
         private string _Name;
         private Guid _ProjectKey;
-        private string _AssemblyPath;
+        private string _ProjectPath;
+        private string _ProjectAssembliesPath;
         private ServerInfoStatus _status = ServerInfoStatus.Stable;
 
         public string Name
@@ -108,18 +108,33 @@ namespace SignalGo.Publisher.Models
         }
 
         /// <summary>
-        /// project files path
+        /// project solutions files path
         /// </summary>
-        public string AssemblyPath
+        public string ProjectPath
         {
             get
             {
-                return _AssemblyPath;
+                return _ProjectPath;
             }
             set
             {
-                _AssemblyPath = value;
-                OnPropertyChanged(nameof(AssemblyPath));
+                _ProjectPath = value;
+                OnPropertyChanged(nameof(ProjectPath));
+            }
+        }
+        /// <summary>
+        /// project assemblies(dll's and exe) path
+        /// </summary>
+        public string ProjectAssembliesPath
+        {
+            get
+            {
+                return _ProjectAssembliesPath;
+            }
+            set
+            {
+                _ProjectAssembliesPath = value;
+                OnPropertyChanged(nameof(ProjectAssembliesPath));
             }
         }
 
@@ -140,25 +155,22 @@ namespace SignalGo.Publisher.Models
             }
         }
 
-        /// <summary>
-        /// dotnet build
-        /// </summary>
-        public async void Build()
-        {
-            try
-            {
-                var cmd = new BuildCommandInfo()
-                {
-                    Path = AssemblyPath
-                };
-                await cmd.Run();
-            }
-            catch (Exception ex)
-            {
-                AutoLogger.Default.LogError(ex, "Build Command");
-            }
+        //public async void Build()
+        //{
+        //    try
+        //    {
+        //        var cmd = new BuildCommandInfo()
+        //        {
+        //            Path = AssemblyPath
+        //        };
+        //        await cmd.Run();
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        AutoLogger.Default.LogError(ex, "Build Command");
+        //    }
 
-        }
+        //}
 
         /// <summary>
         /// run each commands in queue async
@@ -183,10 +195,9 @@ namespace SignalGo.Publisher.Models
         /// <param name="command"></param>
         public void AddCommand(ICommand command)
         {
-            command.Path = AssemblyPath;
+            command.WorkingPath = ProjectPath;
+            command.AssembliesPath = ProjectAssembliesPath;
             Commands.Add(command);
-            // extra command item for test ui
-            //Commands.Add(command);
         }
 
         //public void UpdateDatabase()

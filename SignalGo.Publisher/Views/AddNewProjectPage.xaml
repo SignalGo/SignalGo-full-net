@@ -64,6 +64,7 @@
                 <RowDefinition Height="auto"/>
                 <RowDefinition Height="auto"/>
                 <RowDefinition Height="auto"/>
+                <RowDefinition Height="auto"/>
                 <RowDefinition/>
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
@@ -85,17 +86,22 @@
             <!--</StackPanel>-->
 
 
-            <TextBlock Grid.Row="2" Text="Project Path:"/>
-            <TextBox Grid.Row="2" Text="{Binding AssemblyPath}" Grid.Column="1"/>
+            <TextBlock Grid.Row="2" Text="Project Solution Path:"/>
+            <TextBox Grid.Row="2" Text="{Binding ProjectPath}" Grid.Column="1"/>
+
+            <TextBlock Grid.Row="3" Text="Project Assemblies Path:" Margin="0,0,0,10"/>
+            <TextBox Text="{Binding ProjectAssembliesPath}" Grid.Row="3" Grid.Column="1" Margin="10,10,0,10" VerticalAlignment="Stretch" HorizontalAlignment="Stretch"/>
 
             <!--path warning text-->
             <!--<TextBlock Text="&#x26A0;" FontSize="20" Grid.Row="2" Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Left" />-->
 
             <!--path correct text-->
             <TextBlock Text="&#x2714;" FontSize="20" Grid.Row="2" Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Left" />
-            <Button Grid.Row="2" Command="{Binding BrowsePathCommand}" Content="Browse" Grid.Column="3" Margin="25,0,0,0" Width="100"/>
+            <TextBlock Text="&#x2714;" FontSize="20" Grid.Row="3" Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Left" />
+            <Button Grid.Row="2" Command="{Binding BrowseProjectPathCommand}" Content="Browse" Grid.Column="3" Margin="25,0,0,0" Width="100" Height="25"/>
+            <Button Grid.Row="3" Command="{Binding BrowseAssembliesPathCommand}" Content="Browse" Grid.Column="3" Margin="25,0,0,0" Width="100" Height="25"/>
 
-            <StackPanel Margin="0,10,0,0" Orientation="Horizontal"  Grid.Row="3" Grid.ColumnSpan="3" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <StackPanel Margin="0,10,0,0" Orientation="Horizontal"  Grid.Row="4" Grid.ColumnSpan="3" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <Button Command="{Binding SaveCommand}" Content="Save" Width="100" Height="30"/>
                 <Button Command="{Binding CancelCommand}" Content="Cancel" Width="100" Height="30" Margin="10,0,0,0"/>
             </StackPanel>

@@ -9,6 +9,8 @@ using SignalGo.Publisher.Views;
 using SignalGo.Publisher.Models;
 using SignalGo.Publisher.Engines.Commands;
 using SignalGo.Publisher.Engines.Interfaces;
+using System.Text;
+using System.Collections.Generic;
 
 namespace SignalGo.Publisher.ViewModels
 {
@@ -54,9 +56,20 @@ namespace SignalGo.Publisher.ViewModels
         /// read log of excecuted commands
         /// </summary>
         /// <returns></returns>
-        public async Task<string> ReadCommandLog()
+        public async Task ReadCommandLog()
         {
-            return await File.ReadAllTextAsync(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CommandRunnerLogs.txt"));
+            string standardOutputResult;
+            while (true)
+            {
+                var logFile = File.ReadAllTextAsync(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CommandRunnerLogs.txt"));
+                standardOutputResult = logFile.Result;
+                if (logFile.IsCompleted)
+                    break;
+                //sb.Append(standardOutputResult);
+                //CmdLogs += standardOutputResult;
+            }
+            CmdLogs = standardOutputResult;
+            //return await File.ReadAllTextAsync(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CommandRunnerLogs.txt"));
         }
 
         /// <summary>
@@ -69,7 +82,7 @@ namespace SignalGo.Publisher.ViewModels
             folderBrowserDialog.SelectedPath = folderBrowserDialog.SelectedPath;
             if (folderBrowserDialog.ShowDialog() == DialogResult.OK)
             {
-                this.ProjectInfo.AssemblyPath = folderBrowserDialog.SelectedPath;
+                this.ProjectInfo.ProjectPath = folderBrowserDialog.SelectedPath;
             }
             //SettingInfo.Current.ProjectInfo.Add(new ProjectInfo()
             //{
@@ -127,6 +140,7 @@ namespace SignalGo.Publisher.ViewModels
         /// run a custome command/expression
         /// </summary>
         public Command RunCommand { get; set; }
+        public Command RunTestsCommand { get; set; }
         //public string CmdLogs { get; set; }
         /// <summary>
         /// restore/update nuget packages
@@ -139,9 +153,9 @@ namespace SignalGo.Publisher.ViewModels
         /// <summary>
         /// Execute Test Cases of Project
         /// </summary>
-        public Command RunTestsCommand { get; set; }
-        string _CmdLogs;
+        public Command RnTestsCommand { get; set; }
 
+        string _CmdLogs;
 
         /// <summary>
         /// instance of ProjectInfo Model
@@ -219,17 +233,18 @@ namespace SignalGo.Publisher.ViewModels
         /// <summary>
         /// 
         /// </summary>
-        private void RunCMD()
+        private async void RunCMD()
         {
-            Task.Run(async () =>
-            {
-                await RunCustomCommand(ProjectInfo);
-                var logs = ReadCommandLog().Result;
-                CmdLogs += logs;
-                CmdLogs += "=================";
-            });
-        }
 
+
+            //Task.Run(async () =>
+            //{
+            await RunCustomCommand(ProjectInfo);
+            await ReadCommandLog();
+            //CmdLogs += logs;
+            //CmdLogs += "=================";
+            //});
+        }
         /// <summary>
         /// restore (install/fix) nuget packages
         /// </summary>
@@ -357,14 +372,10 @@ namespace SignalGo.Publisher.ViewModels
         //    ProjectInfo.Logs.Clear();
         //}
 
-        //private void Copy(TextLogInfo textLogInfo)
+        //private void Copy(ProjectInfo.TextLogInfo textLogInfo)
         //{
         //    System.Windows.Clipboard.SetText(textLogInfo.Text);
         //}
-
-        /// <summary>
-        /// field of ProjectInfo Model
-        /// </summary>
 
     }
 }

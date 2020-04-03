@@ -15,12 +15,13 @@
     <ProjectReference Include="..\..\MvvmGo\MvvmGo.WindowsWPF\MvvmGo.WindowsWPF.csproj" />
     <ProjectReference Include="..\..\MvvmGo\MvvmGo\MvvmGo.csproj" />
     <ProjectReference Include="..\SignalGo.Client\SignalGo.Client.csproj" />
-    <ProjectReference Include="..\SignalGo.ServerManager\SignalGo.ServerManager.csproj" />
     <ProjectReference Include="..\SignalGo.Shared\SignalGo.Shared.csproj" />
     <ProjectReference Include="..\SignalGo.Utilities\SignalGo.Utilities.csproj" />
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Engines\Providers\" />
+    <Folder Include="Converters\" />
     <Folder Include="Resources\Images\" />
   </ItemGroup>
 

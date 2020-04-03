@@ -18,6 +18,14 @@ using System;
 namespace ServerManagerService.Interfaces
 {
 
+    [ServiceContract("serverstreammanagerstreamservice", ServiceType.StreamService, InstanceType.SingleInstance)]
+    public partial interface IServerManagerStreamService
+    {
+        string UploadData(SignalGo.Shared.Models.StreamInfo streamInfo);
+        Task<string> UploadDataAsync(SignalGo.Shared.Models.StreamInfo streamInfo);
+        bool ExtractArchive(string archive);
+        Task<bool> ExtractArchiveAsync(string archive);
+    }
     [ServiceContract("servermanagerserverservice", ServiceType.ServerService, InstanceType.SingleInstance)]
     public partial interface IServerManagerService
     {
@@ -31,14 +39,6 @@ namespace ServerManagerService.Interfaces
         Task<string> CallClientServiceAsync(string message);
         string SayHello(string name);
         Task<string> SayHelloAsync(string name);
-    }
-    [ServiceContract("serverstreammanagerstreamservice", ServiceType.StreamService, InstanceType.SingleInstance)]
-    public partial interface IServerManagerStreamService
-    {
-        string UploadData(SignalGo.Shared.Models.StreamInfo streamInfo);
-        Task<string> UploadDataAsync(SignalGo.Shared.Models.StreamInfo streamInfo);
-        bool ExtractArchive(string archive);
-        Task<bool> ExtractArchiveAsync(string archive);
     }
 }
 

@@ -14,8 +14,6 @@ namespace SignalGo.Publisher.Services
             var watch = new Stopwatch();
             watch.Start();
             ServerManagerService.StreamServices.ServerManagerStreamService service = new ServerManagerService.StreamServices.ServerManagerStreamService(PublisherServiceProvider.CurrentClientProvider);
-
-            Debug.WriteLine(PublisherServiceProvider.CurrentClientProvider.ClientId);
             using Stream stream = File.OpenRead(uploadInfo.FilePath);
             var streamInfo = new Shared.Models.StreamInfo()
             {
@@ -23,15 +21,8 @@ namespace SignalGo.Publisher.Services
                 Length = stream.Length,
                 Stream = stream,
                 ClientId = PublisherServiceProvider.CurrentClientProvider.ClientId, // null
-
-
-                //GetPositionFlush = new Func<Task<long>>(() =>
-                //{
-                //    return Task.FromResult(stream.Position);
-                //})
             };
-            
-            //its c# shit ke zard nashe
+
             streamInfo.WriteManuallyAsync = async (streamWriter) =>
             {
                 long len = streamInfo.Length.Value;
@@ -43,7 +34,7 @@ namespace SignalGo.Publisher.Services
 
                     await streamWriter.WriteAsync(bytes, 0, readCount);
                     writed += readCount;
-                    uploadInfo.Command.Position = writed;
+                    uploadInfo.Command.Position = (writed / 1024);
                     //var pos = await streamInfo.GetPositionFlush();
                 }
             };

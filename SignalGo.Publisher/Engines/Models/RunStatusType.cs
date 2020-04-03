@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace SignalGo.Publisher.Engines.Models
+﻿namespace SignalGo.Publisher.Engines.Models
 {
     public enum RunStatusType
     {
