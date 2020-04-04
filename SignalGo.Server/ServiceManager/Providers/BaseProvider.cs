@@ -54,6 +54,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 MethodInfo method = null;//4
                 Type serviceType = null;//3
                 object service = null;//5
+                bool isSingleInstance = false;//5
                 Exception exception = null;
                 FileActionResult fileActionResult = null;//6
                 IStreamInfo streamInfo = null;//1
@@ -96,7 +97,9 @@ namespace SignalGo.Server.ServiceManager.Providers
                     {
                         methodName = methodName.Split('.').FirstOrDefault();
                     }
-                    service = await GetInstanceOfService(client, serviceName, serviceType, serverBase);
+                    var serviceInstance = await GetInstanceOfService(client, serviceName, serviceType, serverBase);
+                    service = serviceInstance.Key;
+                    isSingleInstance = serviceInstance.Value;
                     if (service == null)
                         throw new Exception($"{client.IPAddress} {client.ClientId} service {serviceName} not found");
 
@@ -137,7 +140,6 @@ namespace SignalGo.Server.ServiceManager.Providers
                             }).FirstOrDefault();
                             if (parameters == null || parameters.Length == 0)
                                 parameters = new Shared.Models.ParameterInfo[] { new Shared.Models.ParameterInfo() { Value = methodName } };
-                            //parameters = new Shared.Models.ParameterInfo[] { };
                         }
                     }
 
@@ -305,7 +307,10 @@ namespace SignalGo.Server.ServiceManager.Providers
                                                 {
                                                     await serverBase.LockWaitToRead.WaitAsync();
                                                     if (IsTask(method))
+                                                    {
                                                         taskResult = (Task)method.Invoke(service, parametersValues.ToArray());
+                                                        await taskResult;
+                                                    }
                                                     else
                                                         result = method.Invoke(service, parametersValues.ToArray());
                                                 }
@@ -321,7 +326,10 @@ namespace SignalGo.Server.ServiceManager.Providers
                                                 {
                                                     await client.LockWaitToRead.WaitAsync();
                                                     if (IsTask(method))
+                                                    {
                                                         taskResult = (Task)method.Invoke(service, parametersValues.ToArray());
+                                                        await taskResult;
+                                                    }
                                                     else
                                                         result = method.Invoke(service, parametersValues.ToArray());
                                                 }
@@ -333,34 +341,63 @@ namespace SignalGo.Server.ServiceManager.Providers
                                             }
                                         case ConcurrentLockType.PerIpAddress:
                                             {
-                                                lock (client.IPAddress)
+                                                var slim = ConcurrentObjects.GetIpObject(client.IPAddress);
+                                                try
                                                 {
+                                                    await slim.WaitAsync();
                                                     if (IsTask(method))
+                                                    {
                                                         taskResult = (Task)method.Invoke(service, parametersValues.ToArray());
+                                                        await taskResult;
+                                                    }
                                                     else
                                                         result = method.Invoke(service, parametersValues.ToArray());
+                                                }
+                                                finally
+                                                {
+                                                    slim.Release();
                                                 }
                                                 break;
                                             }
                                         case ConcurrentLockType.PerMethod:
                                             {
-                                                lock (method)
+                                                var slim = ConcurrentObjects.GetMethodObject(method);
+                                                try
                                                 {
+                                                    await slim.WaitAsync();
                                                     if (IsTask(method))
+                                                    {
                                                         taskResult = (Task)method.Invoke(service, parametersValues.ToArray());
+                                                        await taskResult;
+                                                    }
                                                     else
                                                         result = method.Invoke(service, parametersValues.ToArray());
+                                                }
+                                                finally
+                                                {
+                                                    slim.Release();
                                                 }
                                                 break;
                                             }
                                         case ConcurrentLockType.PerSingleInstanceService:
                                             {
-                                                lock (service)
+                                                if (!isSingleInstance)
+                                                    throw new Exception("you are using ConcurrentLockType.PerSingleInstanceService but your service type is not single instace! this type is not support for multiple instance of services");
+                                                var slim = ConcurrentObjects.GetInstanceObject(service);
+                                                try
                                                 {
+                                                    await slim.WaitAsync();
                                                     if (IsTask(method))
+                                                    {
                                                         taskResult = (Task)method.Invoke(service, parametersValues.ToArray());
+                                                        await taskResult;
+                                                    }
                                                     else
                                                         result = method.Invoke(service, parametersValues.ToArray());
+                                                }
+                                                finally
+                                                {
+                                                    slim.Release();
                                                 }
                                                 break;
                                             }
@@ -369,13 +406,16 @@ namespace SignalGo.Server.ServiceManager.Providers
                                 else
                                 {
                                     if (IsTask(method))
+                                    {
                                         taskResult = (Task)method.Invoke(service, parametersValues.ToArray());
+                                        await taskResult;
+                                    }
                                     else
                                         result = method.Invoke(service, parametersValues.ToArray());
+
                                 }
                                 if (taskResult != null)
                                 {
-                                    await taskResult;
                                     if (taskResult.GetType() != typeof(Task))
                                         result = taskResult.GetType().GetProperty("Result").GetValue(taskResult);
                                 }
@@ -620,10 +660,9 @@ namespace SignalGo.Server.ServiceManager.Providers
             return parametersValues;
         }
 
-        private static async Task<object> GetInstanceOfService(ClientInfo client, string serviceName, Type serviceType, ServerBase serverBase)
+        private static async Task<KeyValue<object, bool>> GetInstanceOfService(ClientInfo client, string serviceName, Type serviceType, ServerBase serverBase)
         {
             ServiceContractAttribute attribute = serviceType.GetServerServiceAttribute(serviceName, false);
-
             if (attribute.InstanceType == InstanceType.SingleInstance)
             {
                 //single instance services must create instance when server starting so this must always true
@@ -632,7 +671,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     result = Activator.CreateInstance(serviceType);
                     serverBase.SingleInstanceServices.TryAdd(attribute.Name, result);
                 }
-                return result;
+                return new KeyValue<object, bool>(result, true);
             }
             else
             {
@@ -644,13 +683,13 @@ namespace SignalGo.Server.ServiceManager.Providers
                     {
                         if (result.TryGetValue(client.ClientId, out object service))
                         {
-                            return service;
+                            return new KeyValue<object, bool>(service, false);
                         }
                         else
                         {
                             service = Activator.CreateInstance(serviceType);
                             result.TryAdd(client.ClientId, service);
-                            return service;
+                            return new KeyValue<object, bool>(service, false);
                         }
                     }
                     else
@@ -659,7 +698,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                         serverBase.MultipleInstanceServices.TryAdd(attribute.Name, result);
                         object service = Activator.CreateInstance(serviceType);
                         result.TryAdd(client.ClientId, service);
-                        return service;
+                        return new KeyValue<object, bool>(service, false);
                     }
                 }
                 finally
