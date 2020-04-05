@@ -20,11 +20,13 @@ namespace SignalGo.Publisher.ViewModels
         {
             This = this;
             AddNewProjectCommand = new Command(AddNewProject);
-            Load();
+            ShowServersCommand = new Command(ShowServers);
+            LoadProjects();
         }
 
 
         public Command AddNewProjectCommand { get; set; }
+        public Command ShowServersCommand { get; set; }
 
         public static Frame MainFrame { get; set; }
 
@@ -54,14 +56,19 @@ namespace SignalGo.Publisher.ViewModels
                 return SettingInfo.Current;
             }
         }
+        
 
         private void AddNewProject()
         {
             MainFrame.Navigate(new AddNewProjectPage());
-
+        } 
+        private void ShowServers()
+        {
+            MainFrame.Navigate(new ServerInfoPage());
         }
 
-        public void Load()
+
+        public void LoadProjects()
         {
 
             try
@@ -72,9 +79,10 @@ namespace SignalGo.Publisher.ViewModels
             }
             catch (Exception ex)
             {
-                AutoLogger.Default.LogError(ex, "Load");
+                AutoLogger.Default.LogError(ex, "LoadProjectInfo");
             }
         }
+        
 
 
 

@@ -1,14 +1,6 @@
-﻿using SignalGo.Client;
-using SignalGo.Publisher.Engines.Commands;
-using SignalGo.Publisher.Services;
-using SignalGo.Publisher.ViewModels;
+﻿using SignalGo.Publisher.ViewModels;
 using SignalGo.Publisher.Views;
-using SignalGo.Shared.Log;
 using System;
-using System.Diagnostics;
-using System.IO;
-using System.Net.Sockets;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Animation;
@@ -29,7 +21,7 @@ namespace SignalGo.Publisher
             InitializeComponent();
             mainframe.Navigate(new FirstPage());
             Closing += MainWindow_Closing;
-            PublisherServiceProvider.Initialize();
+            //PublisherServiceProvider.Initialize();
         }
         private void MainWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {

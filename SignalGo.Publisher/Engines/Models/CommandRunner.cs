@@ -15,7 +15,7 @@ namespace SignalGo.Publisher.Engines.Models
     /// </summary>
     public static class CommandRunner //: IDisposable
     {
-
+        static string logFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CommandRunnerLogs.txt");
         /// <summary>
         /// Runner Of Commands
         /// </summary>
@@ -43,12 +43,10 @@ namespace SignalGo.Publisher.Engines.Models
                 command.Size = projectCount;
                 while (true)
                 {
-                    string standardOutputResult = await process.StandardOutput.ReadLineAsync();
-                    await File.AppendAllTextAsync(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CommandRunnerLogs.txt"), standardOutputResult);
+                    string standardOutputResult = await process.StandardOutput.ReadToEndAsync();
+                    await File.WriteAllTextAsync(logFilePath, standardOutputResult);
 
-                    //outStr.Add(standardOutputResult);
-                    //await File.AppendAllLinesAsync(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CommandRunnerLogs.txt"), outStr);
-                    if (standardOutputResult == null)
+                    if (standardOutputResult == null || standardOutputResult.Contains("Time Elapsed"))
                         break;
                     if (standardOutputResult.Contains("Done Building"))
                     {
@@ -57,11 +55,6 @@ namespace SignalGo.Publisher.Engines.Models
                     }
                     Debug.WriteLine($"Progress {position} from {projectCount}");
                 }
-
-                //outStr = await process.StandardOutput.ReadToEndAsync();
-                //await File.AppendAllTextAsync(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CommandRunnerLogs.txt"), outStr);
-                //Debug.WriteLine(outStr);
-
             }
             catch (Exception ex)
             {
@@ -75,22 +68,29 @@ namespace SignalGo.Publisher.Engines.Models
         {
             int count = 0;
             var slnFile = Directory.GetFiles(path, "*.*").FirstOrDefault(x => x.EndsWith(".sln", StringComparison.OrdinalIgnoreCase));
-            foreach (var item in File.ReadAllLines(slnFile))
+            try
             {
-                if (item.Contains("Project("))
+                foreach (var item in File.ReadAllLines(slnFile))
                 {
-                    var pPath = item.Split(',')[1].Replace("\"", "").Trim();
-                    if (pPath.EndsWith(".csproj", StringComparison.OrdinalIgnoreCase))
+                    if (item.Contains("Project("))
                     {
-                        var projectPath = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(slnFile), pPath));
-                        var findLine = File.ReadAllLines(projectPath).FirstOrDefault(x => !x.Contains("<!--") && x.Contains("<TargetFrameworks>"));
-                        if (findLine != null)
+                        var pPath = item.Split(',')[1].Replace("\"", "").Trim();
+                        if (pPath.EndsWith(".csproj", StringComparison.OrdinalIgnoreCase))
                         {
-                            count += findLine.Split(';').Count();
+                            var projectPath = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(slnFile), pPath));
+                            var findLine = File.ReadAllLines(projectPath).FirstOrDefault(x => !x.Contains("<!--") && x.Contains("<TargetFrameworks>"));
+                            if (findLine != null)
+                            {
+                                count += findLine.Split(';').Count();
+                            }
+                            count++;
                         }
-                        count++;
                     }
                 }
+            }
+            catch (Exception ex)
+            {
+                AutoLogger.Default.LogError(ex, "CommandRunner(LoadSlnProjectsCount)");
             }
             return count;
         }

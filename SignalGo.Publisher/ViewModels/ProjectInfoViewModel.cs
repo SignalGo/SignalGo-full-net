@@ -9,8 +9,6 @@ using SignalGo.Publisher.Views;
 using SignalGo.Publisher.Models;
 using SignalGo.Publisher.Engines.Commands;
 using SignalGo.Publisher.Engines.Interfaces;
-using System.Text;
-using System.Collections.Generic;
 
 namespace SignalGo.Publisher.ViewModels
 {
@@ -61,7 +59,7 @@ namespace SignalGo.Publisher.ViewModels
             string standardOutputResult;
             while (true)
             {
-                var logFile = File.ReadAllTextAsync(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CommandRunnerLogs.txt"));
+                Task<string> logFile = File.ReadAllTextAsync(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CommandRunnerLogs.txt"));
                 standardOutputResult = logFile.Result;
                 if (logFile.IsCompleted)
                     break;
@@ -199,7 +197,6 @@ namespace SignalGo.Publisher.ViewModels
         public Command UpdateDatabaseCommand { get; set; }
         public Command DeleteCommand { get; set; }
         public Command ClearLogCommand { get; set; }
-        //public Command<TextLogInfo> CopyCommand { get; set; }
 
         private void Delete()
         {
@@ -235,15 +232,8 @@ namespace SignalGo.Publisher.ViewModels
         /// </summary>
         private async void RunCMD()
         {
-
-
-            //Task.Run(async () =>
-            //{
             await RunCustomCommand(ProjectInfo);
-            await ReadCommandLog();
-            //CmdLogs += logs;
-            //CmdLogs += "=================";
-            //});
+            //await ReadCommandLog();
         }
         /// <summary>
         /// restore (install/fix) nuget packages
@@ -306,76 +296,6 @@ namespace SignalGo.Publisher.ViewModels
                 OnPropertyChanged(nameof(ProjectInfo));
             }
         }
-
-        /// <summary>
-        /// ef update database
-        /// </summary>
-        //private void UpdateDatabase()
-        //{
-        //    if (!ProjectInfo.Commands.Any(x => x is RestoreCommandInfo))
-        //        ProjectInfo.AddCommand(new RestoreCommandInfo());
-        //}
-
-        //public static void RestoreProjectPackages(ProjectInfo ProjectInfo)
-        //{
-        //    ProjectInfo.RestorePackagesAsync();
-        //}
-
-        //public static void Publish(ProjectInfo ProjectInfo)
-        //{
-        //    ProjectInfo.Publish();
-        //}
-
-        /// <summary>
-        /// compile assemblies
-        /// </summary>
-        /// <param name="ProjectInfo"></param>
-        //public static void BuildProjectAssemblies(ProjectInfo ProjectInfo)
-        //{
-        //    Debug.WriteLine("Build Started");
-        //    ProjectInfo.Build();
-        //    Debug.WriteLine("Build Finished");
-        //}
-
-        /// <summary>
-        /// execute test cases
-        /// </summary>
-        /// <param name="ProjectInfo"></param>
-        //public static void RunProjectTests(ProjectInfo ProjectInfo)
-        //{
-        //    ProjectInfo.RunTestsAsync();
-        //}
-
-        /// <summary>
-        /// apply migrations update to db
-        /// </summary>
-        /// <param name="ProjectInfo"></param>
-        //public static void UpdateProjectDatabase(ProjectInfo ProjectInfo)
-        //{
-        //    ProjectInfo.UpdateDatabase();
-        //}
-
-        /// <summary>
-        /// check for migrations change/availibility
-        /// </summary>
-        /// <param name="ProjectInfo"></param>
-        //public static void ApplyProjectMigrations(ProjectInfo ProjectInfo)
-        //{
-        //    ProjectInfo.ApplyMigrations();
-        //}
-
-        /// <summary>
-        /// clear logs
-        /// </summary>
-        //private void ClearLog()
-        //{
-        //    ProjectInfo.Logs.Clear();
-        //}
-
-        //private void Copy(ProjectInfo.TextLogInfo textLogInfo)
-        //{
-        //    System.Windows.Clipboard.SetText(textLogInfo.Text);
-        //}
 
     }
 }

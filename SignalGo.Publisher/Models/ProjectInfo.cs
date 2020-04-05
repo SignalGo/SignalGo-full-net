@@ -37,38 +37,16 @@ namespace SignalGo.Publisher.Models
         public Command<ICommand> RunCommmand { get; set; }
         public Command RunCommmands { get; set; }
 
-        [JsonIgnore]
-        public ObservableCollection<TextLogInfo> Logs { get; set; } = new ObservableCollection<TextLogInfo>();
-
-        //[JsonIgnore]
-        //public ProjectProcessInfoBase CurrentServerBase { get; set; }
-
-        //[JsonIgnore]
-        //public Action ProcessStarted { get; set; }
-
-
         /// <summary>
         /// List of Commands
         /// </summary>
         public ObservableCollection<ICommand> Commands { get; set; } = new ObservableCollection<ICommand>();
 
-        //private ObservableCollection<string> _servers;
-        //public ObservableCollection<string> Servers
-        //{
-        //    get { return _servers; ; }
-        //    set
-        //    {
-        //        _servers = value;
-        //        OnPropertyChanged(nameof(Servers));
-        //    }
-        //}
-
-
         private string _Name;
         private Guid _ProjectKey;
         private string _ProjectPath;
         private string _ProjectAssembliesPath;
-        private ServerInfoStatus _status = ServerInfoStatus.Stable;
+        private ProjectInfoStatus _Status = ProjectInfoStatus.Stable;
 
         public string Name
         {
@@ -142,15 +120,15 @@ namespace SignalGo.Publisher.Models
         /// status of server
         /// </summary>
         [JsonIgnore]
-        public ServerInfoStatus Status
+        public ProjectInfoStatus Status
         {
             get
             {
-                return _status;
+                return _Status;
             }
             set
             {
-                _status = value;
+                _Status = value;
                 OnPropertyChanged(nameof(Status));
             }
         }
@@ -254,52 +232,53 @@ namespace SignalGo.Publisher.Models
         //}
 
         ///Console Writer
-        public class ConsoleWriter : TextWriter
-        {
-            public string ProjectName { get; set; }
-            public Action<string, string> TextAddedAction { get; set; }
+        //public class ConsoleWriter : TextWriter
+        //{
+        //    public string ProjectName { get; set; }
+        //    public Action<string, string> TextAddedAction { get; set; }
 
-            public ConsoleWriter()
-            {
-            }
+        //    public ConsoleWriter()
+        //    {
+        //    }
 
-            public override void Write(char value)
-            {
-                try
-                {
-                    TextAddedAction?.Invoke(ProjectName, value.ToString());
-                }
-                catch (Exception ex)
-                {
-                    AutoLogger.Default.LogError(ex, "Write char");
-                }
-            }
+        //    public override void Write(char value)
+        //    {
+        //        try
+        //        {
+        //            TextAddedAction?.Invoke(ProjectName, value.ToString());
+        //        }
+        //        catch (Exception ex)
+        //        {
+        //            AutoLogger.Default.LogError(ex, "Write char");
+        //        }
+        //    }
 
-            /// <summary>
-            /// write action
-            /// </summary>
-            /// <param name="value"></param>
-            public override void Write(string value)
-            {
-                try
-                {
-                    TextAddedAction?.Invoke(ProjectName, value);
-                }
-                catch (Exception ex)
-                {
-                    AutoLogger.Default.LogError(ex, "Write string");
-                }
-            }
+        //    /// <summary>
+        //    /// write action
+        //    /// </summary>
+        //    /// <param name="value"></param>
+        //    public override void Write(string value)
+        //    {
+        //        try
+        //        {
+        //            TextAddedAction?.Invoke(ProjectName, value);
+        //        }
+        //        catch (Exception ex)
+        //        {
+        //            AutoLogger.Default.LogError(ex, "Write string");
+        //        }
+        //    }
 
-            public override Encoding Encoding
-            {
-                get { return Encoding.UTF8; }
-            }
-        }
+        //    public override Encoding Encoding
+        //    {
+        //        get { return Encoding.UTF8; }
+        //    }
+        //}
+
         /// <summary>
         /// status if server
         /// </summary>
-        public enum ServerInfoStatus : byte
+        public enum ProjectInfoStatus : byte
         {
             Stable = 1,
             NotStable = 2,
@@ -310,23 +289,23 @@ namespace SignalGo.Publisher.Models
         /// <summary>
         /// TextLog
         /// </summary>
-        public class TextLogInfo : BaseViewModel
-        {
-            private string _Text;
-            public string Text
-            {
-                get
-                {
-                    return _Text;
-                }
-                set
-                {
-                    _Text = value;
-                    OnPropertyChanged(nameof(Text));
-                }
-            }
-            public bool IsDone { get; set; }
-        }
+        //public class TextLogInfo : BaseViewModel
+        //{
+        //    private string _Text;
+        //    public string Text
+        //    {
+        //        get
+        //        {
+        //            return _Text;
+        //        }
+        //        set
+        //        {
+        //            _Text = value;
+        //            OnPropertyChanged(nameof(Text));
+        //        }
+        //    }
+        //    public bool IsDone { get; set; }
+        //}
 
     }
 }

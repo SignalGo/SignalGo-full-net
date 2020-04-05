@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 
 namespace SignalGo.Publisher.Engines.Commands
 {
-    public abstract class CommandBaseInfo : PropertyChangedViewModel, ICommand, IPublish,IDisposable
+    public abstract class CommandBaseInfo : PropertyChangedViewModel, ICommand, IPublish//, IDisposable
     {
 
         private RunStatusType _Status;
@@ -81,8 +81,8 @@ namespace SignalGo.Publisher.Engines.Commands
             {
                 Status = RunStatusType.Running;
                 var process = CommandRunner.Run(this);
-                if (process.Status == TaskStatus.Faulted)
-                    Status = RunStatusType.Error;
+                //if (process.Status == TaskStatus.Faulted)
+                    //Status = RunStatusType.Error;
                 Status = RunStatusType.Done;
                 return process.Result;
             }
@@ -175,6 +175,7 @@ namespace SignalGo.Publisher.Engines.Commands
         }
 
         #region IDisposable Support
+        /*
         private bool disposedValue = false; // To detect redundant calls
 
         protected virtual void Dispose(bool disposing)
@@ -208,6 +209,7 @@ namespace SignalGo.Publisher.Engines.Commands
             // TODO: uncomment the following line if the finalizer is overridden above.
             //GC.SuppressFinalize(this);
         }
+        */
         #endregion
     }
 }
