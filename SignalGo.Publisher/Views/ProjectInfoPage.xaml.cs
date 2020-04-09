@@ -1,4 +1,9 @@
-﻿using System.Windows.Controls;
+﻿using SignalGo.Publisher.Engines.Commands;
+using SignalGo.Publisher.Engines.Models;
+using System;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media.Animation;
 
 namespace SignalGo.Publisher.Views
 {
@@ -13,6 +18,16 @@ namespace SignalGo.Publisher.Views
         public ProjectInfoPage()
         {
             InitializeComponent();
+        }
+
+        private void taskProgressBar_Initialized(object sender, EventArgs e)
+        {
+
+        }
+
+        private void txtCmdLogs_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            txtCmdLogs.ScrollToEnd();
         }
 
         //public IntPtr MainWindowHandle { get; set; }

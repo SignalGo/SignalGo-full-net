@@ -9,6 +9,7 @@ using SignalGo.Publisher.Views;
 using SignalGo.Publisher.Models;
 using SignalGo.Publisher.Engines.Commands;
 using SignalGo.Publisher.Engines.Interfaces;
+using System.Text;
 
 namespace SignalGo.Publisher.ViewModels
 {
@@ -43,7 +44,12 @@ namespace SignalGo.Publisher.ViewModels
             });
             RetryCommand = new Command<ICommand>((x) =>
             {
-                x.Run();
+                //x.Run();
+                Task.Run(async () =>
+                {
+                    await x.Run();
+                    await ReadCommandLog();
+                });
             });
             BrowsePathCommand = new Command(BrowsePath);
             //ClearLogCommand = new Command(ClearLog);
@@ -57,17 +63,15 @@ namespace SignalGo.Publisher.ViewModels
         public async Task ReadCommandLog()
         {
             string standardOutputResult;
-            while (true)
+            StringBuilder sb = new StringBuilder();
+            var logFile = await File.ReadAllTextAsync(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CommandRunnerLogs.txt"));
+            standardOutputResult = logFile;
+            CmdLogs += standardOutputResult;
+            foreach (var item in ServerInfo.ServerLogs)
             {
-                Task<string> logFile = File.ReadAllTextAsync(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CommandRunnerLogs.txt"));
-                standardOutputResult = logFile.Result;
-                if (logFile.IsCompleted)
-                    break;
-                //sb.Append(standardOutputResult);
-                //CmdLogs += standardOutputResult;
+                sb.Append(item);
             }
-            CmdLogs = standardOutputResult;
-            //return await File.ReadAllTextAsync(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CommandRunnerLogs.txt"));
+            ServerLogs = sb.ToString();
         }
 
         /// <summary>
@@ -151,7 +155,24 @@ namespace SignalGo.Publisher.ViewModels
         /// <summary>
         /// Execute Test Cases of Project
         /// </summary>
-        public Command RnTestsCommand { get; set; }
+
+        string _ServerLogs;
+
+        /// <summary>
+        /// instance of ProjectInfo Model
+        /// </summary>
+        public string ServerLogs
+        {
+            get
+            {
+                return _ServerLogs;
+            }
+            set
+            {
+                _ServerLogs = value;
+                OnPropertyChanged(nameof(ServerLogs));
+            }
+        }
 
         string _CmdLogs;
 
@@ -228,12 +249,15 @@ namespace SignalGo.Publisher.ViewModels
         }
 
         /// <summary>
-        /// 
+        /// Init Commands to Run in Queue
         /// </summary>
-        private async void RunCMD()
+        private void RunCMD()
         {
-            await RunCustomCommand(ProjectInfo);
-            //await ReadCommandLog();
+            Task.Run(async () =>
+            {
+                await RunCustomCommand(ProjectInfo);
+                await ReadCommandLog();
+            });
         }
         /// <summary>
         /// restore (install/fix) nuget packages
@@ -296,6 +320,30 @@ namespace SignalGo.Publisher.ViewModels
                 OnPropertyChanged(nameof(ProjectInfo));
             }
         }
+
+        public SettingInfo CurrentServerSettingInfo
+        {
+            get
+            {
+                return SettingInfo.CurrentServer;
+            }
+        }
+
+        ServerInfo _ServerInfo;
+
+        public ServerInfo ServerInfo
+        {
+            get
+            {
+                return _ServerInfo;
+            }
+            set
+            {
+                _ServerInfo = value;
+                OnPropertyChanged(nameof(ServerInfo));
+            }
+        }
+
 
     }
 }

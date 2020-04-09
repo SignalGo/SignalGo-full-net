@@ -11,6 +11,8 @@
 
     <Page.Resources>
         <vm:ServerInfoViewModel x:Key="ServerInfoViewModel"/>
+        <!--<ObjectDataProvider x:Key="dataFromEnum" MethodName="GetValues" ObjectType="{x:Type System:Enum}"/>-->
+        <!--xmlns:System="clr-namespace:System;assembly=mscorlib"-->
     </Page.Resources>
 
     <Page.DataContext>
@@ -19,6 +21,8 @@
 
     <Grid Margin="10">
         <Grid.RowDefinitions>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="auto"/>
             <RowDefinition Height="auto"/>
             <RowDefinition Height="auto"/>
             <RowDefinition Height="auto"/>
@@ -41,18 +45,34 @@
         <Label Margin="10" Grid.Row="3" Grid.Column="1" Content="ServerAddress:" VerticalContentAlignment="Center" HorizontalAlignment="Left"/>
         <TextBox Margin="10" Grid.Row="3" Text="{Binding ServerInfo.ServerAddress}" Grid.Column="2" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Grid.ColumnSpan="2" />
 
-        <StackPanel Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2" HorizontalAlignment="Center" VerticalAlignment="Center">
+        <Label Margin="10" Grid.Row="4" Grid.Column="1" Content="ServerPort:" VerticalContentAlignment="Center" HorizontalAlignment="Left"/>
+        <TextBox Margin="10" Grid.Row="4" Text="{Binding ServerInfo.ServerPort}" Grid.Column="2" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Grid.ColumnSpan="2" />
+
+        <Label Margin="10" Grid.Row="5" Grid.Column="1" Content="ServerEndPoint:" VerticalContentAlignment="Center" HorizontalAlignment="Left"/>
+        <TextBox Margin="10" Grid.Row="5" Text="{Binding ServerInfo.ServerEndPoint}" Grid.Column="2" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Grid.ColumnSpan="2" />
+
+        <StackPanel Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="2" HorizontalAlignment="Center" VerticalAlignment="Center">
             <StackPanel Orientation="Horizontal"  HorizontalAlignment="Center">
                 <TextBlock Text="Server Status: " Margin="10"/>
-                <TextBlock Text="{Binding ServerInfo.ServerStatus}" Margin="10"/>
+                <!--<TextBlock Text="{Binding ServerInfo.ServerStatus}" Margin="10"/>-->
+                <ComboBox x:Name="serverStatusCombo" SelectedItem="{Binding ServerInfo.ServerStatus}" >
+                    <!--<ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Bindong ServerInfo.ServerStatus }"/>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>-->
+                </ComboBox>
             </StackPanel>
             <!--<StackPanel Orientation="Horizontal" >
                 <Button Command="{Binding StartCommand}" Content="Start" Width="100" Height="30"/>
                 <Button Command="{Binding StopCommand}" Content="Stop" Width="100" Height="30" Margin="10,0,0,0"/>
             </StackPanel>-->
         </StackPanel>
-        <Button Command="{Binding RemoveServerCommand}" Grid.Row="4" Grid.Column="3" VerticalAlignment="Bottom" HorizontalAlignment="Right" Content="Delete" Width="100" Height="30" />
-        <Button Command="{Binding BackCommand}" Grid.Row="4" Grid.Column="3" VerticalAlignment="Bottom" HorizontalAlignment="Left" Content="Back" Width="100" Height="30" />
+        <StackPanel Orientation="Horizontal" Grid.Row="6" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Bottom" Grid.ColumnSpan="3">
+            <Button Margin="10" Command="{Binding SaveChangesCommand}" Grid.Row="6" Grid.Column="3" Content="Save" Width="100" Height="30" />
+            <Button Margin="10" Command="{Binding RemoveServerCommand}" Grid.Row="6" Grid.Column="3" Content="Delete" Width="100" Height="30" />
+            <Button Margin="10" Command="{Binding BackCommand}" Grid.Row="6" Grid.Column="3" Content="Back" Width="100" Height="30" />
+        </StackPanel>
 
         <StackPanel Orientation="Horizontal">
             <Button Command="{Binding AddNewServerCommand}" Content="Add new server" Padding="30,10,30,10" Margin="0,0,0,0"/>

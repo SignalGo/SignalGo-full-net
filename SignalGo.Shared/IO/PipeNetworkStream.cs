@@ -46,6 +46,9 @@ namespace SignalGo.Shared.IO
 
         private readonly SemaphoreSlim lockWaitToRead = new SemaphoreSlim(1, 1);
 #if (!NET35 && !NET40)
+        /// <summary>
+        /// read the stream buffer async
+        /// </summary>
         private async void ReadBufferAsync()
         {
             try
@@ -63,10 +66,13 @@ namespace SignalGo.Shared.IO
                     lockWaitToRead.Release();
                 }
                 byte[] buffer = new byte[BufferToRead];
-                System.Diagnostics.Debug.WriteLine($"try to ReadAsync {buffer.Length}");
+                // this line will write in console on every stream buffer read 
+                // and it slows down the performance a bit (Just In Debug Mode Because of the frequent writing)
+                //System.Diagnostics.Debug.WriteLine($"try to ReadAsync {buffer.Length}");
                 int readCount = await Stream.ReadAsync(buffer, 0, buffer.Length);
-
-                System.Diagnostics.Debug.WriteLine($"done ReadAsync {buffer.Length}");
+                // this line will write in console on every stream buffer read 
+                // and it slows down the performance a bit (Just In Debug Mode Because of the frequent writing)
+                //System.Diagnostics.Debug.WriteLine($"done ReadAsync {buffer.Length}");
                 if (readCount <= 0)
                 {
                     IsClosed = true;

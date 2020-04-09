@@ -1,5 +1,7 @@
-﻿using System;
+﻿using SignalGo.Publisher.Models;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -21,6 +23,8 @@ namespace SignalGo.Publisher.Views
         public ServerInfoPage()
         {
             InitializeComponent();
+            serverStatusCombo.ItemsSource = Enum.GetValues(typeof(ServerInfo.ServerInfoStatusEnum)).Cast<ServerInfo.ServerInfoStatusEnum>();
         }
     }
 }
+

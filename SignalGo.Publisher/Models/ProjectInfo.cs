@@ -177,7 +177,6 @@ namespace SignalGo.Publisher.Models
             command.AssembliesPath = ProjectAssembliesPath;
             Commands.Add(command);
         }
-
         //public void UpdateDatabase()
         //{
 

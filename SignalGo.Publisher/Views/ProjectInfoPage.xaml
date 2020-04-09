@@ -5,7 +5,9 @@
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
       xmlns:local="clr-namespace:SignalGo.Publisher.Views"
       xmlns:vm="clr-namespace:SignalGo.Publisher.ViewModels"
+      xmlns:models="clr-namespace:SignalGo.Publisher.Models;assembly=SignalGo.Publisher"
       xmlns:wf="clr-namespace:System.Windows.Forms;assembly=System.Windows.Forms"
+      xmlns:tg="clr-namespace:MvvmGo.Triggers;assembly=MvvmGo.WindowsWPF"
       mc:Ignorable="d"
       d:DesignHeight="450" d:DesignWidth="800"
       Title="ProjectInfoPage" Background="White">
@@ -13,7 +15,7 @@
 
     <Page.Resources>
         <vm:ProjectInfoViewModel x:Key="ProjectInfoViewModel"/>
-        
+
         <Style TargetType="TextBlock">
             <Setter Property="VerticalAlignment" Value="Center"/>
         </Style>
@@ -28,6 +30,51 @@
                                 <ItemsPresenter/>
                             </ScrollViewer>
                         </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style TargetType="CheckBox" x:Key="CircleCheckbox">
+            <Setter Property="Cursor" Value="Hand"></Setter>
+            <Setter Property="Content" Value=""></Setter>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type CheckBox}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="24"></RowDefinition>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="24"></ColumnDefinition>
+                                <ColumnDefinition ></ColumnDefinition>
+                            </Grid.ColumnDefinitions>
+                            <Border x:Name="chkBorder" Background="White" BorderBrush="#C6C6C6" BorderThickness="1" CornerRadius="10" Width="20" Height="20" VerticalAlignment="Center"  >
+                                <Grid>
+                                    <Ellipse x:Name="outerEllipse" Grid.Column="0" Fill="White" Margin="2">
+                                    </Ellipse>
+                                </Grid>
+                            </Border>
+                            <ContentPresenter Grid.Column="1" x:Name="content" Margin="5,0,0,0" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="outerEllipse" Property="Fill" Value="Green"/>
+                                <Setter Property="Foreground" Value="Blue"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="true">
+                                <!--<Setter TargetName="chkBorder" Property="Background" Value="#C6C6C6" />-->
+                                <Setter TargetName="chkBorder" Property="BorderBrush" Value="#454545" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="false">
+                                <Setter Property="Foreground" Value="Red"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="{x:Null}">
+                                <Setter TargetName="outerEllipse" Property="Fill" Value="Gray"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="False">
+                                <Setter TargetName="outerEllipse" Property="Fill" Value="Red"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
@@ -170,32 +217,8 @@
 
                 <!--<Button Command="{Binding BrowsePathCommand}" Content="..." Grid.Column="3" Width="100" Grid.Row="1" FontWeight="Normal" HorizontalAlignment="Right"/>-->
                 <Button Command="{Binding BrowsePathCommand}" Content="..." Grid.Column="3" Width="100" Grid.Row="2" FontWeight="Normal" HorizontalAlignment="Right"/>
-                <TextBox TextWrapping="WrapWithOverflow" Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Top" Text="{Binding CmdLogs}" Height="Auto" Margin="0,5,5,0" ScrollViewer.CanContentScroll="True" VerticalScrollBarVisibility="Auto"/>
-                <!--<StackPanel Grid.Row="3" Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Bottom" HorizontalAlignment="Stretch">
-                    <TextBlock Text="Servers : "/>
-                    <Expander Header="Expander" VerticalAlignment="Bottom" ExpandDirection="Up" Background="WhiteSmoke" ScrollViewer.VerticalScrollBarVisibility="Auto"  >
-                        <ToolBarOverflowPanel VerticalAlignment="Top" ScrollViewer.VerticalScrollBarVisibility="Auto" Width="150">
-                            -->
-                <!--<Label Content="Server Test" HorizontalAlignment="Right" Style="{DynamicResource Label_Selection_Item}"/>-->
-                <!--
-
-                            <CheckBox Content="Server Test" IsChecked="True" HorizontalAlignment="Stretch" />
-                            <CheckBox Content="Server Main1" IsChecked="False" HorizontalAlignment="Stretch" />
-                            <CheckBox Content="Server 3" HorizontalAlignment="Stretch" />
-                            <CheckBox Content="Server 4" HorizontalAlignment="Stretch" />
-
-                        </ToolBarOverflowPanel>
-                    </Expander>
-                    -->
-                <!--<CheckBox Content="Test" IsChecked="{Binding ProjectInfo}" Margin="5,0,5,0"/>-->
-                <!--<CheckBox Content="Main" IsChecked="{Binding ProjectInfo}" Margin="5,0,5,0"/>-->
-                <!--
-                </StackPanel>-->
-                <!--<StackPanel Orientation="Horizontal" Grid.Row="3" Grid.Column="2" VerticalAlignment="Bottom" HorizontalAlignment="Stretch">
-                    <TextBlock Text="Servers: "></TextBlock>
-                    <CheckBox Content="Test" IsChecked="{Binding ProjectInfo.IsBusy}" Margin="5,0,5,0"/>
-                    <CheckBox Content="Main" IsChecked="{Binding ProjectInfo.HasError}" Margin="5,0,5,0"/>
-                </StackPanel>-->
+                <TextBox TextChanged="txtCmdLogs_TextChanged" x:Name="txtCmdLogs" TextWrapping="WrapWithOverflow" Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Top" Text="{Binding CmdLogs}" Height="170" Margin="0,5,5,0" ScrollViewer.CanContentScroll="True" VerticalScrollBarVisibility="Auto"/>
+                <TextBox x:Name="CmdServerLogs" TextWrapping="WrapWithOverflow" Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Text="{Binding ServerLogs}" Height="80" Margin="0,5,5,0" ScrollViewer.CanContentScroll="True" VerticalScrollBarVisibility="Auto"/>
 
                 <ListBox Style="{DynamicResource White_ListBox}" x:Name="lst_CommandsQueue" ItemsSource="{Binding ProjectInfo.Commands}" MinWidth="150" Grid.Column="2" Grid.Row="3" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Margin="0,5,0,20" VerticalContentAlignment="Stretch" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto">
                     <ListBox.ItemTemplate>
@@ -224,19 +247,90 @@
                                     <Button FontSize="14" HorizontalAlignment="Stretch" Cursor="Hand" Command="{Binding ToUpCommand,Source={StaticResource ProjectInfoViewModel}}" CommandParameter="{Binding}" BorderThickness="0" Content="↑" Padding="5" Background="Transparent" Foreground="Green"/>
                                 </StackPanel>
                                 <Grid Grid.Row="1" Grid.ColumnSpan="2" VerticalAlignment="Center" HorizontalAlignment="Stretch">
-                                    <ProgressBar x:Name="taskProgressBar" Maximum="{Binding Size}" Value="{Binding Position}" />
+                                    <ProgressBar x:Name="taskProgressBar" Initialized="taskProgressBar_Initialized" Maximum="{Binding Size}" Value="{Binding Position}" />
                                     <TextBlock Text="{Binding ElementName=taskProgressBar, Path=Value, StringFormat={}{0:0} KB}" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                 </Grid>
                             </Grid>
                         </HierarchicalDataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
+                <!--#region Publish Servers Detail -->
+                <StackPanel Orientation="Vertical" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Grid.Column="2" Grid.Row="3" >
+                    <Expander ExpandDirection="Up" Cursor="Hand">
+                        <ListView HorizontalAlignment="Stretch" ItemsSource="{Binding CurrentServerSettingInfo.ServerInfo}" HorizontalContentAlignment="Stretch">
+                            <ListView.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="auto"/>
+                                            <ColumnDefinition />
+                                            <ColumnDefinition Width="auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <CheckBox Style="{StaticResource CircleCheckbox}" Grid.Column="0"
+                                                  Command="{Binding AddToServerQueueCommand}" 
+                                                  Content="{Binding ServerName}"
+                                                  />
 
+                                        <!--<CheckBox>
+                                            <tg:TriggerExtensions.Triggers>
+                                                <tg:TriggerCollections>
+                                                    -->
+                                        <!--Updated-->
+                                        <!--
+                                                    <tg:DataTriggerInfo>
+                                                        <tg:DataTriggerInfo.Conditions>
+                                                            <tg:DataConditionInfo Binding="{Binding ServerStatus}" Value="{x:Static models:ServerInfoStatus.Updated}"/>
+                                                        </tg:DataTriggerInfo.Conditions>
+                                                        <tg:DataTriggerInfo.Setters>
+                                                            <tg:SetterInfo  Property="Background" Value="Green"/>
+                                                            <tg:SetterInfo  Property="IsChecked" >
+                                                                <tg:SetterInfo.Value>
+                                                                    <Thickness>0</Thickness>
+                                                                </tg:SetterInfo.Value>
+                                                            </tg:SetterInfo>
+                                                        </tg:DataTriggerInfo.Setters>
+                                                    </tg:DataTriggerInfo>
+                                                    -->
+                                        <!--UpdateError-->
+                                        <!--
+                                                    <tg:DataTriggerInfo>
+                                                        <tg:DataTriggerInfo.Conditions>
+                                                            <tg:DataConditionInfo Binding="{Binding ServerStatus}" Value="{x:Static models:ServerInfoStatus.UpdateError}"/>
+                                                        </tg:DataTriggerInfo.Conditions>
+                                                        <tg:DataTriggerInfo.Setters>
+                                                            <tg:SetterInfo  Property="Background" Value="Red"/>
+                                                            <tg:SetterInfo  Property="BorderThickness">
+                                                                <tg:SetterInfo.Value>
+                                                                    <Thickness>1</Thickness>
+                                                                </tg:SetterInfo.Value>
+                                                            </tg:SetterInfo>
+                                                        </tg:DataTriggerInfo.Setters>
+                                                    </tg:DataTriggerInfo>
+                                                </tg:TriggerCollections>
+                                            </tg:TriggerExtensions.Triggers>
+                                        </CheckBox>-->
+
+                                        <TextBlock Padding="5" Grid.Column="2" Foreground="Green" Text="{Binding ServerStatus}">
+                                        </TextBlock>
+                                    </Grid>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                    </Expander>
+                    <TextBlock Text="Servers" HorizontalAlignment="Stretch" FontWeight="Bold"/>
+                </StackPanel>
+                <!--#endregion-->
+
+                <!--#region Commands Trigger -->
                 <StackPanel Grid.Row="4" Grid.ColumnSpan="3" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <!--#region Project Status -->
                     <StackPanel Orientation="Horizontal"  HorizontalAlignment="Center">
                         <TextBlock Text="Status: " Margin="10"/>
-                        <TextBlock x:Name="cmdStatus" Text="{Binding ProjectInfo.Status}" Margin="10"/>
+                        <TextBlock x:Name="cmdStatus" Foreground="Green" Text="{Binding ProjectInfo.Status}" Margin="10">
+
+                        </TextBlock>
                     </StackPanel>
+                    <!--#endregion-->
 
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" >
                         <Button Command="{Binding BuildCommand}" Content="Build ♻" Width="60" Height="30"/>
@@ -245,22 +339,26 @@
                         <Button Command="{Binding RunCommand}" Content="Run Commands ▶" Width="100" Height="30" Margin="10,0,0,0"/>
                     </StackPanel>
                 </StackPanel>
+                <!--#endregion-->
 
+                <!--#region Project Remove Command -->
                 <Button Command="{Binding DeleteCommand}" Grid.Column="2" VerticalAlignment="Bottom" Content="Delete" Width="100" Height="30" Grid.Row="4" HorizontalAlignment="Right"/>
-
+                <!--#endregion-->
             </Grid>
         </TabItem>
 
         <!--<TabItem Header="Window" Loaded="TabItem_Loaded" >-->
-        <TabItem Header="Window" >
+        <!--<TabItem Header="Window" >
             <Grid Margin="10">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
-                <!--<StackPanel Orientation="Horizontal">
+                -->
+        <!--<StackPanel Orientation="Horizontal">
                     <Button Command="{Binding ClearLogCommand}" Content="Clear" Padding="10"/>
                 </StackPanel>-->
+        <!--
                 <ListView Grid.Row="1" ItemsSource="{Binding ProjectInfo.Logs}">
                     <ListView.Resources>
                         <Style TargetType="ListViewItem">
@@ -282,6 +380,6 @@
                     </ListView.ItemTemplate>
                 </ListView>
             </Grid>
-        </TabItem>
+        </TabItem>-->
     </TabControl>
 </Page>

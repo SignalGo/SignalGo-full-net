@@ -1,4 +1,5 @@
-﻿using SignalGo.Publisher.ViewModels;
+﻿using SignalGo.Publisher.Services;
+using SignalGo.Publisher.ViewModels;
 using SignalGo.Publisher.Views;
 using System;
 using System.Windows;

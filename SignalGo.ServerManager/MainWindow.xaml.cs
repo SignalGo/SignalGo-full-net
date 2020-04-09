@@ -10,6 +10,7 @@ using System.Windows.Media.Animation;
 using SignalGo.Server.ServiceManager;
 using SignalGo.ServerManager.Services;
 using SignalGo.ServerManager.ViewModels;
+using System.Configuration;
 
 namespace SignalGo.ServerManager
 {
@@ -19,20 +20,29 @@ namespace SignalGo.ServerManager
     public partial class MainWindow : Window
     {
         public static MainWindow This;
+
         public MainWindow()
         {
-            This = this;
-            InitializeComponent();
-            mainframe.Navigate(new FirstPage());
-            Closing += MainWindow_Closing;
-            ServerProvider serverProvider = new ServerProvider();
+            try
+            {
+                This = this;
+                InitializeComponent();
+                mainframe.Navigate(new FirstPage());
+                Closing += MainWindow_Closing;
+                ServerProvider serverProvider = new ServerProvider();
+                serverProvider.RegisterServerService<ServerManagerService>();
+                serverProvider.RegisterServerService<ServerManagerStreamService>();
+                serverProvider.ProviderSetting.HttpSetting.HandleCrossOriginAccess = true;
+                serverProvider.Start(
+                    $"http://{ConfigurationManager.AppSettings["ListeningAddress"]}:{ConfigurationManager.AppSettings["ListeningPort"]}/ServerManager/SignalGo");
+                MessageBox.Show($"Server Manager Started on {ConfigurationManager.AppSettings["ListeningAddress"]}{ConfigurationManager.AppSettings["ListeningPort"]}", "start info", MessageBoxButton.OK, MessageBoxImage.Information, MessageBoxResult.OK);
 
-            serverProvider.RegisterServerService<ServerManagerService>();
-            serverProvider.RegisterServerService<ServerManagerStreamService>();
-            serverProvider.ProviderSetting.HttpSetting.HandleCrossOriginAccess = true;
-            serverProvider.Start("http://localhost:5468/ServerManager/SignalGo");
-
-            Debug.WriteLine("server is started");
+                Debug.WriteLine("server is started");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "MainWindow Error");
+            }
         }
 
 

@@ -13,7 +13,7 @@ namespace SignalGo.Publisher.Engines.Models
     /// <summary>
     /// Mother of command executers
     /// </summary>
-    public static class CommandRunner //: IDisposable
+    public class CommandRunner : IDisposable
     {
         static string logFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CommandRunnerLogs.txt");
         /// <summary>
@@ -27,6 +27,7 @@ namespace SignalGo.Publisher.Engines.Models
             command.Size = 0;
             command.Position = 0;
             int position = 0;
+            string standardOutputResult;
             //List<string> outStr = new List<string>();
             try
             {
@@ -41,12 +42,15 @@ namespace SignalGo.Publisher.Engines.Models
                 process = Process.Start(processInfo);
                 var projectCount = LoadSlnProjectsCount(command.WorkingPath);
                 command.Size = projectCount;
+
+                if (File.Exists(logFilePath))
+                    File.Delete(logFilePath);
                 while (true)
                 {
-                    string standardOutputResult = await process.StandardOutput.ReadToEndAsync();
-                    await File.WriteAllTextAsync(logFilePath, standardOutputResult);
+                    standardOutputResult = await process.StandardOutput.ReadLineAsync();
+                    await File.AppendAllTextAsync(logFilePath, standardOutputResult + Environment.NewLine);
 
-                    if (standardOutputResult == null || standardOutputResult.Contains("Time Elapsed"))
+                    if (standardOutputResult == null)
                         break;
                     if (standardOutputResult.Contains("Done Building"))
                     {
@@ -96,40 +100,40 @@ namespace SignalGo.Publisher.Engines.Models
         }
 
         #region IDisposable Support
-        //private bool disposedValue = false; // To detect redundant calls
+        private bool disposedValue = false; // To detect redundant calls
 
-        //protected virtual void Dispose(bool disposing)
-        //{
-        //    if (!disposedValue)
-        //    {
-        //        if (disposing)
-        //        {
-        //            // TODO: dispose managed state (managed objects).
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    // TODO: dispose managed state (managed objects).
 
-        //        }
+                }
 
-        //        // TODO: free unmanaged resources (unmanaged objects) and override a finalizer below.
-        //        // TODO: set large fields to null.
+                // TODO: free unmanaged resources (unmanaged objects) and override a finalizer below.
+                // TODO: set large fields to null.
 
-        //        disposedValue = true;
-        //    }
-        //}
+                disposedValue = true;
+            }
+        }
 
-        //// TODO: override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources.
-        //// ~CommandRunner()
-        //// {
-        ////   // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
-        ////   Dispose(false);
-        //// }
+        // TODO: override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources.
+        // ~CommandRunner()
+        // {
+        //   // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+        //   Dispose(false);
+        // }
 
-        //// This code added to correctly implement the disposable pattern.
-        //public void Dispose()
-        //{
-        //    // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
-        //    Dispose(true);
-        //    // TODO: uncomment the following line if the finalizer is overridden above.
-        //    GC.SuppressFinalize(this);
-        //}
+        // This code added to correctly implement the disposable pattern.
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+            Dispose(true);
+            // TODO: uncomment the following line if the finalizer is overridden above.
+            GC.SuppressFinalize(this);
+        }
         #endregion
     }
 }

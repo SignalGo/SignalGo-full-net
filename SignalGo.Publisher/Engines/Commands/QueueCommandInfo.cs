@@ -30,6 +30,7 @@ namespace SignalGo.Publisher.Engines.Commands
                     {
                         IsSuccess = false;
                         Status = Models.RunStatusType.Error;
+                        return proc;
                     }
                 }
             }

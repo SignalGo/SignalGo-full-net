@@ -20,8 +20,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Engines\Converters\" />
     <Folder Include="Engines\Providers\" />
-    <Folder Include="Converters\" />
     <Folder Include="Resources\Images\" />
   </ItemGroup>
 

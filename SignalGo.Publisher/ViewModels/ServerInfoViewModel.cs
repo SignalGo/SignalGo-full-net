@@ -6,6 +6,7 @@ using SignalGo.Shared.Log;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Windows;
 
 namespace SignalGo.Publisher.ViewModels
 {
@@ -19,7 +20,9 @@ namespace SignalGo.Publisher.ViewModels
             AddNewServerCommand = new Command(AddNewServer);
             RemoveServerCommand = new Command(Delete);
             BackCommand = new Command(Back);
-            LoadServers();
+            SaveChangesCommand = new Command(SaveChanges);
+
+            //LoadServers();
         }
 
         ServerInfo _ServerInfo;
@@ -39,6 +42,7 @@ namespace SignalGo.Publisher.ViewModels
         public Command AddNewServerCommand { get; set; }
         public Command RemoveServerCommand { get; set; }
         public Command BackCommand { get; set; }
+        public Command SaveChangesCommand { get; set; }
 
         private ServerInfo _SelectedServerInfo;
 
@@ -63,20 +67,20 @@ namespace SignalGo.Publisher.ViewModels
             ProjectManagerWindow.This.mainframe.Navigate(new AddNewServerPage());
 
         }
-        public void LoadServers()
-        {
+        //public void LoadServers()
+        //{
 
-            try
-            {
-                foreach (ServerInfo project in SettingInfo.CurrentServer.ServerInfo)
-                {
-                }
-            }
-            catch (Exception ex)
-            {
-                AutoLogger.Default.LogError(ex, "LoadServerInfo");
-            }
-        }
+        //    try
+        //    {
+        //        foreach (ServerInfo project in SettingInfo.CurrentServer.ServerInfo)
+        //        {
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        AutoLogger.Default.LogError(ex, "LoadServerInfo");
+        //    }
+        //}
         public SettingInfo CurrentServerSettingInfo
         {
             get
@@ -86,14 +90,21 @@ namespace SignalGo.Publisher.ViewModels
         }
         private void Delete()
         {
-            SettingInfo.CurrentServer.ServerInfo.Remove(ServerInfo);
-            SettingInfo.SaveServersSettingInfo();
+            if (MessageBox.Show("are you sure?", "Remove Server", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) == MessageBoxResult.Yes)
+            {
+                SettingInfo.CurrentServer.ServerInfo.Remove(ServerInfo);
+                SettingInfo.SaveServersSettingInfo();
+            }
             ProjectManagerWindowViewModel.MainFrame.GoBack();
-        }  
+        }
         private void Back()
         {
             ProjectManagerWindowViewModel.MainFrame.GoBack();
 
+        }
+        private void SaveChanges()
+        {
+            SettingInfo.SaveServersSettingInfo();
         }
 
     }

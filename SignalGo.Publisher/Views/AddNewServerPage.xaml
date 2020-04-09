@@ -25,6 +25,8 @@
             <RowDefinition Height="auto"/>
             <RowDefinition Height="auto"/>
             <RowDefinition Height="auto"/>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="auto"/>
             <RowDefinition/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
@@ -32,16 +34,23 @@
             <ColumnDefinition Width="*"/>
             <ColumnDefinition Width="auto"/>
         </Grid.ColumnDefinitions>
-        <TextBlock Text="Server Name:" Margin="0,0,0,10"/>
-        <TextBox Text="{Binding ServerName}" Grid.Column="1" Margin="10,0,0,10"/>
+        <TextBlock Text="Server Key:" Margin="0,0,0,10"/>
+        <TextBox Text="{Binding ServerKey}" Grid.Column="1" Margin="10,0,0,10"/>
 
-        <TextBlock Grid.Row="1" Text="Server Address:" Margin="0,0,0,10"/>
-        <TextBox Text="{Binding ServerAddress}" Grid.Row="1" Grid.Column="1" Margin="10,0,0,10"/>
+        <TextBlock Grid.Row="1" Text="Server Name:" Margin="0,0,0,10"/>
+        <TextBox Grid.Row="1" Text="{Binding ServerName}" Grid.Column="1" Margin="10,0,0,10"/>
 
-        <TextBlock Grid.Row="2" Text="Server Port:"/>
-        <TextBox Text="{Binding ServerPort}" Grid.Row="2" Grid.Column="1"/>
+        <TextBlock Grid.Row="2" Text="Server Address:" Margin="0,0,0,10"/>
+        <TextBox Text="{Binding ServerAddress}" Grid.Row="2" Grid.Column="1" Margin="10,0,0,10"/>
 
-        <StackPanel Margin="0,10,0,0" Orientation="Horizontal"  Grid.Row="3" Grid.ColumnSpan="3" HorizontalAlignment="Center" VerticalAlignment="Center">
+        <TextBlock Grid.Row="3" Text="Server Port:" Margin="0,0,0,10"/>
+        <TextBox Text="{Binding ServerPort}" Grid.Row="3" Grid.Column="1" Margin="10,0,0,10"/>
+
+        <TextBlock Grid.Row="4" Text="Server EndPoint:" Margin="0,0,0,10"/>
+        <TextBox Text="{Binding ServerEndPoint}" Grid.Row="4" Grid.Column="1" Margin="10,0,0,10"/>
+
+
+        <StackPanel Margin="0,10,0,0" Orientation="Horizontal"  Grid.Row="5" Grid.ColumnSpan="3" HorizontalAlignment="Center" VerticalAlignment="Center">
             <Button Command="{Binding SaveCommand}" Content="Save" Width="100" Height="30"/>
             <Button Command="{Binding CancelCommand}" Content="Cancel" Width="100" Height="30" Margin="10,0,0,0"/>
         </StackPanel>
