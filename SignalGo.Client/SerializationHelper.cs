@@ -28,6 +28,7 @@ namespace SignalGo.Client
             return JsonConvert.SerializeObject(obj, Formatting.None, new JsonSerializerSettings()
             {
                 ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+                FloatParseHandling = FloatParseHandling.Decimal,
                 Converters = new List<JsonConverter>()
                 {
                     new DataExchangeConverter(LimitExchangeType.OutgoingCall, customDataExchanger)
@@ -65,6 +66,7 @@ namespace SignalGo.Client
                 Formatting = Formatting.None,
                 NullValueHandling = nullValueHandling,
                 ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+                FloatParseHandling = FloatParseHandling.Decimal,
                 Converters = new List<JsonConverter>() 
                 {
                     new DataExchangeConverter(LimitExchangeType.IncomingCall, customDataExchanger)
