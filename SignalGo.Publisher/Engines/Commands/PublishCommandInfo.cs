@@ -23,7 +23,7 @@ namespace SignalGo.Publisher.Engines.Commands
             //Status = Models.RunStatusType.Done;
             //Status = Models.RunStatusType.Error;
             var compressedData = await Compress();
-            await Upload(compressedData);
+            await Upload(compressedData, null, true);
 
             return result;
         }

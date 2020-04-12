@@ -13,11 +13,8 @@ namespace SignalGo.Publisher.Services
         public static async Task<UploadInfo> UploadAsync(UploadInfo uploadInfo)
         {
             string result = string.Empty;
-
-            //var watch = new Stopwatch();
             try
             {
-                //watch.Start();
                 ServerManagerService.StreamServices.ServerManagerStreamService service = new ServerManagerService.StreamServices.ServerManagerStreamService(PublisherServiceProvider.CurrentClientProvider);
                 using Stream stream = File.OpenRead(uploadInfo.FilePath);
                 var streamInfo = new Shared.Models.StreamInfo()
@@ -25,7 +22,6 @@ namespace SignalGo.Publisher.Services
                     FileName = uploadInfo.FileName,
                     Length = stream.Length,
                     Stream = stream,
-                    //ClientId = PublisherServiceProvider.CurrentClientProvider.ClientId, // null
                 };
 
                 streamInfo.WriteManuallyAsync = async (streamWriter) =>
@@ -43,11 +39,7 @@ namespace SignalGo.Publisher.Services
                     }
                 };
                 result = await service.UploadDataAsync(streamInfo);
-
                 Debug.WriteLine(result);
-
-                //watch.Stop();
-                //Debug.WriteLine($"stop watch ended in , {watch.Elapsed}, Timestamp {Stopwatch.GetTimestamp()}");
                 if (result == "success")
                 {
                     uploadInfo.Status = true;

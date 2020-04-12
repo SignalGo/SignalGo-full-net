@@ -1,0 +1,7 @@
+{
+  "profiles": {
+    "SignalGo.Publisher": {
+      "commandName": "Project"
+    }
+  }
+}

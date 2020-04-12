@@ -34,12 +34,15 @@ namespace SignalGo.Publisher.Models
         /// <summary>
         /// Run Command Prop
         /// </summary>
+        [JsonIgnore]
         public Command<ICommand> RunCommmand { get; set; }
+        [JsonIgnore]
         public Command RunCommmands { get; set; }
 
         /// <summary>
         /// List of Commands
         /// </summary>
+        [JsonIgnore]
         public ObservableCollection<ICommand> Commands { get; set; } = new ObservableCollection<ICommand>();
 
         private string _Name;

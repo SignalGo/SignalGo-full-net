@@ -12,7 +12,7 @@ namespace SignalGo.Publisher.Services
     /// init instance of publisher client that connect to signalGo server manager service
     /// simply check the connection state and reliability
     /// </summary>
-    public static class PublisherServiceProvider //: IDisposable
+    public class PublisherServiceProvider //: IDisposable
     {
         //static PublisherServiceProvider()
         //{
@@ -22,7 +22,7 @@ namespace SignalGo.Publisher.Services
         /// instance of client(publisher)
         /// </summary>
         public static ClientProvider CurrentClientProvider { get; set; }
-
+        public static string RemoteServer { get; set; }
         /// <summary>
         /// instance of server manager service
         /// </summary>
@@ -37,7 +37,7 @@ namespace SignalGo.Publisher.Services
             bool isSuccess = false;
             try
             {
-                string server = string.Concat("http://", serverInfo.ServerAddress, ":", serverInfo.ServerPort);
+                RemoteServer = string.Concat("http://", serverInfo.ServerAddress, ":", serverInfo.ServerPort);
                 if (CurrentClientProvider != null)
                 {
                     //Debug.WriteLine($"CurrentClientProvider not null");
@@ -49,12 +49,13 @@ namespace SignalGo.Publisher.Services
                 ServerManagerService = CurrentClientProvider
                     .RegisterServerService<ServerManagerService.ServerServices.ServerManagerService>(CurrentClientProvider);
                 //await CheckConnectionQuality();
-                CurrentClientProvider.Connect(server);//, async (isConnected) =>
-                                                      //{
-                                                      //if (isConnected)
-                                                      //{
-                                                      //try
-                                                      //{
+                CurrentClientProvider.Connect(RemoteServer);
+                //, async (isConnected) =>
+                //{
+                //if (isConnected)
+                //{
+                //try
+                //{
                 isSuccess = CheckConnectionQuality();
                 //}
                 //catch (Exception ex)
@@ -69,7 +70,6 @@ namespace SignalGo.Publisher.Services
                 //}
                 //isConnected connection state changed
                 //});
-
             }
             catch (Exception ex)
             {
@@ -79,7 +79,24 @@ namespace SignalGo.Publisher.Services
             }
             return isSuccess;
         }
-
+        public static async Task RestartServices()
+        {
+            Guid serviceGuid = Guid.Parse("ae58b3ba-b6ca-45dc-a432-569a2fbd3a88");
+            await ServerManagerService.RestartServerAsync(serviceGuid, true);
+            ServerInfo.ServerLogs.Add($"-> from ({RemoteServer}): Service Restarted During Update...");
+        }
+        public static async Task StartServices()
+        {
+            Guid serviceGuid = Guid.Parse("ae58b3ba-b6ca-45dc-a432-569a2fbd3a88");
+            await ServerManagerService.StartServerAsync(serviceGuid);
+            ServerInfo.ServerLogs.Add($"-> from ({RemoteServer}): Service Started After Update...");
+        }
+        public static async Task StopServices()
+        {
+            Guid serviceGuid = Guid.Parse("ae58b3ba-b6ca-45dc-a432-569a2fbd3a88");
+            await ServerManagerService.StopServerAsync(serviceGuid);
+            ServerInfo.ServerLogs.Add($"-> from ({RemoteServer}): Service Stopped Before Update...");
+        }
         #region Utility Methods For Connection
         /// <summary>
         /// call server hello method to get simple response
@@ -93,15 +110,15 @@ namespace SignalGo.Publisher.Services
             {
                 isServerAvailaible = CurrentClientProvider.SendPingAndWaitToReceive();
 #if Debug
-                    Debug.WriteLine($"{ServerManagerService.SayHello("saeed")} ,connection is ok.");
-                    ServerInfo.This.ServerLogs.Add($"{ServerManagerService.SayHello("saeed")} ,connection is ok.");
-                    //Debug.WriteLine($"ping is {isServerAvailaible}");
-                    ServerInfo.This.ServerLogs.Add($"ping is {isServerAvailaible} in {watch.Elapsed}");
-                    Debug.WriteLine($"time elapsed: {watch.Elapsed}");
+                    Debug.WriteLine($"-> {ServerManagerService.SayHello("saeed")} ,connection is ok.");
+                    ServerInfo.This.ServerLogs.Add($"-> {ServerManagerService.SayHello("saeed")} ,connection is ok.");
+                    //Debug.WriteLine($"-> ping is {isServerAvailaible}");
+                    ServerInfo.This.ServerLogs.Add($"-> ping is {isServerAvailaible} in {watch.Elapsed}");
+                    Debug.WriteLine($-> "time elapsed: {watch.Elapsed}");
 #else
-                Debug.WriteLine($"connection is {isServerAvailaible}");
-                ServerInfo.ServerLogs.Add($"{ServerManagerService.SayHello("saeed")} ,connection is ok.");
-                ServerInfo.ServerLogs.Add($"ping is {isServerAvailaible} in {watch.Elapsed}");
+                Debug.WriteLine($"-> connection is {isServerAvailaible}");
+                ServerInfo.ServerLogs.Add($"-> from ({RemoteServer}): {ServerManagerService.SayHello("saeed")} ,connection is ok.");
+                ServerInfo.ServerLogs.Add($"-> ping is {isServerAvailaible} in {watch.Elapsed}");
 #endif
                 watch.Stop();
             }

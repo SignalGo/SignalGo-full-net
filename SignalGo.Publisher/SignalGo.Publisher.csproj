@@ -5,6 +5,11 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
+    <Version>1.1.0</Version>
+    <Authors>SaeedRezayi, SignalGo</Authors>
+    <Company>SignalGo</Company>
+    <Description />
+    <NeutralLanguage>en</NeutralLanguage>
   </PropertyGroup>
 
   <ItemGroup>

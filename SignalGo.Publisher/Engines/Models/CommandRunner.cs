@@ -15,7 +15,7 @@ namespace SignalGo.Publisher.Engines.Models
     /// </summary>
     public class CommandRunner : IDisposable
     {
-        static string logFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CommandRunnerLogs.txt");
+        static readonly string logFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CommandRunnerLogs.txt");
         /// <summary>
         /// Runner Of Commands
         /// </summary>
@@ -28,7 +28,6 @@ namespace SignalGo.Publisher.Engines.Models
             command.Position = 0;
             int position = 0;
             string standardOutputResult;
-            //List<string> outStr = new List<string>();
             try
             {
                 ProcessStartInfo processInfo = new ProcessStartInfo

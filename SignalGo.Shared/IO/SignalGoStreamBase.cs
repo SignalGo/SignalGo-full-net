@@ -146,7 +146,8 @@ namespace SignalGo.Shared.IO
 #if (!NET35 && !NET40)
         public virtual async Task WriteToStreamAsync(PipeNetworkStream stream, byte[] data)
         {
-            await stream.WriteAsync(data, 0, data.Length);
+            if(stream !=null)
+                await stream.WriteAsync(data, 0, data.Length);
         }
 #endif
 

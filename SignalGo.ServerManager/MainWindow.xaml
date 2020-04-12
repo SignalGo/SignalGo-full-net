@@ -19,16 +19,8 @@
 			<RowDefinition Height="auto"/>
 			<RowDefinition Height="*"/>
 		</Grid.RowDefinitions>
-		<Button Command="{Binding AddNewServerCommand}" Content="Add new server" Padding="30,10,30,10" Margin="0,0,0,10"/>
-		<Grid Grid.Column="1">
-			<Grid.ColumnDefinitions>
-				<ColumnDefinition Width="auto"/>
-				<ColumnDefinition/>
-			</Grid.ColumnDefinitions>
-			<Label Content="Guid:" VerticalContentAlignment="Center"/>
-			<TextBox Text="{Binding CurrentSettingInfo.ServerKey}" Grid.Column="1" VerticalAlignment="Center" Height="27"/>
-		</Grid>
-		<ListView Grid.Row="1" ItemsSource="{Binding CurrentSettingInfo.ServerInfo}" SelectedItem="{Binding SelectedServerInfo}">
+        <Button Command="{Binding AddNewServerCommand}" Content="Add new server" Padding="30,10,30,10" Margin="0,0,0,10"/>
+        <ListView Grid.Row="1" ItemsSource="{Binding CurrentSettingInfo.ServerInfo}" SelectedItem="{Binding SelectedServerInfo}">
 			<ListView.ItemTemplate>
 				<DataTemplate>
 					<TextBlock Text="{Binding Name}"/>

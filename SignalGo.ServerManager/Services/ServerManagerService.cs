@@ -21,7 +21,17 @@ namespace SignalGo.ServerManager.Services
             find.Stop();
             return true;
         }
-
+        public bool StopServer(Guid serverKey)
+        {
+            // Current.ServerKey not set yet!
+            //if (serverKey != SettingInfo.Current.ServerKey)
+            //    return false;
+            var find = SettingInfo.Current.ServerInfo.FirstOrDefault(x => x.ServerKey == serverKey);
+            if (find == null)
+                return false;
+            find.Stop();
+            return true;
+        }
         public bool StartServer(Guid serverKey, string name)
         {
             if (serverKey != SettingInfo.Current.ServerKey)
@@ -32,13 +42,39 @@ namespace SignalGo.ServerManager.Services
             find.Start();
             return true;
         }
-
+        public bool StartServer(Guid serverKey)
+        {
+            //if (serverKey != SettingInfo.Current.ServerKey)
+            //    return false;
+            var find = SettingInfo.Current.ServerInfo.FirstOrDefault(x => x.ServerKey == serverKey);
+            if (find == null)
+                return false;
+            find.Start();
+            return true;
+        }
         public bool RestartServer(Guid serverKey, string name, bool force = false)
         {
             // find server
             if (serverKey != SettingInfo.Current.ServerKey)
                 return false;
             var find = SettingInfo.Current.ServerInfo.FirstOrDefault(x => x.Name == name);
+            if (find == null)
+                return false;
+            // stop 
+            find.Stop();
+
+            // start 
+            find.Start();
+
+            return true;
+
+        }
+        public bool RestartServer(Guid serverKey, bool force = false)
+        {
+            // find server
+            if (serverKey != SettingInfo.Current.ServerKey)
+                return false;
+            var find = SettingInfo.Current.ServerInfo.FirstOrDefault(x => x.ServerKey == serverKey);
             if (find == null)
                 return false;
             // stop 

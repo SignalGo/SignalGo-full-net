@@ -10,6 +10,9 @@ using SignalGo.Publisher.Models;
 using SignalGo.Publisher.Engines.Commands;
 using SignalGo.Publisher.Engines.Interfaces;
 using System.Text;
+using System.Threading;
+using System.Diagnostics;
+using SignalGo.Publisher.Engines.Models;
 
 namespace SignalGo.Publisher.ViewModels
 {
@@ -42,9 +45,12 @@ namespace SignalGo.Publisher.ViewModels
             {
                 ProjectInfo.Commands.Remove(x);
             });
+            CancellationCommand = new Command(() =>
+            {
+                CancelCommands();
+            });
             RetryCommand = new Command<ICommand>((x) =>
             {
-                //x.Run();
                 Task.Run(async () =>
                 {
                     await x.Run();
@@ -52,8 +58,6 @@ namespace SignalGo.Publisher.ViewModels
                 });
             });
             BrowsePathCommand = new Command(BrowsePath);
-            //ClearLogCommand = new Command(ClearLog);
-            //CopyCommand = new Command<TextLogInfo>(Copy);
         }
 
         /// <summary>
@@ -69,11 +73,10 @@ namespace SignalGo.Publisher.ViewModels
             CmdLogs += standardOutputResult;
             foreach (var item in ServerInfo.ServerLogs)
             {
-                sb.Append(item);
+                sb.AppendLine(item);
             }
             ServerLogs = sb.ToString();
         }
-
         /// <summary>
         /// browse directory for path
         /// </summary>
@@ -134,6 +137,9 @@ namespace SignalGo.Publisher.ViewModels
         /// </summary>
         public Command BrowsePathCommand { get; set; }
         public Command BuildCommand { get; set; }
+        CancellationTokenSource cancellationTokenSource { get; set; }
+        CancellationToken cancellationToken { get; set; }
+        public Command CancellationCommand { get; set; }
         public Command<ICommand> RemoveCommand { get; set; }
         public Command<ICommand> RetryCommand { get; set; }
         public Command<ICommand> ToDownCommand { get; set; }
@@ -238,6 +244,23 @@ namespace SignalGo.Publisher.ViewModels
             if (!ProjectInfo.Commands.Any(x => x is PublishCommandInfo))
                 ProjectInfo.AddCommand(new PublishCommandInfo());
         }
+        private void CancelCommands()
+        {
+            try
+            {
+                //cancellationTokenSource.Cancel();
+                //if (cancellationTokenSource.IsCancellationRequested)
+                //{
+                //    Debug.WriteLine("Task was cancelled before it got started.");
+                //    cancellationToken.ThrowIfCancellationRequested();
+                //}
+
+            }
+            catch (Exception ex)
+            {
+
+            }
+        }
 
         /// <summary>
         /// Compile Project Source
@@ -247,18 +270,29 @@ namespace SignalGo.Publisher.ViewModels
             if (!ProjectInfo.Commands.Any(x => x is BuildCommandInfo))
                 ProjectInfo.AddCommand(new BuildCommandInfo());
         }
-
+        public Thread thread;
         /// <summary>
         /// Init Commands to Run in Queue
         /// </summary>
-        private void RunCMD()
+        private async void RunCMD()
         {
-            Task.Run(async () =>
+            var t1 = Task.Run(async () =>
+           {
+               await RunCustomCommand(ProjectInfo);
+               await ReadCommandLog();
+           });
+
+            //t1.GetAwaiter().OnCompleted(() =>
+            //{
+            //    MessageBox.Show("All Commands Completed");
+            //});
+            //Debug.WriteLine("Task {0} executing", t1.Id);
+            //if (t1)
             {
-                await RunCustomCommand(ProjectInfo);
-                await ReadCommandLog();
-            });
+                //t1.Dispose();
+            }
         }
+
         /// <summary>
         /// restore (install/fix) nuget packages
         /// </summary>

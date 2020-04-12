@@ -3,11 +3,8 @@ using MvvmGo.Commands;
 using MvvmGo.ViewModels;
 using SignalGo.ServerManager.Models;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 
 namespace SignalGo.ServerManager.ViewModels
@@ -27,6 +24,7 @@ namespace SignalGo.ServerManager.ViewModels
 
         string _Name;
         string _AssemblyPath;
+        Guid _ServerKey;
 
         public string Name
         {
@@ -40,7 +38,26 @@ namespace SignalGo.ServerManager.ViewModels
                 OnPropertyChanged(nameof(Name));
             }
         }
-
+        public Guid ServerKey
+        {
+            get
+            {
+                if (_ServerKey != Guid.Empty)
+                {
+                    return _ServerKey;
+                }
+                else
+                {
+                    _ServerKey = Guid.NewGuid();
+                    return _ServerKey;
+                }
+            }
+            set
+            {
+                _ServerKey = value;
+                OnPropertyChanged(nameof(ServerKey));
+            }
+        }
         public string AssemblyPath
         {
             get
@@ -79,7 +96,12 @@ namespace SignalGo.ServerManager.ViewModels
                 MessageBox.Show("Server name exist on list, please set a different name");
             else
             {
-                SettingInfo.Current.ServerInfo.Add(new Models.ServerInfo() { AssemblyPath = AssemblyPath, Name = Name });
+                SettingInfo.Current.ServerInfo.Add(new ServerInfo()
+                {
+                    AssemblyPath = AssemblyPath,
+                    Name = Name,
+                    ServerKey = ServerKey
+                });
                 SettingInfo.SaveSettingInfo();
                 MainWindowViewModel.MainFrame.GoBack();
             }

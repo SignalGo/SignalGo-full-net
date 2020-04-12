@@ -27,6 +27,7 @@
             <Grid Margin="10">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="auto"/>
+                    <RowDefinition Height="auto"/>
                     <RowDefinition/>
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
@@ -34,11 +35,15 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="auto"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock Text="Server File Path:"/>
-                <TextBox Text="{Binding ServerInfo.AssemblyPath}" Grid.Column="1"/>
-                <Button Content="..." Grid.Column="3" Margin="10,0,0,0" Width="100"/>
 
-                <StackPanel Grid.Row="1" Grid.ColumnSpan="3" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Label Content="Guid:" VerticalContentAlignment="Center"/>
+                <TextBox  Margin="5" Text="{Binding ServerInfo.ServerKey}" Grid.Column="1" VerticalAlignment="Center" Height="27"/>
+
+                <TextBlock Text="Server File Path:" Grid.Row="1"/>
+                <TextBox Margin="5" Text="{Binding ServerInfo.AssemblyPath}" TextWrapping="WrapWithOverflow" ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Auto" Height="auto" MaxHeight="40" Grid.Row="1" Grid.Column="1"/>
+                <Button Content="..." Grid.Column="3" Grid.Row="1" Margin="10,0,0,0" Width="100"/>
+
+                <StackPanel Grid.Row="2" Grid.ColumnSpan="3" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <StackPanel Orientation="Horizontal"  HorizontalAlignment="Center">
                         <TextBlock Text="Status: " Margin="10"/>
                         <TextBlock Text="{Binding ServerInfo.Status}" Margin="10"/>

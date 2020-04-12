@@ -27,10 +27,19 @@
             <!--<Button Command="{Binding AddNewServerCommand}" Content="Add new server" Padding="15,5,15,5" Margin="0,0,0,10"/>-->
         </StackPanel>
 
-        <ListView Grid.Row="1" ItemsSource="{Binding CurrentSettingInfo.ProjectInfo}" SelectedItem="{Binding SelectedProjectInfo}" HorizontalContentAlignment="Stretch">
+        <ListView x:Name="ProjectsListView" Grid.Row="1" ItemsSource="{Binding CurrentSettingInfo.ProjectInfo}" SelectedItem="{Binding SelectedProjectInfo}" HorizontalContentAlignment="Stretch">
             <ListView.ItemTemplate>
                 <DataTemplate>
-                    <TextBlock Background="DarkGray" Padding="5" Text="{Binding Name}"/>
+                    <TextBlock Background="DarkGray" Padding="5">
+                        <TextBox Text="{Binding Name}" BorderThickness="0" Background="Transparent" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+                            <TextBox.Style>
+                                <Style TargetType="TextBox">
+                                    <EventSetter Event="MouseDoubleClick" Handler="projectItem_MouseDoubleClick" />
+                                    <EventSetter Event="KeyDown" Handler="projectItem_KeyDown" />
+                                </Style>
+                            </TextBox.Style>
+                            </TextBox>
+                    </TextBlock>
                 </DataTemplate>
             </ListView.ItemTemplate>
         </ListView>

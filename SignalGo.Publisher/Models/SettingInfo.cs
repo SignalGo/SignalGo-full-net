@@ -45,7 +45,7 @@ namespace SignalGo.Publisher.Models
         {
             try
             {
-                string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "PublisherData.json");
+                string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, PublisherDbName);
                 if (!File.Exists(path))
                     return new SettingInfo()
                     {
@@ -66,7 +66,7 @@ namespace SignalGo.Publisher.Models
         {
             try
             {
-                string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ServersData.json");
+                string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ServersDbName);
                 if (!File.Exists(path))
                     return new SettingInfo()
                     {

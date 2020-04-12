@@ -8,6 +8,7 @@ namespace SignalGo.ServerManager.Models
     public class SettingInfo
     {
         private static SettingInfo _Current = null;
+        private readonly static string ServerDbName = "Data.json";
         public static SettingInfo Current
         {
             get
@@ -24,13 +25,13 @@ namespace SignalGo.ServerManager.Models
         {
             try
             {
-                string path = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data.db");
-                if (!File.Exists(path))
+                //string path = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data.json");
+                if (!File.Exists(System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ServerDbName)))
                     return new SettingInfo()
                     {
                         ServerInfo = new ObservableCollection<ServerInfo>()
                     };
-                return Newtonsoft.Json.JsonConvert.DeserializeObject<SettingInfo>(File.ReadAllText(path, Encoding.UTF8));
+                return Newtonsoft.Json.JsonConvert.DeserializeObject<SettingInfo>(File.ReadAllText(System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ServerDbName), Encoding.UTF8));
             }
             catch
             {
@@ -43,8 +44,8 @@ namespace SignalGo.ServerManager.Models
 
         public static void SaveSettingInfo()
         {
-            string path = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data.db");
-            File.WriteAllText(path, Newtonsoft.Json.JsonConvert.SerializeObject(Current), Encoding.UTF8);
+            //string path = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data.db");
+            File.WriteAllText(System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ServerDbName), Newtonsoft.Json.JsonConvert.SerializeObject(Current), Encoding.UTF8);
         }
     }
 }

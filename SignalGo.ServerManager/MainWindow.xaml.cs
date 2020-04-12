@@ -60,7 +60,8 @@ namespace SignalGo.ServerManager
             {
                 try
                 {
-                    server.CurrentServerBase.Dispose();
+                    if (server.CurrentServerBase != null)
+                        server.CurrentServerBase.Dispose();
                 }
                 catch (Exception ex)
                 {

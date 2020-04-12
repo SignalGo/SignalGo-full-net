@@ -89,10 +89,31 @@ namespace SignalGo.ServerManager.Models
         public ServerProcessInfoBase CurrentServerBase { get; set; }
         [JsonIgnore]
         public Action ProcessStarted { get; set; }
-
+        private Guid _ServerKey;
+       
         private string _Name;
         private string _AssemblyPath;
         private ServerInfoStatus _status = ServerInfoStatus.Stopped;
+        public Guid ServerKey
+        {
+            get
+            {
+                if (_ServerKey != Guid.Empty)
+                {
+                    return _ServerKey;
+                }
+                else
+                {
+                    _ServerKey = Guid.NewGuid();
+                    return _ServerKey;
+                }
+            }
+            set
+            {
+                _ServerKey = value;
+                OnPropertyChanged(nameof(ServerKey));
+            }
+        }
         public string Name
         {
             get

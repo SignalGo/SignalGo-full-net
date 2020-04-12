@@ -192,7 +192,8 @@
                     <RowDefinition Height="auto"/>
                     <RowDefinition Height="auto"/>
                     <RowDefinition Height="auto"/>
-                    <RowDefinition/>
+                    <RowDefinition Height="1*"/>
+                    <RowDefinition Height="100"/>
                     <RowDefinition Height="auto"/>
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
@@ -203,7 +204,7 @@
 
                 <!--project guid key-->
                 <!--<StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Left">-->
-                <Label Grid.Row="0" Content="Guid:" VerticalContentAlignment="Center" HorizontalAlignment="Left"/>
+                <TextBlock Grid.Row="0" Text="Guid:" VerticalAlignment="Center" HorizontalAlignment="Left"/>
                 <TextBox Text="{Binding ProjectInfo.ProjectKey}" Grid.Column="1" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Grid.ColumnSpan="2" Margin="10,0,125,0" />
                 <!--</StackPanel>-->
                 <!--  -->
@@ -217,10 +218,13 @@
 
                 <!--<Button Command="{Binding BrowsePathCommand}" Content="..." Grid.Column="3" Width="100" Grid.Row="1" FontWeight="Normal" HorizontalAlignment="Right"/>-->
                 <Button Command="{Binding BrowsePathCommand}" Content="..." Grid.Column="3" Width="100" Grid.Row="2" FontWeight="Normal" HorizontalAlignment="Right"/>
-                <TextBox TextChanged="txtCmdLogs_TextChanged" x:Name="txtCmdLogs" TextWrapping="WrapWithOverflow" Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Top" Text="{Binding CmdLogs}" Height="170" Margin="0,5,5,0" ScrollViewer.CanContentScroll="True" VerticalScrollBarVisibility="Auto"/>
-                <TextBox x:Name="CmdServerLogs" TextWrapping="WrapWithOverflow" Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Text="{Binding ServerLogs}" Height="80" Margin="0,5,5,0" ScrollViewer.CanContentScroll="True" VerticalScrollBarVisibility="Auto"/>
+                <Label Content="Builder Log:" FontSize="12" Grid.Row="3" Grid.Column="0" VerticalAlignment="Top" />
+                <TextBox TextChanged="txtCmdLogs_TextChanged" x:Name="txtCmdLogs" TextWrapping="WrapWithOverflow" Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Text="{Binding CmdLogs}" Height="130" Margin="5,5,5,5" ScrollViewer.CanContentScroll="True" VerticalScrollBarVisibility="Auto"/>
+                
+                <Label Content="Servers Log:" FontSize="12" Grid.Row="4" Grid.Column="0" VerticalAlignment="Top" />
+                <TextBox x:Name="CmdServerLogs" TextWrapping="WrapWithOverflow" Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Text="{Binding ServerLogs}" Height="70" Margin="5,5,5,5" ScrollViewer.CanContentScroll="True" VerticalScrollBarVisibility="Auto"/>
 
-                <ListBox Style="{DynamicResource White_ListBox}" x:Name="lst_CommandsQueue" ItemsSource="{Binding ProjectInfo.Commands}" MinWidth="150" Grid.Column="2" Grid.Row="3" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Margin="0,5,0,20" VerticalContentAlignment="Stretch" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto">
+                <ListBox Style="{DynamicResource White_ListBox}" x:Name="lst_CommandsQueue" ItemsSource="{Binding ProjectInfo.Commands}" MinWidth="150" Grid.Column="2" Grid.Row="3" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Margin="0,5,0,20" VerticalContentAlignment="Stretch" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto" Grid.RowSpan="3">
                     <ListBox.ItemTemplate>
                         <HierarchicalDataTemplate>
                             <Grid>
@@ -255,7 +259,7 @@
                     </ListBox.ItemTemplate>
                 </ListBox>
                 <!--#region Publish Servers Detail -->
-                <StackPanel Orientation="Vertical" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Grid.Column="2" Grid.Row="3" >
+                <StackPanel Orientation="Vertical" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Grid.Column="2" Grid.Row="3" Grid.RowSpan="2" >
                     <Expander ExpandDirection="Up" Cursor="Hand">
                         <ListView HorizontalAlignment="Stretch" ItemsSource="{Binding CurrentServerSettingInfo.ServerInfo}" HorizontalContentAlignment="Stretch">
                             <ListView.ItemTemplate>
@@ -322,7 +326,7 @@
                 <!--#endregion-->
 
                 <!--#region Commands Trigger -->
-                <StackPanel Grid.Row="4" Grid.ColumnSpan="3" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <StackPanel Grid.Row="5" Grid.ColumnSpan="3" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <!--#region Project Status -->
                     <StackPanel Orientation="Horizontal"  HorizontalAlignment="Center">
                         <TextBlock Text="Status: " Margin="10"/>
@@ -337,12 +341,13 @@
                         <Button Command="{Binding RunTestsCommand}" Content="Tests ☑" Width="60" Height="30" Margin="10,0,0,0"/>
                         <Button Command="{Binding PublishCommand}" Content="Publish ☢" Width="60" Height="30" Margin="10,0,0,0"/>
                         <Button Command="{Binding RunCommand}" Content="Run Commands ▶" Width="100" Height="30" Margin="10,0,0,0"/>
+                        <Button Command="{Binding CancellationCommand}" Content="Cancel Commands" Width="100" Height="30" Margin="10,0,0,0"/>
                     </StackPanel>
                 </StackPanel>
                 <!--#endregion-->
 
                 <!--#region Project Remove Command -->
-                <Button Command="{Binding DeleteCommand}" Grid.Column="2" VerticalAlignment="Bottom" Content="Delete" Width="100" Height="30" Grid.Row="4" HorizontalAlignment="Right"/>
+                <Button Command="{Binding DeleteCommand}" Grid.Column="2" VerticalAlignment="Bottom" Content="Delete" Width="100" Height="30" Grid.Row="5" HorizontalAlignment="Right"/>
                 <!--#endregion-->
             </Grid>
         </TabItem>

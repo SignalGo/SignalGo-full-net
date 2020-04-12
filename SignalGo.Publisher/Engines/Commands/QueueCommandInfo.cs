@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SignalGo.Publisher.Engines.Commands
@@ -12,6 +13,7 @@ namespace SignalGo.Publisher.Engines.Commands
     {
         public List<ICommand> Commands { get; set; }
         public bool IsSuccess { get; set; } = false;
+
         public QueueCommandInfo(IEnumerable<ICommand> commands)
         {
             Commands = commands.ToList();
@@ -19,6 +21,7 @@ namespace SignalGo.Publisher.Engines.Commands
 
         public override async Task<Process> Run()
         {
+
             var proc = new Process();
             Status = Models.RunStatusType.Running;
             try
