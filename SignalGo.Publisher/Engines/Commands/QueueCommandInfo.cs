@@ -19,7 +19,7 @@ namespace SignalGo.Publisher.Engines.Commands
             Commands = commands.ToList();
         }
 
-        public override async Task<Process> Run()
+        public override async Task<Process> Run(CancellationToken cancellationToken)
         {
 
             var proc = new Process();
@@ -28,7 +28,13 @@ namespace SignalGo.Publisher.Engines.Commands
             {
                 foreach (var item in Commands)
                 {
-                    proc = await item.Run();
+                    if (cancellationToken.IsCancellationRequested)
+                    {
+                        Debug.WriteLine($"Cancellation Requested in task {Task.CurrentId}");
+                        Status = Models.RunStatusType.Cancelled;
+                        return proc;
+                    }
+                    proc = await item.Run(cancellationToken);
                     if (proc.ExitCode != 0)
                     {
                         IsSuccess = false;

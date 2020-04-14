@@ -6,7 +6,6 @@ using MvvmGo.ViewModels;
 using SignalGo.Shared.Log;
 using SignalGo.ServerManager.Views;
 using System.Collections.ObjectModel;
-using System.Threading.Tasks;
 
 namespace SignalGo.ServerManager.Models
 {

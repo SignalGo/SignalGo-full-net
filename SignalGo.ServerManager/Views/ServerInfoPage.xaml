@@ -38,10 +38,12 @@
 
                 <Label Content="Guid:" VerticalContentAlignment="Center"/>
                 <TextBox  Margin="5" Text="{Binding ServerInfo.ServerKey}" Grid.Column="1" VerticalAlignment="Center" Height="27"/>
-
+                <Button Command="{Binding ChangeCommand}" Content="Change" Grid.Column="3" Grid.Row="0" Margin="10,0,0,0" Width="100" Height="25"/>
+                
                 <TextBlock Text="Server File Path:" Grid.Row="1"/>
                 <TextBox Margin="5" Text="{Binding ServerInfo.AssemblyPath}" TextWrapping="WrapWithOverflow" ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Auto" Height="auto" MaxHeight="40" Grid.Row="1" Grid.Column="1"/>
-                <Button Content="..." Grid.Column="3" Grid.Row="1" Margin="10,0,0,0" Width="100"/>
+                <Button Command="{Binding BrowsePathCommand}" Content="..." Grid.Column="3" Grid.Row="1" Margin="10,0,0,0" Width="100" Height="25"/>
+
 
                 <StackPanel Grid.Row="2" Grid.ColumnSpan="3" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <StackPanel Orientation="Horizontal"  HorizontalAlignment="Center">
@@ -53,7 +55,7 @@
                         <Button Command="{Binding StopCommand}" Content="Stop" Width="100" Height="30" Margin="10,0,0,0"/>
                     </StackPanel>
                 </StackPanel>
-                <Button Command="{Binding DeleteCommand}" Grid.Row="1" Grid.Column="2" VerticalAlignment="Bottom" Content="Delete" Width="100" Height="30" Margin="10,0,0,0"/>
+                <Button Command="{Binding DeleteCommand}" Grid.Row="2" Grid.Column="2" VerticalAlignment="Bottom" Content="Delete" Width="100" Height="30" Margin="10,0,0,0"/>
             </Grid>
         </TabItem>
         <TabItem Header="Window" Loaded="TabItem_Loaded">

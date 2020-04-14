@@ -81,12 +81,18 @@ namespace SignalGo.Publisher.Engines.Commands
         /// Base Virtual Run
         /// </summary>
         /// <returns></returns>
-        public virtual async Task<Process> Run()
+        public virtual async Task<Process> Run(CancellationToken cancellationToken)
         {
             try
             {
                 Status = RunStatusType.Running;
-                var process = CommandRunner.Run(this);
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    Debug.WriteLine("Runner Cancellation Requested");
+                    Status = RunStatusType.Running;
+                    return null;
+                }
+                var process = CommandRunner.Run(this, cancellationToken);
                 if (process.Status == TaskStatus.Faulted)
                     Status = RunStatusType.Error;
                 Status = RunStatusType.Done;
@@ -161,12 +167,18 @@ namespace SignalGo.Publisher.Engines.Commands
         }
         int retryCounter = 0;
 
-        public virtual async Task<TaskStatus> Upload(string dataPath, ServerInfo serverInfo = null, bool forceUpdate = false)
+        public virtual async Task<TaskStatus> Upload(string dataPath, CancellationToken cancellationToken, ServerInfo serverInfo = null, bool forceUpdate = false)
         {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                Debug.WriteLine("Cancellation Requested In Upload Command");
+                return TaskStatus.Canceled;
+            }
             try
             {
                 ServerInfo.ServerLogs.Add($"----(Manually)Started at [{DateTime.Now}] ------");
                 // Generate Upload Model based on
+
                 Size = (new FileInfo(dataPath).Length / 1024);
                 UploadInfo uploadInfo = new UploadInfo(this)
                 {
@@ -188,7 +200,7 @@ namespace SignalGo.Publisher.Engines.Commands
                             // wait and retry up to 3 time
                             await Task.Delay(2000);
                             // Try to update current server again
-                            await Upload(dataPath);
+                            await Upload(dataPath, cancellationToken);
                         }
                         //else, we can't update this erver at this moment (Problems are Possible: Server is Offline,refuse || block || Network Mismatch, unhandled Errors...)
                         ServerInfo.Servers.FirstOrDefault(s => s.ServerKey == server.ServerKey).ServerStatus = ServerInfo.ServerInfoStatusEnum.UpdateError;
@@ -198,7 +210,7 @@ namespace SignalGo.Publisher.Engines.Commands
                     if (forceUpdate)
                         await PublisherServiceProvider.StopServices();
                     // contacting with Provider is OK and server is available.
-                    var uploadResult = await StreamManagerService.UploadAsync(uploadInfo);
+                    var uploadResult = await StreamManagerService.UploadAsync(uploadInfo, cancellationToken);
                     if (uploadResult.Status)
                     {
                         if (forceUpdate)
@@ -206,8 +218,9 @@ namespace SignalGo.Publisher.Engines.Commands
                         ServerInfo.ServerLogs.Add($"------ Ended at [{DateTime.Now}] ------");
                         server.IsUpdated = ServerInfo.ServerInfoStatusEnum.Updated;
                         server.ServerStatus = ServerInfo.ServerInfoStatusEnum.Updated;
-                    }
-                } // end server collection foreach
+                    } // end server collection foreach
+                }
+                ServerInfo.ServerLogs.Add($"------ Cancelled at [{DateTime.Now}] ------");
             }
             catch (Exception ex)
             {

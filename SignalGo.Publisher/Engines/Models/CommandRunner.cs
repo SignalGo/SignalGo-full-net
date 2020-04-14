@@ -21,7 +21,7 @@ namespace SignalGo.Publisher.Engines.Models
         /// </summary>
         /// <param name="command"></param>
         /// <returns></returns>
-        public async static Task<Process> Run(ICommand command)
+        public async static Task<Process> Run(ICommand command, CancellationToken cancellationToken)
         {
             var process = new Process();
             command.Size = 0;
@@ -46,6 +46,11 @@ namespace SignalGo.Publisher.Engines.Models
                     File.Delete(logFilePath);
                 while (true)
                 {
+                    if (cancellationToken.IsCancellationRequested)
+                    {
+                        Debug.WriteLine("Cancellation Is Requested in CommandRunner");
+                        return process;
+                    }
                     standardOutputResult = await process.StandardOutput.ReadLineAsync();
                     await File.AppendAllTextAsync(logFilePath, standardOutputResult + Environment.NewLine);
 

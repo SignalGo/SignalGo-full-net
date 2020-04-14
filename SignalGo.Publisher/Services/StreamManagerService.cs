@@ -4,14 +4,22 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using SignalGo.Publisher.Models;
 using SignalGo.Shared.Log;
+using System.Threading;
 
 namespace SignalGo.Publisher.Services
 {
     public class StreamManagerService
     {
 
-        public static async Task<UploadInfo> UploadAsync(UploadInfo uploadInfo)
+        public static async Task<UploadInfo> UploadAsync(UploadInfo uploadInfo, CancellationToken cancellationToken)
         {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                uploadInfo.Status = false;
+                uploadInfo.Description = "Upload Cancelled By User";
+                return uploadInfo;
+            }
+
             string result = string.Empty;
             try
             {
@@ -30,13 +38,27 @@ namespace SignalGo.Publisher.Services
                     long writed = 0;
                     while (writed < len)
                     {
-                        byte[] bytes = new byte[1024];
-                        var readCount = await streamInfo.Stream.ReadAsync(bytes, bytes.Length);
+                        while (!cancellationToken.IsCancellationRequested)
+                        {
+                            byte[] bytes = new byte[1024];
+                            var readCount = await streamInfo.Stream.ReadAsync(bytes, bytes.Length);
 
-                        await streamWriter.WriteAsync(bytes, 0, readCount);
-                        writed += readCount;
-                        uploadInfo.Command.Position = (writed / 1024);
+                            await streamWriter.WriteAsync(bytes, 0, readCount);
+                            writed += readCount;
+                            uploadInfo.Command.Position = (writed / 1024);
+                        }
+                        // cancellation occured, Release All Resources and report back
+                        streamInfo.Stream.Dispose();
+                        streamInfo.Dispose();
+                        stream.Close();
+                        stream.Dispose();
+
+                        uploadInfo.Status = false;
+                        uploadInfo.Description = "Upload Cancelled By User";
+                        ServerInfo.ServerLogs.Add("Upload Cancelled By User!");
+                        break;
                     }
+                    await Task.FromCanceled(cancellationToken);
                 };
                 result = await service.UploadDataAsync(streamInfo);
                 Debug.WriteLine(result);

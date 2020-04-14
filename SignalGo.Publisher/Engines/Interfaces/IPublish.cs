@@ -1,6 +1,7 @@
 ﻿using SignalGo.Publisher.Engines.Models;
 using SignalGo.Publisher.Models;
 using System.IO.Compression;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SignalGo.Publisher.Engines.Interfaces
@@ -12,7 +13,7 @@ namespace SignalGo.Publisher.Engines.Interfaces
     {
         public Task<string> Compress(CompressionMethodType compressionMethod = CompressionMethodType.Zip, bool includeParent = false, CompressionLevel compressionLevel = CompressionLevel.Fastest);
         public Task DeCompress(CompressionMethodType compressionMethod = CompressionMethodType.Zip);
-        public Task<TaskStatus> Upload(string dataPath, ServerInfo serverInfo, bool forceUpdate = false);
+        public Task<TaskStatus> Upload(string dataPath, CancellationToken cancellationToken, ServerInfo serverInfo, bool forceUpdate = false);
 
     }
 }

@@ -26,12 +26,30 @@ namespace SignalGo.Publisher.ViewModels
         /// </summary>
         public ProjectInfoViewModel()
         {
-            RunCommand = new Command(RunCMD);
-            BuildCommand = new Command(Build);
-            RunTestsCommand = new Command(RunTests);
             ApplyMigrationsCommand = new Command(ApplyMigrations);
-            PublishCommand = new Command(PublishToServers);
+            BuildCommand = new Command(Build);
+            BrowsePathCommand = new Command(BrowsePath);
+            CancellationCommand = new Command(() =>
+            {
+                CancelCommands();
+            });
+            DeleteCommand = new Command(Delete);
+            RunTestsCommand = new Command(RunTests);
+            RunCommand = new Command(RunCMD);
             RestorePackagesCommand = new Command(RestorePackages);
+            RemoveCommand = new Command<ICommand>((x) =>
+            {
+                ProjectInfo.Commands.Remove(x);
+            });
+
+            RetryCommand = new Command<ICommand>((x) =>
+            {
+                Task.Run(async () =>
+                {
+                    await x.Run(CancellationToken);
+                    await ReadCommandLog();
+                });
+            });
             ToDownCommand = new Command<ICommand>((x) =>
             {
                 MoveCommandLower(x);
@@ -40,24 +58,7 @@ namespace SignalGo.Publisher.ViewModels
             {
                 MoveCommandUpper(x);
             });
-            DeleteCommand = new Command(Delete);
-            RemoveCommand = new Command<ICommand>((x) =>
-            {
-                ProjectInfo.Commands.Remove(x);
-            });
-            CancellationCommand = new Command(() =>
-            {
-                CancelCommands();
-            });
-            RetryCommand = new Command<ICommand>((x) =>
-            {
-                Task.Run(async () =>
-                {
-                    await x.Run();
-                    await ReadCommandLog();
-                });
-            });
-            BrowsePathCommand = new Command(BrowsePath);
+            PublishCommand = new Command(PublishToServers);
         }
 
         /// <summary>
@@ -91,12 +92,15 @@ namespace SignalGo.Publisher.ViewModels
             }
             //SettingInfo.Current.ProjectInfo.Add(new ProjectInfo()
             //{
-            //    ProjectKey = this.ProjectKey,
+            //    ProjectKey = this.ProjectKey,mg
             //    AssemblyPath = AssemblyPath,
             //    Name = Name,
             //});
             //SettingInfo.SaveSettingInfo();
         }
+
+        public static CancellationTokenSource CancellationTokenSource = new CancellationTokenSource();
+        public static CancellationToken CancellationToken = CancellationTokenSource.Token;
 
         /// <summary>
         /// move a command lower/down in Commands Queue List
@@ -137,8 +141,6 @@ namespace SignalGo.Publisher.ViewModels
         /// </summary>
         public Command BrowsePathCommand { get; set; }
         public Command BuildCommand { get; set; }
-        CancellationTokenSource cancellationTokenSource { get; set; }
-        CancellationToken cancellationToken { get; set; }
         public Command CancellationCommand { get; set; }
         public Command<ICommand> RemoveCommand { get; set; }
         public Command<ICommand> RetryCommand { get; set; }
@@ -248,17 +250,29 @@ namespace SignalGo.Publisher.ViewModels
         {
             try
             {
-                //cancellationTokenSource.Cancel();
-                //if (cancellationTokenSource.IsCancellationRequested)
+                // if cancellation was called before, Make new cancel token for current Cancel
+
+                //if (CancellationToken.IsCancellationRequested)
                 //{
-                //    Debug.WriteLine("Task was cancelled before it got started.");
-                //    cancellationToken.ThrowIfCancellationRequested();
+                //    CancellationTokenSource = new CancellationTokenSource();
+                //    CancellationToken = CancellationTokenSource.Token;
                 //}
+                CancellationTokenSource.Cancel();
+                CancellationToken.ThrowIfCancellationRequested();
+                Debug.WriteLine("Task has been cancelled from Cancellation Command");
+                ServerInfo.ServerLogs.Add("Task has been cancelled from Cancellation Command");
+
 
             }
             catch (Exception ex)
             {
-
+                Debug.WriteLine(ex.Message);
+            }
+            finally
+            {
+                CancellationTokenSource = new CancellationTokenSource();
+                CancellationToken = new CancellationToken(false);
+                CancellationToken = CancellationTokenSource.Token;
             }
         }
 
@@ -276,21 +290,19 @@ namespace SignalGo.Publisher.ViewModels
         /// </summary>
         private async void RunCMD()
         {
-            var t1 = Task.Run(async () =>
-           {
-               await RunCustomCommand(ProjectInfo);
-               await ReadCommandLog();
-           });
+            var runner = Task.Run(async () =>
+            {
+                await Task.Delay(2000);
+                await RunCustomCommand(ProjectInfo, CancellationToken);
+                await ReadCommandLog();
+            }, CancellationToken);
+
 
             //t1.GetAwaiter().OnCompleted(() =>
             //{
             //    MessageBox.Show("All Commands Completed");
             //});
             //Debug.WriteLine("Task {0} executing", t1.Id);
-            //if (t1)
-            {
-                //t1.Dispose();
-            }
         }
 
         /// <summary>
@@ -321,17 +333,22 @@ namespace SignalGo.Publisher.ViewModels
                 ProjectInfo.AddCommand(new RestoreCommandInfo());
         }
 
-        public static async Task RunCustomCommand(ProjectInfo ProjectInfo)
+        public static async Task<bool> RunCustomCommand(ProjectInfo ProjectInfo, CancellationToken cancellationToken)
         {
             try
             {
-                await ProjectInfo.RunCommands();
+                if (CancellationToken.IsCancellationRequested)
+                {
+                    Debug.WriteLine("Cancellation Is Requested, breaking RunCustomCommand");
+                    return false;
+                }
+                await ProjectInfo.RunCommands(CancellationToken);
             }
             catch (Exception ex)
             {
 
             }
-
+            return true;
         }
 
         /// <summary>

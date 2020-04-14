@@ -3,12 +3,14 @@ using MvvmGo.ViewModels;
 using Newtonsoft.Json;
 using SignalGo.Publisher.Engines.Commands;
 using SignalGo.Publisher.Engines.Interfaces;
+using SignalGo.Publisher.ViewModels;
 using SignalGo.Shared.Log;
 using System;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SignalGo.Publisher.Models
@@ -21,7 +23,7 @@ namespace SignalGo.Publisher.Models
             {
                 try
                 {
-                    await RunCommands();
+                    await RunCommands(ProjectInfoViewModel.CancellationToken);
 
                 }
                 catch (Exception ex)
@@ -157,12 +159,14 @@ namespace SignalGo.Publisher.Models
         /// run each commands in queue async
         /// </summary>
         /// <returns></returns>
-        public async Task RunCommands()
+        public async Task RunCommands(CancellationToken cancellationToken)
         {
             try
             {
+                if (cancellationToken.IsCancellationRequested)
+                    return;
                 QueueCommandInfo queueCommandInfo = new QueueCommandInfo(Commands.ToList());
-                await queueCommandInfo.Run();
+                await queueCommandInfo.Run(cancellationToken);
             }
             catch (Exception ex)
             {

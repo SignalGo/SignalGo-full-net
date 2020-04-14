@@ -13,6 +13,7 @@ namespace SignalGo.Publisher.Models
         string _FileName;
         string _FileExtension;
         string _FilePath;
+        string _Description;
         public UploadInfo(ICommand command) : base()
         {
             Command = command;
@@ -73,6 +74,18 @@ namespace SignalGo.Publisher.Models
             {
                 _Title = value;
                 OnPropertyChanged("Title");
+            }
+        }
+        public string Description
+        {
+            get
+            {
+                return _Description;
+            }
+            set
+            {
+                _Description = value;
+                OnPropertyChanged("Description");
             }
         }
 
