@@ -11,7 +11,7 @@ namespace SignalGo.Shared.Log
     /// </summary>
     public class AutoLogger
     {
-        public static AutoLogger Default { get; set; } = new AutoLogger() { DirectoryName = "", FileName = "App Logs.log" };
+        public static AutoLogger Default { get; set; } = new AutoLogger() { DirectoryName = "", FileName = "AppLogs.log" };
         /// <summary>
         /// is enabled log system
         /// </summary>
