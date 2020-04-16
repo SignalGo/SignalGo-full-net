@@ -17,7 +17,7 @@ namespace SignalGo.Publisher.ViewModels
         public ServerInfoViewModel()
         {
             This = this;
-            AddNewServerCommand = new Command(AddNewServer);
+            //AddNewServerCommand = new Command(AddNewServer);
             RemoveServerCommand = new Command(Delete);
             BackCommand = new Command(Back);
             SaveChangesCommand = new Command(SaveChanges);
@@ -39,7 +39,7 @@ namespace SignalGo.Publisher.ViewModels
                 OnPropertyChanged(nameof(ServerInfo));
             }
         }
-        public Command AddNewServerCommand { get; set; }
+        //public Command AddNewServerCommand { get; set; }
         public Command RemoveServerCommand { get; set; }
         public Command BackCommand { get; set; }
         public Command SaveChangesCommand { get; set; }
@@ -62,11 +62,11 @@ namespace SignalGo.Publisher.ViewModels
                 ProjectManagerWindowViewModel.MainFrame.Navigate(page);
             }
         }
-        private void AddNewServer()
-        {
-            ProjectManagerWindow.This.mainframe.Navigate(new AddNewServerPage());
+        //private void AddNewServer()
+        //{
+        //    ProjectManagerWindow.This.mainframe.Navigate(new AddNewServerPage());
 
-        }
+        //}
         //public void LoadServers()
         //{
 

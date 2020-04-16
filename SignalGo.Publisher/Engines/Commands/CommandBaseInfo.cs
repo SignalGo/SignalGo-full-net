@@ -11,7 +11,8 @@ using SignalGo.Publisher.Models;
 using SignalGo.Publisher.Services;
 using SignalGo.Publisher.Engines.Models;
 using SignalGo.Publisher.Engines.Interfaces;
-//using static SignalGo.Publisher.Models.ServerInfo;
+using SignalGo.Shared.Models;
+using SignalGo.Publisher.ViewModels;
 
 
 namespace SignalGo.Publisher.Engines.Commands
@@ -29,8 +30,9 @@ namespace SignalGo.Publisher.Engines.Commands
             }
         }
 
-        long _Size = 0;
-        long _Position = 0;
+        private long _Size = 0;
+        private long _Position = 0;
+        private int retryCounter = 0;
 
         /// <summary>
         /// size of data/file
@@ -76,6 +78,8 @@ namespace SignalGo.Publisher.Engines.Commands
         /// assemblies and publish foler/files path
         /// </summary>
         public string AssembliesPath { get; set; }
+        public string ServiceName { get; set; }
+        public Guid ServiceKey { get; set; }
 
         /// <summary>
         /// Base Virtual Run
@@ -114,7 +118,7 @@ namespace SignalGo.Publisher.Engines.Commands
                 string[] directories = Directory.GetDirectories(AssembliesPath);
                 string publishDir = directories.SingleOrDefault(x => x.Contains("publish"));
 
-                zipFilePath = Path.Combine(AssembliesPath, "publishArchive.zip");
+                zipFilePath = Path.Combine(AssembliesPath, $"{ServiceName}.zip");
                 if (File.Exists(zipFilePath))
                     File.Delete(zipFilePath);
                 switch (compressionMethod)
@@ -150,22 +154,6 @@ namespace SignalGo.Publisher.Engines.Commands
             }
             return Task.FromResult(zipFilePath);
         }
-        public virtual Task DeCompress(CompressionMethodType compressionMethod = CompressionMethodType.Zip)
-        {
-            try
-            {
-                string zipFilePath = Path.Combine(AssembliesPath, "publishArchive.zip");
-                string extractPath = Path.Combine(AssembliesPath, "extracted");
-                if (compressionMethod == CompressionMethodType.Zip)
-                    ZipFile.ExtractToDirectory(zipFilePath, extractPath);
-            }
-            catch (Exception ex)
-            {
-                AutoLogger.Default.LogError(ex, "Publisher DeCompression");
-            }
-            return Task.CompletedTask;
-        }
-        int retryCounter = 0;
 
         public virtual async Task<TaskStatus> Upload(string dataPath, CancellationToken cancellationToken, ServerInfo serverInfo = null, bool forceUpdate = false)
         {
@@ -185,6 +173,11 @@ namespace SignalGo.Publisher.Engines.Commands
                     FileName = "publishArchive.zip",
                     HasProgress = true,
                     FilePath = dataPath
+                };
+                var serviceContract = new ServiceContract
+                {
+                    Name = ServiceName,
+                    ServiceKey = ServiceKey
                 };
                 foreach (var server in ServerInfo.Servers.Where(x => x.IsUpdated != ServerInfo.ServerInfoStatusEnum.UpdateError).Where(y => y.IsUpdated != ServerInfo.ServerInfoStatusEnum.Updated))
                 {
@@ -207,14 +200,14 @@ namespace SignalGo.Publisher.Engines.Commands
                         server.ServerStatus = ServerInfo.ServerInfoStatusEnum.UpdateError;
                         server.IsUpdated = ServerInfo.ServerInfoStatusEnum.UpdateError;
                     }
-                    if (forceUpdate)
-                        await PublisherServiceProvider.StopServices();
+                    //if (forceUpdate)
+                    //    await PublisherServiceProvider.StopServices();
                     // contacting with Provider is OK and server is available.
-                    var uploadResult = await StreamManagerService.UploadAsync(uploadInfo, cancellationToken);
+                    var uploadResult = await StreamManagerService.UploadAsync(uploadInfo, cancellationToken, serviceContract);
                     if (uploadResult.Status)
                     {
-                        if (forceUpdate)
-                            await PublisherServiceProvider.StartServices();
+                        //if (forceUpdate)
+                        //    await PublisherServiceProvider.StartServices();
                         ServerInfo.ServerLogs.Add($"------ Ended at [{DateTime.Now}] ------");
                         server.IsUpdated = ServerInfo.ServerInfoStatusEnum.Updated;
                         server.ServerStatus = ServerInfo.ServerInfoStatusEnum.Updated;
@@ -226,48 +219,10 @@ namespace SignalGo.Publisher.Engines.Commands
             {
 
             }
-
             ServerInfo.ServerLogs.Add($"------ Exited at [{DateTime.Now}] ------");
             return TaskStatus.RanToCompletion;
         }
 
 
     }
-    #region IDisposable Support
-
-    //private bool disposedValue = false; // To detect redundant calls
-
-    //protected virtual void Dispose(bool disposing)
-    //{
-    //    if (!disposedValue)
-    //    {
-    //        if (disposing)
-    //        {
-    //            // TODO: dispose managed state (managed objects).
-    //        }
-
-    //        // TODO: free unmanaged resources (unmanaged objects) and override a finalizer below.
-    //        // TODO: set large fields to null.
-
-    //        disposedValue = true;
-    //    }
-    //}
-
-    //// TODO: override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources.
-    //// ~CommandBaseInfo()
-    //// {
-    ////   // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
-    ////   Dispose(false);
-    //// }
-
-    //// This code added to correctly implement the disposable pattern.
-    //public void Dispose()
-    //{
-    //    // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
-    //    Dispose(true);
-    //    // TODO: uncomment the following line if the finalizer is overridden above.
-    //    //GC.SuppressFinalize(this);
-    //}
-
-    #endregion
 }

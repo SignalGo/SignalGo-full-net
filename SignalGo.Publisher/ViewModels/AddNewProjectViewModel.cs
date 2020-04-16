@@ -1,13 +1,10 @@
-﻿using Microsoft.Win32;
-using MvvmGo.Commands;
-using MvvmGo.ViewModels;
-using SignalGo.Publisher.Models;
-using SignalGo.Publisher.ViewModels;
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
-using System.Windows;
+using MvvmGo.Commands;
+using MvvmGo.ViewModels;
 using System.Windows.Forms;
+using SignalGo.Publisher.Models;
 
 namespace SignalGo.Publisher.ViewModels
 {
@@ -86,13 +83,6 @@ namespace SignalGo.Publisher.ViewModels
 
         private void BrowseProjectPath()
         {
-            //OpenFileDialog fileDialog = new OpenFileDialog();
-            //fileDialog.FileName = AssemblyPath;
-            //if (fileDialog.ShowDialog().GetValueOrDefault())
-            //{
-            //    AssemblyPath = fileDialog.FileName;
-            //}
-
             FolderBrowserDialog folderBrowserDialog = new FolderBrowserDialog();
             folderBrowserDialog.SelectedPath = folderBrowserDialog.SelectedPath;
             if (folderBrowserDialog.ShowDialog() == DialogResult.OK)
@@ -103,13 +93,6 @@ namespace SignalGo.Publisher.ViewModels
 
         private void BrowseAssembliesPath()
         {
-            //OpenFileDialog fileDialog = new OpenFileDialog();
-            //fileDialog.FileName = AssemblyPath;
-            //if (fileDialog.ShowDialog().GetValueOrDefault())
-            //{
-            //    AssemblyPath = fileDialog.FileName;
-            //}
-
             FolderBrowserDialog folderBrowserDialog = new FolderBrowserDialog();
             folderBrowserDialog.SelectedPath = folderBrowserDialog.SelectedPath;
             if (folderBrowserDialog.ShowDialog() == DialogResult.OK)

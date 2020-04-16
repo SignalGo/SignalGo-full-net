@@ -5,13 +5,14 @@ using System.Threading.Tasks;
 using SignalGo.Publisher.Models;
 using SignalGo.Shared.Log;
 using System.Threading;
+using SignalGo.Shared.Models;
 
 namespace SignalGo.Publisher.Services
 {
     public class StreamManagerService
     {
-
-        public static async Task<UploadInfo> UploadAsync(UploadInfo uploadInfo, CancellationToken cancellationToken)
+        static ServerManagerService.StreamServices.ServerManagerStreamService service = new ServerManagerService.StreamServices.ServerManagerStreamService(PublisherServiceProvider.CurrentClientProvider);
+        public static async Task<UploadInfo> UploadAsync(UploadInfo uploadInfo, CancellationToken cancellationToken, ServiceContract serviceContract)
         {
             if (cancellationToken.IsCancellationRequested)
             {
@@ -19,13 +20,12 @@ namespace SignalGo.Publisher.Services
                 uploadInfo.Description = "Upload Cancelled By User";
                 return uploadInfo;
             }
-
             string result = string.Empty;
             try
             {
-                ServerManagerService.StreamServices.ServerManagerStreamService service = new ServerManagerService.StreamServices.ServerManagerStreamService(PublisherServiceProvider.CurrentClientProvider);
+
                 using Stream stream = File.OpenRead(uploadInfo.FilePath);
-                var streamInfo = new Shared.Models.StreamInfo()
+                using var streamInfo = new StreamInfo()
                 {
                     FileName = uploadInfo.FileName,
                     Length = stream.Length,
@@ -48,28 +48,24 @@ namespace SignalGo.Publisher.Services
                             uploadInfo.Command.Position = (writed / 1024);
                         }
                         // cancellation occured, Release All Resources and report back
-                        streamInfo.Stream.Dispose();
-                        streamInfo.Dispose();
-                        stream.Close();
-                        stream.Dispose();
-
                         uploadInfo.Status = false;
+                        await DisposeAsync();
                         uploadInfo.Description = "Upload Cancelled By User";
                         ServerInfo.ServerLogs.Add("Upload Cancelled By User!");
                         break;
                     }
                     await Task.FromCanceled(cancellationToken);
                 };
-                result = await service.UploadDataAsync(streamInfo);
+                result = await service.UploadDataAsync(streamInfo, serviceContract);
                 Debug.WriteLine(result);
                 if (result == "success")
                 {
                     uploadInfo.Status = true;
-                    Debug.WriteLine("Yehh. That's Fucking Right!");
+                    Debug.WriteLine("Streaming Completed.");
                     return uploadInfo;
                 }
                 else
-                    Debug.WriteLine("No. That's Fucking Sucks!");
+                    Debug.WriteLine("Problem Occured In Stream");
             }
             catch (Exception ex)
             {
@@ -78,6 +74,15 @@ namespace SignalGo.Publisher.Services
                 AutoLogger.Default.LogError(ex, "StreamManagerService(UploadAsync)");
             }
             return uploadInfo;
+        }
+
+        public static async Task DisposeAsync()
+        {
+            //streamInfo.Stream.Dispose();
+            //streamInfo.Dispose();
+            //stream.Close();
+            //stream.Dispose();
+            await service.DisposeStreamAsync();
         }
 
     }

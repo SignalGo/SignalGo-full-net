@@ -7,26 +7,50 @@
 		xmlns:vm="clr-namespace:SignalGo.ServerManager.ViewModels"
         mc:Ignorable="d"
         Title="Signalgo Server Manager" Height="450" Width="800">
-	<Window.DataContext>
-		<vm:MainWindowViewModel/>
-	</Window.DataContext>
-	<Grid Margin="10">
-		<Grid.ColumnDefinitions>
-			<ColumnDefinition Width="auto"/>
-			<ColumnDefinition Width="*"/>
-		</Grid.ColumnDefinitions>
-		<Grid.RowDefinitions>
-			<RowDefinition Height="auto"/>
-			<RowDefinition Height="*"/>
-		</Grid.RowDefinitions>
-        <Button Command="{Binding AddNewServerCommand}" Content="Add new server" Padding="30,10,30,10" Margin="0,0,0,10"/>
-        <ListView Grid.Row="1" ItemsSource="{Binding CurrentSettingInfo.ServerInfo}" SelectedItem="{Binding SelectedServerInfo}">
-			<ListView.ItemTemplate>
-				<DataTemplate>
-					<TextBlock Text="{Binding Name}"/>
-				</DataTemplate>
-			</ListView.ItemTemplate>
-		</ListView>
-		<Frame x:Name="mainframe" Grid.Column="1" Grid.Row="1" JournalOwnership="OwnsJournal" Loaded="Frame_Loaded" ClipToBounds="True" Background="#f6f6f7" Navigating="MainFrame_Navigating" NavigationUIVisibility="Hidden"/>
-	</Grid>
+    <Window.DataContext>
+        <vm:MainWindowViewModel/>
+    </Window.DataContext>
+
+
+    <Grid Margin="10">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="auto"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <DockPanel Grid.ColumnSpan="2">
+            <Menu DockPanel.Dock="Top"  Width="Auto" Height="20" Background="#FFA9D1F4">
+                <MenuItem Header="_File">
+                    <MenuItem Header="_ServerManager Settings"  />
+                    <MenuItem Header="_Exit" Command="{Binding ExitApplicationCommand}" />
+                </MenuItem>
+                <MenuItem Header="_Management">
+                    <MenuItem Header="_Add Service" Command="{Binding AddNewServerCommand}" />
+                    <MenuItem Header="_Service Logs"  Command="{Binding ShowServieLogsCommand}"/>
+                    <MenuItem Header="_ServiceUpdater" IsCheckable="True" IsChecked="True" />
+                    <MenuItem Header="_Scheduler" IsCheckable="True" IsChecked="False" />
+                </MenuItem>
+                <MenuItem Header="_Help">
+                    <MenuItem Header="_How to use"/>
+                    <MenuItem Header="_About"/>
+
+                </MenuItem>
+            </Menu>
+        </DockPanel>
+
+        <!--<Button Grid.Row="1" Command="{Binding AddNewServerCommand}" Content="Add new server" Padding="30,10,30,10" Margin="0,0,0,10"/>-->
+        <ListView Grid.Row="1" Grid.RowSpan="2" Grid.Column="0" MinWidth="100" Width="150" MaxWidth="250" ItemsSource="{Binding CurrentSettingInfo.ServerInfo}" SelectedItem="{Binding SelectedServerInfo}">
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <TextBlock Text="{Binding Name}"/>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+        <Frame x:Name="mainframe" Grid.Column="1" Grid.Row="1" Grid.RowSpan="2" JournalOwnership="OwnsJournal" Loaded="Frame_Loaded" ClipToBounds="True" Background="#f6f6f7" Navigating="MainFrame_Navigating" NavigationUIVisibility="Hidden"/>
+    </Grid>
 </Window>

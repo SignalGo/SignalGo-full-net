@@ -1,12 +1,11 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Diagnostics;
 using SignalGo.Shared.Log;
 using System.Threading.Tasks;
 using SignalGo.Publisher.Engines.Interfaces;
-using System.Linq;
-using System.Collections.Generic;
 
 namespace SignalGo.Publisher.Engines.Models
 {

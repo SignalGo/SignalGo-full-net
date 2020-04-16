@@ -32,6 +32,8 @@ namespace SignalGo.ServerManager.Models
         /// <returns></returns>
         public void Start(string paramUID, string fileName)
         {
+            if (!File.Exists(fileName))
+                throw new FileNotFoundException("we can't find service executable file. please verify the service path");
             m_PipeID = paramUID;
 
             m_PipeMessagingThread = new Thread(new ThreadStart(StartIPCServer));

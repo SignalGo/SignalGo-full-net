@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
-using System.IO.Compression;
 using System.Threading.Tasks;
-using SignalGo.Shared.DataTypes;
 using SignalGo.Shared.Log;
+using SignalGo.Shared.Models;
+using SignalGo.Shared.DataTypes;
+using SignalGo.ServerManager.Engines.Models;
+using System.Linq;
 
 namespace SignalGo.ServerManager.Services
 {
@@ -15,16 +17,24 @@ namespace SignalGo.ServerManager.Services
     [ServiceContract("ServerStreamManager", ServiceType.StreamService, InstanceType.SingleInstance)]
     public class ServerManagerStreamService
     {
-        public async Task<string> UploadData(Shared.Models.StreamInfo streamInfo)
+        ServiceUpdater ServiceUpdater { get; set; }
+        public FileStream FileStream { get; set; }
+        /// <summary>
+        /// Download Data from client as stream service
+        /// </summary>
+        /// <param name="streamInfo"></param>
+        /// <returns></returns>
+        public async Task<string> UploadData(StreamInfo streamInfo, ServiceContract serviceContract)
         {
+            var serviceToUpdate = Models.SettingInfo.Current.ServerInfo.SingleOrDefault(s => s.ServerKey == serviceContract.ServiceKey);
             double? progress = 0;
-            string fileExtension = streamInfo.FileName.Split('.')[1];
-            string fileName = streamInfo.FileName.Split('.')[0];
-            string outFileName = $"{fileName}{DateTime.Now.ToString("yyyyMMdd_hhmm")}.{fileExtension}";
+            //string fileExtension = streamInfo.FileName.Split('.')[1];
+            //string fileName = streamInfo.FileName.Split('.')[0];
+            string outFileName = $"{serviceContract.Name}{DateTime.Now.ToString("yyyyMMdd_hhmm")}.zip";
             string outFilePath = Path.GetFullPath(outFileName, Environment.CurrentDirectory);
             try
             {
-                using var fileStream = new FileStream(outFilePath, FileMode.Create, FileAccess.ReadWrite, FileShare.ReadWrite);
+                FileStream = new FileStream(outFilePath, FileMode.Create, FileAccess.ReadWrite, FileShare.ReadWrite);
                 var lengthWrite = 0;
                 while (lengthWrite != streamInfo.Length)
                 {
@@ -32,56 +42,46 @@ namespace SignalGo.ServerManager.Services
                     int readCount = await streamInfo.Stream.ReadAsync(bufferBytes, bufferBytes.Length);
                     if (readCount <= 0)
                         break;
-                    await fileStream.WriteAsync(bufferBytes, 0, readCount);
+                    await FileStream.WriteAsync(bufferBytes, 0, readCount);
                     lengthWrite += readCount;
                     progress += lengthWrite * 100.0 / streamInfo.Length;
-                    //Debug.WriteLine("progress writed value: " + progress);
                 }
                 Debug.WriteLine("Upload Data Downloaded Successfully");
-                //ExtractArchive(filePath);
             }
             catch (Exception ex)
             {
                 AutoLogger.Default.LogError(ex, "DownloadUploadData");
             }
+            finally
+            {
+                Dispose();
+            }
 
-            //make your custom result
+            var service = new ServiceContract
+            {
+                Name = serviceToUpdate.Name,
+                ServiceAssembliesPath = serviceToUpdate.AssemblyPath,
+                ServiceKey = serviceToUpdate.ServerKey
+            };
+            using (ServiceUpdater = new ServiceUpdater(service, outFilePath))
+            {
+                await ServiceUpdater.Update();
+            }
             //return MessageContract.Success();
             return "success";
         }
-
-        public bool ExtractArchive(string archive)
+        public void Dispose()
         {
-            bool isExtracted = false;
-            // archive extension:
-            switch (archive.Split('.')[1])
+            try
             {
-                case "zip":
-                    ZipFile.ExtractToDirectory(archive, Path.GetFullPath(Directory.GetCurrentDirectory()));
-                    isExtracted = true;
-                    break;
-                case "rar":
-                    isExtracted = false;
-                    break;
-                default:
-                    break;
+                FileStream.Close();
+                FileStream.Dispose();
+                //GC.Collect();
             }
-            return isExtracted;
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.Message);
+            }
         }
-        //public virtual Task DeCompress(CompressionMethodType compressionMethod = CompressionMethodType.Zip)
-        //{
-        //    try
-        //    {
-        //        string zipFilePath = Path.Combine(AssembliesPath, "publishArchive.zip");
-        //        string extractPath = Path.Combine(AssembliesPath, "extracted");
-        //        if (compressionMethod == CompressionMethodType.Zip)
-        //            ZipFile.ExtractToDirectory(zipFilePath, extractPath);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        AutoLogger.Default.LogError(ex, "Publish DeCompression");
-        //    }
-        //    return Task.CompletedTask;
-        //}
     }
 }

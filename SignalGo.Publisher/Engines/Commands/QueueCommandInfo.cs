@@ -1,11 +1,12 @@
-﻿using SignalGo.Publisher.Engines.Interfaces;
+﻿using System;
+using SignalGo.Publisher.Engines.Interfaces;
 using SignalGo.Shared.Log;
-using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using SignalGo.Publisher.Engines.Models;
 
 namespace SignalGo.Publisher.Engines.Commands
 {
@@ -23,7 +24,7 @@ namespace SignalGo.Publisher.Engines.Commands
         {
 
             var proc = new Process();
-            Status = Models.RunStatusType.Running;
+            Status = RunStatusType.Running;
             try
             {
                 foreach (var item in Commands)
@@ -31,14 +32,14 @@ namespace SignalGo.Publisher.Engines.Commands
                     if (cancellationToken.IsCancellationRequested)
                     {
                         Debug.WriteLine($"Cancellation Requested in task {Task.CurrentId}");
-                        Status = Models.RunStatusType.Cancelled;
+                        Status = RunStatusType.Cancelled;
                         return proc;
                     }
                     proc = await item.Run(cancellationToken);
                     if (proc.ExitCode != 0)
                     {
                         IsSuccess = false;
-                        Status = Models.RunStatusType.Error;
+                        Status = RunStatusType.Error;
                         return proc;
                     }
                 }
@@ -47,7 +48,7 @@ namespace SignalGo.Publisher.Engines.Commands
             {
                 AutoLogger.Default.LogError(ex, "QueueRunner");
             }
-            Status = Models.RunStatusType.Done;
+            Status = RunStatusType.Done;
             return proc;
         }
     }

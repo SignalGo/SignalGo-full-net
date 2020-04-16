@@ -74,11 +74,10 @@
             <Button Margin="10" Command="{Binding BackCommand}" Grid.Row="6" Grid.Column="3" Content="Back" Width="100" Height="30" />
         </StackPanel>
 
-        <StackPanel Orientation="Horizontal">
-            <Button Command="{Binding AddNewServerCommand}" Content="Add new server" Padding="30,10,30,10" Margin="0,0,0,0"/>
-        </StackPanel>
-
-        <ListView Grid.Row="1" Grid.RowSpan="4" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" ItemsSource="{Binding CurrentServerSettingInfo.ServerInfo}" SelectedItem="{Binding SelectedServerInfo}" HorizontalContentAlignment="Stretch">
+        <!--<StackPanel Orientation="Horizontal">-->
+        <!--<Button Command="{Binding AddNewServerCommand}" Content="Add new server" Padding="10,0,10,0" Margin="0,0,0,0"/>-->
+        <!--</StackPanel>-->
+        <ListView Grid.Row="0" Grid.RowSpan="7" Width="150" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" ItemsSource="{Binding CurrentServerSettingInfo.ServerInfo}" SelectedItem="{Binding SelectedServerInfo}" HorizontalContentAlignment="Stretch">
             <ListView.ItemTemplate>
                 <DataTemplate>
                     <TextBlock Background="DarkGray" Padding="5" Text="{Binding ServerName}"/>

@@ -1,6 +1,6 @@
-﻿namespace SignalGo.Publisher.Engines.Models
+﻿namespace SignalGo.ServerManager.Models
 {
-    public enum CompressionMethodType
+    public enum CompressionMethodTypeOld
     {
         None = 0,
         Zip = 1,

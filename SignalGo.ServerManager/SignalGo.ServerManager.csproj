@@ -28,5 +28,10 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Engines\Commands\" />
+    <Folder Include="Engines\Interfaces\" />
+  </ItemGroup>
+
 
 </Project>

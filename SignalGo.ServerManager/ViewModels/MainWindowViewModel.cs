@@ -4,6 +4,7 @@ using SignalGo.ServerManager.Models;
 using SignalGo.ServerManager.Views;
 using SignalGo.Shared.Log;
 using System;
+using System.IO;
 using System.Windows.Controls;
 
 namespace SignalGo.ServerManager.ViewModels
@@ -16,11 +17,15 @@ namespace SignalGo.ServerManager.ViewModels
         {
             This = this;
             AddNewServerCommand = new Command(AddNewServer);
+            ShowServieLogsCommand = new Command(ShowServieLogs);
+            ExitApplicationCommand = new Command(ExitApplication);
             Load();
         }
 
 
         public Command AddNewServerCommand { get; set; }
+        public Command ShowServieLogsCommand { get; set; }
+        public Command ExitApplicationCommand { get; set; }
 
         public static Frame MainFrame { get; set; }
 
@@ -50,7 +55,16 @@ namespace SignalGo.ServerManager.ViewModels
                 return SettingInfo.Current;
             }
         }
-
+        public void ShowServieLogs()
+        {
+            System.Diagnostics.Process.Start(
+                "notepad",
+                Path.Combine(Environment.CurrentDirectory, "AppLogs.log"));
+        }   
+        public void ExitApplication()
+        {
+            System.Windows.Application.Current.Shutdown();
+        }
         private void AddNewServer()
         {
             MainFrame.Navigate(new AddNewServerPage());

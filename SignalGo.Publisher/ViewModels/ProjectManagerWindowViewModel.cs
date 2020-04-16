@@ -4,6 +4,8 @@ using SignalGo.Publisher.Models;
 using SignalGo.Publisher.Views;
 using SignalGo.Shared.Log;
 using System;
+using System.Diagnostics;
+using System.IO;
 using System.Windows.Controls;
 
 namespace SignalGo.Publisher.ViewModels
@@ -19,14 +21,20 @@ namespace SignalGo.Publisher.ViewModels
         public ProjectManagerWindowViewModel()
         {
             This = this;
+            AddNewServerCommand = new Command(AddNewServer);
             AddNewProjectCommand = new Command(AddNewProject);
+            ShowAppLogsCommand = new Command(ShowAppLogs);
+            ShowCompilerLogsCommand = new Command(ShowCompilerLogs);
             ShowServersCommand = new Command(ShowServers);
             LoadProjects();
         }
 
 
+        public Command AddNewServerCommand { get; set; }
         public Command AddNewProjectCommand { get; set; }
         public Command ShowServersCommand { get; set; }
+        public Command ShowAppLogsCommand { get; set; }
+        public Command ShowCompilerLogsCommand { get; set; }
 
         public static Frame MainFrame { get; set; }
 
@@ -56,17 +64,30 @@ namespace SignalGo.Publisher.ViewModels
                 return SettingInfo.Current;
             }
         }
-        
+
 
         private void AddNewProject()
         {
             MainFrame.Navigate(new AddNewProjectPage());
-        } 
+        }
+        private void ShowCompilerLogs()
+        {
+            Process.Start("notepad", Path.Combine(Environment.CurrentDirectory, "CommandRunnerLogs.txt"));
+        }
+        private void ShowAppLogs()
+        {
+            Process.Start("notepad", Path.Combine(Environment.CurrentDirectory, "AppLogs.log"));
+            //using (Process.Start("notepad", $"{Environment.CurrentDirectory}{ConfigurationManager.AppSettings["CommandRunnerLogFilePath"]}")) { }
+        }
         private void ShowServers()
         {
             MainFrame.Navigate(new ServerInfoPage());
         }
+        private void AddNewServer()
+        {
+            ProjectManagerWindow.This.mainframe.Navigate(new AddNewServerPage());
 
+        }
 
         public void LoadProjects()
         {
@@ -82,7 +103,7 @@ namespace SignalGo.Publisher.ViewModels
                 AutoLogger.Default.LogError(ex, "LoadProjectInfo");
             }
         }
-        
+
 
 
 

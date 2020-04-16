@@ -1,5 +1,6 @@
-﻿using SignalGo.Publisher.Engines.Models;
-using SignalGo.Publisher.Models;
+﻿using SignalGo.Publisher.Models;
+using SignalGo.Shared.Models;
+using System;
 using System.IO.Compression;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,8 +12,10 @@ namespace SignalGo.Publisher.Engines.Interfaces
     /// </summary>
     public interface IPublish : ICommand
     {
+        public string ServiceName { get; set; }
+        public Guid ServiceKey { get; set; }
+
         public Task<string> Compress(CompressionMethodType compressionMethod = CompressionMethodType.Zip, bool includeParent = false, CompressionLevel compressionLevel = CompressionLevel.Fastest);
-        public Task DeCompress(CompressionMethodType compressionMethod = CompressionMethodType.Zip);
         public Task<TaskStatus> Upload(string dataPath, CancellationToken cancellationToken, ServerInfo serverInfo, bool forceUpdate = false);
 
     }

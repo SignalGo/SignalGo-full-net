@@ -12,7 +12,6 @@ using SignalGo.Publisher.Engines.Interfaces;
 using System.Text;
 using System.Threading;
 using System.Diagnostics;
-using SignalGo.Publisher.Engines.Models;
 
 namespace SignalGo.Publisher.ViewModels
 {
@@ -244,25 +243,20 @@ namespace SignalGo.Publisher.ViewModels
             //if (!ProjectInfo.Commands.Any(x => x is TestsCommandInfo))
             //ProjectInfo.AddCommand(new TestsCommandInfo());
             if (!ProjectInfo.Commands.Any(x => x is PublishCommandInfo))
-                ProjectInfo.AddCommand(new PublishCommandInfo());
+                ProjectInfo.AddCommand(new PublishCommandInfo(new Shared.Models.ServiceContract
+                {
+                    Name = ProjectInfo.Name,
+                    ServiceKey = ProjectInfo.ProjectKey
+                }));
         }
         private void CancelCommands()
         {
             try
             {
-                // if cancellation was called before, Make new cancel token for current Cancel
-
-                //if (CancellationToken.IsCancellationRequested)
-                //{
-                //    CancellationTokenSource = new CancellationTokenSource();
-                //    CancellationToken = CancellationTokenSource.Token;
-                //}
                 CancellationTokenSource.Cancel();
                 CancellationToken.ThrowIfCancellationRequested();
                 Debug.WriteLine("Task has been cancelled from Cancellation Command");
                 ServerInfo.ServerLogs.Add("Task has been cancelled from Cancellation Command");
-
-
             }
             catch (Exception ex)
             {
@@ -296,7 +290,6 @@ namespace SignalGo.Publisher.ViewModels
                 await RunCustomCommand(ProjectInfo, CancellationToken);
                 await ReadCommandLog();
             }, CancellationToken);
-
 
             //t1.GetAwaiter().OnCompleted(() =>
             //{
