@@ -401,6 +401,26 @@ namespace SignalGo.Server.ServiceManager.Providers
                                                 }
                                                 break;
                                             }
+                                        case ConcurrentLockType.Key:
+                                            {
+                                                var slim = ConcurrentObjects.GetInstanceObject(concurrentLockAttribute.Key);
+                                                try
+                                                {
+                                                    await slim.WaitAsync();
+                                                    if (IsTask(method))
+                                                    {
+                                                        taskResult = (Task)method.Invoke(service, parametersValues.ToArray());
+                                                        await taskResult;
+                                                    }
+                                                    else
+                                                        result = method.Invoke(service, parametersValues.ToArray());
+                                                }
+                                                finally
+                                                {
+                                                    slim.Release();
+                                                }
+                                                break;
+                                            }
                                     }
                                 }
                                 else
