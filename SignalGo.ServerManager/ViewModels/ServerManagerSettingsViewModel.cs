@@ -20,7 +20,10 @@ namespace SignalGo.ServerManager.ViewModels
 
         public void Save()
         {
-            ConfigurationManager.AppSettings["BackupPath"] = BackupPath;
+            var backupPathTemp1 = ConfigurationManager.AppSettings["BackupPath"];
+
+            ConfigurationManager.AppSettings.Set("BackupPath", BackupPath);
+            var backupPathTemp = ConfigurationManager.AppSettings["BackupPath"];
             ConfigurationManager.AppSettings["MsBuildPath"] = MsBuildPath;
             ConfigurationManager.AppSettings["ApplicationAutoLoggerFilePath"] = LoggerPath;
         }

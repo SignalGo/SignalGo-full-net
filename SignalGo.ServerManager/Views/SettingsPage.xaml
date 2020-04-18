@@ -28,6 +28,8 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="auto"/>
                     <RowDefinition Height="auto"/>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="auto"/>
                     <RowDefinition/>
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
@@ -35,8 +37,17 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="auto"/>
                 </Grid.ColumnDefinitions>
-                
-                <Button Command="{Binding SaveCommand}" Grid.Row="2" Grid.Column="2" VerticalAlignment="Bottom" Content="Save" Width="100" Height="30" Margin="10,0,0,0"/>
+
+                <Label Grid.Row="1" Content="Backup Path:" VerticalContentAlignment="Center"/>
+                <TextBox Grid.Row="1" Margin="5" Text="{Binding BackupPath}" Grid.Column="1" VerticalAlignment="Center" Height="27"/>
+
+                <Label Grid.Row="2" Content="Logger Path:" VerticalContentAlignment="Center"/>
+                <TextBox Grid.Row="2" Margin="5" Text="{Binding LoggerPath}" Grid.Column="1" VerticalAlignment="Center" Height="27"/>
+
+                <Label Grid.Row="0" Content="MsBuild Path" VerticalContentAlignment="Center"/>
+                <TextBox Grid.Row="0" Margin="5" Text="{Binding MsBuildPath}" Grid.Column="1" VerticalAlignment="Center" Height="27"/>
+
+                <Button Command="{Binding SaveCommand}" Grid.Row="4" Grid.Column="2" VerticalAlignment="Bottom" Content="Save" Width="100" Height="30" Margin="10,0,0,0"/>
             </Grid>
         </TabItem>
         <TabItem Header="Variables">
@@ -45,7 +56,7 @@
                     <RowDefinition Height="auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
-                
+
             </Grid>
         </TabItem>
     </TabControl>

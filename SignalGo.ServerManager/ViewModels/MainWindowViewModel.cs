@@ -19,6 +19,7 @@ namespace SignalGo.ServerManager.ViewModels
             AddNewServerCommand = new Command(AddNewServer);
             ShowServieLogsCommand = new Command(ShowServieLogs);
             ExitApplicationCommand = new Command(ExitApplication);
+            ShowSettingPageCommand = new Command(ShowSettingPage);
             Load();
         }
 
@@ -26,6 +27,7 @@ namespace SignalGo.ServerManager.ViewModels
         public Command AddNewServerCommand { get; set; }
         public Command ShowServieLogsCommand { get; set; }
         public Command ExitApplicationCommand { get; set; }
+        public Command ShowSettingPageCommand { get; set; }
 
         public static Frame MainFrame { get; set; }
 
@@ -60,7 +62,14 @@ namespace SignalGo.ServerManager.ViewModels
             System.Diagnostics.Process.Start(
                 "notepad",
                 Path.Combine(Environment.CurrentDirectory, "AppLogs.log"));
-        }   
+        }
+        public void ShowSettingPage()
+        {
+            SettingsPage page = new SettingsPage();
+            //ServerManagerSettingsViewModel vm = page.DataContext as ServerManagerSettingsViewModel;
+            //vm. = value;
+            MainFrame.Navigate(page);
+        }
         public void ExitApplication()
         {
             System.Windows.Application.Current.Shutdown();
