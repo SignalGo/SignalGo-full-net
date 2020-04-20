@@ -118,8 +118,9 @@ namespace SignalGo.Server.ServiceManager.Providers
                     List<CustomDataExchangerAttribute> customDataExchanger = new List<CustomDataExchangerAttribute>();
                     List<ClientLimitationAttribute> clientLimitationAttribute = new List<ClientLimitationAttribute>();
                     List<ConcurrentLockAttribute> concurrentLockAttributes = new List<ConcurrentLockAttribute>();
+                    List<CustomOutputSerializerAttribute> customOutputSerializerAttributes = new List<CustomOutputSerializerAttribute>();
 
-                    IEnumerable<MethodInfo> allMethods = GetMethods(client, methodName, parameters, serviceType, customDataExchanger, securityAttributes, clientLimitationAttribute, concurrentLockAttributes, canTakeMethod);
+                    IEnumerable<MethodInfo> allMethods = GetMethods(client, methodName, parameters, serviceType, customDataExchanger, customOutputSerializerAttributes, securityAttributes, clientLimitationAttribute, concurrentLockAttributes, canTakeMethod);
                     method = allMethods.FirstOrDefault();
                     //if (method == null && !string.IsNullOrEmpty(jsonParameters))
                     //{
@@ -131,10 +132,10 @@ namespace SignalGo.Server.ServiceManager.Providers
                     if (method == null)
                     {
                         //find method with sended parameters
-                        method = GetMethods(client, methodName, null, serviceType, customDataExchanger, securityAttributes, clientLimitationAttribute, concurrentLockAttributes, canTakeMethod).FirstOrDefault();
+                        method = GetMethods(client, methodName, null, serviceType, customDataExchanger, customOutputSerializerAttributes, securityAttributes, clientLimitationAttribute, concurrentLockAttributes, canTakeMethod).FirstOrDefault();
                         if (method == null)
                         {
-                            method = GetMethods(client, "-noName-", null, serviceType, customDataExchanger, securityAttributes, clientLimitationAttribute, concurrentLockAttributes, x =>
+                            method = GetMethods(client, "-noName-", null, serviceType, customDataExchanger, customOutputSerializerAttributes, securityAttributes, clientLimitationAttribute, concurrentLockAttributes, x =>
                             {
                                 return x.GetCustomAttribute<HomePageAttribute>() != null;
                             }).FirstOrDefault();
@@ -469,8 +470,12 @@ namespace SignalGo.Server.ServiceManager.Providers
                                     if (result == null)
                                         callback.Data = null;
                                     else
-                                        callback.Data = ServerSerializationHelper.SerializeObject(result, serverBase, customDataExchanger: customDataExchanger.ToArray(), client: client, isEnabledReferenceResolver: isEnabledReferenceResolver, isEnabledReferenceResolverForArray: isEnabledReferenceResolverForArray);
-
+                                    {
+                                        if (customOutputSerializerAttributes.Count == 0)
+                                            callback.Data = ServerSerializationHelper.SerializeObject(result, serverBase, customDataExchanger: customDataExchanger.ToArray(), client: client, isEnabledReferenceResolver: isEnabledReferenceResolver, isEnabledReferenceResolverForArray: isEnabledReferenceResolverForArray);
+                                        else
+                                            callback.Data = customOutputSerializerAttributes.First().Serialize(result, serverBase, client);
+                                    }
 
                                 }
                             }
@@ -733,6 +738,7 @@ namespace SignalGo.Server.ServiceManager.Providers
             , Shared.Models.ParameterInfo[] parameters
             , Type serviceType
             , List<CustomDataExchangerAttribute> customDataExchangerAttributes
+            , List<CustomOutputSerializerAttribute> customOutputSerializerAttributes
             , List<ISecurityContract> securityContractAttributes
             , List<ClientLimitationAttribute> clientLimitationAttributes
             , List<ConcurrentLockAttribute> concurrentLockAttributes
@@ -748,6 +754,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                         continue;
                     securityContractAttributes.AddRange(method.GetCustomAttributes(typeof(ISecurityContract), true).Cast<ISecurityContract>());
                     customDataExchangerAttributes.AddRange(method.GetCustomAttributes(typeof(CustomDataExchangerAttribute), true).Cast<CustomDataExchangerAttribute>().Where(x => x.GetExchangerByUserCustomization(client)));
+                    customOutputSerializerAttributes.AddRange(method.GetCustomAttributes(typeof(CustomOutputSerializerAttribute), true).Cast<CustomOutputSerializerAttribute>());
                     clientLimitationAttributes.AddRange(method.GetCustomAttributes(typeof(ClientLimitationAttribute), true).Cast<ClientLimitationAttribute>());
                     concurrentLockAttributes.AddRange(method.GetCustomAttributes(typeof(ConcurrentLockAttribute), true).Cast<ConcurrentLockAttribute>());
                     if (item != serviceType)
@@ -755,6 +762,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                         MethodInfo newMethod = FindMethod(serviceType, methodName, parameters, canTakeMethod);
                         if (newMethod != null)
                         {
+                            customOutputSerializerAttributes.AddRange(newMethod.GetCustomAttributes(typeof(CustomOutputSerializerAttribute), true).Cast<CustomOutputSerializerAttribute>());
                             securityContractAttributes.AddRange(newMethod.GetCustomAttributes(typeof(ISecurityContract), true).Cast<ISecurityContract>());
                             customDataExchangerAttributes.AddRange(newMethod.GetCustomAttributes(typeof(CustomDataExchangerAttribute), true).Cast<CustomDataExchangerAttribute>().Where(x => x.GetExchangerByUserCustomization(client)));
                             clientLimitationAttributes.AddRange(newMethod.GetCustomAttributes(typeof(ClientLimitationAttribute), true).Cast<ClientLimitationAttribute>());
