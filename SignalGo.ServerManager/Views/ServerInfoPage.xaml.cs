@@ -4,7 +4,7 @@ using System.Windows.Controls;
 using System.Runtime.InteropServices;
 using System.Windows.Forms.Integration;
 using SignalGo.ServerManager.ViewModels;
-using System.Windows.Threading;
+using System.Windows.Media;
 
 namespace SignalGo.ServerManager.Views
 {
@@ -31,11 +31,22 @@ namespace SignalGo.ServerManager.Views
             // Tab
             var tabItem = (TabItem)sender;
             var vm = tabItem.DataContext as ServerInfoViewModel;
+            Grid grid = new Grid()
+            {
+                Background = Brushes.DarkGray
+            };
             tabItem.LayoutUpdated += (x, ee) =>
             {
                 // to fix show console window error/bug
+                tabItem.Header = $"Window ({grid.ActualWidth},{grid.ActualHeight})";
                 if (vm.ServerInfo.CurrentServerBase != null)
-                    SetWindowPos(vm.ServerInfo.CurrentServerBase.BaseProcess.MainWindowHandle, IntPtr.Zero, 0, 0, (int)this.ActualWidth, (int)this.ActualHeight, SWP_NOZORDER | SWP_NOACTIVATE);
+                    SetWindowPos(vm.ServerInfo.CurrentServerBase.BaseProcess.MainWindowHandle, IntPtr.Zero, 0, 0, (int)grid.ActualWidth, (int)grid.ActualHeight, SWP_NOZORDER | SWP_NOACTIVATE);
+            };
+            WindowsFormsHost host = new WindowsFormsHost()
+            {
+                VerticalAlignment = VerticalAlignment.Stretch,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                Background = Brushes.Green
             };
             // instance of windows form host
             WindowsFormsHost host = new WindowsFormsHost();

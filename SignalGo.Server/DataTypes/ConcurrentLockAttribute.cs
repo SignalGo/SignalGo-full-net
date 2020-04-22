@@ -26,13 +26,50 @@ namespace SignalGo.Server.DataTypes
         /// <summary>
         /// lock per signle instance service,users cannot call methods of service concurrent
         /// </summary>
-        PerSingleInstanceService = 5
+        PerSingleInstanceService = 5,
+        /// <summary>
+        /// by a static string key
+        /// </summary>
+        Key = 6
     }
     /// <summary>
     /// lock method when multipe clients are calling
     /// </summary>
     public class ConcurrentLockAttribute : Attribute
     {
+        /// <summary>
+        /// 
+        /// </summary>
+        public ConcurrentLockAttribute()
+        {
+
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="type"></param>
+        public ConcurrentLockAttribute(ConcurrentLockType type)
+        {
+            Type = type;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="key"></param>
+        public ConcurrentLockAttribute(string key)
+        {
+            Type =  ConcurrentLockType.Key;
+            Key = key;
+        }
+
+        /// <summary>
+        /// type of lock
+        /// </summary>
         public ConcurrentLockType Type { get; set; }
+        /// <summary>
+        /// key of lock
+        /// </summary>
+        public string Key { get; set; }
     }
 }

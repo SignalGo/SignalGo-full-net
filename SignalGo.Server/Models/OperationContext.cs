@@ -251,8 +251,10 @@ namespace SignalGo.Server.Models
             return null;
         }
 
+
+
         /// <summary>
-        /// return all of setting of current context
+        /// get all settings of client
         /// </summary>
         /// <returns></returns>
         public static IEnumerable<object> GetAllSettings()
@@ -262,11 +264,9 @@ namespace SignalGo.Server.Models
                 throw new Exception("Context is null or empty! Do not call this property inside of another thread or after await or another task");
             if (SavedSettings.TryGetValue(context.Client, out HashSet<object> result))
             {
-                foreach (object item in result)
-                {
-                    yield return item;
-                }
+                return result;
             }
+            return null;
         }
 
         /// <summary>
@@ -556,22 +556,6 @@ namespace SignalGo.Server.Models
                         yield return find;
                 }
             }
-        }
-
-        /// <summary>
-        /// get all settings of client
-        /// </summary>
-        /// <returns></returns>
-        public static IEnumerable<object> GetAllSettings()
-        {
-            OperationContext context = OperationContext.Current;
-            if (context == null)
-                throw new Exception("Context is null or empty! Do not call this property inside of another thread or after await or another task");
-            if (SavedSettings.TryGetValue(context.Client, out HashSet<object> result))
-            {
-                return result;
-            }
-            return null;
         }
 
         public static bool HasSettingNoHttp(ClientInfo clientInfo)
