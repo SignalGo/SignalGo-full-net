@@ -42,14 +42,13 @@ namespace SignalGo.ServerManager.Views
                 if (vm.ServerInfo.CurrentServerBase != null)
                     SetWindowPos(vm.ServerInfo.CurrentServerBase.BaseProcess.MainWindowHandle, IntPtr.Zero, 0, 0, (int)grid.ActualWidth, (int)grid.ActualHeight, SWP_NOZORDER | SWP_NOACTIVATE);
             };
+            // instance of windows form host
             WindowsFormsHost host = new WindowsFormsHost()
             {
                 VerticalAlignment = VerticalAlignment.Stretch,
                 HorizontalAlignment = HorizontalAlignment.Stretch,
                 Background = Brushes.Green
             };
-            // instance of windows form host
-            WindowsFormsHost host = new WindowsFormsHost();
             System.Windows.Forms.Panel p = new System.Windows.Forms.Panel();
             host.Child = p;
             tabItem.Content = host;

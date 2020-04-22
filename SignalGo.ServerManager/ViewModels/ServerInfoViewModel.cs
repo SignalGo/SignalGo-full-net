@@ -44,7 +44,6 @@ namespace SignalGo.ServerManager.ViewModels
             }
         }
 
-
         private void Delete()
         {
             SettingInfo.Current.ServerInfo.Remove(ServerInfo);

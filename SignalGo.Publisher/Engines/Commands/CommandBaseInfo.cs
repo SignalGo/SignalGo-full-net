@@ -187,23 +187,25 @@ namespace SignalGo.Publisher.Engines.Commands
                     // contacting with Provider is Not Availaible;
                     if (!contactToProvider)
                     {
-                        if (retryCounter < 3)
-                        {
-                            // increase try counter
-                            retryCounter++;
-                            // wait and retry up to 3 time
-                            await Task.Delay(2000);
-                            // Try to update current server again
-                            await Upload(dataPath, cancellationToken);
-                        }
+                        //if (retryCounter < 3)
+                        //{
+                        //    // increase try counter
+                        //    retryCounter++;
+                        //    // wait and retry up to 3 time
+                        //    await Task.Delay(2000);
+                        //    // Try to update current server again
+                        //    await Upload(dataPath, cancellationToken);
+                        //}
                         //else, we can't update this erver at this moment (Problems are Possible: Server is Offline,refuse || block || Network Mismatch, unhandled Errors...)
                         ServerInfo.Servers.FirstOrDefault(s => s.ServerKey == server.ServerKey).ServerStatus = ServerInfo.ServerInfoStatusEnum.UpdateError;
                         ServerInfo.Servers.FirstOrDefault(s => s.ServerKey == server.ServerKey).IsUpdated = ServerInfo.ServerInfoStatusEnum.UpdateError;
-                        server.ServerStatus = ServerInfo.ServerInfoStatusEnum.UpdateError;
-                        server.IsUpdated = ServerInfo.ServerInfoStatusEnum.UpdateError;
+
+                        //server.ServerStatus = ServerInfo.ServerInfoStatusEnum.UpdateError;
+                        //server.IsUpdated = ServerInfo.ServerInfoStatusEnum.UpdateError;
+
                         SettingInfo.CurrentServer.ServerInfo.FirstOrDefault(x => x.ServerKey == server.ServerKey).ServerLastUpdate = "Couldn't Update";
                         SettingInfo.SaveServersSettingInfo();
-                        await Upload(dataPath, cancellationToken);
+                        return await Upload(dataPath, cancellationToken);
                     }
                     //if (forceUpdate)
                     //    await PublisherServiceProvider.StopServices();
@@ -221,12 +223,18 @@ namespace SignalGo.Publisher.Engines.Commands
                     } // end server collection foreach
                     else
                     {
+                        //server.IsUpdated = ServerInfo.ServerInfoStatusEnum.UpdateError;
+                        //server.ServerStatus = ServerInfo.ServerInfoStatusEnum.UpdateError;
+                        ServerInfo.Servers.FirstOrDefault(s => s.ServerKey == server.ServerKey).ServerStatus = ServerInfo.ServerInfoStatusEnum.UpdateError;
+                        ServerInfo.Servers.FirstOrDefault(s => s.ServerKey == server.ServerKey).IsUpdated = ServerInfo.ServerInfoStatusEnum.UpdateError;
                         SettingInfo.CurrentServer.ServerInfo.FirstOrDefault(x => x.ServerKey == server.ServerKey).ServerLastUpdate = "Couldn't Update";
                     }
                 }
             }
             catch (Exception ex)
             {
+                // may be service is in use and started before. so i need compile it
+                ServerInfo.ServerLogs.Add(ex.Message);
 
             }
             ServerInfo.ServerLogs.Add($"------ Exited at [{DateTime.Now}] ------");

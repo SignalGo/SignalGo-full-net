@@ -65,6 +65,7 @@ namespace SignalGo.Publisher.Services
                     return uploadInfo;
                 }
                 else
+                    uploadInfo.Status = false;
                     Debug.WriteLine("Problem Occured In Stream");
             }
             catch (Exception ex)
