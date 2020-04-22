@@ -2,7 +2,7 @@
 using SignalGo.Shared.Log;
 using SignalGo.Shared.Models;
 using System;
-using System.Configuration;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
@@ -14,10 +14,10 @@ namespace SignalGo.ServerManager.Engines.Models
 {
     public class ServiceUpdater : IDisposable
     {
-        //public string ExtractPath { get; set; }
         public ServiceContract ServiceInfo { get; set; }
         public string UpdateDataPath { get; set; }
         private bool IsSuccess = false;
+
         public ServiceUpdater(ServiceContract service)
         {
             ServiceInfo = service;
@@ -26,7 +26,6 @@ namespace SignalGo.ServerManager.Engines.Models
         {
             ServiceInfo = service;
             UpdateDataPath = updateDataPath;
-            //ExtractPath = Path.Combine(Directory.GetParent(service.AssemblyPath).FullName);
         }
 
         public async Task<TaskStatus> Update()
@@ -64,6 +63,7 @@ namespace SignalGo.ServerManager.Engines.Models
             catch (Exception ex)
             {
                 Debug.WriteLine($"an error occured in service backup{ex.Message}");
+                AutoLogger.Default.LogError(ex, "an error occured in service backup");
             }
             return IsSuccess;
         }
@@ -109,7 +109,8 @@ namespace SignalGo.ServerManager.Engines.Models
         public async Task<bool> CompressBackup(CompressionMethodType compressionMethod = CompressionMethodType.Zip, bool includeParent = false, CompressionLevel compressionLevel = CompressionLevel.Optimal)
         {
             IsSuccess = false;
-            string backupPath = Path.Combine($"{ConfigurationManager.AppSettings["BackupPath"]}");
+            string backupPath = Path.Combine(UserSettingInfo.Current.UserSettings.BackupPath);
+            string GetServicePathParent = Directory.GetParent(ServiceInfo.ServiceAssembliesPath).FullName;
             // if backup path is'nt valid or exist break operation and display a warn message to user
             if (!Directory.Exists(backupPath))
             {
@@ -118,17 +119,18 @@ namespace SignalGo.ServerManager.Engines.Models
             }
             string zipFilePath = string.Empty;
             string backupArchivePath = DateTime.Now.ToString("yyyyMMdd_hhmm");
-            string tempServiceBackupPath = Path.Combine(backupPath, ServiceInfo.Name, $"{ServiceInfo.Name}_backup{backupArchivePath}");
+            string tempServiceBackupPath = Path.Combine(backupPath, ServiceInfo.Name,
+                $"{ServiceInfo.Name}_backup{backupArchivePath}");
             // get executable service directory
-            string servicePath = Path.Combine(Directory.GetParent(ServiceInfo.ServiceAssembliesPath).FullName);
+            string servicePath = Path.Combine(GetServicePathParent);
             try
             {
                 // get all files in service path
-                var allDires = Directory.GetDirectories(Directory.GetParent(ServiceInfo.ServiceAssembliesPath).FullName, "*", SearchOption.AllDirectories);
-                var allFiles = Directory.GetFiles(Directory.GetParent(ServiceInfo.ServiceAssembliesPath).FullName, "*.*", SearchOption.AllDirectories);
+                string[] allDires = Directory.GetDirectories(GetServicePathParent, "*", SearchOption.AllDirectories);
+                string[] allFiles = Directory.GetFiles(GetServicePathParent, "*.*", SearchOption.AllDirectories);
                 var filesList = allFiles.ToList();
                 //find backup files that stored earlier to ignore in backup
-                var ignoreFiles = filesList.Where(x => x.Contains(".zip")).ToList();
+                List<string> ignoreFiles = filesList.Where(x => x.Contains(".zip")).ToList();
                 // remove ignored files from backup files
                 foreach (var file in ignoreFiles)
                 {

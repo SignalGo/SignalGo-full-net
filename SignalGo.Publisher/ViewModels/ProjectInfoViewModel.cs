@@ -25,9 +25,12 @@ namespace SignalGo.Publisher.ViewModels
         /// </summary>
         public ProjectInfoViewModel()
         {
+            ServerInfo.Servers.Clear();
+            SaveChangeCommand = new Command(SaveChanges);
             ApplyMigrationsCommand = new Command(ApplyMigrations);
             BuildCommand = new Command(Build);
-            BrowsePathCommand = new Command(BrowsePath);
+            BrowseProjectPathCommand = new Command(BrowseProjectPath);
+            BrowseAssemblyPathCommand = new Command(BrowseAssemblyPath);
             CancellationCommand = new Command(() =>
             {
                 CancelCommands();
@@ -80,22 +83,36 @@ namespace SignalGo.Publisher.ViewModels
         /// <summary>
         /// browse directory for path
         /// </summary>
-        private void BrowsePath()
+        private void BrowseAssemblyPath()
         {
-
+            FolderBrowserDialog folderBrowserDialog = new FolderBrowserDialog();
+            folderBrowserDialog.SelectedPath = folderBrowserDialog.SelectedPath;
+            if (folderBrowserDialog.ShowDialog() == DialogResult.OK)
+            {
+                this.ProjectInfo.ProjectAssembliesPath = folderBrowserDialog.SelectedPath;
+                SettingInfo.SaveSettingInfo();
+            }
+        }
+        private void BrowseProjectPath()
+        {
             FolderBrowserDialog folderBrowserDialog = new FolderBrowserDialog();
             folderBrowserDialog.SelectedPath = folderBrowserDialog.SelectedPath;
             if (folderBrowserDialog.ShowDialog() == DialogResult.OK)
             {
                 this.ProjectInfo.ProjectPath = folderBrowserDialog.SelectedPath;
+                SettingInfo.SaveSettingInfo();
             }
-            //SettingInfo.Current.ProjectInfo.Add(new ProjectInfo()
-            //{
-            //    ProjectKey = this.ProjectKey,mg
-            //    AssemblyPath = AssemblyPath,
-            //    Name = Name,
-            //});
-            //SettingInfo.SaveSettingInfo();
+        }
+
+        /// <summary>
+        /// save changes in project info
+        /// </summary>
+        private void SaveChanges()
+        {
+            var gu = Guid.Empty;
+            if (Guid.TryParse(ProjectInfo.ProjectKey.ToString(), out gu))
+                ProjectInfo.ProjectKey = gu;
+            SettingInfo.SaveSettingInfo();
         }
 
         public static CancellationTokenSource CancellationTokenSource = new CancellationTokenSource();
@@ -138,7 +155,9 @@ namespace SignalGo.Publisher.ViewModels
         /// <summary>
         /// compile and check project assemblies for build
         /// </summary>
-        public Command BrowsePathCommand { get; set; }
+        public Command SaveChangeCommand { get; set; }
+        public Command BrowseProjectPathCommand { get; set; }
+        public Command BrowseAssemblyPathCommand { get; set; }
         public Command BuildCommand { get; set; }
         public Command CancellationCommand { get; set; }
         public Command<ICommand> RemoveCommand { get; set; }
@@ -278,7 +297,6 @@ namespace SignalGo.Publisher.ViewModels
             if (!ProjectInfo.Commands.Any(x => x is BuildCommandInfo))
                 ProjectInfo.AddCommand(new BuildCommandInfo());
         }
-        public Thread thread;
         /// <summary>
         /// Init Commands to Run in Queue
         /// </summary>

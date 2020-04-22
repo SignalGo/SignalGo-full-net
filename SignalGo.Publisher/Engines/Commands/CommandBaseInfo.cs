@@ -179,7 +179,8 @@ namespace SignalGo.Publisher.Engines.Commands
                     Name = ServiceName,
                     ServiceKey = ServiceKey
                 };
-                foreach (var server in ServerInfo.Servers.Where(x => x.IsUpdated != ServerInfo.ServerInfoStatusEnum.UpdateError).Where(y => y.IsUpdated != ServerInfo.ServerInfoStatusEnum.Updated))
+                //TODO: Fix offline servers update bug
+                foreach (var server in ServerInfo.Servers.Where(x => x.IsUpdated != ServerInfo.ServerInfoStatusEnum.UpdateError).ToList().Where(y => y.IsUpdated != ServerInfo.ServerInfoStatusEnum.Updated).ToList())
                 {
                     // Contact with Server Agents and Make the connection if it possible
                     var contactToProvider = await PublisherServiceProvider.Initialize(server);
@@ -197,8 +198,12 @@ namespace SignalGo.Publisher.Engines.Commands
                         }
                         //else, we can't update this erver at this moment (Problems are Possible: Server is Offline,refuse || block || Network Mismatch, unhandled Errors...)
                         ServerInfo.Servers.FirstOrDefault(s => s.ServerKey == server.ServerKey).ServerStatus = ServerInfo.ServerInfoStatusEnum.UpdateError;
+                        ServerInfo.Servers.FirstOrDefault(s => s.ServerKey == server.ServerKey).IsUpdated = ServerInfo.ServerInfoStatusEnum.UpdateError;
                         server.ServerStatus = ServerInfo.ServerInfoStatusEnum.UpdateError;
                         server.IsUpdated = ServerInfo.ServerInfoStatusEnum.UpdateError;
+                        SettingInfo.CurrentServer.ServerInfo.FirstOrDefault(x => x.ServerKey == server.ServerKey).ServerLastUpdate = "Couldn't Update";
+                        SettingInfo.SaveServersSettingInfo();
+                        await Upload(dataPath, cancellationToken);
                     }
                     //if (forceUpdate)
                     //    await PublisherServiceProvider.StopServices();
@@ -211,9 +216,14 @@ namespace SignalGo.Publisher.Engines.Commands
                         ServerInfo.ServerLogs.Add($"------ Ended at [{DateTime.Now}] ------");
                         server.IsUpdated = ServerInfo.ServerInfoStatusEnum.Updated;
                         server.ServerStatus = ServerInfo.ServerInfoStatusEnum.Updated;
+                        SettingInfo.CurrentServer.ServerInfo.FirstOrDefault(x => x.ServerKey == server.ServerKey).ServerLastUpdate = DateTime.Now.ToString();
+                        SettingInfo.SaveServersSettingInfo();
                     } // end server collection foreach
+                    else
+                    {
+                        SettingInfo.CurrentServer.ServerInfo.FirstOrDefault(x => x.ServerKey == server.ServerKey).ServerLastUpdate = "Couldn't Update";
+                    }
                 }
-                ServerInfo.ServerLogs.Add($"------ Cancelled at [{DateTime.Now}] ------");
             }
             catch (Exception ex)
             {

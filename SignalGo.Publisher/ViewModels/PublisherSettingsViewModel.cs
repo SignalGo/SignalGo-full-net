@@ -2,34 +2,34 @@
 using MvvmGo.Commands;
 using MvvmGo.ViewModels;
 using System.Diagnostics;
-using SignalGo.ServerManager.Models;
-using System.Windows.Forms;
+using SignalGo.Publisher.Models;
 using System.IO;
+using System.Windows.Forms;
 
-namespace SignalGo.ServerManager.ViewModels
+namespace SignalGo.Publisher.ViewModels
 {
-    public class ServerManagerSettingsViewModel : BaseViewModel
+    public class PublisherSettingsViewModel : BaseViewModel
     {
-        public Command BrowseBackupPathCommand { get; set; }
+        public PublisherSettingsViewModel()
+        {
+            SaveCommand = new Command(Save);
+            BackCommand = new Command(Back);
+            BrowseMsbuildPathCommand = new Command(BrowseMsbuildPath);
+            BrowseLoggerPathCommand = new Command(BrowseLoggerPath);
+        }
+
+        public Command BrowseMsbuildPathCommand { get; set; }
         public Command BrowseLoggerPathCommand { get; set; }
         public Command RestoreDefaults { get; set; }
         public Command SaveCommand { get; set; }
         public Command BackCommand { get; set; }
-        public ServerManagerSettingsViewModel()
-        {
-            SaveCommand = new Command(Save);
-            BackCommand = new Command(Back);
-            BrowseBackupPathCommand = new Command(BrowseBackupPath);
-            BrowseLoggerPathCommand = new Command(BrowseLoggerPath);
-        }
 
-
-        private void BrowseBackupPath()
+        private void BrowseMsbuildPath()
         {
-            using FolderBrowserDialog BrowseBackupPathDialog = new FolderBrowserDialog();
-            BrowseBackupPathDialog.SelectedPath = BrowseBackupPathDialog.SelectedPath;
-            if (BrowseBackupPathDialog.ShowDialog() == DialogResult.OK)
-                CurrentUserSettingInfo.UserSettings.BackupPath = BrowseBackupPathDialog.SelectedPath;
+            Microsoft.Win32.OpenFileDialog fileDialog = new Microsoft.Win32.OpenFileDialog();
+            fileDialog.FileName = UserSettingInfo.Current.UserSettings.MsbuildPath;
+            if (fileDialog.ShowDialog().GetValueOrDefault())
+                UserSettingInfo.Current.UserSettings.MsbuildPath = fileDialog.FileName;
         }
 
         private void BrowseLoggerPath()
@@ -61,27 +61,23 @@ namespace SignalGo.ServerManager.ViewModels
                 OnPropertyChanged(nameof(UserSetting));
             }
         }
-        
+
         public void Back()
         {
-            MainWindowViewModel.MainFrame.GoBack();
+            ProjectManagerWindowViewModel.MainFrame.GoBack();
         }
         public void Save()
         {
             try
             {
                 UserSettingInfo.SaveUserSettingInfo();
-                MainWindowViewModel.MainFrame.GoBack();
+                ProjectManagerWindowViewModel.MainFrame.GoBack();
             }
             catch (Exception ex)
             {
                 Debug.WriteLine(ex.Message);
-
             }
         }
-
-
-
 
     }
 }

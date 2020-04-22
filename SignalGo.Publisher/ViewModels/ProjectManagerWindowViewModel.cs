@@ -22,6 +22,7 @@ namespace SignalGo.Publisher.ViewModels
         {
             This = this;
             AddNewServerCommand = new Command(AddNewServer);
+            ShowSettingsCommand = new Command(ShowSettingsPage);
             AddNewProjectCommand = new Command(AddNewProject);
             ShowAppLogsCommand = new Command(ShowAppLogs);
             ShowCompilerLogsCommand = new Command(ShowCompilerLogs);
@@ -33,6 +34,7 @@ namespace SignalGo.Publisher.ViewModels
         public Command AddNewServerCommand { get; set; }
         public Command AddNewProjectCommand { get; set; }
         public Command ShowServersCommand { get; set; }
+        public Command ShowSettingsCommand { get; set; }
         public Command ShowAppLogsCommand { get; set; }
         public Command ShowCompilerLogsCommand { get; set; }
 
@@ -66,6 +68,11 @@ namespace SignalGo.Publisher.ViewModels
         }
 
 
+        private void ShowSettingsPage()
+        {
+            MainFrame.Navigate(new PublisherSettingManagerPage());
+
+        }
         private void AddNewProject()
         {
             MainFrame.Navigate(new AddNewProjectPage());

@@ -38,7 +38,6 @@
                 <MenuItem Header="_Help">
                     <MenuItem Header="_How to use"/>
                     <MenuItem Header="_About"/>
-
                 </MenuItem>
             </Menu>
         </DockPanel>

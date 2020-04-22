@@ -33,9 +33,10 @@ namespace SignalGo.ServerManager
                 serverProvider.RegisterServerService<ServerManagerService>();
                 serverProvider.RegisterServerService<ServerManagerStreamService>();
                 serverProvider.ProviderSetting.HttpSetting.HandleCrossOriginAccess = true;
-                serverProvider.Start(
-                    $"http://{ConfigurationManager.AppSettings["ListeningAddress"]}:{ConfigurationManager.AppSettings["ListeningPort"]}/ServerManager/SignalGo");
-                MessageBox.Show($"Server Manager Started on {ConfigurationManager.AppSettings["ListeningAddress"]}{ConfigurationManager.AppSettings["ListeningPort"]}", "start info", MessageBoxButton.OK, MessageBoxImage.Information, MessageBoxResult.OK);
+                serverProvider.Start($"http://{UserSettingInfo.Current.UserSettings.ListeningAddress}:{UserSettingInfo.Current.UserSettings.ListeningPort}/ServerManager/SignalGo");
+
+                // just for see start info
+                //MessageBox.Show($"Server Manager Started on {UserSettingInfo.Current.UserSettings.ListeningAddress}{UserSettingInfo.Current.UserSettings.ListeningPort}", "start info", MessageBoxButton.OK, MessageBoxImage.Information, MessageBoxResult.OK);
 
                 Debug.WriteLine("server is started");
             }

@@ -8,7 +8,9 @@ namespace SignalGo.ServerManager.Models
     public class SettingInfo
     {
         private static SettingInfo _Current = null;
+
         private readonly static string ServerDbName = "Data.json";
+
         public static SettingInfo Current
         {
             get
@@ -25,7 +27,6 @@ namespace SignalGo.ServerManager.Models
         {
             try
             {
-                //string path = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data.json");
                 if (!File.Exists(System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ServerDbName)))
                     return new SettingInfo()
                     {
@@ -44,7 +45,6 @@ namespace SignalGo.ServerManager.Models
 
         public static void SaveSettingInfo()
         {
-            //string path = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Data.db");
             File.WriteAllText(System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ServerDbName), Newtonsoft.Json.JsonConvert.SerializeObject(Current), Encoding.UTF8);
         }
     }

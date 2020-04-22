@@ -23,12 +23,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="App.config">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
-  <ItemGroup>
     <Folder Include="Engines\Commands\" />
     <Folder Include="Engines\Interfaces\" />
   </ItemGroup>

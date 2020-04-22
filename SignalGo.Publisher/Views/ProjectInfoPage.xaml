@@ -204,27 +204,32 @@
 
                 <!--project guid key-->
                 <!--<StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Left">-->
-                <TextBlock Grid.Row="0" Text="Guid:" VerticalAlignment="Center" HorizontalAlignment="Left"/>
-                <TextBox Text="{Binding ProjectInfo.ProjectKey}" Grid.Column="1" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Grid.ColumnSpan="2" Margin="10,0,125,0" />
+                <Label Margin="0,5" Grid.Row="0" Content="Guid:" VerticalAlignment="Center" HorizontalAlignment="Left"/>
+                <TextBox Text="{Binding ProjectInfo.ProjectKey}" Grid.Column="1" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Grid.ColumnSpan="2" Margin="10,5,125,5" />
+                <Button Command="{Binding SaveChangeCommand}" Margin="0,5" Content="Save" Grid.Column="3" Width="80" Grid.Row="0" FontWeight="Normal" HorizontalAlignment="Right"/>
                 <!--</StackPanel>-->
                 <!--  -->
                 <!--<StackPanel  Orientation="Horizontal" Margin="0,0,0,20" HorizontalAlignment="Left">-->
 
-                <TextBlock Text="Project Folder Path:" Grid.Row="1"/>
-                <TextBox Text="{Binding ProjectInfo.ProjectPath}" Grid.Column="1" HorizontalAlignment="Stretch" Grid.Row="1" VerticalAlignment="Stretch" TextWrapping="NoWrap" Margin="10,0,125,0" Grid.ColumnSpan="2"/>
+                <TextBlock Margin="0,5" Text="Project Folder Path:" Grid.Row="1"/>
+                <TextBox Text="{Binding ProjectInfo.ProjectPath}" Grid.Column="1" HorizontalAlignment="Stretch" Grid.Row="1" VerticalAlignment="Stretch" TextWrapping="NoWrap" Margin="10,5,125,5" Grid.ColumnSpan="2"/>
 
-                <TextBlock Text="Project Assemblies Path:" Grid.Row="2"/>
-                <TextBox Text="{Binding ProjectInfo.ProjectAssembliesPath}" Grid.Column="1" HorizontalAlignment="Stretch" Grid.Row="2" VerticalAlignment="Stretch" TextWrapping="NoWrap" Grid.ColumnSpan="2" Margin="10,0,125,0"/>
+                <TextBlock Margin="0,5" Text="Project Assemblies Path:" Grid.Row="2"/>
+                <TextBox Text="{Binding ProjectInfo.ProjectAssembliesPath}" Grid.Column="1" HorizontalAlignment="Stretch" Grid.Row="2" VerticalAlignment="Stretch" TextWrapping="WrapWithOverflow" ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Auto" Grid.ColumnSpan="2" Margin="10,5,125,5"/>
+                <Button Margin="0,5" Command="{Binding BrowseAssemblyPathCommand}" Content="..." Grid.Column="3" Width="80" Grid.Row="2" FontWeight="Normal" HorizontalAlignment="Right"/>
 
-                <!--<Button Command="{Binding BrowsePathCommand}" Content="..." Grid.Column="3" Width="100" Grid.Row="1" FontWeight="Normal" HorizontalAlignment="Right"/>-->
-                <Button Command="{Binding BrowsePathCommand}" Content="..." Grid.Column="3" Width="100" Grid.Row="2" FontWeight="Normal" HorizontalAlignment="Right"/>
-                <Label Content="Builder Log:" FontSize="12" Grid.Row="3" Grid.Column="0" VerticalAlignment="Top" />
-                <TextBox TextChanged="txtCmdLogs_TextChanged" x:Name="txtCmdLogs" TextWrapping="WrapWithOverflow" Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Text="{Binding CmdLogs}" Height="130" Margin="5,5,5,5" ScrollViewer.CanContentScroll="True" VerticalScrollBarVisibility="Auto"/>
-                
-                <Label Content="Servers Log:" FontSize="12" Grid.Row="4" Grid.Column="0" VerticalAlignment="Top" />
-                <TextBox x:Name="CmdServerLogs" TextWrapping="WrapWithOverflow" Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Text="{Binding ServerLogs}" Height="70" Margin="5,5,5,5" ScrollViewer.CanContentScroll="True" VerticalScrollBarVisibility="Auto"/>
+                <Button Margin="0,5" Command="{Binding BrowseProjectPathCommand}" Content="..." Grid.Column="3" Width="80" Grid.Row="1" FontWeight="Normal" HorizontalAlignment="Right"/>
 
-                <ListBox Style="{DynamicResource White_ListBox}" x:Name="lst_CommandsQueue" ItemsSource="{Binding ProjectInfo.Commands}" MinWidth="150" Grid.Column="2" Grid.Row="3" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Margin="0,5,0,20" VerticalContentAlignment="Stretch" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto" Grid.RowSpan="3">
+                <DockPanel Margin="5" Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" >
+                    <Label Content="Builder Log:" FontSize="12" VerticalAlignment="Top" DockPanel.Dock="Top" />
+                    <TextBox TextChanged="txtCmdLogs_TextChanged" x:Name="txtCmdLogs" TextWrapping="WrapWithOverflow" Width="auto" Height="auto" Text="{Binding CmdLogs}" ScrollViewer.CanContentScroll="True" VerticalScrollBarVisibility="Auto" DockPanel.Dock="Bottom"/>
+                </DockPanel>
+                <DockPanel Margin="5" Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" >
+                    <Label Content="Servers Log:" FontSize="12" DockPanel.Dock="Top" />
+                    <TextBox x:Name="CmdServerLogs" Width="auto" Height="auto" TextWrapping="WrapWithOverflow" Text="{Binding ServerLogs}" ScrollViewer.CanContentScroll="True" VerticalScrollBarVisibility="Auto"  DockPanel.Dock="Bottom"/>
+                </DockPanel>
+
+                <ListBox Style="{DynamicResource White_ListBox}" x:Name="lst_CommandsQueue" ItemsSource="{Binding ProjectInfo.Commands}" MinWidth="150" Grid.Column="2" Grid.Row="3" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Margin="0,5,0,20" VerticalContentAlignment="Stretch" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto" Grid.RowSpan="2">
                     <ListBox.ItemTemplate>
                         <HierarchicalDataTemplate>
                             <Grid>
@@ -266,55 +271,18 @@
                                 <DataTemplate>
                                     <Grid>
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="auto"/>
-                                            <ColumnDefinition />
-                                            <ColumnDefinition Width="auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition/>
+                                            <ColumnDefinition/>
                                         </Grid.ColumnDefinitions>
+                                        <!--<CheckBox Style="{StaticResource CircleCheckbox}" Grid.Column="0"-->
                                         <CheckBox Style="{StaticResource CircleCheckbox}" Grid.Column="0"
                                                   Command="{Binding AddToServerQueueCommand}" 
                                                   Content="{Binding ServerName}"
                                                   />
-
-                                        <!--<CheckBox>
-                                            <tg:TriggerExtensions.Triggers>
-                                                <tg:TriggerCollections>
-                                                    -->
-                                        <!--Updated-->
-                                        <!--
-                                                    <tg:DataTriggerInfo>
-                                                        <tg:DataTriggerInfo.Conditions>
-                                                            <tg:DataConditionInfo Binding="{Binding ServerStatus}" Value="{x:Static models:ServerInfoStatus.Updated}"/>
-                                                        </tg:DataTriggerInfo.Conditions>
-                                                        <tg:DataTriggerInfo.Setters>
-                                                            <tg:SetterInfo  Property="Background" Value="Green"/>
-                                                            <tg:SetterInfo  Property="IsChecked" >
-                                                                <tg:SetterInfo.Value>
-                                                                    <Thickness>0</Thickness>
-                                                                </tg:SetterInfo.Value>
-                                                            </tg:SetterInfo>
-                                                        </tg:DataTriggerInfo.Setters>
-                                                    </tg:DataTriggerInfo>
-                                                    -->
-                                        <!--UpdateError-->
-                                        <!--
-                                                    <tg:DataTriggerInfo>
-                                                        <tg:DataTriggerInfo.Conditions>
-                                                            <tg:DataConditionInfo Binding="{Binding ServerStatus}" Value="{x:Static models:ServerInfoStatus.UpdateError}"/>
-                                                        </tg:DataTriggerInfo.Conditions>
-                                                        <tg:DataTriggerInfo.Setters>
-                                                            <tg:SetterInfo  Property="Background" Value="Red"/>
-                                                            <tg:SetterInfo  Property="BorderThickness">
-                                                                <tg:SetterInfo.Value>
-                                                                    <Thickness>1</Thickness>
-                                                                </tg:SetterInfo.Value>
-                                                            </tg:SetterInfo>
-                                                        </tg:DataTriggerInfo.Setters>
-                                                    </tg:DataTriggerInfo>
-                                                </tg:TriggerCollections>
-                                            </tg:TriggerExtensions.Triggers>
-                                        </CheckBox>-->
-
-                                        <TextBlock Padding="5" Grid.Column="2" Foreground="Green" Text="{Binding ServerStatus}">
+                                            <TextBlock Padding="5" HorizontalAlignment="Center" Grid.Column="1" Foreground="DarkGray" Text="{Binding ServerLastUpdate}">
+                                            </TextBlock>
+                                            <TextBlock Padding="5" HorizontalAlignment="Right" Grid.Column="2" Foreground="Green" Text="{Binding ServerStatus}">
                                         </TextBlock>
                                     </Grid>
                                 </DataTemplate>
@@ -340,8 +308,8 @@
                         <Button Command="{Binding BuildCommand}" Content="Build ♻" Width="60" Height="30"/>
                         <Button Command="{Binding RunTestsCommand}" Content="Tests ☑" Width="60" Height="30" Margin="10,0,0,0"/>
                         <Button Command="{Binding PublishCommand}" Content="Publish ☢" Width="60" Height="30" Margin="10,0,0,0"/>
-                        <Button Command="{Binding RunCommand}" Content="Run Commands ▶" Width="100" Height="30" Margin="10,0,0,0"/>
-                        <Button Command="{Binding CancellationCommand}" Content="Cancel Commands" Width="100" Height="30" Margin="10,0,0,0"/>
+                        <Button Command="{Binding RunCommand}" Content="Run Commands ▶" Width="auto" Height="30" Margin="10,0,0,0"/>
+                        <Button Command="{Binding CancellationCommand}" Content="Cancel Commands" Width="auto" Height="30" Margin="10,0,0,0"/>
                     </StackPanel>
                 </StackPanel>
                 <!--#endregion-->

@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using SignalGo.Publisher.Models;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -25,7 +26,7 @@ namespace SignalGo.Publisher.Engines.Commands
         {
             Name = "compile dotnet project";
             ExecutableFile = "cmd.exe";
-            Command = "msbuild  ";
+            Command = $"{UserSettingInfo.Current.UserSettings.MsbuildPath} ";
             Arguments = $"-nologo";
             IsEnabled = true;
         }

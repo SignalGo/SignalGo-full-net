@@ -65,7 +65,7 @@ namespace SignalGo.ServerManager.ViewModels
         }
         public void ShowSettingPage()
         {
-            SettingsPage page = new SettingsPage();
+            ServerManagerSettingsPage page = new ServerManagerSettingsPage();
             //ServerManagerSettingsViewModel vm = page.DataContext as ServerManagerSettingsViewModel;
             //vm. = value;
             MainFrame.Navigate(page);

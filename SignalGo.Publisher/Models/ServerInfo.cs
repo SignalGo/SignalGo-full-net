@@ -37,6 +37,7 @@ namespace SignalGo.Publisher.Models
         private string _ServerEndPoint;
         private string _ServerAddress;
         private string _ServerPort;
+        private string _ServerLastUpdate;
         private ServerInfoStatusEnum _ServerStatus = ServerInfoStatusEnum.Stable;
         [JsonIgnore]
         private ServerInfoStatusEnum _IsUpdated = ServerInfoStatusEnum.Updating;
@@ -79,6 +80,21 @@ namespace SignalGo.Publisher.Models
             {
                 _ServerName = value;
                 OnPropertyChanged(nameof(ServerName));
+            }
+        }
+        public string ServerLastUpdate
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(_ServerLastUpdate))
+                    return "Never";
+                else
+                    return _ServerLastUpdate;
+            }
+            set
+            {
+                _ServerLastUpdate = value;
+                OnPropertyChanged(nameof(ServerLastUpdate));
             }
         }
 

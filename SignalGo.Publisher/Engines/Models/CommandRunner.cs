@@ -32,9 +32,9 @@ namespace SignalGo.Publisher.Engines.Models
                 ProcessStartInfo processInfo = new ProcessStartInfo
                 {
                     RedirectStandardOutput = true,
-                    FileName = command.ExecutableFile,
+                    FileName = $"{command.Command}",
                     CreateNoWindow = true,
-                    Arguments = $"/c {command.Command} {command.Arguments}",
+                    Arguments = $" {command.Arguments}",
                     WorkingDirectory = command.WorkingPath
                 };
                 process = Process.Start(processInfo);

@@ -51,17 +51,15 @@
         <Label Margin="10" Grid.Row="5" Grid.Column="1" Content="ServerEndPoint:" VerticalContentAlignment="Center" HorizontalAlignment="Left"/>
         <TextBox Margin="10" Grid.Row="5" Text="{Binding ServerInfo.ServerEndPoint}" Grid.Column="2" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Grid.ColumnSpan="2" />
 
-        <StackPanel Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="2" HorizontalAlignment="Center" VerticalAlignment="Center">
+        <StackPanel Grid.Row="6" Grid.Column="1" Orientation="Horizontal" Grid.ColumnSpan="3" HorizontalAlignment="Center" VerticalAlignment="Center">
             <StackPanel Orientation="Horizontal"  HorizontalAlignment="Center">
                 <TextBlock Text="Server Status: " Margin="10"/>
-                <!--<TextBlock Text="{Binding ServerInfo.ServerStatus}" Margin="10"/>-->
-                <ComboBox x:Name="serverStatusCombo" SelectedItem="{Binding ServerInfo.ServerStatus}" >
-                    <!--<ComboBox.ItemTemplate>
-                        <DataTemplate>
-                            <TextBlock Text="{Bindong ServerInfo.ServerStatus }"/>
-                        </DataTemplate>
-                    </ComboBox.ItemTemplate>-->
+                <ComboBox x:Name="serverStatusCombo" VerticalAlignment="Center" SelectedItem="{Binding ServerInfo.ServerStatus}" >
                 </ComboBox>
+            </StackPanel>
+            <StackPanel Margin="10,0,0,0" Orientation="Horizontal" HorizontalAlignment="Center">
+                <TextBlock Text="Server Last Update: " Margin="10"/>
+                <TextBlock HorizontalAlignment="Stretch" VerticalAlignment="Center" Text="{Binding ServerInfo.ServerLastUpdate}" />
             </StackPanel>
             <!--<StackPanel Orientation="Horizontal" >
                 <Button Command="{Binding StartCommand}" Content="Start" Width="100" Height="30"/>

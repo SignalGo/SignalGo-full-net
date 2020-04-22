@@ -24,7 +24,7 @@
         <DockPanel Grid.ColumnSpan="2">
             <Menu DockPanel.Dock="Top"  Width="Auto" Height="20" Background="#FFA9D1F4">
                 <MenuItem Header="_File">
-                    <MenuItem Header="Publisher Settings"  />
+                    <MenuItem Header="Publisher Settings" Command="{Binding ShowSettingsCommand}" />
                     <MenuItem Header="_Exit" Command="{Binding ExitApplicationCommand}" />
                 </MenuItem>
                 <MenuItem Header="_Management">

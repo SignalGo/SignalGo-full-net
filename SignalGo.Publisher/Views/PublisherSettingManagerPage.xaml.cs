@@ -11,14 +11,14 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace SignalGo.ServerManager.Views
+namespace SignalGo.Publisher.Views
 {
     /// <summary>
-    /// Interaction logic for SettingsPage.xaml
+    /// Interaction logic for PublisherSettingManagerPage.xaml
     /// </summary>
-    public partial class SettingsPage : Page
+    public partial class PublisherSettingManagerPage : Page
     {
-        public SettingsPage()
+        public PublisherSettingManagerPage()
         {
             InitializeComponent();
         }
