@@ -110,12 +110,14 @@ namespace SignalGo.ServerManager.Engines.Models
         {
             IsSuccess = false;
             string backupPath = Path.Combine(UserSettingInfo.Current.UserSettings.BackupPath);
+
             string GetServicePathParent = Directory.GetParent(ServiceInfo.ServiceAssembliesPath).FullName;
             // if backup path is'nt valid or exist break operation and display a warn message to user
             if (!Directory.Exists(backupPath))
             {
-                MessageBox.Show("Backup path not found. please set Valid Backup Path in Application Settings", "No valid path", MessageBoxButton.OK);
-                return IsSuccess;
+                Directory.CreateDirectory(backupPath);
+                //MessageBox.Show("Backup path not found. please set Valid Backup Path in Application Settings", "No valid path", MessageBoxButton.OK);
+                //return IsSuccess;
             }
             string zipFilePath = string.Empty;
             string backupArchivePath = DateTime.Now.ToString("yyyyMMdd_hhmm");

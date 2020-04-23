@@ -221,11 +221,11 @@
                 <Button Margin="0,5" Command="{Binding BrowseProjectPathCommand}" Content="..." Grid.Column="3" Width="80" Grid.Row="1" FontWeight="Normal" HorizontalAlignment="Right"/>
 
                 <DockPanel Margin="5" Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" >
-                    <Label Content="Builder Log:" FontSize="12" VerticalAlignment="Top" DockPanel.Dock="Top" />
+                    <Label Content="Builder Log:" FontSize="10" VerticalAlignment="Top" DockPanel.Dock="Top" HorizontalAlignment="Left" />
                     <TextBox TextChanged="txtCmdLogs_TextChanged" x:Name="txtCmdLogs" TextWrapping="WrapWithOverflow" Width="auto" Height="auto" Text="{Binding CmdLogs}" ScrollViewer.CanContentScroll="True" VerticalScrollBarVisibility="Auto" DockPanel.Dock="Bottom"/>
                 </DockPanel>
-                <DockPanel Margin="5" Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" >
-                    <Label Content="Servers Log:" FontSize="12" DockPanel.Dock="Top" />
+                <DockPanel Margin="5,0,5,0" Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" >
+                    <Label Content="Servers Log:" FontSize="10" DockPanel.Dock="Top" VerticalAlignment="Top" HorizontalAlignment="Left" />
                     <TextBox x:Name="CmdServerLogs" Width="auto" Height="auto" TextWrapping="WrapWithOverflow" Text="{Binding ServerLogs}" ScrollViewer.CanContentScroll="True" VerticalScrollBarVisibility="Auto"  DockPanel.Dock="Bottom"/>
                 </DockPanel>
 
@@ -238,18 +238,18 @@
                                     <RowDefinition/>
                                 </Grid.RowDefinitions>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="150"/>
-                                    <ColumnDefinition/>
+                                    <ColumnDefinition Width="200"/>
+                                    <ColumnDefinition />
                                 </Grid.ColumnDefinitions>
-                                <StackPanel>
+                                <StackPanel HorizontalAlignment="Stretch">
                                     <TextBlock Text="{Binding Name}">
                                     </TextBlock>
                                     <TextBlock Foreground="Green">
-                                        <Run Text="⌛"/>
+                                        <!--<Run Text="⌛"/>-->
                                         <Run Text="{Binding Status}"/>
                                     </TextBlock>
                                 </StackPanel>
-                                <StackPanel Orientation="Horizontal" Grid.Column="1">
+                                <StackPanel Orientation="Horizontal" Grid.Column="1" HorizontalAlignment="Stretch">
                                     <Button FontSize="14" Background="Transparent" HorizontalAlignment="Stretch" Cursor="Hand" Command="{Binding RemoveCommand,Source={StaticResource ProjectInfoViewModel}}" CommandParameter="{Binding}" BorderThickness="0" Content="✘" Padding="5" Foreground="Red"/>
                                     <Button FontSize="14" Background="Transparent" HorizontalAlignment="Stretch" Cursor="Hand" Command="{Binding RetryCommand,Source={StaticResource ProjectInfoViewModel}}" CommandParameter="{Binding}" BorderThickness="0" Content="⟲" Padding="5" Foreground="DodgerBlue"/>
                                     <Button FontSize="14" HorizontalAlignment="Stretch" Cursor="Hand" Command="{Binding ToDownCommand,Source={StaticResource ProjectInfoViewModel}}" CommandParameter="{Binding}" BorderThickness="0" Content="↓" Padding="5" Background="Transparent" Foreground="Green"/>
@@ -257,7 +257,7 @@
                                 </StackPanel>
                                 <Grid Grid.Row="1" Grid.ColumnSpan="2" VerticalAlignment="Center" HorizontalAlignment="Stretch">
                                     <ProgressBar x:Name="taskProgressBar" Initialized="taskProgressBar_Initialized" Maximum="{Binding Size}" Value="{Binding Position}" />
-                                    <TextBlock Text="{Binding ElementName=taskProgressBar, Path=Value, StringFormat={}{0:0} KB}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding ElementName=taskProgressBar, Path=Value, StringFormat={}{0:0} (Kb/Count)}" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                 </Grid>
                             </Grid>
                         </HierarchicalDataTemplate>
@@ -306,7 +306,7 @@
 
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" >
                         <Button Command="{Binding BuildCommand}" Content="Build ♻" Width="60" Height="30"/>
-                        <Button Command="{Binding RunTestsCommand}" Content="Tests ☑" Width="60" Height="30" Margin="10,0,0,0"/>
+                        <Button IsEnabled="False" Command="{Binding RunTestsCommand}" Content="Tests ☑" Width="60" Height="30" Margin="10,0,0,0"/>
                         <Button Command="{Binding PublishCommand}" Content="Publish ☢" Width="60" Height="30" Margin="10,0,0,0"/>
                         <Button Command="{Binding RunCommand}" Content="Run Commands ▶" Width="auto" Height="30" Margin="10,0,0,0"/>
                         <Button Command="{Binding CancellationCommand}" Content="Cancel Commands" Width="auto" Height="30" Margin="10,0,0,0"/>

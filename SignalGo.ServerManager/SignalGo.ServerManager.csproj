@@ -5,6 +5,15 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
+    <Version>1.3.2</Version>
+    <Company>SignalGo</Company>
+    <Authors>AliYousefi, SaeedRezayi</Authors>
+    <Description>SignalGo Server Manager is an signalGo service management software for you servers.
+it can run and manage multiple services/windows in one program with multiple tabs
+ServerManager can manage the start / stop, Update/Backup operation of your service and Its complement is Publisher Project Manager Software.</Description>
+    <PackageProjectUrl>https://github.com/SignalGo/SignalGo-full-net</PackageProjectUrl>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <ApplicationIcon>ServersManage.ico</ApplicationIcon>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

@@ -53,7 +53,8 @@ namespace SignalGo.ServerManager.ViewModels
 
         private void Stop()
         {
-            ServerInfo.Stop();
+            //ServerInfo.Stop();
+            StopServer(ServerInfo);
         }
 
         private void Start()
@@ -82,10 +83,14 @@ namespace SignalGo.ServerManager.ViewModels
         {
             serverInfo.Start();
         }
+        public static void StopServer(ServerInfo serverInfo)
+        {
+            serverInfo.Stop();
+        }
 
         private void ClearLog()
         {
-            // ServerInfo.Logs.Clear();
+            ServerInfo.Logs.Clear();
         }
 
         private void Copy(TextLogInfo textLogInfo)

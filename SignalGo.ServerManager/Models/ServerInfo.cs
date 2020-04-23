@@ -6,6 +6,7 @@ using MvvmGo.ViewModels;
 using SignalGo.Shared.Log;
 using SignalGo.ServerManager.Views;
 using System.Collections.ObjectModel;
+using System.Windows;
 
 namespace SignalGo.ServerManager.Models
 {
@@ -216,6 +217,8 @@ namespace SignalGo.ServerManager.Models
                     }
                     SettingInfo.SaveSettingInfo();
                 }
+                else
+                    MessageBox.Show("Service aleready started!");
             });
         }
     }

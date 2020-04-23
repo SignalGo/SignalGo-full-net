@@ -22,7 +22,7 @@ namespace SignalGo.Publisher.ViewModels
         private string _ServerName;
         private string _ServerAddress;
         private string _ServerPort;
-        private string _ServerEndPoint;
+        private string _ServerEndPoint = "/ServerManager/SignalGo";
 
 
         public string ServerName

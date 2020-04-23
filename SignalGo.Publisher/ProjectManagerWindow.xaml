@@ -23,7 +23,7 @@
         </Grid.RowDefinitions>
         <DockPanel Grid.ColumnSpan="2">
             <Menu DockPanel.Dock="Top"  Width="Auto" Height="20" Background="#FFA9D1F4">
-                <MenuItem Header="_File">
+                <MenuItem Header="_Tools">
                     <MenuItem Header="Publisher Settings" Command="{Binding ShowSettingsCommand}" />
                     <MenuItem Header="_Exit" Command="{Binding ExitApplicationCommand}" />
                 </MenuItem>
@@ -54,7 +54,7 @@
         <ListView x:Name="ProjectsListView" Grid.Row="1" MinWidth="150" Width="200" MaxWidth="300" ItemsSource="{Binding CurrentSettingInfo.ProjectInfo}" SelectedItem="{Binding SelectedProjectInfo}" HorizontalContentAlignment="Stretch">
             <ListView.ItemTemplate>
                 <DataTemplate>
-                    <TextBlock Background="DarkGray" Padding="5">
+                    <TextBlock Background="#FFECEAEA" Padding="5">
                         <TextBox Text="{Binding Name}" BorderThickness="0" Background="Transparent" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
                             <TextBox.Style>
                                 <Style TargetType="TextBox">

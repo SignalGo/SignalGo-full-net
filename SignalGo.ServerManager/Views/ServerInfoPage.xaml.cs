@@ -13,9 +13,6 @@ namespace SignalGo.ServerManager.Views
     /// </summary>
     public partial class ServerInfoPage : Page
     {
-        /// <summary>
-        /// Server Manager Servers Information Page
-        /// </summary>
         public ServerInfoPage()
         {
             InitializeComponent();
@@ -27,8 +24,6 @@ namespace SignalGo.ServerManager.Views
 
         private void TabItem_Loaded(object sender, RoutedEventArgs e)
         {
-
-            // Tab
             var tabItem = (TabItem)sender;
             var vm = tabItem.DataContext as ServerInfoViewModel;
             Grid grid = new Grid()
@@ -42,7 +37,6 @@ namespace SignalGo.ServerManager.Views
                 if (vm.ServerInfo.CurrentServerBase != null)
                     SetWindowPos(vm.ServerInfo.CurrentServerBase.BaseProcess.MainWindowHandle, IntPtr.Zero, 0, 0, (int)grid.ActualWidth, (int)grid.ActualHeight, SWP_NOZORDER | SWP_NOACTIVATE);
             };
-            // instance of windows form host
             WindowsFormsHost host = new WindowsFormsHost()
             {
                 VerticalAlignment = VerticalAlignment.Stretch,
@@ -51,8 +45,8 @@ namespace SignalGo.ServerManager.Views
             };
             System.Windows.Forms.Panel p = new System.Windows.Forms.Panel();
             host.Child = p;
-            tabItem.Content = host;
-
+            grid.Children.Add(host);
+            tabItem.Content = grid;
             if (vm.ServerInfo.CurrentServerBase != null)
                 ChangeParent(vm.ServerInfo.CurrentServerBase.BaseProcess.MainWindowHandle, p.Handle, vm.ServerInfo.CurrentServerBase.BaseProcess, p);
             vm.ServerInfo.ProcessStarted = () =>
@@ -67,7 +61,6 @@ namespace SignalGo.ServerManager.Views
         {
             mainHost.Child = mainPannel;
             ChangeParent(process.MainWindowHandle, mainPannel.Handle, process, panel);
-
         }
 
         static void ChangeParent(IntPtr main, IntPtr panelHanle, System.Diagnostics.Process process, System.Windows.Forms.Panel panel)
@@ -96,16 +89,8 @@ namespace SignalGo.ServerManager.Views
         private const int WS_CAPTION = 0x00C00000;
         private const int WS_THICKFRAME = 0x00040000;
 
+
         [DllImport("user32.dll", SetLastError = true)]
         private static extern int ShowWindow(IntPtr hwnd, int nCmdShow);
     }
-    //public static class MyExtensions
-    //{
-    //    private static Action EmptyDelegate = delegate () { };
-
-    //    public static void Refresh(this UIElement uiElement)
-    //    {
-    //        uiElement.Dispatcher.Invoke(DispatcherPriority.Render, EmptyDelegate);
-    //    }
-    //}
 }
