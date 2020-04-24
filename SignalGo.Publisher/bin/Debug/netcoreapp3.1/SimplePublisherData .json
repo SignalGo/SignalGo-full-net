@@ -1,0 +1,16 @@
+﻿{
+	"ProjectInfo": [
+		{
+			"IgnoredFiles": [
+			],
+			"Name": "SimpleProject",
+			"ProjectKey": "ae58b3ba-b6ca-45dc-a432-569a2fbd3a88",
+			"ProjectPath": "D:\\DevOps\\Logger",
+			"ProjectAssembliesPath": "D:\\DevOps\\Logger\\Utravs.Hub.Logger.ConsoleApp\\bin\\Debug\\netcoreapp3.1",
+			"IsBusy": false,
+			"AllMessages": [],
+			"HasError": false,
+			"MessagesByProperty": {}
+		}
+	]
+}

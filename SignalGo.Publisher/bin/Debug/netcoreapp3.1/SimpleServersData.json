@@ -1,0 +1,22 @@
+﻿{
+	"ServerInfo": [
+		{
+			"ServerName": "localhost",
+			"ServerLastUpdate": "Never",
+			"ServerKey": "d78b013e-29bd-41dc-9978-f5bf42c93804",
+			"ServerAddress": "localhost",
+			"ServerPort": "5468",
+			"ServerEndPoint": "/ServerManager/SignalGo",
+			"ServerStatus": 1,
+			"PropertyChangedAction": null,
+			"IsBusyChangedAction": null,
+			"BusyContentChangedAction": null,
+			"IsBusy": false,
+			"BusyContent": null,
+			"AllMessages": [],
+			"HasError": false,
+			"FirstMessage": null,
+			"MessagesByProperty": {}
+		}
+	]
+}

@@ -1,0 +1,17 @@
+﻿{
+	"UserSettings": {
+		"ServiceUpdaterLogFilePath": null,
+		"LoggerPath": "AppLogs.log",
+		"MsbuildPath": "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Enterprise\\MSBuild\\Current\\Bin\\MSBuild.exe",
+		"StartPriority": null,
+		"PropertyChangedAction": null,
+		"IsBusyChangedAction": null,
+		"BusyContentChangedAction": null,
+		"IsBusy": false,
+		"BusyContent": null,
+		"AllMessages": [],
+		"HasError": false,
+		"FirstMessage": null,
+		"MessagesByProperty": {}
+	}
+}
