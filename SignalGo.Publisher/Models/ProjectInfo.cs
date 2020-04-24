@@ -54,6 +54,19 @@ namespace SignalGo.Publisher.Models
         private ProjectInfoStatus _Status = ProjectInfoStatus.Stable;
 
         private ObservableCollection<string> _IgnoredFiles { get; set; } = new ObservableCollection<string>();
+        private ObservableCollection<string> _ServerIgnoredFiles { get; set; } = new ObservableCollection<string>();
+        public ObservableCollection<string> ServerIgnoredFiles
+        {
+            get
+            {
+                return _ServerIgnoredFiles;
+            }
+            set
+            {
+                _ServerIgnoredFiles = value;
+                OnPropertyChanged(nameof(ServerIgnoredFiles));
+            }
+        }
 
         public ObservableCollection<string> IgnoredFiles
         {

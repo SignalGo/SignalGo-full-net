@@ -41,11 +41,13 @@ namespace SignalGo.Publisher.ViewModels
             RunTestsCommand = new Command(RunTests);
             RunCommand = new Command(RunCMD);
             RestorePackagesCommand = new Command(RestorePackages);
+            RemoveIgnoredServerFileCommand = new Command<string>(RemoveIgnoredServerFile);
             RemoveIgnoredFileCommand = new Command<string>((s) =>
             {
                 RemoveIgnoredFile(s);
             });
-            AddIgnoreFileCommand = new Command(AddIgnoreFile);
+            AddIgnoreClientFileCommand = new Command(AddIgnoreClientFile);
+            AddIgnoreServerFileCommand = new Command(AddIgnoreServerFile);
             RemoveCommand = new Command<ICommand>((x) =>
             {
                 ProjectInfo.Commands.Remove(x);
@@ -165,7 +167,9 @@ namespace SignalGo.Publisher.ViewModels
         public Command SaveIgnoreFileListCommand { get; set; }
         public Command<ICommand> RemoveCommand { get; set; }
         public Command<string> RemoveIgnoredFileCommand { get; set; }
-        public Command AddIgnoreFileCommand { get; set; }
+        public Command<string> RemoveIgnoredServerFileCommand { get; set; }
+        public Command AddIgnoreClientFileCommand { get; set; }
+        public Command AddIgnoreServerFileCommand { get; set; }
         public Command<ICommand> RetryCommand { get; set; }
         public Command<ICommand> ToDownCommand { get; set; }
         public Command<ICommand> ToUpCommand { get; set; }
@@ -179,9 +183,7 @@ namespace SignalGo.Publisher.ViewModels
         /// restore/update nuget packages
         /// </summary>
         public Command RestorePackagesCommand { get; set; }
-        /// <summary>
-        /// push/upload changes to remote servers
-        /// </summary>
+
         public Command PublishCommand { get; set; }
         /// <summary>
         /// Execute Test Cases of Project
@@ -297,7 +299,7 @@ namespace SignalGo.Publisher.ViewModels
         /// <summary>
         /// Compile Project Source
         /// </summary>
-        private void AddIgnoreFile()
+        private void AddIgnoreClientFile()
         {
             Microsoft.Win32.OpenFileDialog fileDialog = new Microsoft.Win32.OpenFileDialog();
             fileDialog.Multiselect = true;
@@ -309,18 +311,39 @@ namespace SignalGo.Publisher.ViewModels
                 }
             }
         }
+        private void AddIgnoreServerFile()
+        {
+            if (!ProjectInfo.ServerIgnoredFiles.Contains(IgnoreServerFileName) && !string.IsNullOrEmpty(IgnoreServerFileName))
+            {
+                ProjectInfo.ServerIgnoredFiles.Add(IgnoreServerFileName);
+                IgnoreServerFileName = string.Empty;
+            }
+            else
+                System.Windows.MessageBox.Show("Invalid Input Or exist", "validation error", System.Windows.MessageBoxButton.OK);
+        }
 
         private void SaveIgnoreFileList()
         {
-            var ignoreList = CurrentProjectSettingInfo.ProjectInfo.Select(x => x.IgnoredFiles).ToList();
-            ignoreList.Add(ProjectInfo.IgnoredFiles);
+            var clientIgnoreList = CurrentProjectSettingInfo.ProjectInfo.Select(x => x.IgnoredFiles).ToList();
+            var serverIgnoreList = CurrentProjectSettingInfo.ProjectInfo.Select(x => x.ServerIgnoredFiles).ToList();
+            clientIgnoreList.Add(ProjectInfo.IgnoredFiles);
+            serverIgnoreList.Add(ProjectInfo.ServerIgnoredFiles);
             SettingInfo.SaveSettingInfo();
+            clientIgnoreList.Clear();
+            serverIgnoreList.Clear();
+        }
+        private void RemoveIgnoredServerFile(string name)
+        {
+            if (ProjectInfo.ServerIgnoredFiles.Contains(name))
+                ProjectInfo.ServerIgnoredFiles.Remove(name);
+            //SaveIgnoreFileList();
         }
         private void RemoveIgnoredFile(string name)
         {
             if (ProjectInfo.IgnoredFiles.Contains(name))
                 ProjectInfo.IgnoredFiles.Remove(name);
-            SaveIgnoreFileList();
+            //SaveIgnoreFileList();
+
         }
         private void Build()
         {
@@ -443,5 +466,18 @@ namespace SignalGo.Publisher.ViewModels
                 OnPropertyChanged(nameof(ServerInfo));
             }
         }
+
+        private string _IgnoreServerFileName;
+
+        public string IgnoreServerFileName
+        {
+            get { return _IgnoreServerFileName; }
+            set
+            {
+                _IgnoreServerFileName = value;
+                OnPropertyChanged(nameof(IgnoreServerFileName));
+            }
+        }
+
     }
 }

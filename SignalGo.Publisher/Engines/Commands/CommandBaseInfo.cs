@@ -179,7 +179,7 @@ namespace SignalGo.Publisher.Engines.Commands
                 {
                     Name = ServiceName,
                     ServiceKey = ServiceKey,
-                    IgnoreFiles = new List<string>(SettingInfo.Current.ProjectInfo.FirstOrDefault(p => p.ProjectKey == ServiceKey).IgnoredFiles)
+                    IgnoreFiles = new List<string>(SettingInfo.Current.ProjectInfo.FirstOrDefault(p => p.ProjectKey == ServiceKey).ServerIgnoredFiles)
                 };
                 foreach (var server in ServerInfo.Servers.Where(x => x.IsUpdated != ServerInfo.ServerInfoStatusEnum.UpdateError).ToList().Where(y => y.IsUpdated != ServerInfo.ServerInfoStatusEnum.Updated).ToList())
                 {
