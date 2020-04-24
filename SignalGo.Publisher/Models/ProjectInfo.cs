@@ -6,10 +6,12 @@ using SignalGo.Publisher.Engines.Interfaces;
 using SignalGo.Publisher.ViewModels;
 using SignalGo.Shared.Log;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Documents;
 
 namespace SignalGo.Publisher.Models
 {
@@ -51,6 +53,20 @@ namespace SignalGo.Publisher.Models
         private string _ProjectAssembliesPath;
         private ProjectInfoStatus _Status = ProjectInfoStatus.Stable;
 
+        private ObservableCollection<string> _IgnoredFiles { get; set; } = new ObservableCollection<string>();
+
+        public ObservableCollection<string> IgnoredFiles
+        {
+            get
+            {
+                return _IgnoredFiles;
+            }
+            set
+            {
+                _IgnoredFiles = value;
+                OnPropertyChanged(nameof(IgnoredFiles));
+            }
+        }
         public string Name
         {
             get

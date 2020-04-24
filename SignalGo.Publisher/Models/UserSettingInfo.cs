@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.IO;
 using System.Text;
 
@@ -17,6 +18,7 @@ namespace SignalGo.Publisher.Models
                 if (_Current == null)
                 {
                     _Current = LoadUserSettingInfo();
+                    SaveUserSettingInfo();
                 }
                 return _Current;
             }
@@ -27,12 +29,22 @@ namespace SignalGo.Publisher.Models
         {
             try
             {
-                if (!File.Exists(System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, UserSettingsDbName)))
+                string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, UserSettingsDbName);
+                if (!File.Exists(path) || File.ReadAllLinesAsync(path).Result.Length <= 0)
+                {
                     return new UserSettingInfo()
                     {
-                        UserSettings = new UserSetting()
+                        UserSettings = new UserSetting
+                        {
+                            LoggerPath = "AppLogs.log",
+                            MsbuildPath = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Enterprise\\MSBuild\\Current\\Bin\\MSBuild.exe",
+                            CommandRunnerLogsPath = "CommandRunnerLogs.log",
+                            ServiceUpdaterLogFilePath = "ServiceUpdaterLog.log",
+                            StartPriority = "Normal"
+                        }
                     };
-                return Newtonsoft.Json.JsonConvert.DeserializeObject<UserSettingInfo>(File.ReadAllText(System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, UserSettingsDbName), Encoding.UTF8));
+                }
+                return JsonConvert.DeserializeObject<UserSettingInfo>(File.ReadAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, UserSettingsDbName), Encoding.UTF8));
             }
             catch
             {
@@ -45,7 +57,7 @@ namespace SignalGo.Publisher.Models
 
         public static void SaveUserSettingInfo()
         {
-            File.WriteAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, UserSettingsDbName), Newtonsoft.Json.JsonConvert.SerializeObject(Current), Encoding.UTF8);
+            File.WriteAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, UserSettingsDbName), JsonConvert.SerializeObject(Current), Encoding.UTF8);
         }
     }
 }

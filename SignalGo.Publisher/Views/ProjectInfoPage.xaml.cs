@@ -19,12 +19,6 @@ namespace SignalGo.Publisher.Views
         {
             InitializeComponent();
         }
-
-        private void taskProgressBar_Initialized(object sender, EventArgs e)
-        {
-
-        }
-
         private void txtCmdLogs_TextChanged(object sender, TextChangedEventArgs e)
         {
             txtCmdLogs.ScrollToEnd();

@@ -61,7 +61,8 @@ namespace SignalGo.ServerManager.Services
             {
                 Name = serviceToUpdate.Name,
                 ServiceAssembliesPath = serviceToUpdate.AssemblyPath,
-                ServiceKey = serviceToUpdate.ServerKey
+                ServiceKey = serviceToUpdate.ServerKey,
+                IgnoreFiles = serviceContract.IgnoreFiles
             };
             using (ServiceUpdater = new ServiceUpdater(service, outFilePath))
             {

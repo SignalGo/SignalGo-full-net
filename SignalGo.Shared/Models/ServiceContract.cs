@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace SignalGo.Shared.Models
 {
@@ -18,6 +19,7 @@ namespace SignalGo.Shared.Models
         private Guid _ServiceKey;
         private string _Name;
         private string _ServiceAssembliesPath;
+        private List<string> _IgnoreFiles;
 
         /// <summary>
         /// name of service
@@ -63,46 +65,19 @@ namespace SignalGo.Shared.Models
                 _ServiceAssembliesPath = value;
             }
         }
-
-        ///// <summary>
-        ///// Service solutions files path
-        ///// </summary>
-        //public string ServicePath
-        //{
-        //    get
-        //    {
-        //        return _ServicePath;
-        //    }
-        //    set
-        //    {
-        //        _ServicePath = value;
-        //    }
-        //}
-        ///// <summary>
-        ///// Service assemblies(dll's and exe) path
-        ///// </summary>
-        //public string ServiceAssembliesPath
-        //{
-        //    get
-        //    {
-        //        return _ServiceAssembliesPath;
-        //    }
-        //    set
-        //    {
-        //        _ServiceAssembliesPath = value;
-        //    }
-        //}
-
-        //public static explicit operator ServiceContract(Shared.Models.ProjectInfo projectInfo)
-        //{
-        //    return new ServiceContract()
-        //    {
-        //        Name = projectInfo.Name,
-        //        ServiceAssembliesPath = projectInfo.ProjectAssembliesPath,
-        //        ServiceKey = projectInfo.ProjectKey,
-        //        ServicePath = projectInfo.ProjectPath
-        //    };
-        //}
-
+        /// <summary>
+        /// files to ignore in service updates
+        /// </summary>
+        public List<string> IgnoreFiles
+        {
+            get
+            {
+                return _IgnoreFiles;
+            }
+            set
+            {
+                _IgnoreFiles = value;
+            }
+        }
     }
 }

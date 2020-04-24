@@ -81,19 +81,19 @@ namespace SignalGo.Publisher.ViewModels
         //        AutoLogger.Default.LogError(ex, "LoadServerInfo");
         //    }
         //}
-        public SettingInfo CurrentServerSettingInfo
+        public ServerSettingInfo CurrentServerSettingInfo
         {
             get
             {
-                return SettingInfo.CurrentServer;
+                return ServerSettingInfo.CurrentServer;
             }
         }
         private void Delete()
         {
             if (MessageBox.Show("are you sure?", "Remove Server", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) == MessageBoxResult.Yes)
             {
-                SettingInfo.CurrentServer.ServerInfo.Remove(ServerInfo);
-                SettingInfo.SaveServersSettingInfo();
+                ServerSettingInfo.CurrentServer.ServerInfo.Remove(ServerInfo);
+                ServerSettingInfo.SaveServersSettingInfo();
             }
             ProjectManagerWindowViewModel.MainFrame.GoBack();
         }
@@ -104,7 +104,7 @@ namespace SignalGo.Publisher.ViewModels
         }
         private void SaveChanges()
         {
-            SettingInfo.SaveServersSettingInfo();
+            ServerSettingInfo.SaveServersSettingInfo();
         }
 
     }

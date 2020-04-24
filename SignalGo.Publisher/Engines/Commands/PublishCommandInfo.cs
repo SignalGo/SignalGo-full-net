@@ -27,6 +27,11 @@ namespace SignalGo.Publisher.Engines.Commands
             ServiceName = serviceContract.Name;
             ServiceKey = serviceContract.ServiceKey;
         }
+        /// <summary>
+        /// run publish tasks like get output and compressed data then upload
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public override async Task<Process> Run(CancellationToken cancellationToken)
         {
             var result = await base.Run(cancellationToken);
@@ -38,6 +43,13 @@ namespace SignalGo.Publisher.Engines.Commands
             return result;
         }
 
+        /// <summary>
+        /// compress project to an archive for fastest upload
+        /// </summary>
+        /// <param name="compressionMethod"></param>
+        /// <param name="includeParent"></param>
+        /// <param name="compressionLevel"></param>
+        /// <returns></returns>
         public override async Task<string> Compress(CompressionMethodType compressionMethod = CompressionMethodType.Zip, bool includeParent = false, CompressionLevel compressionLevel = CompressionLevel.Fastest)
         {
             return await base.Compress();

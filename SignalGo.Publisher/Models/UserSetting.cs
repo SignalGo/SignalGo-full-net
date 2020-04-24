@@ -12,6 +12,7 @@ namespace SignalGo.Publisher.Models
 
         private string _MsbuildPath;
         private string _LoggerPath;
+        private string _CommandRunnerLogsPath;
         private string _StartPriority;
         private string _ServiceUpdaterLogFilePath;
 
@@ -24,6 +25,15 @@ namespace SignalGo.Publisher.Models
                 OnPropertyChanged(nameof(ServiceUpdaterLogFilePath));
             }
         }
+        public string CommandRunnerLogsPath
+        {
+            get { return _CommandRunnerLogsPath; }
+            set
+            {
+                _CommandRunnerLogsPath = value;
+                OnPropertyChanged(nameof(CommandRunnerLogsPath));
+            }
+        } 
         public string LoggerPath
         {
             get { return _LoggerPath; }

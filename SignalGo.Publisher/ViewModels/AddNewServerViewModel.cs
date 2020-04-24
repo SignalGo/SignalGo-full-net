@@ -4,6 +4,7 @@ using System.Windows;
 using MvvmGo.Commands;
 using MvvmGo.ViewModels;
 using SignalGo.Publisher.Models;
+using SignalGo.Shared.Log;
 
 namespace SignalGo.Publisher.ViewModels
 {
@@ -17,11 +18,16 @@ namespace SignalGo.Publisher.ViewModels
 
         public Command CancelCommand { get; set; }
         public Command SaveCommand { get; set; }
-
+        /// <summary>
+        /// uniqe server key, very important to integrate server manager's - publisher
+        /// </summary>
         private Guid _ServerKey = Guid.NewGuid();
         private string _ServerName;
         private string _ServerAddress;
         private string _ServerPort;
+        /// <summary>
+        /// default endpoint like /ServerManager/SignalGo
+        /// </summary>
         private string _ServerEndPoint = "/ServerManager/SignalGo";
 
 
@@ -87,28 +93,6 @@ namespace SignalGo.Publisher.ViewModels
                 OnPropertyChanged(nameof(ServerEndPoint));
             }
         }
-        //private ServerInfoStatus _ServerStatus = ServerInfoStatus.Stable;
-        //public ServerInfoStatus ServerStatus
-        //{
-        //    get
-        //    {
-        //        return _ServerStatus;
-        //    }
-        //    set
-        //    {
-        //        _ServerStatus = value;
-        //        OnPropertyChanged(nameof(ServerStatus));
-        //    }
-        //}
-        //public enum ServerInfoStatus : byte
-        //{
-        //    Stable = 1,
-        //    NotStable = 2,
-        //    Updating = 3,
-        //    Restarting = 4,
-        //    Disabled = 5,
-        //    Disconnected
-        //}
 
         private void Cancel()
         {
@@ -117,28 +101,39 @@ namespace SignalGo.Publisher.ViewModels
 
         private void SaveServerSettings()
         {
-            if (string.IsNullOrEmpty(ServerName))
-                MessageBox.Show("Plase set name of server");
-            if (string.IsNullOrEmpty(ServerAddress))
-                MessageBox.Show("Plase set Server Address");
-            if (string.IsNullOrEmpty(ServerPort))
-                MessageBox.Show("Plase set Server Port");
-            if (string.IsNullOrEmpty(ServerEndPoint))
-                MessageBox.Show("Plase set Server Port");
-            else if (SettingInfo.CurrentServer.ServerInfo.Any(x => x.ServerName == ServerName))
-                MessageBox.Show("Server name exist on list, please set a different name");
-            else
+            try
             {
-                SettingInfo.CurrentServer.ServerInfo.Add(new ServerInfo()
+                if (ServerSettingInfo.CurrentServer == null)
                 {
-                    ServerKey = ServerKey,
-                    ServerName = ServerName,
-                    ServerAddress = ServerAddress,
-                    ServerPort = ServerPort,
-                    ServerEndPoint = ServerEndPoint
-                });
-                SettingInfo.SaveServersSettingInfo();
-                ProjectManagerWindowViewModel.MainFrame.GoBack();
+
+                }
+                if (string.IsNullOrEmpty(ServerName))
+                    MessageBox.Show("Plase set name of server");
+                if (string.IsNullOrEmpty(ServerAddress))
+                    MessageBox.Show("Plase set Server Address");
+                if (string.IsNullOrEmpty(ServerPort))
+                    MessageBox.Show("Plase set Server Port");
+                if (string.IsNullOrEmpty(ServerEndPoint))
+                    MessageBox.Show("Plase set Server Port");
+                else if (ServerSettingInfo.CurrentServer.ServerInfo.Any(x => x.ServerName == ServerName))
+                    MessageBox.Show("Server name exist on list, please set a different name");
+                else
+                {
+                    ServerSettingInfo.CurrentServer.ServerInfo.Add(new ServerInfo()
+                    {
+                        ServerKey = ServerKey,
+                        ServerName = ServerName,
+                        ServerAddress = ServerAddress,
+                        ServerPort = ServerPort,
+                        ServerEndPoint = ServerEndPoint
+                    });
+                    ServerSettingInfo.SaveServersSettingInfo();
+                    ProjectManagerWindowViewModel.MainFrame.GoBack();
+                }
+            }
+            catch (Exception ex)
+            {
+                AutoLogger.Default.LogError(ex, "save server settings");
             }
         }
     }

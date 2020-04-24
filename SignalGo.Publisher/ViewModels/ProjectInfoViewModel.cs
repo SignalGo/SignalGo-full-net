@@ -12,6 +12,7 @@ using SignalGo.Publisher.Engines.Interfaces;
 using System.Text;
 using System.Threading;
 using System.Diagnostics;
+using System.Collections.ObjectModel;
 
 namespace SignalGo.Publisher.ViewModels
 {
@@ -26,6 +27,7 @@ namespace SignalGo.Publisher.ViewModels
         public ProjectInfoViewModel()
         {
             ServerInfo.Servers.Clear();
+            SaveIgnoreFileListCommand = new Command(SaveIgnoreFileList);
             SaveChangeCommand = new Command(SaveChanges);
             ApplyMigrationsCommand = new Command(ApplyMigrations);
             BuildCommand = new Command(Build);
@@ -39,6 +41,11 @@ namespace SignalGo.Publisher.ViewModels
             RunTestsCommand = new Command(RunTests);
             RunCommand = new Command(RunCMD);
             RestorePackagesCommand = new Command(RestorePackages);
+            RemoveIgnoredFileCommand = new Command<string>((s) =>
+            {
+                RemoveIgnoredFile(s);
+            });
+            AddIgnoreFileCommand = new Command(AddIgnoreFile);
             RemoveCommand = new Command<ICommand>((x) =>
             {
                 ProjectInfo.Commands.Remove(x);
@@ -140,17 +147,12 @@ namespace SignalGo.Publisher.ViewModels
                 ProjectInfo.Commands.Move(index - 1, index);
         }
 
-        /// <summary>
-        /// Move a command to topest of Queue List.
-        /// that will run first
-        /// </summary>
-        /// <param name="x"></param>
-        public void MoveCommandToppest(ICommand x)
-        {
-            var index = ProjectInfo.Commands.IndexOf(x);
-            if (index != 0)
-                ProjectInfo.Commands.Move(index - 1, 0);
-        }
+        //public void MoveCommandToppest(ICommand x)
+        //{
+        //    var index = ProjectInfo.Commands.IndexOf(x);
+        //    if (index != 0)
+        //        ProjectInfo.Commands.Move(index - 1, 0);
+        //}
 
         /// <summary>
         /// compile and check project assemblies for build
@@ -160,7 +162,10 @@ namespace SignalGo.Publisher.ViewModels
         public Command BrowseAssemblyPathCommand { get; set; }
         public Command BuildCommand { get; set; }
         public Command CancellationCommand { get; set; }
+        public Command SaveIgnoreFileListCommand { get; set; }
         public Command<ICommand> RemoveCommand { get; set; }
+        public Command<string> RemoveIgnoredFileCommand { get; set; }
+        public Command AddIgnoreFileCommand { get; set; }
         public Command<ICommand> RetryCommand { get; set; }
         public Command<ICommand> ToDownCommand { get; set; }
         public Command<ICommand> ToUpCommand { get; set; }
@@ -292,6 +297,31 @@ namespace SignalGo.Publisher.ViewModels
         /// <summary>
         /// Compile Project Source
         /// </summary>
+        private void AddIgnoreFile()
+        {
+            Microsoft.Win32.OpenFileDialog fileDialog = new Microsoft.Win32.OpenFileDialog();
+            fileDialog.Multiselect = true;
+            if (fileDialog.ShowDialog().GetValueOrDefault())
+            {
+                if (!ProjectInfo.IgnoredFiles.Contains(fileDialog.SafeFileName) && fileDialog.CheckFileExists)
+                {
+                    ProjectInfo.IgnoredFiles.Add(fileDialog.SafeFileName);
+                }
+            }
+        }
+
+        private void SaveIgnoreFileList()
+        {
+            var ignoreList = CurrentProjectSettingInfo.ProjectInfo.Select(x => x.IgnoredFiles).ToList();
+            ignoreList.Add(ProjectInfo.IgnoredFiles);
+            SettingInfo.SaveSettingInfo();
+        }
+        private void RemoveIgnoredFile(string name)
+        {
+            if (ProjectInfo.IgnoredFiles.Contains(name))
+                ProjectInfo.IgnoredFiles.Remove(name);
+            SaveIgnoreFileList();
+        }
         private void Build()
         {
             if (!ProjectInfo.Commands.Any(x => x is BuildCommandInfo))
@@ -383,11 +413,19 @@ namespace SignalGo.Publisher.ViewModels
             }
         }
 
-        public SettingInfo CurrentServerSettingInfo
+        public SettingInfo CurrentProjectSettingInfo
         {
             get
             {
-                return SettingInfo.CurrentServer;
+                return SettingInfo.Current;
+            }
+        }
+
+        public ServerSettingInfo CurrentServerSettingInfo
+        {
+            get
+            {
+                return ServerSettingInfo.CurrentServer;
             }
         }
 
@@ -405,7 +443,5 @@ namespace SignalGo.Publisher.ViewModels
                 OnPropertyChanged(nameof(ServerInfo));
             }
         }
-
-
     }
 }

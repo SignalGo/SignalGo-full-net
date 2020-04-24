@@ -80,9 +80,12 @@ namespace SignalGo.ServerManager.Engines.Models
                     var allFiles = Directory.GetFiles(ExtractPath);
                     var filesList = allFiles.ToList();
                     var ignoredFiles = filesList.Where(f => f.Contains(".zip")).ToList();
+                    ignoredFiles.AddRange(ServiceInfo.IgnoreFiles);
                     foreach (var item in ignoredFiles)
                     {
-                        filesList.Remove(item);
+                        //var t = filesList.Where(x => x.Contains(item)).ToList();
+                        filesList.RemoveAll(x => x.Contains(item));
+                        //filesList.Remove(item);
                     }
                     if (Directory.Exists(Path.Combine(ExtractPath, "publish")))
                         Directory.Delete(Path.Combine(ExtractPath, "publish"), true);

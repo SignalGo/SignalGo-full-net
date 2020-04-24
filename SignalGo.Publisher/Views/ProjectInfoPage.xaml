@@ -256,7 +256,7 @@
                                     <Button FontSize="14" HorizontalAlignment="Stretch" Cursor="Hand" Command="{Binding ToUpCommand,Source={StaticResource ProjectInfoViewModel}}" CommandParameter="{Binding}" BorderThickness="0" Content="↑" Padding="5" Background="Transparent" Foreground="Green"/>
                                 </StackPanel>
                                 <Grid Grid.Row="1" Grid.ColumnSpan="2" VerticalAlignment="Center" HorizontalAlignment="Stretch">
-                                    <ProgressBar x:Name="taskProgressBar" Initialized="taskProgressBar_Initialized" Maximum="{Binding Size}" Value="{Binding Position}" />
+                                    <ProgressBar x:Name="taskProgressBar" Maximum="{Binding Size}" Value="{Binding Position}" />
                                     <TextBlock Text="{Binding ElementName=taskProgressBar, Path=Value, StringFormat={}{0:0} (Kb/Count)}" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                 </Grid>
                             </Grid>
@@ -280,9 +280,9 @@
                                                   Command="{Binding AddToServerQueueCommand}" 
                                                   Content="{Binding ServerName}"
                                                   />
-                                            <TextBlock Padding="5" HorizontalAlignment="Center" Grid.Column="1" Foreground="DarkGray" Text="{Binding ServerLastUpdate}">
-                                            </TextBlock>
-                                            <TextBlock Padding="5" HorizontalAlignment="Right" Grid.Column="2" Foreground="Green" Text="{Binding ServerStatus}">
+                                        <TextBlock Padding="5" HorizontalAlignment="Center" Grid.Column="1" Foreground="DarkGray" Text="{Binding ServerLastUpdate}">
+                                        </TextBlock>
+                                        <TextBlock Padding="5" HorizontalAlignment="Right" Grid.Column="2" Foreground="Green" Text="{Binding ServerStatus}">
                                         </TextBlock>
                                     </Grid>
                                 </DataTemplate>
@@ -319,7 +319,55 @@
                 <!--#endregion-->
             </Grid>
         </TabItem>
+        <TabItem Header="Options">
+            <Grid Margin="10">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="auto" />
+                    <ColumnDefinition Width="auto" />
+                    <ColumnDefinition Width="auto" />
+                    <ColumnDefinition  />
+                </Grid.ColumnDefinitions>
 
+                <TextBlock Margin="5,5" Grid.Column="0" Text="Files To Ignore: " HorizontalAlignment="Stretch" VerticalAlignment="Top"/>
+                <ListView x:Name="lst_ignoredFiles" ItemsSource="{Binding ProjectInfo.IgnoredFiles}" MinWidth="200" MaxWidth="250" Grid.Column="1" VerticalAlignment="Top" HorizontalAlignment="Stretch" Margin="5" VerticalContentAlignment="Stretch" ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.CanContentScroll="True"  ScrollViewer.VerticalScrollBarVisibility="Auto" MinHeight="25" Grid.RowSpan="2">
+                    <ListView.ItemTemplate>
+                        <DataTemplate>
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="auto"/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+                                
+                                    <Button FontSize="14" Background="Transparent"
+                                            Cursor="Hand" Command="{Binding
+                                        RemoveIgnoredFileCommand,Source={StaticResource
+                                        ProjectInfoViewModel}}"
+                                            CommandParameter="{Binding }"
+                                            BorderThickness="0" Content="✘" Padding="0"
+                                            Foreground="Red" Grid.Column="0" HorizontalAlignment="Right" />
+                                    <TextBlock x:Name="lstitem_ignorefileName" 
+                                               Text="{Binding }" Grid.Column="1"
+                                               Padding="5" HorizontalAlignment="Stretch"/>
+                            </Grid>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+
+                </ListView>
+                <!--<TextBox HorizontalAlignment="Stretch" x:Name="txt_ignoreFileName" MinWidth="150" Grid.Column="2" Grid.Row="0" VerticalAlignment="Top" Text="{Binding IgnoreFileName}" Margin="5,5,5,5"/>-->
+                <Button Margin="5,5" Command="{Binding AddIgnoreFileCommand}" Content="Browse" Width="80" Grid.Row="0" FontWeight="Normal" HorizontalAlignment="Center" Grid.Column="3" VerticalAlignment="Top"/>
+
+                <Button Margin="5,5" Command="{Binding SaveIgnoreFileListCommand}" Content="Save" Width="80" Grid.Row="1" FontWeight="Normal" HorizontalAlignment="Right" Grid.Column="3" VerticalAlignment="Bottom"/>
+
+                
+            </Grid>
+        </TabItem>
         <!--<TabItem Header="Window" Loaded="TabItem_Loaded" >-->
         <!--<TabItem Header="Window" >
             <Grid Margin="10">
