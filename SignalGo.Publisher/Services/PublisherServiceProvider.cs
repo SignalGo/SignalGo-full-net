@@ -108,7 +108,10 @@ namespace SignalGo.Publisher.Services
             bool isServerAvailaible = false;
             try
             {
-                isServerAvailaible = CurrentClientProvider.SendPingAndWaitToReceive();
+                Task.Run(async () =>
+                {
+                    isServerAvailaible = await CurrentClientProvider.SendPingAndWaitToReceiveAsync();
+                });
 #if Debug
                     Debug.WriteLine($"-> {ServerManagerService.SayHello("saeed")} ,connection is ok.");
                     ServerInfo.This.ServerLogs.Add($"-> {ServerManagerService.SayHello("saeed")} ,connection is ok.");
@@ -117,7 +120,7 @@ namespace SignalGo.Publisher.Services
                     Debug.WriteLine($-> "time elapsed: {watch.Elapsed}");
 #else
                 Debug.WriteLine($"-> connection is {isServerAvailaible}");
-                ServerInfo.ServerLogs.Add($"-> from ({RemoteServer}): {ServerManagerService.SayHello("saeed")} ,connection is ok.");
+                //ServerInfo.ServerLogs.Add($"-> from ({RemoteServer}): {ServerManagerService.SayHello("saeed")} ,connection is ok.");
                 ServerInfo.ServerLogs.Add($"-> ping is {isServerAvailaible} in {watch.Elapsed}");
 #endif
                 watch.Stop();

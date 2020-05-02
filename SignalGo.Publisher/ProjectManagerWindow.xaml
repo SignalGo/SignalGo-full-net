@@ -19,6 +19,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="auto"/>
             <RowDefinition Height="*"/>
+            <RowDefinition Height="auto"/>
         </Grid.RowDefinitions>
         <DockPanel Grid.ColumnSpan="2">
             <Menu DockPanel.Dock="Top"  Width="Auto" Height="20" Background="#FFA9D1F4">
@@ -67,6 +68,16 @@
             </ListView.ItemTemplate>
         </ListView>
         <Frame x:Name="mainframe" Grid.Column="1" Grid.Row="1" JournalOwnership="OwnsJournal" Loaded="Frame_Loaded" ClipToBounds="True" Background="#f6f6f7" Navigating="MainFrame_Navigating" NavigationUIVisibility="Hidden" VerticalAlignment="Stretch"/>
+        <StatusBar Grid.Row="2" Grid.ColumnSpan="2">
+            <StatusBarItem>
+                <DataTemplate>
+                    <TextBlock>
+                        <Run Text="Usage:" />
+                        <Run Text="512M" />
+                    </TextBlock>
+                </DataTemplate>
+            </StatusBarItem>
+        </StatusBar>
     </Grid>
 
 </Window>

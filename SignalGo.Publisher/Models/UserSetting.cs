@@ -112,7 +112,7 @@ namespace SignalGo.Publisher.Models
             {
                 if (value < Environment.ProcessorCount)
                 {
-                    MessageBox.Show("Value is smaller than you'r processor cores");
+                    //MessageBox.Show("Value is smaller than you'r processor cores");
                     _MaxThreads = Environment.ProcessorCount;
                 }
                 else

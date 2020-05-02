@@ -6,6 +6,7 @@ using SignalGo.Shared.Log;
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Windows;
 using System.Windows.Controls;
 
 namespace SignalGo.Publisher.ViewModels
@@ -25,12 +26,14 @@ namespace SignalGo.Publisher.ViewModels
             ShowSettingsCommand = new Command(ShowSettingsPage);
             AddNewProjectCommand = new Command(AddNewProject);
             ShowAppLogsCommand = new Command(ShowAppLogs);
+            ExitApplicationCommand = new Command(ExitApplication);
             ShowCompilerLogsCommand = new Command(ShowCompilerLogs);
             ShowServersCommand = new Command(ShowServers);
             LoadProjects();
         }
 
 
+        public Command ExitApplicationCommand { get; set; }
         public Command AddNewServerCommand { get; set; }
         public Command AddNewProjectCommand { get; set; }
         public Command ShowServersCommand { get; set; }
@@ -96,6 +99,15 @@ namespace SignalGo.Publisher.ViewModels
 
         }
 
+        public void ExitApplication()
+        {
+            try
+            {
+                if (MessageBox.Show("Are you sure?", "Exit Application", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.Yes) == MessageBoxResult.Yes)
+                    Application.Current.Shutdown();
+            }
+            catch { }
+        }
         public void LoadProjects()
         {
 

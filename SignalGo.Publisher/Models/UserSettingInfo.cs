@@ -42,13 +42,17 @@ namespace SignalGo.Publisher.Models
                             ServiceUpdaterLogFilePath = "ServiceUpdaterLog.log",
                             DefaultTestRunner = UserSetting.TestRunnersEnum.NetCoreSDK,
                             TestRunnerExecutableFile = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TestWindow\\vstest.console.exe",
-                            StartPriority = "Normal"
+                            StartPriority = "Normal",
+                            MaxThreads = 1,
+                            IsDebug = true,
+                            IsRebuild = true,
+                            IsRestore = true,
                         }
                     };
                 }
                 return JsonConvert.DeserializeObject<UserSettingInfo>(File.ReadAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, UserSettingsDbName), Encoding.UTF8));
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 ServerInfo.ServerLogs.Add(ex.Message + "\n");
                 return new UserSettingInfo()
