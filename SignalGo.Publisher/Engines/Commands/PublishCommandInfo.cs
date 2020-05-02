@@ -22,7 +22,7 @@ namespace SignalGo.Publisher.Engines.Commands
             Name = "upload to servers";
             ExecutableFile = "cmd.exe";
             Command = "dotnet ";
-            Arguments = $"publish -nologo";
+            Arguments = $"publish --no-build -nologo";
             IsEnabled = true;
             ServiceName = serviceContract.Name;
             ServiceKey = serviceContract.ServiceKey;
@@ -32,7 +32,7 @@ namespace SignalGo.Publisher.Engines.Commands
         /// </summary>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public override async Task<Process> Run(CancellationToken cancellationToken)
+        public override async Task<RunStatusType> Run(CancellationToken cancellationToken)
         {
             var result = await base.Run(cancellationToken);
             //var output = result.StartInfo;

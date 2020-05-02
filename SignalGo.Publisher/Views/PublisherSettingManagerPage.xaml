@@ -28,6 +28,7 @@
                     <RowDefinition Height="auto"/>
                     <RowDefinition Height="auto"/>
                     <RowDefinition Height="auto"/>
+                    <RowDefinition Height="auto"/>
                     <RowDefinition/>
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
@@ -50,20 +51,78 @@
                 <TextBox Grid.Row="2" Margin="5" Text="{Binding CurrentUserSettingInfo.UserSettings.MsbuildPath}" Grid.Column="1" VerticalAlignment="Stretch" Height="27" Grid.ColumnSpan="2"/>
                 <Button Command="{Binding BrowseMsbuildPathCommand}" VerticalAlignment="Stretch" Content="Browse..." Width="100" Height="30" Margin="10,0,0,0" HorizontalAlignment="Stretch" Grid.Column="3" Grid.Row="2"/>
 
-                <WrapPanel Grid.Column="0" Grid.Row="3" Orientation="Horizontal" Grid.ColumnSpan="3">
-                    <Label Content="Use .NetCore SDK?" VerticalContentAlignment="Center" VerticalAlignment="Stretch"/>
-                    <CheckBox IsChecked="False" VerticalAlignment="Stretch" Height="27" HorizontalAlignment="Stretch" VerticalContentAlignment="Center" HorizontalContentAlignment="Left"/>
+                <Label Grid.Row="3" Content="Test Runner Address:" VerticalContentAlignment="Center" VerticalAlignment="Stretch"/>
+                <TextBox Grid.Row="3" Margin="5" Text="{Binding CurrentUserSettingInfo.UserSettings.TestRunnerExecutableFile}" Grid.Column="1" VerticalAlignment="Stretch" Height="27" Grid.ColumnSpan="2"/>
+                <Button Command="{Binding BrowseTestRunnerCommand}" VerticalAlignment="Stretch" Content="Browse..." Width="100" Height="30" Margin="10,0,0,0" HorizontalAlignment="Stretch" Grid.Column="3" Grid.Row="3"/>
 
-                    <Label Content="Use SignalGo Duplex" VerticalContentAlignment="Center" VerticalAlignment="Stretch"/>
-                    <CheckBox IsChecked="True" IsEnabled="False" VerticalAlignment="Stretch" Height="27" HorizontalAlignment="Stretch"  VerticalContentAlignment="Center" HorizontalContentAlignment="Left"/>
-                    
-                    <Label Content="Administrative" VerticalContentAlignment="Center" VerticalAlignment="Stretch"/>
-                    <CheckBox IsChecked="True" IsEnabled="False" VerticalAlignment="Stretch" Height="27" HorizontalAlignment="Stretch" VerticalContentAlignment="Center" HorizontalContentAlignment="Left"/>
-                </WrapPanel>
 
-                <Button Command="{Binding SaveCommand}" Grid.Row="4" Grid.Column="4" VerticalAlignment="Bottom" Content="Save" Width="100" Height="30" Margin="10,0,0,0" HorizontalAlignment="Right"/>
-                <Button Command="{Binding BackCommand}" Grid.Row="4" Grid.Column="0" VerticalAlignment="Bottom" Content="Back" Width="100" Height="30" Margin="10,0,0,0" HorizontalAlignment="Left"/>
+
+                <Button Command="{Binding SaveCommand}" Grid.Row="5" Grid.Column="4" VerticalAlignment="Bottom" Content="Save" Width="100" Height="30" Margin="10,0,0,0" HorizontalAlignment="Right"/>
+                <Button Command="{Binding BackCommand}" Grid.Row="5" Grid.Column="0" VerticalAlignment="Bottom" Content="Back" Width="100" Height="30" Margin="10,0,0,0" HorizontalAlignment="Left"/>
             </Grid>
         </TabItem>
+
+
+        <TabItem Header="Commands Setting">
+            <Grid Margin="10">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="auto" />
+                    <ColumnDefinition  />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="Compiler Configurations"/>
+                <WrapPanel Margin="5" Orientation="Horizontal" Grid.Row="1" VerticalAlignment="Stretch">
+                    <TextBlock Margin="5" Text="Compiler:" VerticalAlignment="Stretch"/>
+                    <CheckBox IsEnabled="False" Margin="5" Content=".NetCore SDK" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" VerticalContentAlignment="Center" HorizontalContentAlignment="Left"/>
+                    <CheckBox Margin="5" Content="MsBuild" IsChecked="True" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" VerticalContentAlignment="Center" HorizontalContentAlignment="Left"/>
+                    <StackPanel Orientation="Horizontal">
+                        <RadioButton Margin="5" Content="Debug" IsChecked="{Binding CurrentUserSettingInfo.UserSettings.IsDebug}"/>
+                        <RadioButton Margin="5" Content="Release" IsChecked="{Binding CurrentUserSettingInfo.UserSettings.IsRelease}"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <RadioButton Margin="5" Content="Build" IsChecked="{Binding CurrentUserSettingInfo.UserSettings.IsBuild}"/>
+                        <RadioButton Margin="5" Content="Rebuild" IsChecked="{Binding CurrentUserSettingInfo.UserSettings.IsRebuild}"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <CheckBox Margin="5" Content="Restore Packages" IsChecked="{Binding CurrentUserSettingInfo.UserSettings.IsRestore}" VerticalAlignment="Top"/>
+                        <CheckBox Margin="5" Content="Clean" IsChecked="True" VerticalAlignment="Top"/>
+                    </StackPanel>
+                </WrapPanel>
+
+
+                <TextBlock Text="TestRunner Configurations" Grid.Column="1"/>
+                <WrapPanel Margin="5" Grid.Column="1" Grid.Row="1" Orientation="Horizontal" Grid.ColumnSpan="3">
+
+                    <TextBlock Margin="5"  Text="Default TestRunner:"/>
+                    <ComboBox Margin="5"  x:Name="testRunnersCombo" SelectedItem="{Binding CurrentUserSettingInfo.UserSettings.DefaultTestRunner}" Grid.Row="4" Grid.Column="0" />
+
+                </WrapPanel>
+
+                <Button Margin="5" Command="{Binding SaveCommand}" Content="Save" Width="80" Grid.Row="3" FontWeight="Normal" HorizontalAlignment="Right" Grid.Column="3" VerticalAlignment="Bottom"/>
+                <TextBlock Text="Global Configs: " Grid.Column="3"/>
+                <WrapPanel Margin="5" Grid.Row="1" Grid.Column="3" VerticalAlignment="Stretch">
+                    <CheckBox Margin="5" Content="Stop if Error" IsChecked="True" VerticalContentAlignment="Center" />
+                    <CheckBox Margin="5" Content="SignalGo Duplex" IsChecked="True" IsEnabled="False" VerticalAlignment="Stretch" HorizontalAlignment="Stretch"/>
+                    <CheckBox Margin="5" Content="Administrative" IsChecked="True" IsEnabled="False" VerticalContentAlignment="Center"/>
+                    <!--<CheckBox Margin="5" Content="Task Scheduler" IsChecked="False" IsEnabled="False" VerticalContentAlignment="Center"/>-->
+                </WrapPanel>
+                <StackPanel Grid.Row="1" Grid.Column="3" Orientation="Vertical" VerticalAlignment="Bottom">
+                    <TextBlock VerticalAlignment="Stretch" Margin="5">
+                        <Run Text="Max Threads: "/>
+                        <Run Text="{Binding ElementName=maxThreadsSlider, Path=Value}"/>
+                    </TextBlock>
+
+                    <Slider Margin="5" x:Name="maxThreadsSlider" Maximum="32000" Value="{Binding CurrentUserSettingInfo.UserSettings.MaxThreads}" Minimum="12" SmallChange="1" IsSnapToTickEnabled="True" Orientation="Horizontal" TickPlacement="BottomRight" Cursor="SizeWE"/>
+                </StackPanel>
+            </Grid>
+        </TabItem>
+
     </TabControl>
 </Page>

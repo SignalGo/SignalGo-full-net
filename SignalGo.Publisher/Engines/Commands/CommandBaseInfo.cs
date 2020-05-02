@@ -32,7 +32,7 @@ namespace SignalGo.Publisher.Engines.Commands
 
         private long _Size = 0;
         private long _Position = 0;
-        private int retryCounter = 0;
+        //private int retryCounter = 0;
 
         /// <summary>
         /// size of data/file
@@ -85,7 +85,7 @@ namespace SignalGo.Publisher.Engines.Commands
         /// Base Virtual Run
         /// </summary>
         /// <returns></returns>
-        public virtual async Task<Process> Run(CancellationToken cancellationToken)
+        public virtual async Task<RunStatusType> Run(CancellationToken cancellationToken)
         {
             try
             {
@@ -93,20 +93,19 @@ namespace SignalGo.Publisher.Engines.Commands
                 if (cancellationToken.IsCancellationRequested)
                 {
                     Debug.WriteLine("Runner Cancellation Requested");
-                    Status = RunStatusType.Running;
-                    return null;
+                    Status = RunStatusType.Cancelled;
+                    return RunStatusType.Cancelled;
                 }
-                var process = CommandRunner.Run(this, cancellationToken);
-                if (process.Status == TaskStatus.Faulted)
+                var process = await CommandRunner.Run(this, cancellationToken);
+                if (process == RunStatusType.Error)
                     Status = RunStatusType.Error;
-                Status = RunStatusType.Done;
-                return process.Result;
+                return process;
             }
             catch (Exception ex)
             {
                 AutoLogger.Default.LogError(ex, "Runner CommandBaseInfo");
                 Status = RunStatusType.Error;
-                return null;
+                return RunStatusType.Cancelled;
             }
         }
 

@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SignalGo.Publisher"
         xmlns:vm="clr-namespace:SignalGo.Publisher.ViewModels"
-        mc:Ignorable="d" WindowStartupLocation="CenterScreen" Title="ProjectManagerWindow" Height="560" Width="1030" Background="White">
+        mc:Ignorable="d" WindowStartupLocation="CenterScreen" Title="ProjectManagerWindow" Height="560" Width="1030" Background="White" Closing="Window_Closing">
 
     <Window.DataContext>
         <vm:ProjectManagerWindowViewModel/>

@@ -20,7 +20,7 @@ namespace SignalGo.Publisher.Engines.Commands
             Commands = commands.ToList();
         }
 
-        public override async Task<Process> Run(CancellationToken cancellationToken)
+        public override async Task<RunStatusType> Run(CancellationToken cancellationToken)
         {
 
             var proc = new Process();
@@ -32,24 +32,27 @@ namespace SignalGo.Publisher.Engines.Commands
                     if (cancellationToken.IsCancellationRequested)
                     {
                         Debug.WriteLine($"Cancellation Requested in task {Task.CurrentId}");
-                        Status = RunStatusType.Cancelled;
-                        return proc;
+                        return Status = RunStatusType.Cancelled;
                     }
-                    proc = await item.Run(cancellationToken);
-                    if (proc.ExitCode != 0)
+                    var res = await item.Run(cancellationToken);
+                    if (res == RunStatusType.Error)
                     {
-                        IsSuccess = false;
-                        Status = RunStatusType.Error;
-                        return proc;
+                        return Status = RunStatusType.Error;
                     }
+                    //if (proc.ExitCode != 0)
+                    //{
+                    //    IsSuccess = false;
+                    //    Status = RunStatusType.Error;
+                    //    return proc;
+                    //}
                 }
             }
             catch (Exception ex)
             {
                 AutoLogger.Default.LogError(ex, "QueueRunner");
             }
-            Status = RunStatusType.Done;
-            return proc;
+            return Status = RunStatusType.Done;
+            //return proc;
         }
     }
 }

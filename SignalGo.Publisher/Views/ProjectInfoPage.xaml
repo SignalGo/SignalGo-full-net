@@ -306,7 +306,7 @@
 
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" >
                         <Button Command="{Binding BuildCommand}" Content="Build ♻" Width="60" Height="30"/>
-                        <Button IsEnabled="False" Command="{Binding RunTestsCommand}" Content="Tests ☑" Width="60" Height="30" Margin="10,0,0,0"/>
+                        <Button Command="{Binding RunTestsCommand}" Content="Tests ☑" Width="60" Height="30" Margin="10,0,0,0"/>
                         <Button Command="{Binding PublishCommand}" Content="Publish ☢" Width="60" Height="30" Margin="10,0,0,0"/>
                         <Button Command="{Binding RunCommand}" Content="Run Commands ▶" Width="auto" Height="30" Margin="10,0,0,0"/>
                         <Button Command="{Binding CancellationCommand}" Content="Cancel Commands" Width="auto" Height="30" Margin="10,0,0,0"/>
@@ -319,7 +319,7 @@
                 <!--#endregion-->
             </Grid>
         </TabItem>
-        <TabItem Header="Options">
+        <TabItem Header="File Options">
             <Grid Margin="10">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="auto"/>
@@ -410,6 +410,8 @@
 
             </Grid>
         </TabItem>
+
+
         <!--<TabItem Header="Window" Loaded="TabItem_Loaded" >-->
         <!--<TabItem Header="Window" >
             <Grid Margin="10">

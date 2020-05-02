@@ -3,7 +3,6 @@ using MvvmGo.Commands;
 using MvvmGo.ViewModels;
 using System.Diagnostics;
 using SignalGo.Publisher.Models;
-using System.IO;
 using System.Windows.Forms;
 
 namespace SignalGo.Publisher.ViewModels
@@ -16,10 +15,14 @@ namespace SignalGo.Publisher.ViewModels
             BackCommand = new Command(Back);
             BrowseMsbuildPathCommand = new Command(BrowseMsbuildPath);
             BrowseLoggerPathCommand = new Command(BrowseLoggerPath);
+            BrowseTestRunnerCommand = new Command(BrowseTestRunner);
+            BrowseCommandRunnerLogPathCommand = new Command(BrowseCommandRunnerLogPath);
         }
 
         public Command BrowseMsbuildPathCommand { get; set; }
         public Command BrowseLoggerPathCommand { get; set; }
+        public Command BrowseCommandRunnerLogPathCommand { get; set; }
+        public Command BrowseTestRunnerCommand { get; set; }
         public Command RestoreDefaults { get; set; }
         public Command SaveCommand { get; set; }
         public Command BackCommand { get; set; }
@@ -27,7 +30,7 @@ namespace SignalGo.Publisher.ViewModels
         private void BrowseMsbuildPath()
         {
             Microsoft.Win32.OpenFileDialog fileDialog = new Microsoft.Win32.OpenFileDialog();
-            fileDialog.FileName = UserSettingInfo.Current.UserSettings.MsbuildPath;
+            fileDialog.FileName = CurrentUserSettingInfo.UserSettings.MsbuildPath;
             if (fileDialog.ShowDialog().GetValueOrDefault())
                 UserSettingInfo.Current.UserSettings.MsbuildPath = fileDialog.FileName;
         }
@@ -47,21 +50,36 @@ namespace SignalGo.Publisher.ViewModels
             }
         }
 
-        UserSetting _UserSetting;
-        public UserSetting UserSetting
+        //UserSetting _UserSetting;
+        //public UserSetting UserSetting
+        //{
+        //    get
+        //    {
+        //        return _UserSetting;
+        //    }
+
+        //    set
+        //    {
+        //        _UserSetting = value;
+        //        OnPropertyChanged(nameof(UserSetting));
+        //    }
+        //}
+
+        public void BrowseCommandRunnerLogPath()
         {
-            get
-            {
-                return _UserSetting;
-            }
+            using FolderBrowserDialog BrowseLoggerPathDialog = new FolderBrowserDialog();
+            BrowseLoggerPathDialog.SelectedPath = CurrentUserSettingInfo.UserSettings.CommandRunnerLogsPath;
+            if (BrowseLoggerPathDialog.ShowDialog() == DialogResult.OK)
+                CurrentUserSettingInfo.UserSettings.CommandRunnerLogsPath = BrowseLoggerPathDialog.SelectedPath;
 
-            set
-            {
-                _UserSetting = value;
-                OnPropertyChanged(nameof(UserSetting));
-            }
         }
-
+        public void BrowseTestRunner()
+        {
+            Microsoft.Win32.OpenFileDialog fileDialog = new Microsoft.Win32.OpenFileDialog();
+            fileDialog.FileName = CurrentUserSettingInfo.UserSettings.TestRunnerExecutableFile;
+            if (fileDialog.ShowDialog().GetValueOrDefault())
+                UserSettingInfo.Current.UserSettings.TestRunnerExecutableFile = fileDialog.FileName;
+        }
         public void Back()
         {
             ProjectManagerWindowViewModel.MainFrame.GoBack();

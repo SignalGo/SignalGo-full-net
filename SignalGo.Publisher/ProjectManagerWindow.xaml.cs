@@ -3,6 +3,7 @@ using SignalGo.Publisher.Services;
 using SignalGo.Publisher.ViewModels;
 using SignalGo.Publisher.Views;
 using System;
+using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -118,6 +119,15 @@ namespace SignalGo.Publisher
             //var obj = item.Content as ProjectInfo;
             //var Name = x.Text;
             //SettingInfo.SaveSettingInfo();
+        }
+
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            try
+            {
+                File.Delete(UserSettingInfo.Current.UserSettings.CommandRunnerLogsPath);
+            }
+            catch { }
         }
     }
 }

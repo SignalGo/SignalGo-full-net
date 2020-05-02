@@ -1,5 +1,8 @@
-﻿using SignalGo.Publisher.Models;
+﻿using SignalGo.Publisher.Engines.Models;
+using SignalGo.Publisher.Models;
+using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -18,7 +21,15 @@ namespace SignalGo.Publisher.Engines.Commands
         //    Arguments = "build";
         //    IsEnabled = true;
         //}
-
+        public UserSetting CurrentSettings
+        {
+            get
+            {
+                return UserSettingInfo.Current.UserSettings;
+            }
+        }
+        string buildType = "Rebuild";
+        string outputType = "Debug";
         /// <summary>
         /// MsBuild
         /// </summary>
@@ -27,11 +38,28 @@ namespace SignalGo.Publisher.Engines.Commands
             Name = "compile dotnet project";
             ExecutableFile = "cmd.exe";
             Command = $"{UserSettingInfo.Current.UserSettings.MsbuildPath} ";
-            Arguments = $"-nologo";
+            var Configuration = CurrentSettings;
+            //p:Configuration=Debug
+            //int MinT, maxT, CurrentT, IOT;
+            //ThreadPool.GetAvailableThreads(out maxT, out IOT);
+            //var tx = ThreadPool.SetMaxThreads(CurrentSettings.MaxThreads, CurrentSettings.MaxThreads);
+            //ThreadPool.GetAvailableThreads(out maxT, out IOT);
+
+            if (Configuration.IsBuild)
+                buildType = "Build";
+            else
+                buildType = "Rebuild";
+            if (Configuration.IsRelease)
+                outputType = "Release";
+            else
+                outputType = "Debug";
+
+
+            Arguments = $"-t:{buildType} -r:{CurrentSettings.IsRestore} -p:Configuration={outputType} -noWarn:CS1591 -nologo";
             IsEnabled = true;
         }
 
-        public override async Task<Process> Run(CancellationToken cancellationToken)
+        public override async Task<RunStatusType> Run(CancellationToken cancellationToken)
         {
             var result = await base.Run(cancellationToken);
             //var output = result.StartInfo;

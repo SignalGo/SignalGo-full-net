@@ -8,7 +8,7 @@ namespace SignalGo.Publisher.Engines.Interfaces
     public interface IRunnable
     {
         public bool IsEnabled { get; set; }
-        Task<Process> Run(CancellationToken cancellationToken);
+        Task<RunStatusType> Run(CancellationToken cancellationToken);
         public RunStatusType Status { get; set; }
 
     }

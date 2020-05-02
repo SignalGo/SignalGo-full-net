@@ -40,24 +40,27 @@ namespace SignalGo.Publisher.Models
                             MsbuildPath = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Enterprise\\MSBuild\\Current\\Bin\\MSBuild.exe",
                             CommandRunnerLogsPath = "CommandRunnerLogs.log",
                             ServiceUpdaterLogFilePath = "ServiceUpdaterLog.log",
+                            DefaultTestRunner = UserSetting.TestRunnersEnum.NetCoreSDK,
+                            TestRunnerExecutableFile = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TestWindow\\vstest.console.exe",
                             StartPriority = "Normal"
                         }
                     };
                 }
                 return JsonConvert.DeserializeObject<UserSettingInfo>(File.ReadAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, UserSettingsDbName), Encoding.UTF8));
             }
-            catch
+            catch(Exception ex)
             {
+                ServerInfo.ServerLogs.Add(ex.Message + "\n");
                 return new UserSettingInfo()
                 {
-                    UserSettings = new UserSetting()
+                    //UserSettings = new UserSetting()
                 };
             }
         }
 
         public static void SaveUserSettingInfo()
         {
-            File.WriteAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, UserSettingsDbName), JsonConvert.SerializeObject(Current), Encoding.UTF8);
+            File.WriteAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, UserSettingsDbName), JsonConvert.SerializeObject(Current, Formatting.Indented), Encoding.UTF8);
         }
     }
 }

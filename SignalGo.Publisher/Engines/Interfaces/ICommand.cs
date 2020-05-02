@@ -1,4 +1,6 @@
-﻿namespace SignalGo.Publisher.Engines.Interfaces
+﻿using SignalGo.Publisher.Models;
+
+namespace SignalGo.Publisher.Engines.Interfaces
 {
     public interface ICommand : IRunnable
     {
@@ -22,6 +24,13 @@
         /// postion of file/stream for reporting it's progress value
         /// </summary>
         public long Position { get; set; }
+        //public UserSetting CurrentSettings
+        //{
+        //    get
+        //    {
+        //        return UserSettingInfo.Current.UserSettings;
+        //    }
+        //}
         /// <summary>
         /// shell (cmd,bash...)
         /// </summary>

@@ -13,6 +13,7 @@ using System.Text;
 using System.Threading;
 using System.Diagnostics;
 using System.Collections.ObjectModel;
+using SignalGo.Shared.Log;
 
 namespace SignalGo.Publisher.ViewModels
 {
@@ -80,7 +81,7 @@ namespace SignalGo.Publisher.ViewModels
         {
             string standardOutputResult;
             StringBuilder sb = new StringBuilder();
-            var logFile = await File.ReadAllTextAsync(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CommandRunnerLogs.txt"));
+            var logFile = await File.ReadAllTextAsync(UserSettingInfo.Current.UserSettings.CommandRunnerLogsPath);
             standardOutputResult = logFile;
             CmdLogs += standardOutputResult;
             foreach (var item in ServerInfo.ServerLogs)
@@ -355,18 +356,30 @@ namespace SignalGo.Publisher.ViewModels
         /// </summary>
         private async void RunCMD()
         {
-            var runner = Task.Run(async () =>
+            try
             {
-                await Task.Delay(2000);
-                await RunCustomCommand(ProjectInfo, CancellationToken);
-                await ReadCommandLog();
-            }, CancellationToken);
-
-            //t1.GetAwaiter().OnCompleted(() =>
-            //{
-            //    MessageBox.Show("All Commands Completed");
-            //});
-            //Debug.WriteLine("Task {0} executing", t1.Id);
+                if (ProjectInfo.Commands.Any(x => x is PublishCommandInfo) && ServerInfo.Servers.Count <= 0)
+                {
+                    System.Windows.MessageBox.Show("No Server Selected", "Specify Remote Target", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                }
+                else
+                {
+                    var runner = Task.Run(async () =>
+                    {
+                    //await Task.Delay(2000);
+                    await RunCustomCommand(ProjectInfo, CancellationToken);
+                        await ReadCommandLog();
+                    }, CancellationToken);
+                }
+            }
+            catch(Exception ex)
+            {
+                AutoLogger.Default.LogError(ex, "Run CMD");
+            }
+            finally
+            {
+                File.Delete(UserSettingInfo.Current.UserSettings.CommandRunnerLogsPath);
+            }
         }
 
         /// <summary>
@@ -383,7 +396,8 @@ namespace SignalGo.Publisher.ViewModels
         /// </summary>
         private void RunTests()
         {
-            // TODO: add test runner logics
+            if (!ProjectInfo.Commands.Any(x => x is BuildCommandInfo))
+                ProjectInfo.AddCommand(new BuildCommandInfo());
             if (!ProjectInfo.Commands.Any(x => x is TestsCommandInfo))
                 ProjectInfo.AddCommand(new TestsCommandInfo());
         }

@@ -1,8 +1,6 @@
 ﻿using SignalGo.Publisher.Engines.Models;
-using System;
-using System.Collections.Generic;
+using SignalGo.Publisher.Models;
 using System.Diagnostics;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -14,11 +12,12 @@ namespace SignalGo.Publisher.Engines.Commands
         {
             Name = "run tests";
             ExecutableFile = "cmd.exe";
+            //Command = $"{UserSettingInfo.Current.UserSettings.TestRunnerExecutableFile}";
             Command = "dotnet";
-            Arguments = "test";
+            Arguments = "test --nologo --no-build";
             IsEnabled = true;
         }
-        public override async Task<Process> Run(CancellationToken cancellationToken)
+        public override async Task<RunStatusType> Run(CancellationToken cancellationToken)
         {
             var result = await base.Run(cancellationToken);
             //var output = result.StartInfo;

@@ -54,7 +54,7 @@ namespace SignalGo.Publisher.Models
         public static void SaveSettingInfo()
         {
             string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, PublisherDbName);
-            File.WriteAllText(path, JsonConvert.SerializeObject(Current), Encoding.UTF8);
+            File.WriteAllText(path, JsonConvert.SerializeObject(Current, Formatting.Indented), Encoding.UTF8);
         }
     }
 }

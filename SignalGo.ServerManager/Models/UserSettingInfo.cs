@@ -17,6 +17,7 @@ namespace SignalGo.ServerManager.Models
                 if (_Current == null)
                 {
                     _Current = LoadUserSettingInfo();
+                    SaveUserSettingInfo();
                 }
                 return _Current;
             }
@@ -27,11 +28,20 @@ namespace SignalGo.ServerManager.Models
         {
             try
             {
-                if (!File.Exists(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, UserSettingsDbName)))
+                string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, UserSettingsDbName);
+                if (!File.Exists(path) || File.ReadAllLinesAsync(path).Result.Length <= 0)
+                {
                     return new UserSettingInfo()
                     {
-                        UserSettings = new UserSetting()
+                        UserSettings = new UserSetting
+                        {
+                            BackupPath = "C:\\ServerManagerBackups",
+                            ListeningPort = "6464",
+                            ListeningAddress = "localhost",
+                            LoggerPath = "AppLogs.log"
+                        }
                     };
+                }
                 return Newtonsoft.Json.JsonConvert.DeserializeObject<UserSettingInfo>(File.ReadAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, UserSettingsDbName), Encoding.UTF8));
             }
             catch

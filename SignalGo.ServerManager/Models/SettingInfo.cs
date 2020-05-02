@@ -16,7 +16,10 @@ namespace SignalGo.ServerManager.Models
             get
             {
                 if (_Current == null)
+                {
                     _Current = LoadSettingInfo();
+                    SaveSettingInfo();
+                }
                 return _Current;
             }
         }
@@ -27,11 +30,15 @@ namespace SignalGo.ServerManager.Models
         {
             try
             {
-                if (!File.Exists(System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ServerDbName)))
+                string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ServerDbName);
+                if (!File.Exists(path) || File.ReadAllLinesAsync(path).Result.Length <= 0)
+                {
+                    File.Delete(path);
                     return new SettingInfo()
                     {
                         ServerInfo = new ObservableCollection<ServerInfo>()
                     };
+                }
                 return Newtonsoft.Json.JsonConvert.DeserializeObject<SettingInfo>(File.ReadAllText(System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ServerDbName), Encoding.UTF8));
             }
             catch
