@@ -21,15 +21,18 @@ namespace SignalGo.Publisher.Engines.Commands
         //    Arguments = "build";
         //    IsEnabled = true;
         //}
-        public UserSetting CurrentSettings
-        {
-            get
-            {
-                return UserSettingInfo.Current.UserSettings;
-            }
-        }
-        string buildType = "Rebuild";
-        string outputType = "Debug";
+        //private UserSetting CurrentSettings
+        //{
+        //    get
+        //    {
+        //        return UserSettingInfo.Current.UserSettings;
+        //    }
+        //}
+
+        private string buildType = "Rebuild";
+        private string outputType = "Debug";
+        private UserSetting Configuration = UserSettingInfo.Current.UserSettings;
+
         /// <summary>
         /// MsBuild
         /// </summary>
@@ -38,33 +41,20 @@ namespace SignalGo.Publisher.Engines.Commands
             Name = "compile dotnet project";
             ExecutableFile = "cmd.exe";
             Command = $"{UserSettingInfo.Current.UserSettings.MsbuildPath} ";
-            var Configuration = CurrentSettings;
-            //p:Configuration=Debug
             //int MinT, maxT, CurrentT, IOT;
             //ThreadPool.GetAvailableThreads(out maxT, out IOT);
             //var tx = ThreadPool.SetMaxThreads(CurrentSettings.MaxThreads, CurrentSettings.MaxThreads);
             //ThreadPool.GetAvailableThreads(out maxT, out IOT);
+            buildType = Configuration.IsBuild ? "Build" : "Rebuild";
+            outputType = Configuration.IsRelease ? "Release" : "Debug";
 
-            if (Configuration.IsBuild)
-                buildType = "Build";
-            else
-                buildType = "Rebuild";
-            if (Configuration.IsRelease)
-                outputType = "Release";
-            else
-                outputType = "Debug";
-
-
-            Arguments = $"-t:{buildType} -r:{CurrentSettings.IsRestore} -p:Configuration={outputType} -noWarn:CS1591 -nologo";
+            Arguments = $"-t:{buildType} -r:{Configuration.IsRestore} -p:Configuration={outputType} -noWarn:CS1591 -nologo";
             IsEnabled = true;
         }
 
         public override async Task<RunStatusType> Run(CancellationToken cancellationToken)
         {
             var result = await base.Run(cancellationToken);
-            //var output = result.StartInfo;
-            //Status = Models.RunStatusType.Done;
-            //Status = Models.RunStatusType.Error;
             return result;
         }
     }
