@@ -68,15 +68,26 @@
             </ListView.ItemTemplate>
         </ListView>
         <Frame x:Name="mainframe" Grid.Column="1" Grid.Row="1" JournalOwnership="OwnsJournal" Loaded="Frame_Loaded" ClipToBounds="True" Background="#f6f6f7" Navigating="MainFrame_Navigating" NavigationUIVisibility="Hidden" VerticalAlignment="Stretch"/>
-        <StatusBar Grid.Row="2" Grid.ColumnSpan="2">
+        <StatusBar Grid.Row="2" Grid.ColumnSpan="2" Background="Transparent">
             <StatusBarItem>
-                <DataTemplate>
-                    <TextBlock>
-                        <Run Text="Usage:" />
-                        <Run Text="512M" />
-                    </TextBlock>
-                </DataTemplate>
+                <Grid>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="RAM Usage: "/>
+                        <TextBlock Text="{Binding ApplicationRAMUsage}"/>
+                        <TextBlock Text=" Mb"/>
+                    </StackPanel>
+                </Grid>
             </StatusBarItem>
+            <!--<Separator />-->
+            <!--<StatusBarItem>
+                <Grid>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Cpu Usage: "/>
+                        <TextBlock Text="{Binding ApplicationCPUUsage}"/>
+                        <TextBlock Text=" %"/>
+                    </StackPanel>
+                </Grid>
+            </StatusBarItem>-->
         </StatusBar>
     </Grid>
 

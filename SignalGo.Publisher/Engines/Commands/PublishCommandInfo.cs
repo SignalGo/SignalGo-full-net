@@ -1,6 +1,5 @@
 ﻿using SignalGo.Publisher.Engines.Models;
 using SignalGo.Shared.Models;
-using System.Diagnostics;
 using System.IO.Compression;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,14 +16,26 @@ namespace SignalGo.Publisher.Engines.Commands
         //    Arguments = $"publish -nologo";
         //    IsEnabled = true;
         //}
+
+        /// <summary>
+        /// this command will run dotnet sdk publish command, before it, rebuild must be called
+        /// </summary>
+        /// <param name="serviceContract"></param>
         public PublishCommandInfo(ServiceContract serviceContract) : base()
         {
+            // title of command in Queue list
             Name = "upload to servers";
+            // executable shell binary 
             ExecutableFile = "cmd.exe";
+            // command which run in shell
             Command = "dotnet ";
+            // args to send to command
             Arguments = $"publish --no-build -nologo";
+            // command are avail/not available
             IsEnabled = true;
+            // name of project service (in server)
             ServiceName = serviceContract.Name;
+            // key of project that must integrate with key of service in ServerManager
             ServiceKey = serviceContract.ServiceKey;
         }
         /// <summary>

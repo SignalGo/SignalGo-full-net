@@ -4,8 +4,11 @@ using SignalGo.Publisher.Models;
 using SignalGo.Publisher.Views;
 using SignalGo.Shared.Log;
 using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -30,6 +33,7 @@ namespace SignalGo.Publisher.ViewModels
             ShowCompilerLogsCommand = new Command(ShowCompilerLogs);
             ShowServersCommand = new Command(ShowServers);
             LoadProjects();
+            GetAppUsage();
         }
 
 
@@ -122,8 +126,73 @@ namespace SignalGo.Publisher.ViewModels
                 AutoLogger.Default.LogError(ex, "LoadProjectInfo");
             }
         }
+        //private readonly BackgroundWorker worker = new BackgroundWorker();
+        public async Task GetAppUsage()
+        {
+            try
+            {
+                //worker.DoWork += worker_DoWork;
+                //worker.RunWorkerCompleted += worker_RunWorkerCompleted;
+                //worker.RunWorkerAsync();
 
+                //ApplicationRAMUsage = GC.GetTotalMemory(true) / 10000;v
+                //if (GC.GetGCMemoryInfo().MemoryLoadBytes == 0)
+                //    GC.GetTotalMemory(true);
+                //ApplicationRAMUsage = (GC.GetGCMemoryInfo().MemoryLoadBytes / 100000).ToString("N0");
+                //var cpuSet = ;
+                ApplicationRAMUsage = (Process.GetCurrentProcess().WorkingSet64 / 1000000).ToString();
+                //ApplicationCPUUsage = (cpuSet / 100).ToString();
+                await Task.Delay(2000);
 
+            }
+            catch (Exception e)
+            {
+
+            }
+            finally
+            {
+                GetAppUsage();
+            }
+
+        }
+        //private void worker_DoWork(object sender, DoWorkEventArgs e)
+        //{
+        //    ApplicationRAMUsage = GC.GetTotalMemory(true) / 10000;
+        //}
+
+        //private void worker_RunWorkerCompleted(object sender,
+        //                                           RunWorkerCompletedEventArgs e)
+        //{
+        //    ApplicationRAMUsage = GC.GetTotalMemory(true) / 10000;
+        //}
+        //public static string RAMUsage { get; set; }
+
+        public string _ApplicationRAMUsage;
+        public string ApplicationRAMUsage
+        {
+            get
+            {
+                return $"< { _ApplicationRAMUsage}";
+            }
+            set
+            {
+                _ApplicationRAMUsage = value;
+                OnPropertyChanged(nameof(ApplicationRAMUsage));
+            }
+        }
+        //public string _ApplicationCPUUsage;
+        //public string ApplicationCPUUsage
+        //{
+        //    get
+        //    {
+        //        return $"< { _ApplicationCPUUsage}";
+        //    }
+        //    set
+        //    {
+        //        _ApplicationCPUUsage = value;
+        //        OnPropertyChanged(nameof(ApplicationCPUUsage));
+        //    }
+        //}
 
 
     }

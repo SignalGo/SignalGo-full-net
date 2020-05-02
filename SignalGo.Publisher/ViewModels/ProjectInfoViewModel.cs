@@ -261,21 +261,31 @@ namespace SignalGo.Publisher.ViewModels
         }
 
         /// <summary>
-        /// push/update projects and related assemblies
+        /// Get Compile and output for Publish
+        /// push/update projects and related assemblies to Servers
         /// </summary>
         private void PublishToServers()
         {
+            // add compiler command to commands list
             if (!ProjectInfo.Commands.Any(x => x is BuildCommandInfo))
                 ProjectInfo.AddCommand(new BuildCommandInfo());
-            //if (!ProjectInfo.Commands.Any(x => x is TestsCommandInfo))
-            //ProjectInfo.AddCommand(new TestsCommandInfo());
+            // add TestsRunner Command if not exist in commands list
+            if (!ProjectInfo.Commands.Any(x => x is TestsCommandInfo))
+                ProjectInfo.AddCommand(new TestsCommandInfo());
+            // add publish command with peroject data|key
             if (!ProjectInfo.Commands.Any(x => x is PublishCommandInfo))
+            {
                 ProjectInfo.AddCommand(new PublishCommandInfo(new Shared.Models.ServiceContract
                 {
                     Name = ProjectInfo.Name,
                     ServiceKey = ProjectInfo.ProjectKey
                 }));
+            }
         }
+
+        /// <summary>
+        /// Cancel/Break All Commands and Queued Commands
+        /// </summary>
         private void CancelCommands()
         {
             try
@@ -291,6 +301,7 @@ namespace SignalGo.Publisher.ViewModels
             }
             finally
             {
+                // Generate new token
                 CancellationTokenSource = new CancellationTokenSource();
                 CancellationToken = new CancellationToken(false);
                 CancellationToken = CancellationTokenSource.Token;
@@ -298,7 +309,7 @@ namespace SignalGo.Publisher.ViewModels
         }
 
         /// <summary>
-        /// Compile Project Source
+        /// Add Specified File to upload ignore list settings
         /// </summary>
         private void AddIgnoreClientFile()
         {
@@ -312,6 +323,9 @@ namespace SignalGo.Publisher.ViewModels
                 }
             }
         }
+        /// <summary>
+        /// add specified file to Server Ignore Update List settings
+        /// </summary>
         private void AddIgnoreServerFile()
         {
             if (!ProjectInfo.ServerIgnoredFiles.Contains(IgnoreServerFileName) && !string.IsNullOrEmpty(IgnoreServerFileName))
@@ -322,7 +336,9 @@ namespace SignalGo.Publisher.ViewModels
             else
                 System.Windows.MessageBox.Show("Invalid Input Or exist", "validation error", System.Windows.MessageBoxButton.OK);
         }
-
+        /// <summary>
+        /// Save all ignore file settings to user settings
+        /// </summary>
         private void SaveIgnoreFileList()
         {
             var clientIgnoreList = CurrentProjectSettingInfo.ProjectInfo.Select(x => x.IgnoredFiles).ToList();
@@ -333,12 +349,17 @@ namespace SignalGo.Publisher.ViewModels
             clientIgnoreList.Clear();
             serverIgnoreList.Clear();
         }
+        /// <summary>
+        /// remove specified file from server ignore list
+        /// </summary>
+        /// <param name="name"></param>
         private void RemoveIgnoredServerFile(string name)
         {
             if (ProjectInfo.ServerIgnoredFiles.Contains(name))
                 ProjectInfo.ServerIgnoredFiles.Remove(name);
             //SaveIgnoreFileList();
         }
+        /// remove specified file from client(publisher) ignore list
         private void RemoveIgnoredFile(string name)
         {
             if (ProjectInfo.IgnoredFiles.Contains(name))
@@ -346,6 +367,9 @@ namespace SignalGo.Publisher.ViewModels
             //SaveIgnoreFileList();
 
         }
+        /// <summary>
+        /// Add Compile Command To Commands List
+        /// </summary>
         private void Build()
         {
             if (!ProjectInfo.Commands.Any(x => x is BuildCommandInfo))
@@ -366,18 +390,19 @@ namespace SignalGo.Publisher.ViewModels
                 {
                     var runner = Task.Run(async () =>
                     {
-                    //await Task.Delay(2000);
-                    await RunCustomCommand(ProjectInfo, CancellationToken);
+                        //await Task.Delay(2000);
+                        await RunCustomCommand(ProjectInfo, CancellationToken);
                         await ReadCommandLog();
                     }, CancellationToken);
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 AutoLogger.Default.LogError(ex, "Run CMD");
             }
             finally
             {
+                //if (!ProjectInfo.Commands.Any(x => x.Status == Engines.Models.RunStatusType.Running))
                 File.Delete(UserSettingInfo.Current.UserSettings.CommandRunnerLogsPath);
             }
         }
