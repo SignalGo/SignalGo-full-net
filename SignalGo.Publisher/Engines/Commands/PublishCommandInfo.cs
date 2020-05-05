@@ -45,13 +45,13 @@ namespace SignalGo.Publisher.Engines.Commands
         /// <returns></returns>
         public override async Task<RunStatusType> Run(CancellationToken cancellationToken)
         {
-            var result = await base.Run(cancellationToken);
+            await base.Run(cancellationToken);
             //var output = result.StartInfo;
             //Status = Models.RunStatusType.Done;
             //Status = Models.RunStatusType.Error;
             var compressedData = await Compress();
-            await Upload(compressedData, cancellationToken, null, true);
-            return result;
+            var result = await Upload(compressedData, cancellationToken, null, true);
+            return Status = result;
         }
 
         /// <summary>

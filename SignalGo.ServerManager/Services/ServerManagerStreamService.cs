@@ -26,49 +26,59 @@ namespace SignalGo.ServerManager.Services
         /// <returns></returns>
         public async Task<string> UploadData(StreamInfo streamInfo, ServiceContract serviceContract)
         {
-            var serviceToUpdate = Models.SettingInfo.Current.ServerInfo.SingleOrDefault(s => s.ServerKey == serviceContract.ServiceKey);
-            double? progress = 0;
-            //string fileExtension = streamInfo.FileName.Split('.')[1];
-            //string fileName = streamInfo.FileName.Split('.')[0];
             string outFileName = $"{serviceContract.Name}{DateTime.Now.ToString("yyyyMMdd_hhmm")}.zip";
             string outFilePath = Path.GetFullPath(outFileName, Environment.CurrentDirectory);
             try
             {
-                FileStream = new FileStream(outFilePath, FileMode.Create, FileAccess.ReadWrite, FileShare.ReadWrite);
-                var lengthWrite = 0;
-                while (lengthWrite != streamInfo.Length)
+                var serviceToUpdate = Models.SettingInfo.Current.ServerInfo.SingleOrDefault(s => s.ServerKey == serviceContract.ServiceKey);
+                if (serviceToUpdate == null)
+                    return "failed";
+                double? progress = 0;
+                //string fileExtension = streamInfo.FileName.Split('.')[1];
+                //string fileName = streamInfo.FileName.Split('.')[0];
+
+                try
                 {
-                    byte[] bufferBytes = new byte[1024];
-                    int readCount = await streamInfo.Stream.ReadAsync(bufferBytes, bufferBytes.Length);
-                    if (readCount <= 0)
-                        break;
-                    await FileStream.WriteAsync(bufferBytes, 0, readCount);
-                    lengthWrite += readCount;
-                    progress += lengthWrite * 100.0 / streamInfo.Length;
+                    FileStream = new FileStream(outFilePath, FileMode.Create, FileAccess.ReadWrite, FileShare.ReadWrite);
+                    var lengthWrite = 0;
+                    while (lengthWrite != streamInfo.Length)
+                    {
+                        byte[] bufferBytes = new byte[1024];
+                        int readCount = await streamInfo.Stream.ReadAsync(bufferBytes, bufferBytes.Length);
+                        if (readCount <= 0)
+                            break;
+                        await FileStream.WriteAsync(bufferBytes, 0, readCount);
+                        lengthWrite += readCount;
+                        progress += lengthWrite * 100.0 / streamInfo.Length;
+                    }
+                    Debug.WriteLine("Upload Data Downloaded Successfully");
                 }
-                Debug.WriteLine("Upload Data Downloaded Successfully");
+                catch (Exception ex)
+                {
+                    AutoLogger.Default.LogError(ex, "DownloadUploadData");
+                }
+                finally
+                {
+                    Dispose();
+                }
+
+                var service = new ServiceContract
+                {
+                    Name = serviceToUpdate.Name,
+                    ServiceAssembliesPath = serviceToUpdate.AssemblyPath,
+                    ServiceKey = serviceToUpdate.ServerKey,
+                    IgnoreFiles = serviceContract.IgnoreFiles
+                };
+                using (ServiceUpdater = new ServiceUpdater(service, outFilePath))
+                {
+                    await ServiceUpdater.Update();
+                }
+                //return MessageContract.Success();
             }
             catch (Exception ex)
             {
-                AutoLogger.Default.LogError(ex, "DownloadUploadData");
+                return "failed";
             }
-            finally
-            {
-                Dispose();
-            }
-
-            var service = new ServiceContract
-            {
-                Name = serviceToUpdate.Name,
-                ServiceAssembliesPath = serviceToUpdate.AssemblyPath,
-                ServiceKey = serviceToUpdate.ServerKey,
-                IgnoreFiles = serviceContract.IgnoreFiles
-            };
-            using (ServiceUpdater = new ServiceUpdater(service, outFilePath))
-            {
-                await ServiceUpdater.Update();
-            }
-            //return MessageContract.Success();
             return "success";
         }
         public void Dispose()

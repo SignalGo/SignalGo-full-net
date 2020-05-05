@@ -56,7 +56,7 @@ namespace SignalGo.Publisher.Services
                 //{
                 //try
                 //{
-                isSuccess = CheckConnectionQuality();
+                isSuccess = await CheckConnectionQuality();
                 //}
                 //catch (Exception ex)
                 //{
@@ -101,14 +101,14 @@ namespace SignalGo.Publisher.Services
         /// <summary>
         /// call server hello method to get simple response
         /// </summary>
-        public static bool CheckConnectionQuality()
+        public static async Task<bool> CheckConnectionQuality()
         {
             var watch = new Stopwatch();
             watch.Start();
             bool isServerAvailaible = false;
             try
             {
-                Task.Run(async () =>
+                await Task.Run(async () =>
                 {
                     isServerAvailaible = await CurrentClientProvider.SendPingAndWaitToReceiveAsync();
                 });

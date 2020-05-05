@@ -137,7 +137,7 @@ namespace SignalGo.Publisher.Engines.Models
                     if (cancellationToken.IsCancellationRequested)
                     {
                         Debug.WriteLine("Cancellation Is Requested in CommandRunner");
-                        return RunStatusType.Cancelled;
+                        return RunStatusType.Canceled;
                     }
                     standardOutputResult = await process.StandardOutput.ReadLineAsync();
                     await File.AppendAllTextAsync(CommandsLogPath, standardOutputResult + Environment.NewLine);

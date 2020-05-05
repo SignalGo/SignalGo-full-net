@@ -38,8 +38,8 @@
                     <MenuItem Header="_Service Updater" IsCheckable="True" IsChecked="True" />
                     <MenuItem Header="_Scheduler" IsCheckable="True" IsChecked="False" />
                 </MenuItem>
-                <MenuItem Header="_Help">
-                    <MenuItem Header="_How to use"/>
+                <MenuItem Header="_Help" >
+                    <MenuItem Header="_How to use" Command="{Binding ShowAppHelpPageCommand}"/>
                     <MenuItem Header="_About"/>
 
                 </MenuItem>

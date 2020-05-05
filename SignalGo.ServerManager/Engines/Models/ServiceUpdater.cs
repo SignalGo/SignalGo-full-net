@@ -40,7 +40,8 @@ namespace SignalGo.ServerManager.Engines.Models
                 }
                 else
                 {
-                    throw new InvalidOperationException();
+                    AutoLogger.Default.LogText("Update operation Failed");
+                    return TaskStatus.Faulted;
                 }
                 serviceToUpdate.Start();
             }
@@ -194,9 +195,15 @@ namespace SignalGo.ServerManager.Engines.Models
             return IsSuccess;
         }
 
+        public void DisposeCache()
+        {
+            File.Delete(UpdateDataPath);
+            Debug.WriteLine("Cache Disposed");
+        }
         public void Dispose()
         {
-
+            DisposeCache();
+            GC.Collect();
         }
     }
 }

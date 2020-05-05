@@ -25,6 +25,7 @@ namespace SignalGo.Publisher.ViewModels
         public ProjectManagerWindowViewModel()
         {
             This = this;
+            ShowAppHelpPageCommand = new Command(ShowAppHelpPage);
             AddNewServerCommand = new Command(AddNewServer);
             ShowSettingsCommand = new Command(ShowSettingsPage);
             AddNewProjectCommand = new Command(AddNewProject);
@@ -33,11 +34,14 @@ namespace SignalGo.Publisher.ViewModels
             ShowCompilerLogsCommand = new Command(ShowCompilerLogs);
             ShowServersCommand = new Command(ShowServers);
             LoadProjects();
+
+            // get application resouce usage in background
             GetAppUsage();
         }
 
 
         public Command ExitApplicationCommand { get; set; }
+        public Command ShowAppHelpPageCommand { get; set; }
         public Command AddNewServerCommand { get; set; }
         public Command AddNewProjectCommand { get; set; }
         public Command ShowServersCommand { get; set; }
@@ -103,6 +107,11 @@ namespace SignalGo.Publisher.ViewModels
 
         }
 
+        public void ShowAppHelpPage()
+        {
+            ProjectManagerWindow.This.mainframe.Navigate(new AppHelpPage());
+
+        }
         public void ExitApplication()
         {
             try
@@ -126,23 +135,23 @@ namespace SignalGo.Publisher.ViewModels
                 AutoLogger.Default.LogError(ex, "LoadProjectInfo");
             }
         }
-        //private readonly BackgroundWorker worker = new BackgroundWorker();
         public async Task GetAppUsage()
         {
             try
             {
-                //worker.DoWork += worker_DoWork;
-                //worker.RunWorkerCompleted += worker_RunWorkerCompleted;
-                //worker.RunWorkerAsync();
-
+                Task.Factory.StartNew(async () =>
+                {
+                    ApplicationRAMUsage = (Process.GetCurrentProcess().PrivateMemorySize64 / 1000000).ToString();
+                    await Task.Delay(20000);
+                    GetAppUsage();
+                }, TaskCreationOptions.LongRunning);
                 //ApplicationRAMUsage = GC.GetTotalMemory(true) / 10000;v
                 //if (GC.GetGCMemoryInfo().MemoryLoadBytes == 0)
                 //    GC.GetTotalMemory(true);
                 //ApplicationRAMUsage = (GC.GetGCMemoryInfo().MemoryLoadBytes / 100000).ToString("N0");
                 //var cpuSet = ;
-                ApplicationRAMUsage = (Process.GetCurrentProcess().WorkingSet64 / 1000000).ToString();
                 //ApplicationCPUUsage = (cpuSet / 100).ToString();
-                await Task.Delay(2000);
+
 
             }
             catch (Exception e)
@@ -151,7 +160,6 @@ namespace SignalGo.Publisher.ViewModels
             }
             finally
             {
-                GetAppUsage();
             }
 
         }

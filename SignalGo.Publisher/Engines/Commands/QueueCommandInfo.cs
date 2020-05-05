@@ -32,7 +32,7 @@ namespace SignalGo.Publisher.Engines.Commands
                     if (cancellationToken.IsCancellationRequested)
                     {
                         Debug.WriteLine($"Cancellation Requested in task {Task.CurrentId}");
-                        return Status = RunStatusType.Cancelled;
+                        return Status = RunStatusType.Canceled;
                     }
                     var res = await item.Run(cancellationToken);
                     if (res == RunStatusType.Error)

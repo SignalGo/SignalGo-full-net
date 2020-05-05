@@ -93,19 +93,19 @@ namespace SignalGo.Publisher.Engines.Commands
                 if (cancellationToken.IsCancellationRequested)
                 {
                     Debug.WriteLine("Runner Cancellation Requested");
-                    Status = RunStatusType.Cancelled;
-                    return RunStatusType.Cancelled;
+                    Status = RunStatusType.Canceled;
+                    return RunStatusType.Canceled;
                 }
-                var process = await CommandRunner.Run(this, cancellationToken);
-                if (process == RunStatusType.Error)
+                var processStatus = await CommandRunner.Run(this, cancellationToken);
+                if (processStatus == RunStatusType.Error || processStatus == RunStatusType.Canceled)
                     Status = RunStatusType.Error;
-                return process;
+                return processStatus;
             }
             catch (Exception ex)
             {
                 AutoLogger.Default.LogError(ex, "Runner CommandBaseInfo");
                 Status = RunStatusType.Error;
-                return RunStatusType.Cancelled;
+                return RunStatusType.Canceled;
             }
         }
 
@@ -154,12 +154,13 @@ namespace SignalGo.Publisher.Engines.Commands
             return Task.FromResult(zipFilePath);
         }
 
-        public virtual async Task<TaskStatus> Upload(string dataPath, CancellationToken cancellationToken, ServerInfo serverInfo = null, bool forceUpdate = false)
+        public virtual async Task<RunStatusType> Upload(string dataPath, CancellationToken cancellationToken, ServerInfo serverInfo = null, bool forceUpdate = false)
         {
+            var status = RunStatusType.Error;
             if (cancellationToken.IsCancellationRequested)
             {
                 Debug.WriteLine("Cancellation Requested In Upload Command");
-                return TaskStatus.Canceled;
+                return RunStatusType.Canceled;
             }
             try
             {
@@ -182,6 +183,7 @@ namespace SignalGo.Publisher.Engines.Commands
                 };
                 foreach (var server in ServerInfo.Servers.Where(x => x.IsUpdated != ServerInfo.ServerInfoStatusEnum.UpdateError).ToList().Where(y => y.IsUpdated != ServerInfo.ServerInfoStatusEnum.Updated).ToList())
                 {
+                    var currentSrv = ServerSettingInfo.CurrentServer.ServerInfo.FirstOrDefault(x => x.ServerKey == server.ServerKey);
                     // Contact with Server Agents and Make the connection if it possible
                     var contactToProvider = await PublisherServiceProvider.Initialize(server);
                     // contacting with Provider is'nt possible;
@@ -197,16 +199,24 @@ namespace SignalGo.Publisher.Engines.Commands
                         //    await Upload(dataPath, cancellationToken);
                         //}
                         //else, we can't update this server at this moment (Problems are Possible: Server is Offline,refuse || block || Network , unhandled Errors...)
-                        var currentserver = ServerInfo.Servers.FirstOrDefault(s => s.ServerKey == server.ServerKey);
-                        currentserver.ServerStatus = ServerInfo.ServerInfoStatusEnum.UpdateError;
-                        currentserver.IsUpdated = ServerInfo.ServerInfoStatusEnum.UpdateError;
-                        currentserver.ServerLastUpdate = "Couldn't Update";
+                        //var currentserver = ServerInfo.Servers.FirstOrDefault(s => s.ServerKey == server.ServerKey);
+                        ServerInfo.Servers.FirstOrDefault(s => s.ServerKey == server.ServerKey).ServerStatus = ServerInfo.ServerInfoStatusEnum.UpdateError;
+                        ServerInfo.Servers.FirstOrDefault(s => s.ServerKey == server.ServerKey).IsUpdated = ServerInfo.ServerInfoStatusEnum.UpdateError;
+                        //ServerInfo.Servers.FirstOrDefault(s => s.ServerKey == server.ServerKey).ServerLastUpdate = "Couldn't Update";
+
+                        currentSrv.ServerStatus = ServerInfo.ServerInfoStatusEnum.UpdateError;
+                        currentSrv.IsUpdated = ServerInfo.ServerInfoStatusEnum.UpdateError;
+                        currentSrv.ServerLastUpdate = "Couldn't Update";
+
                         ServerSettingInfo.SaveServersSettingInfo();
+                        status = RunStatusType.Error;
                         return await Upload(dataPath, cancellationToken);
                     }
                     //if (forceUpdate)
                     //    await PublisherServiceProvider.StopServices();
                     // contacting with Provider is OK and server is available.
+
+                    currentSrv.ServerStatus = ServerInfo.ServerInfoStatusEnum.Updating;
                     var uploadResult = await StreamManagerService.UploadAsync(uploadInfo, cancellationToken, serviceContract);
                     if (uploadResult.Status)
                     {
@@ -215,16 +225,23 @@ namespace SignalGo.Publisher.Engines.Commands
                         ServerInfo.ServerLogs.Add($"------ Ended at [{DateTime.Now}] ------");
                         server.IsUpdated = ServerInfo.ServerInfoStatusEnum.Updated;
                         server.ServerStatus = ServerInfo.ServerInfoStatusEnum.Updated;
-                        ServerSettingInfo.CurrentServer.ServerInfo.FirstOrDefault(x => x.ServerKey == server.ServerKey).ServerLastUpdate = DateTime.Now.ToString();
+
+                        currentSrv.ServerStatus = ServerInfo.ServerInfoStatusEnum.Updated;
+                        currentSrv.IsUpdated = ServerInfo.ServerInfoStatusEnum.Updated;
+                        currentSrv.ServerLastUpdate = DateTime.Now.ToString();
                         ServerSettingInfo.SaveServersSettingInfo();
+                        status = RunStatusType.Done;
+
                     } // end server collection foreach
                     else
                     {
-                        //server.IsUpdated = ServerInfo.ServerInfoStatusEnum.UpdateError;
-                        //server.ServerStatus = ServerInfo.ServerInfoStatusEnum.UpdateError;
+                        server.IsUpdated = ServerInfo.ServerInfoStatusEnum.UpdateError;
+                        server.ServerStatus = ServerInfo.ServerInfoStatusEnum.UpdateError;
                         ServerInfo.Servers.FirstOrDefault(s => s.ServerKey == server.ServerKey).ServerStatus = ServerInfo.ServerInfoStatusEnum.UpdateError;
                         ServerInfo.Servers.FirstOrDefault(s => s.ServerKey == server.ServerKey).IsUpdated = ServerInfo.ServerInfoStatusEnum.UpdateError;
-                        ServerSettingInfo.CurrentServer.ServerInfo.FirstOrDefault(x => x.ServerKey == server.ServerKey).ServerLastUpdate = "Couldn't Update";
+                        currentSrv.ServerStatus = ServerInfo.ServerInfoStatusEnum.UpdateError;
+                        currentSrv.IsUpdated = ServerInfo.ServerInfoStatusEnum.UpdateError;
+                        currentSrv.ServerLastUpdate = "Couldn't Update";
                     }
                 }
             }
@@ -235,9 +252,13 @@ namespace SignalGo.Publisher.Engines.Commands
 
             }
             ServerInfo.ServerLogs.Add($"------ Exited at [{DateTime.Now}] ------");
-            return TaskStatus.RanToCompletion;
+            return status;
         }
 
+        public static void ClearUploadCash()
+        {
+
+        }
 
     }
 }

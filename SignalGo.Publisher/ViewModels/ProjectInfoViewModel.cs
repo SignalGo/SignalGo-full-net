@@ -150,13 +150,6 @@ namespace SignalGo.Publisher.ViewModels
                 ProjectInfo.Commands.Move(index - 1, index);
         }
 
-        //public void MoveCommandToppest(ICommand x)
-        //{
-        //    var index = ProjectInfo.Commands.IndexOf(x);
-        //    if (index != 0)
-        //        ProjectInfo.Commands.Move(index - 1, 0);
-        //}
-
         /// <summary>
         /// compile and check project assemblies for build
         /// </summary>
@@ -382,15 +375,15 @@ namespace SignalGo.Publisher.ViewModels
         {
             try
             {
+                CanRunCommands = false;
                 if (ProjectInfo.Commands.Any(x => x is PublishCommandInfo) && ServerInfo.Servers.Count <= 0)
                 {
                     System.Windows.MessageBox.Show("No Server Selected", "Specify Remote Target", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
                 }
                 else
                 {
-                    var runner = Task.Run(async () =>
+                     await Task.Run(async () =>
                     {
-                        //await Task.Delay(2000);
                         await RunCustomCommand(ProjectInfo, CancellationToken);
                         await ReadCommandLog();
                     }, CancellationToken);
@@ -402,7 +395,7 @@ namespace SignalGo.Publisher.ViewModels
             }
             finally
             {
-                //if (!ProjectInfo.Commands.Any(x => x.Status == Engines.Models.RunStatusType.Running))
+                CanRunCommands = true;
                 File.Delete(UserSettingInfo.Current.UserSettings.CommandRunnerLogsPath);
             }
         }
@@ -507,7 +500,17 @@ namespace SignalGo.Publisher.ViewModels
         }
 
         private string _IgnoreServerFileName;
+        private bool _CanRunCommands= true;
 
+        public bool CanRunCommands
+        {
+            get { return _CanRunCommands; }
+            set
+            {
+                _CanRunCommands = value;
+                OnPropertyChanged(nameof(CanRunCommands));
+            }
+        }
         public string IgnoreServerFileName
         {
             get { return _IgnoreServerFileName; }

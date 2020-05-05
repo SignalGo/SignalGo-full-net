@@ -6,6 +6,6 @@
         Running = 1,
         Done = 2,
         Error = 3,
-        Cancelled = 4
+        Canceled = 4
     }
 }

@@ -308,7 +308,7 @@
                         <Button Command="{Binding BuildCommand}" Content="Build ♻" Width="60" Height="30"/>
                         <Button Command="{Binding RunTestsCommand}" Content="Tests ☑" Width="60" Height="30" Margin="10,0,0,0"/>
                         <Button Command="{Binding PublishCommand}" Content="Publish ☢" Width="60" Height="30" Margin="10,0,0,0"/>
-                        <Button Command="{Binding RunCommand}" Content="Run Commands ▶" Width="auto" Height="30" Margin="10,0,0,0"/>
+                        <Button IsEnabled="{Binding CanRunCommands}" Command="{Binding RunCommand}" Content="Run Commands ▶" Width="auto" Height="30" Margin="10,0,0,0"/>
                         <Button Command="{Binding CancellationCommand}" Content="Cancel Commands" Width="auto" Height="30" Margin="10,0,0,0"/>
                     </StackPanel>
                 </StackPanel>

@@ -1,0 +1,86 @@
+﻿<Page x:Class="SignalGo.Publisher.Views.AppHelpPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      xmlns:local="clr-namespace:SignalGo.Publisher.Views" xmlns:vm="clr-namespace:SignalGo.Publisher.ViewModels"
+      mc:Ignorable="d" 
+      d:DesignHeight="450" d:DesignWidth="800"
+      Background="White"
+      Title="AppHelpPage">
+
+    <Page.Resources>
+        <vm:AppHelpPageViewModel x:Key="AppHelpPageViewModel"/>
+
+    </Page.Resources>
+    <Page.DataContext>
+        <Binding Source="{StaticResource AppHelpPageViewModel}"/>
+    </Page.DataContext>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition/>
+            <RowDefinition/>
+        </Grid.RowDefinitions>
+        <!--<TextBlock Text="How to use application" VerticalAlignment="Stretch" HorizontalAlignment="Stretch"/>-->
+        <RichTextBox Grid.Row="0" Grid.RowSpan="2" >
+            <FlowDocument>
+                <Section TextAlignment="Center">
+                    <Paragraph>
+                        <Bold FontSize="14">
+                            <Run Text="*How to use application*"/>
+                        </Bold>
+                    </Paragraph>
+                </Section>
+                <Section>
+                    <List>
+                        <ListItem>
+                            <Paragraph>
+                                <Bold>
+                                    <Run Text="[Project Managment]" Foreground="#FF1414E8"/>
+                                </Bold>
+                            </Paragraph>
+                            <Paragraph>
+                                <Run Text="Manage Project source code and publish them into servers."/>
+                                <LineBreak/>
+                                <Run Text="Of course for publish, you need to verify Project Key(In Publisher) with service key(In You'r Server Manager). "/>
+                                <Run Text="Both must be the same" FontSize="12" Foreground="Red"></Run>
+                                <LineBreak/>
+                            </Paragraph>
+                        </ListItem>
+
+                        <ListItem>
+                            <Paragraph>
+                                <Bold>
+                                    <Run Text="[Server Managment]" Foreground="#FF1414E8"/>
+                                </Bold>
+                            </Paragraph>
+                            <Paragraph>
+                                <Run Text="Manage You'r Server's Information Such as server address, port and connection requirements. This is you'r SignalGo Server Manager connection details in client."/>
+                                <LineBreak/>
+                                <Run Text="These (Server's) will appear in the publish server list, in you'r project's info page."/>
+                                <LineBreak/>
+                            </Paragraph>
+                        </ListItem>
+                        <ListItem>
+                            <Paragraph>
+                                <Bold>
+                                    <Run Text="[Compile, Publish Configurations]" Foreground="#FF1414E8"/>
+                                </Bold>
+                            </Paragraph>
+                            <Paragraph>
+                                <Run Text="You can set Compile mode (Build/Rebuild), Publish Type(Debug/Release), Packages and other options in" />
+                                <Bold>
+                                    <Run Text="Publisher Setting Page."/>
+                                </Bold>
+                            </Paragraph>
+                            <Paragraph>
+                                <Run Text="Also, you can set the max thread's application can use, to run commands." />
+                            </Paragraph>
+                        </ListItem>
+                    </List>
+                </Section>
+            </FlowDocument>
+        </RichTextBox>
+        <Button Margin="5" Command="{Binding BackCommand}" Content="Back" Grid.Row="1" HorizontalAlignment="Right" VerticalAlignment="Bottom" Width="50" Height="25"/>
+    </Grid>
+</Page>
