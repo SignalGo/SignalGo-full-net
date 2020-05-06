@@ -17,7 +17,7 @@ using System.Collections.Generic;
 
 namespace SignalGo.Publisher.Engines.Commands
 {
-    public abstract class CommandBaseInfo : PropertyChangedViewModel, ICommand, IPublish//, IDisposable
+    public abstract class CommandBaseInfo : BaseViewModel, ICommand, IPublish//, IDisposable
     {
 
         private RunStatusType _Status;
@@ -27,6 +27,15 @@ namespace SignalGo.Publisher.Engines.Commands
             {
                 _Status = value;
                 OnPropertyChanged(nameof(Status));
+                OnPropertyChanged(nameof(HasStatusError));
+            }
+        }
+
+        public bool HasStatusError
+        {
+            get
+            {
+                return Status == RunStatusType.Error;
             }
         }
 

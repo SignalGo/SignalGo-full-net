@@ -256,7 +256,17 @@
                                     <Button FontSize="14" HorizontalAlignment="Stretch" Cursor="Hand" Command="{Binding ToUpCommand,Source={StaticResource ProjectInfoViewModel}}" CommandParameter="{Binding}" BorderThickness="0" Content="↑" Padding="5" Background="Transparent" Foreground="Green"/>
                                 </StackPanel>
                                 <Grid Grid.Row="1" Grid.ColumnSpan="2" VerticalAlignment="Center" HorizontalAlignment="Stretch">
-                                    <ProgressBar x:Name="taskProgressBar" Maximum="{Binding Size}" Value="{Binding Position}" />
+                                    <ProgressBar x:Name="taskProgressBar" Foreground="Green"  Maximum="{Binding Size}" Value="{Binding Position}" >
+                                        <tg:TriggerExtensions.Triggers>
+                                            <tg:TriggerCollections>
+                                                <tg:DataTriggerInfo Binding="{Binding HasStatusError}" Value="True">
+                                                    <tg:DataTriggerInfo.Setters>
+                                                        <tg:SetterInfo Property="Foreground" Value="{x:Static Brushes.Red}"/>
+                                                    </tg:DataTriggerInfo.Setters>
+                                                </tg:DataTriggerInfo>
+                                            </tg:TriggerCollections>
+                                        </tg:TriggerExtensions.Triggers>
+                                    </ProgressBar>
                                     <TextBlock Text="{Binding ElementName=taskProgressBar, Path=Value, StringFormat={}{0:0} (Kb/Count)}" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                 </Grid>
                             </Grid>
@@ -275,9 +285,9 @@
                                             <ColumnDefinition/>
                                             <ColumnDefinition/>
                                         </Grid.ColumnDefinitions>
-                                        <!--<CheckBox Style="{StaticResource CircleCheckbox}" Grid.Column="0"-->
+                                        <!--<CheckBox Style="{StaticResource CircleCheckbox}" Grid.Column="0"  -->
                                         <CheckBox Style="{StaticResource CircleCheckbox}" Grid.Column="0"
-                                                  Command="{Binding AddToServerQueueCommand}" 
+                                                  IsChecked="{Binding IsChecked}"
                                                   Content="{Binding ServerName}"
                                                   />
                                         <TextBlock Padding="5" HorizontalAlignment="Center" Grid.Column="1" Foreground="DarkGray" Text="{Binding ServerLastUpdate}">
@@ -298,7 +308,7 @@
                     <!--#region Project Status -->
                     <StackPanel Orientation="Horizontal"  HorizontalAlignment="Center">
                         <TextBlock Text="Status: " Margin="10"/>
-                        <TextBlock x:Name="cmdStatus" Foreground="Green" Text="{Binding ProjectInfo.Status}" Margin="10">
+                        <TextBlock x:Name="cmdStatus" Foreground="Green" Text="{Binding Status}" Margin="10">
 
                         </TextBlock>
                     </StackPanel>

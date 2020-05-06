@@ -1,4 +1,5 @@
-﻿using SignalGo.Publisher.Models;
+﻿using MvvmGo.ViewModels;
+using SignalGo.Publisher.Models;
 using SignalGo.Publisher.Services;
 using SignalGo.Publisher.ViewModels;
 using SignalGo.Publisher.Views;
@@ -24,6 +25,11 @@ namespace SignalGo.Publisher
 
         public ProjectManagerWindow()
         {
+            BaseViewModel.Initialize();
+            BaseViewModel.RunOnUIAction = (x) =>
+            {
+                Dispatcher.BeginInvoke(x);
+            };
             This = this;
             InitializeComponent();
             mainframe.Navigate(new FirstPage());

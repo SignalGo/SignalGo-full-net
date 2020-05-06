@@ -376,17 +376,22 @@ namespace SignalGo.Publisher.ViewModels
             try
             {
                 CanRunCommands = false;
+                ServerInfo.Servers.Clear();
+                foreach (var item in CurrentServerSettingInfo.ServerInfo.Where(x => x.IsChecked))
+                {
+                    ServerInfo.Servers.Add(item.Clone());
+                }
                 if (ProjectInfo.Commands.Any(x => x is PublishCommandInfo) && ServerInfo.Servers.Count <= 0)
                 {
                     System.Windows.MessageBox.Show("No Server Selected", "Specify Remote Target", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
                 }
                 else
                 {
-                     await Task.Run(async () =>
-                    {
-                        await RunCustomCommand(ProjectInfo, CancellationToken);
-                        await ReadCommandLog();
-                    }, CancellationToken);
+                    await Task.Run(async () =>
+                   {
+                       await RunCustomCommand(ProjectInfo, CancellationToken);
+                       await ReadCommandLog();
+                   }, CancellationToken);
                 }
             }
             catch (Exception ex)
@@ -500,7 +505,7 @@ namespace SignalGo.Publisher.ViewModels
         }
 
         private string _IgnoreServerFileName;
-        private bool _CanRunCommands= true;
+        private bool _CanRunCommands = true;
 
         public bool CanRunCommands
         {

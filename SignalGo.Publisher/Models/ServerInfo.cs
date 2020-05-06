@@ -38,6 +38,7 @@ namespace SignalGo.Publisher.Models
         private string _ServerAddress;
         private string _ServerPort;
         private string _ServerLastUpdate;
+        private bool _IsChecked;
         private ServerInfoStatusEnum _ServerStatus = ServerInfoStatusEnum.Stable;
         [JsonIgnore]
         private ServerInfoStatusEnum _IsUpdated = ServerInfoStatusEnum.Updating;
@@ -49,6 +50,16 @@ namespace SignalGo.Publisher.Models
         /// </summary>
         [JsonIgnore]
         public static ObservableCollection<ServerInfo> Servers { get; set; } = new ObservableCollection<ServerInfo>();
+        [JsonIgnore]
+        public bool IsChecked
+        {
+            get => _IsChecked; set
+            {
+                _IsChecked = value;
+                OnPropertyChanged(nameof(IsChecked));
+            }
+        }
+
         [JsonIgnore]
         public ServerInfoStatusEnum IsUpdated
         {
@@ -229,6 +240,7 @@ namespace SignalGo.Publisher.Models
             }
         }
 
+
         [Flags]
         public enum ServerInfoStatusEnum //: byte
         {
@@ -242,5 +254,19 @@ namespace SignalGo.Publisher.Models
             UpdateError = 8,
         }
 
+        public ServerInfo Clone()
+        {
+            return new ServerInfo()
+            {
+                IsChecked = IsChecked,
+                ServerAddress = ServerAddress,
+                ServerEndPoint = ServerEndPoint,
+                ServerKey = ServerKey,
+                ServerLastUpdate = ServerLastUpdate,
+                ServerName = ServerName,
+                ServerPort = ServerPort,
+                ServerStatus = ServerStatus
+            };
+        }
     }
 }
