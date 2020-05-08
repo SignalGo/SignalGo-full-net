@@ -4,7 +4,11 @@ using System.Text;
 
 namespace SignalGo.Server.ServiceManager.Providers
 {
-    public class BaseProvider
+    /// <summary>
+    /// base structre of business logic of every providers the have same codes and business
+    /// </summary>
+    public abstract class BaseProvider
     {
+
     }
 }

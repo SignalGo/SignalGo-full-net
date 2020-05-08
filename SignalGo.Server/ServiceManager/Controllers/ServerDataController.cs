@@ -6,6 +6,7 @@
 
 using SignalGo.Server.Helpers;
 using SignalGo.Server.Models;
+using SignalGo.Server.ServiceManager.Providers.Protocols;
 using SignalGo.Shared.Helpers;
 using SignalGo.Shared.IO;
 using System;
@@ -188,7 +189,7 @@ namespace SignalGo.Server.ServiceManager.Controllers
                 //if the protocol is http
                 if (streamReader.ProtocolType == Shared.Enums.ProtocolType.Http)
                 {
-                    await HttpProvider.StartToReadingClientData(tcpClient, serverBase, streamReader, client);
+                    await BaseHttpProvider.StartToReadingClientData(tcpClient, serverBase, streamReader, client);
                 }
                 //if the protocol is signalgo duplex
                 //else if (firstLineString.Contains("SignalGo/6.0"))

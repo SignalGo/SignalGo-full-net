@@ -1,6 +1,7 @@
 ﻿
 using SignalGo.Server.Models;
-using SignalGo.Server.ServiceManager.Versions;
+using SignalGo.Server.ServiceManager.Controllers;
+//using SignalGo.Server.ServiceManager.Versions;
 using SignalGo.Shared;
 using SignalGo.Shared.DataTypes;
 using System;
@@ -34,7 +35,7 @@ namespace SignalGo.Server.ServiceManager
         /// <summary>
         /// server data provider communication between client and server
         /// </summary>
-        public ServerDataProviderBase ServerDataProvider { get; private set; } = new ServerDataProvider();
+        public ServerDataController ServerDataController { get; private set; } = new ServerDataController();
         /// <summary>
         /// log errors and warnings
         /// </summary>

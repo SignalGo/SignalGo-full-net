@@ -28,7 +28,13 @@ namespace SignalGo.Shared.IO
         /// request headers
         /// </summary>
         public IDictionary<string, string[]> RequestHeaders { get; set; } = new Dictionary<string, string[]>();
-
+        /// <summary>
+        /// first line readed from providers
+        /// </summary>
+        public string FirstLine { get; set; }
+        /// <summary>
+        /// character of split for headers
+        /// </summary>
         static readonly char[] SplitHeader = { ':' };
         /// <summary>
         /// procol type of this stream
@@ -124,7 +130,7 @@ namespace SignalGo.Shared.IO
         }
 
         /// <summary>
-        /// read one line from server
+        /// read one line of string from stream
         /// </summary>
         /// <returns></returns>
         public async Task<string> ReadLineAsync()
@@ -151,9 +157,9 @@ namespace SignalGo.Shared.IO
         public async Task ReadAllLinesAsync()
         {
             //read all of the lines
-            var firstLine = await ReadLineAsync();
-            var firstLineText = firstLine.ToString();
-            if (firstLineText.IndexOf("http/", StringComparison.OrdinalIgnoreCase) >= 0)
+            FirstLine = await ReadLineAsync();
+            //var firstLineText = firstLine.ToString();
+            if (FirstLine.IndexOf("http/", StringComparison.OrdinalIgnoreCase) >= 0)
                 ProtocolType = ProtocolType.Http;
 
             StringBuilder builder = new StringBuilder();
