@@ -1,13 +1,9 @@
-﻿using Newtonsoft.Json.Linq;
-using SignalGo.Server.DataTypes;
+﻿using SignalGo.Server.DataTypes;
 using SignalGo.Server.Helpers;
 using SignalGo.Server.IO;
 using SignalGo.Server.Models;
 using SignalGo.Shared.DataTypes;
 using SignalGo.Shared.Helpers;
-using SignalGo.Shared.Http;
-using SignalGo.Shared.IO;
-using SignalGo.Shared.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -109,60 +105,6 @@ namespace SignalGo.Server.ServiceManager.Providers
                 serverBase.DisposeClient(client, null, "HandleHttpRequest exception");
             }
         }
-
-        private static async Task GenerateServiceDetails(HttpClientInfo client, string content, ServerBase serverBase, string newLine)
-        {
-            string host = "";
-            if (client.RequestHeaders.ContainsKey("host"))
-                host = client.RequestHeaders["host"].FirstOrDefault();
-            ServerServicesManager serverServicesManager = new ServerServicesManager();
-            string json = "";
-            bool isParameterDetails = client.RequestHeaders["signalgo-servicedetail"].FirstOrDefault() == "parameter";
-            if (isParameterDetails)
-            {
-                int len = int.Parse(client.GetRequestHeaderValue("content-length"));
-                if (content.Length < len)
-                {
-                    List<byte> resultBytes = new List<byte>();
-                    int readedCount = 0;
-                    while (readedCount < len)
-                    {
-                        byte[] buffer = new byte[len - content.Length];
-                        int readCount = await client.ClientStream.ReadAsync(buffer, buffer.Length);
-                        if (readCount <= 0)
-                            throw new Exception("zero byte readed socket disconnected!");
-                        resultBytes.AddRange(buffer.ToList().GetRange(0, readCount));
-                        readedCount += readCount;
-                    }
-                    json = Encoding.UTF8.GetString(resultBytes.ToArray(), 0, resultBytes.Count);
-                }
-                MethodParameterDetails detail = ServerSerializationHelper.Deserialize<MethodParameterDetails>(json, serverBase);
-
-                if (!serverBase.RegisteredServiceTypes.TryGetValue(detail.ServiceName, out Type serviceType))
-                    throw new Exception($"{client.IPAddress} {client.ClientId} Service {detail.ServiceName} not found");
-                if (serviceType == null)
-                    throw new Exception($"{client.IPAddress} {client.ClientId} serviceType {detail.ServiceName} not found");
-
-                json = serverServicesManager.SendMethodParameterDetail(serviceType, detail, serverBase);
-            }
-            else
-            {
-                ProviderDetailsInfo detail = serverServicesManager.SendServiceDetail(host, serverBase);
-                json = ServerSerializationHelper.SerializeObject(detail, serverBase);
-            }
-
-            client.ResponseHeaders["Content-Type"] = "application/json; charset=utf-8".Split(',');
-            client.ResponseHeaders["Connection"] = "Close".Split(',');
-            if (serverBase.ProviderSetting.HttpSetting.HandleCrossOriginAccess)
-            {
-                AddOriginHeader(client, serverBase);
-            }
-
-            byte[] dataBytes = Encoding.UTF8.GetBytes(newLine + json + newLine);
-            await SendResponseHeadersToClient(HttpStatusCode.OK, client.ResponseHeaders, client, dataBytes.Length);
-            await SendResponseDataToClient(dataBytes, client);
-        }
-
 
         private static void AddOriginHeader(HttpClientInfo client, ServerBase serverBase)
         {
