@@ -676,7 +676,12 @@ namespace SignalGo.Server.ServiceManager.Providers
                 parameterName = parameterName.ToLower();
                 //change property value, get value from validation and change it to property
                 if (parametersKeyValues.ContainsKey(parameterName))
+                {
                     parametersKeyValues[parameterName] = newValue;
+                    var parameterIndex = methodParameters.IndexOf(methodParameters.FirstOrDefault(x => x.Name.ToLower() == parameterName));
+                    if (parameterIndex >= 0)
+                        parametersValues[parameterIndex] = newValue;
+                }
             }, (validation) =>
             {
                 //initialize validations service method and parameters
