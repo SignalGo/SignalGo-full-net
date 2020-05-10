@@ -182,7 +182,7 @@ namespace SignalGo.Publisher.Engines.Models
                 RedirectStandardOutput = true,
                 FileName = $"cmd.exe",
                 CreateNoWindow = true,
-                Arguments = $"/c dotnet test -t --no-build --nologo",
+                Arguments = $"/c dotnet test -t --no-build -v q --nologo",
                 WorkingDirectory = path
             };
             try

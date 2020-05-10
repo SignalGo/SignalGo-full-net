@@ -264,10 +264,5 @@ namespace SignalGo.Publisher.Engines.Commands
             return status;
         }
 
-        public static void ClearUploadCash()
-        {
-
-        }
-
     }
 }

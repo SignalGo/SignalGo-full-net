@@ -27,7 +27,7 @@ namespace SignalGo.Publisher.ViewModels
         /// </summary>
         public ProjectInfoViewModel()
         {
-            ServerInfo.Servers.Clear();
+            //ServerInfo.Servers.Clear();
             SaveIgnoreFileListCommand = new Command(SaveIgnoreFileList);
             SaveChangeCommand = new Command(SaveChanges);
             ApplyMigrationsCommand = new Command(ApplyMigrations);

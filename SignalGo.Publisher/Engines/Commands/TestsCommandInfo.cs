@@ -14,7 +14,7 @@ namespace SignalGo.Publisher.Engines.Commands
             ExecutableFile = "cmd.exe";
             //Command = $"{UserSettingInfo.Current.UserSettings.TestRunnerExecutableFile}";
             Command = "dotnet";
-            Arguments = "test --nologo --no-build";
+            Arguments = "test --nologo --no-build -v q";
             IsEnabled = true;
         }
         public override async Task<RunStatusType> Run(CancellationToken cancellationToken)

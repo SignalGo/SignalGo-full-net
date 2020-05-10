@@ -220,14 +220,29 @@
 
                 <Button Margin="0,5" Command="{Binding BrowseProjectPathCommand}" Content="..." Grid.Column="3" Width="80" Grid.Row="1" FontWeight="Normal" HorizontalAlignment="Right"/>
 
-                <DockPanel Margin="5" Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" >
-                    <Label FontWeight="Bold" Content="Builder Log:" FontSize="10" VerticalAlignment="Top" DockPanel.Dock="Top" HorizontalAlignment="Left" />
-                    <TextBox TextChanged="txtCmdLogs_TextChanged" x:Name="txtCmdLogs" TextWrapping="WrapWithOverflow" Width="auto" Height="auto" Text="{Binding CmdLogs}" ScrollViewer.CanContentScroll="True" VerticalScrollBarVisibility="Auto" DockPanel.Dock="Bottom"/>
-                </DockPanel>
-                <DockPanel Margin="5,0,5,0" Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" >
-                    <Label FontWeight="Bold" Content="Servers Log:" FontSize="10" DockPanel.Dock="Top" VerticalAlignment="Top" HorizontalAlignment="Left" />
-                    <TextBox x:Name="CmdServerLogs" Width="auto" Height="auto" TextWrapping="WrapWithOverflow" Text="{Binding ServerLogs}" ScrollViewer.CanContentScroll="True" VerticalScrollBarVisibility="Auto"  DockPanel.Dock="Bottom"/>
-                </DockPanel>
+                <TabControl Grid.Row="3" Grid.Column="0" Grid.RowSpan="2" Grid.ColumnSpan="2" >
+                    <TabItem>
+                        <TabItem.Header>
+                            <TextBlock Text="Builder"/>
+                        </TabItem.Header>
+                        <DockPanel>
+                            <!--<Label FontWeight="Bold" Content="Builder Log:" FontSize="10" VerticalAlignment="Top" DockPanel.Dock="Top" HorizontalAlignment="Left" />-->
+                            <TextBox BorderThickness="0" TextChanged="txtCmdLogs_TextChanged" x:Name="txtCmdLogs" TextWrapping="WrapWithOverflow" Width="auto" Height="auto" Text="{Binding CmdLogs}" ScrollViewer.CanContentScroll="True" VerticalScrollBarVisibility="Auto" DockPanel.Dock="Bottom" Margin="0,0,0,0"/>
+                        </DockPanel>
+                    </TabItem>
+                    <TabItem Header="ServerLog">
+                        <DockPanel>
+                            <!--<Label FontWeight="Bold" Content="Builder Log:" FontSize="10" VerticalAlignment="Top" DockPanel.Dock="Top" HorizontalAlignment="Left" />-->
+                            <TextBox BorderThickness="0" x:Name="CmdServerLogs" Width="auto" Height="auto" TextWrapping="WrapWithOverflow" Text="{Binding ServerLogs}" ScrollViewer.CanContentScroll="True" VerticalScrollBarVisibility="Auto"  DockPanel.Dock="Bottom" Margin="0,0,0,0"/>
+                        </DockPanel>
+                    </TabItem>
+                    <TabItem Header="Designer">
+                        <DockPanel>
+                            <!--<Label FontWeight="Bold" Content="Builder Log:" FontSize="10" VerticalAlignment="Top" DockPanel.Dock="Top" HorizontalAlignment="Left" />-->
+                            <TextBox BorderThickness="0" Width="auto" Height="auto" TextWrapping="WrapWithOverflow" Text="{Binding ServerLogs}" ScrollViewer.CanContentScroll="True" VerticalScrollBarVisibility="Auto"  DockPanel.Dock="Bottom" Margin="0,0,0,0"/>
+                        </DockPanel>
+                    </TabItem>
+                </TabControl>
 
                 <ListBox Style="{DynamicResource White_ListBox}" x:Name="lst_CommandsQueue" ItemsSource="{Binding ProjectInfo.Commands}" MinWidth="150" Grid.Column="2" Grid.Row="3" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Margin="0,5,0,20" VerticalContentAlignment="Stretch" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto" Grid.RowSpan="2">
                     <ListBox.ItemTemplate>
@@ -256,7 +271,7 @@
                                     <Button FontSize="14" HorizontalAlignment="Stretch" Cursor="Hand" Command="{Binding ToUpCommand,Source={StaticResource ProjectInfoViewModel}}" CommandParameter="{Binding}" BorderThickness="0" Content="↑" Padding="5" Background="Transparent" Foreground="Green"/>
                                 </StackPanel>
                                 <Grid Grid.Row="1" Grid.ColumnSpan="2" VerticalAlignment="Center" HorizontalAlignment="Stretch">
-                                    <ProgressBar x:Name="taskProgressBar" Foreground="Green"  Maximum="{Binding Size}" Value="{Binding Position}" >
+                                    <ProgressBar x:Name="taskProgressBar" Maximum="{Binding Size}" Value="{Binding Position}" Foreground="#FF25AE1F" >
                                         <tg:TriggerExtensions.Triggers>
                                             <tg:TriggerCollections>
                                                 <tg:DataTriggerInfo Binding="{Binding HasStatusError}" Value="True">

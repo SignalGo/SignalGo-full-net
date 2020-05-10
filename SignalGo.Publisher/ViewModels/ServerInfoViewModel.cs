@@ -105,6 +105,7 @@ namespace SignalGo.Publisher.ViewModels
         private void SaveChanges()
         {
             ServerSettingInfo.SaveServersSettingInfo();
+            ProjectManagerWindowViewModel.MainFrame.GoBack();
         }
 
     }
