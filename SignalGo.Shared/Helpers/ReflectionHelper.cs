@@ -447,7 +447,7 @@ namespace SignalGo.Shared.Helpers
         public static List<MethodInfo> GetListOfMethodsWithAllOfBases(this Type type)
         {
             List<MethodInfo> methods = new List<MethodInfo>();
-            foreach (Type item in type.GetAllInheritances())
+            foreach (Type item in type.GetAllInheritances(false))
             {
                 methods.AddRange(item.GetListOfMethods());
             }
@@ -484,25 +484,31 @@ namespace SignalGo.Shared.Helpers
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
-        public static IEnumerable<Type> GetAllInheritances(this Type type)
+        public static IEnumerable<Type> GetAllInheritances(this Type type, bool isGetInterfaces = true)
         {
             List<Type> result = new List<Type>();
             foreach (Type item in type.GetListOfBaseTypes())
             {
                 if (!result.Contains(item))
                     result.Add(item);
-                foreach (Type face in item.GetListOfInterfaces())
+                if (isGetInterfaces)
                 {
-                    if (!result.Contains(face))
-                        result.Add(face);
+                    foreach (Type face in item.GetListOfInterfaces())
+                    {
+                        if (!result.Contains(face))
+                            result.Add(face);
+                    }
                 }
             }
-            List<MethodInfo> methods = new List<MethodInfo>();
-            foreach (Type item in type.GetListOfInterfaces())
+            if (isGetInterfaces)
             {
-                if (!result.Contains(item))
-                    result.Add(item);
+                foreach (Type item in type.GetListOfInterfaces())
+                {
+                    if (!result.Contains(item))
+                        result.Add(item);
+                }
             }
+
 
             return result;
         }

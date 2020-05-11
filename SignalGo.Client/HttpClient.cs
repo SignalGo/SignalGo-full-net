@@ -96,6 +96,7 @@ namespace SignalGo.Client
         public SignalGo.Shared.Http.WebHeaderCollection RequestHeaders { get; set; } = new Shared.Http.WebHeaderCollection();
         public string KeyParameterName { get; set; }
         public string KeyParameterValue { get; set; }
+        public string Cookie { get; set; }
         public HttpClientResponseBase Response { get; set; }
 
         public HttpClientResponseBase PostHead(string url, ParameterInfo[] parameterInfoes, BaseStreamInfo streamInfo = null)
@@ -118,7 +119,11 @@ namespace SignalGo.Client
                 }
                 string boundary = "----------------------------" + DateTime.Now.Ticks.ToString("x");
                 string headData = $"POST {uri.AbsolutePath} HTTP/1.1" + newLine + $"Host: {uri.Host}" + newLine + $"Content-Type: multipart/form-data; boundary={boundary}" + newLine;
-                if (RequestHeaders != null && RequestHeaders.Count > 0)
+                if (RequestHeaders == null)
+                    RequestHeaders = new Shared.Http.WebHeaderCollection();
+                if (!string.IsNullOrEmpty(Cookie))
+                    RequestHeaders.Add("cookie", Cookie);
+                if (RequestHeaders.Count > 0)
                 {
                     foreach (KeyValuePair<string, string[]> item in RequestHeaders)
                     {
@@ -130,7 +135,6 @@ namespace SignalGo.Client
                         }
                     }
                 }
-
                 StringBuilder valueData = new StringBuilder();
                 if (parameterInfoes != null)
                 {
@@ -190,6 +194,10 @@ namespace SignalGo.Client
                     Stream = pipelineReader,
                     TcpClient = tcpClient
                 };
+                if (httpClientResponse.ResponseHeaders.TryGetValue("set-cookie", out string[] cookieHeader))
+                {
+                    Cookie = cookieHeader[0];
+                }
                 Response = httpClientResponse;
                 return httpClientResponse;
             }
@@ -280,7 +288,11 @@ namespace SignalGo.Client
                     throw new Exception("Please set streamInfo.Length before upload your stream!");
                 string boundary = "----------------------------" + DateTime.Now.Ticks.ToString("x");
                 string headData = $"POST {uri.AbsolutePath} HTTP/1.1" + newLine + $"Host: {uri.Host}" + newLine + $"Content-Type: multipart/form-data; boundary={boundary}" + newLine;
-                if (RequestHeaders != null && RequestHeaders.Count > 0)
+                if (RequestHeaders == null)
+                    RequestHeaders = new Shared.Http.WebHeaderCollection();
+                if (!string.IsNullOrEmpty(Cookie))
+                    RequestHeaders.Add("cookie", Cookie);
+                if (RequestHeaders.Count > 0)
                 {
                     foreach (KeyValuePair<string, string[]> item in RequestHeaders)
                     {
@@ -292,6 +304,7 @@ namespace SignalGo.Client
                         }
                     }
                 }
+             
                 StringBuilder valueData = new StringBuilder();
                 if (parameterInfoes != null)
                 {
@@ -308,7 +321,7 @@ namespace SignalGo.Client
                     string boundaryinsert = TextHelper.NewLine + "--" + boundary + TextHelper.NewLine;
                     valueData.AppendLine(boundaryinsert);
                     valueData.AppendLine($"Content-Disposition: file; filename=\"{streamInfo.FileName}\"");
-                    valueData.AppendLine($"Content-Length: {streamInfo.Length}"); 
+                    valueData.AppendLine($"Content-Length: {streamInfo.Length}");
                     valueData.AppendLine($"Content-Type: {streamInfo.ContentType}");
                     valueData.AppendLine();
                 }
@@ -363,6 +376,10 @@ namespace SignalGo.Client
                     Stream = pipelineReader,
                     TcpClient = tcpClient
                 };
+                if (httpClientResponse.ResponseHeaders.TryGetValue("set-cookie", out string[] cookieHeader))
+                {
+                    Cookie = cookieHeader[0];
+                }
                 Response = httpClientResponse;
                 return httpClientResponse;
             }

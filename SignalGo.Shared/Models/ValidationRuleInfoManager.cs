@@ -440,6 +440,24 @@ namespace SignalGo.Shared.Models
                             }
                         }
                     }
+                    else if (validation.TaskType == ValidationRuleInfoTaskType.ErrorAndChangedValue)
+                    {
+                        if (BaseValidationRuleInfoAttribute.CheckIsValidate(validation))
+                        {
+                            object changedValue = BaseValidationRuleInfoAttribute.GetChangedValue(validation);
+                            if (validation.PropertyInfo != null)
+                            {
+                                System.Reflection.PropertyInfo findProperty = validation.Object.GetType().GetPropertyInfo(validation.PropertyInfo.Name);
+                                findProperty.SetValue(validation.Object, changedValue, null);
+                            }
+                            else
+                            {
+                                changeParameterValueAction(validation.ParameterInfo.Name, changedValue);
+                            }
+                        }
+                        else
+                            yield return validation;
+                    }
                     else
                         throw new NotSupportedException();
                 }
@@ -535,11 +553,31 @@ namespace SignalGo.Shared.Models
                     }
                     else if (validation.TaskType == ValidationRuleInfoTaskType.ChangeValue)
                     {
+                        validation.PropertyInfo = property;
+                        validation.Object = instance;
+                        validation.CurrentValue = currentValue;
+
                         if (!BaseValidationRuleInfoAttribute.CheckIsValidate(validation))
                         {
                             object changedValue = BaseValidationRuleInfoAttribute.GetChangedValue(validation);
                             System.Reflection.PropertyInfo findProperty = type.GetPropertyInfo(property.Name);
                             findProperty.SetValue(instance, changedValue, null);
+                        }
+                    }
+                    else if (validation.TaskType == ValidationRuleInfoTaskType.ErrorAndChangedValue)
+                    {
+                        validation.PropertyInfo = property;
+                        validation.Object = instance;
+                        validation.CurrentValue = currentValue;
+                        if (BaseValidationRuleInfoAttribute.CheckIsValidate(validation))
+                        {
+                            object changedValue = BaseValidationRuleInfoAttribute.GetChangedValue(validation);
+                            System.Reflection.PropertyInfo findProperty = type.GetPropertyInfo(property.Name);
+                            findProperty.SetValue(instance, changedValue, null);
+                        }
+                        else
+                        {
+                            result.Add(validation);
                         }
                     }
                     else

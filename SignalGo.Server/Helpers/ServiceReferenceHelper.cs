@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace SignalGo.Server.Helpers
@@ -253,7 +254,7 @@ namespace SignalGo.Server.Helpers
                 NameSpace = type.Namespace
             };
             Type baseEumType = Enum.GetUnderlyingType(type);
-            enumReferenceInfo.TypeName = GetFullNameOfType(baseEumType, true);
+            enumReferenceInfo.TypeName = GetFullNameOfType(baseEumType, true, null, null);
             foreach (object name in Enum.GetValues(type))
             {
                 object res = Convert.ChangeType(name, baseEumType);
@@ -302,12 +303,12 @@ namespace SignalGo.Server.Helpers
             Type baseType = type.GetBaseType();
             if (baseType != typeof(object) && baseType != null)
             {
-                classReferenceInfo.BaseClassName = GetFullNameOfType(baseType, true);
+                classReferenceInfo.BaseClassName = GetFullNameOfType(baseType, true, null, null);
             }
             else
-                classReferenceInfo.BaseClassName = GetFullNameOfType(typeof(NotifyPropertyChangedBase), true);
+                classReferenceInfo.BaseClassName = GetFullNameOfType(typeof(NotifyPropertyChangedBase), true, null, null);
 
-            classReferenceInfo.Name = GetFullNameOfType(type, false);
+            classReferenceInfo.Name = GetFullNameOfType(type, false, null, null);
 
             ModelsCodeGenerated.Add(type);
 
@@ -355,12 +356,12 @@ namespace SignalGo.Server.Helpers
             Type baseType = type.GetBaseType();
             if (baseType != typeof(object) && baseType != null)
             {
-                classReferenceInfo.BaseClassName = GetFullNameOfType(baseType, true);
+                classReferenceInfo.BaseClassName = GetFullNameOfType(baseType, true, null, null);
             }
             else
-                classReferenceInfo.BaseClassName = GetFullNameOfType(typeof(NotifyPropertyChangedBase), true);
+                classReferenceInfo.BaseClassName = GetFullNameOfType(typeof(NotifyPropertyChangedBase), true, null, null);
 
-            classReferenceInfo.Name = GetFullNameOfType(type, false);
+            classReferenceInfo.Name = GetFullNameOfType(type, false, null, null);
 
             ModelsCodeGenerated.Add(type);
 
@@ -388,7 +389,7 @@ namespace SignalGo.Server.Helpers
             AddToGenerate(methodInfo.ReturnType);
             string returnType = "void";
             if (methodInfo.ReturnType != typeof(void))
-                returnType = GetFullNameOfType(methodInfo.ReturnType, true);
+                returnType = GetFullNameOfType(methodInfo.ReturnType, true, methodInfo, null);
             string methodName = methodInfo.Name;
 
             if (IsRenameDuplicateMethodNames)
@@ -420,7 +421,7 @@ namespace SignalGo.Server.Helpers
             PropertyReferenceInfo propertyReferenceInfo = new PropertyReferenceInfo
             {
                 Name = propertyInfo.Name,
-                ReturnTypeName = GetFullNameOfType(propertyInfo.PropertyType, true)
+                ReturnTypeName = GetFullNameOfType(propertyInfo.PropertyType, true, null, propertyInfo)
             };
 
             classReferenceInfo.Properties.Add(propertyReferenceInfo);
@@ -433,7 +434,7 @@ namespace SignalGo.Server.Helpers
                 ParameterReferenceInfo parameterReferenceInfo = new ParameterReferenceInfo();
                 AddToGenerate(item.ParameterType);
                 parameterReferenceInfo.Name = item.Name;
-                parameterReferenceInfo.TypeName = GetFullNameOfType(item.ParameterType, true);
+                parameterReferenceInfo.TypeName = GetFullNameOfType(item.ParameterType, true, methodInfo, null);
                 methodReferenceInfo.Parameters.Add(parameterReferenceInfo);
             }
         }
@@ -444,8 +445,20 @@ namespace SignalGo.Server.Helpers
                 NamespaceReferenceInfo.Usings.Add(type.Namespace);
         }
 
-        private string GetFullNameOfType(Type type, bool withNameSpace)
+        private string GetFullNameOfType(Type type, bool withNameSpace, MethodInfo method, PropertyInfo property)
         {
+            if (method != null)
+            {
+                var result = GetTupleParameterNames(type, method);
+                if (result != "()" && result != ")")
+                    return result;
+            }
+            if (property != null)
+            {
+                var result = GetTupleParameterNames(type, property);
+                if (result != "()" && result != ")")
+                    return result;
+            }
             if (type == typeof(bool))
                 return "bool";
             else if (type == typeof(short))
@@ -480,11 +493,11 @@ namespace SignalGo.Server.Helpers
             }
             else if (type.GetBaseType() == typeof(Task))
             {
-                return GetFullNameOfType(type.GetGenericArguments()[0], withNameSpace);
+                return GetFullNameOfType(type.GetGenericArguments()[0], withNameSpace, method, property);
             }
             if (type.GetBaseType() == typeof(Array))
             {
-                return GetFullNameOfType(type.GetElementType(), withNameSpace) + "[]";
+                return GetFullNameOfType(type.GetElementType(), withNameSpace, method, property) + "[]";
             }
             if (CannotGenerateAssemblyTypes(type))
                 AddUsingIfNotExist(type);
@@ -501,7 +514,7 @@ namespace SignalGo.Server.Helpers
                     {
                         generics += ", ";
                     }
-                    generics += GetFullNameOfType(item, true);
+                    generics += GetFullNameOfType(item, true, method, property);
                 }
                 string name = "";
                 if (type.Name.IndexOf("`") != -1)
@@ -529,6 +542,82 @@ namespace SignalGo.Server.Helpers
                 else
                     return type.Name;
             }
+        }
+
+        string GetTupleParameterNames(Type type, MethodInfo method)
+        {
+            StringBuilder result = new StringBuilder();
+            result.Append("(");
+#if (!NETSTANDARD1_6 && !NET45)
+            if (type.GetBaseType() == typeof(ValueType))
+            {
+                var tupleGenerics = type.GetGenericArguments();
+                if (tupleGenerics.Length > 0)
+                {
+                    var attribs = method.ReturnTypeCustomAttributes;
+                    if (attribs.GetCustomAttributes(true) != null)
+                    {
+                        foreach (var at in attribs.GetCustomAttributes(true))
+                        {
+                            if (at is System.Runtime.CompilerServices.TupleElementNamesAttribute)
+                            {
+                                var ng = ((System.Runtime.CompilerServices.TupleElementNamesAttribute)at).TransformNames;
+                                int index = 0;
+                                foreach (var ca in ng)
+                                {
+                                    result.Append($"{GetFullNameOfType(tupleGenerics[index], true, method, null)} ");
+                                    result.Append($"{ca}");
+                                    result.Append(", ");
+                                    index++;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+#endif
+            if (result.Length > 2)
+                result = result.Remove(result.Length - 2, 2);
+            result.Append(")");
+            return result.ToString();
+        }
+
+        string GetTupleParameterNames(Type type, PropertyInfo property)
+        {
+            StringBuilder result = new StringBuilder();
+            result.Append("(");
+            if (type.GetBaseType() == typeof(ValueType))
+            {
+                var tupleGenerics = type.GetGenericArguments();
+                if (tupleGenerics.Length > 0)
+                {
+                    if (property.CustomAttributes != null)
+                    {
+                        foreach (var at in property.CustomAttributes)
+                        {
+                            if (at is System.Reflection.CustomAttributeData)
+                            {
+                                var ng = ((System.Reflection.CustomAttributeData)at).ConstructorArguments;
+                                int index = 0;
+                                foreach (var ca in ng)
+                                {
+                                    foreach (var val in (IEnumerable<System.Reflection.CustomAttributeTypedArgument>)ca.Value)
+                                    {
+                                        result.Append($"{GetFullNameOfType(tupleGenerics[index], true, null, property)} ");
+                                        result.Append($"{val.Value}");
+                                        result.Append(", ");
+                                        index++;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            if (result.Length > 2)
+                result = result.Remove(result.Length - 2, 2);
+            result.Append(")");
+            return result.ToString();
         }
     }
 }

@@ -17,7 +17,11 @@ namespace SignalGo.Shared.DataTypes
         /// <summary>
         /// change the value of Rule
         /// </summary>
-        ChangeValue = 2
+        ChangeValue = 2,
+        /// <summary>
+        /// you can check validation and change value too
+        /// </summary>
+        ErrorAndChangedValue = 3
     }
 
 
@@ -35,7 +39,7 @@ namespace SignalGo.Shared.DataTypes
         /// <summary>
         /// task type of validation
         /// </summary>
-        public ValidationRuleInfoTaskType TaskType { get; set; } = ValidationRuleInfoTaskType.Error;
+        public virtual ValidationRuleInfoTaskType TaskType { get; set; } = ValidationRuleInfoTaskType.Error;
         /// <summary>
         /// property of object
         /// </summary>
@@ -59,7 +63,7 @@ namespace SignalGo.Shared.DataTypes
         /// <summary>
         /// value of property or parameter came from client
         /// </summary>
-        public object CurrentValue { get; internal set; }
+        public object CurrentValue { get; set; }
         /// <summary>
         /// value of parameters of method
         /// </summary>
