@@ -7,7 +7,6 @@ using SignalGo.Shared.Log;
 using System.Threading.Tasks;
 using SignalGo.Publisher.Engines.Interfaces;
 using SignalGo.Publisher.Models;
-using System.Text;
 
 namespace SignalGo.Publisher.Engines.Models
 {
@@ -18,71 +17,6 @@ namespace SignalGo.Publisher.Engines.Models
     public class CommandRunner : IDisposable
     {
         static readonly string CommandsLogPath = Path.Combine(UserSettingInfo.Current.UserSettings.CommandRunnerLogsPath);
-        /// <summary>
-        /// Runner Of Commands
-        /// </summary>
-        /// <param name="command"></param>
-        /// <returns></returns>
-        //public async static Task<Process> Run(ICommand command, CancellationToken cancellationToken)
-        //{
-        //    var process = new Process();
-        //    command.Size = 0;
-        //    command.Position = 0;
-        //    int position = 0;
-        //    string standardOutputResult;
-        //    try
-        //    {
-        //        ProcessStartInfo processInfo = new ProcessStartInfo
-        //        {
-        //            RedirectStandardOutput = true,
-        //            FileName = $"{command.Command}",
-        //            CreateNoWindow = true,
-        //            Arguments = $" {command.Arguments}",
-        //            WorkingDirectory = command.WorkingPath
-        //        };
-        //        process = Process.Start(processInfo);
-        //        if (!File.Exists(CommandsLogPath))
-        //            File.Create(CommandsLogPath).Close();
-        //        else
-        //        {
-        //            var file = File.OpenRead(CommandsLogPath);
-        //            if (file.Length > 4000000)
-        //            {
-        //                file.Close();
-        //                File.Delete(CommandsLogPath);
-        //            }
-        //            file.Close();
-        //        }
-        //        var projectCount = LoadSlnProjectsCount(command.WorkingPath);
-        //        command.Size = projectCount +14;
-
-        //        while (true)
-        //        {
-        //            if (cancellationToken.IsCancellationRequested)
-        //            {
-        //                Debug.WriteLine("Cancellation Is Requested in CommandRunner");
-        //                return process;
-        //            }
-        //            standardOutputResult = await process.StandardOutput.ReadLineAsync();
-        //            await File.AppendAllTextAsync(CommandsLogPath, standardOutputResult + Environment.NewLine);
-
-        //            if (standardOutputResult == null)
-        //                break;
-        //            if (standardOutputResult.Contains("Done Building"))
-        //            {
-        //                position++;
-        //                command.Position = position;
-        //            }
-        //            Debug.WriteLine($"Progress {position} from {command.Size}");
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        AutoLogger.Default.LogError(ex, "CommandRunner(Run)");
-        //        Thread.Sleep(500);
-        //    }
-        //    return process;
-        //}
 
         public async static Task<RunStatusType> Run(ICommand command, CancellationToken cancellationToken)
         {
@@ -99,17 +33,17 @@ namespace SignalGo.Publisher.Engines.Models
                 {
                     File.Create(CommandsLogPath).Close();
                 }
-                //else
-                //{
-                //    var file = File.OpenRead(CommandsLogPath);
-                //    if (file.Length > 4000000)
-                //    {
-                //        file.Close();
-                //        File.Delete(CommandsLogPath);
-                //    }
-                //    file.Close();
-                //}
-                if (command.Arguments.Contains("test"))
+                if (command.Command.Contains("git"))
+                {
+                    //command.Size = testCount;
+
+                    processInfo.RedirectStandardOutput = true;
+                    processInfo.FileName = $"{command.ExecutableFile}";
+                    processInfo.CreateNoWindow = true;
+                    processInfo.Arguments = $"/c {command.Command} {command.Arguments}";
+                    processInfo.WorkingDirectory = command.WorkingPath;
+                }
+                else if (command.Command.Contains("test"))
                 {
                     var testCount = await LoadTestsCount(command.WorkingPath);
                     command.Size = testCount;
@@ -120,7 +54,7 @@ namespace SignalGo.Publisher.Engines.Models
                     processInfo.Arguments = $"/c {command.Command} {command.Arguments}";
                     processInfo.WorkingDirectory = command.WorkingPath;
                 }
-                else
+                else // comoile
                 {
                     var projectCount = LoadSlnProjectsCount(command.WorkingPath);
                     command.Size = projectCount;
@@ -141,7 +75,15 @@ namespace SignalGo.Publisher.Engines.Models
                     }
                     standardOutputResult = await process.StandardOutput.ReadLineAsync();
                     await File.AppendAllTextAsync(CommandsLogPath, standardOutputResult + Environment.NewLine);
-
+                    if (standardOutputResult.Contains("Done"))
+                    {
+                        break;
+                        //return command.Status = RunStatusType.Done;
+                    }
+                    if (standardOutputResult.Contains("fatal") || standardOutputResult.Contains("Could not read from remote repository."))
+                    {
+                        return command.Status = RunStatusType.Error;
+                    }
                     if (standardOutputResult == null)
                         break;
                     // check if compiler return error, or test runner return error

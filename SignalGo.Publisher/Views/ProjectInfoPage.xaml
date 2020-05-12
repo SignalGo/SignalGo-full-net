@@ -277,6 +277,12 @@
                                                 <tg:DataTriggerInfo Binding="{Binding HasStatusError}" Value="True">
                                                     <tg:DataTriggerInfo.Setters>
                                                         <tg:SetterInfo Property="Foreground" Value="{x:Static Brushes.Red}"/>
+                                                        <tg:SetterInfo Property="Value" Value="☹"/>
+                                                    </tg:DataTriggerInfo.Setters>
+                                                </tg:DataTriggerInfo>
+                                                 <tg:DataTriggerInfo Binding="{Binding HasStatusError}" Value="True">
+                                                    <tg:DataTriggerInfo.Setters>
+                                                        <tg:SetterInfo Property="Value" Value="☻"/>
                                                     </tg:DataTriggerInfo.Setters>
                                                 </tg:DataTriggerInfo>
                                             </tg:TriggerCollections>
@@ -330,11 +336,12 @@
                     <!--#endregion-->
 
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" >
-                        <Button Command="{Binding BuildCommand}" Content="Build ♻" Width="60" Height="30"/>
+                        <Button Command="{Binding GitPullCommand}" Content="₲it Pull" Width="60" Height="30"/>
+                        <Button Command="{Binding BuildCommand}" Content="Build ♻" Width="60" Height="30" Margin="10,0,0,0"/>
                         <Button Command="{Binding RunTestsCommand}" Content="Tests ☑" Width="60" Height="30" Margin="10,0,0,0"/>
                         <Button Command="{Binding PublishCommand}" Content="Publish ☢" Width="60" Height="30" Margin="10,0,0,0"/>
-                        <Button IsEnabled="{Binding CanRunCommands}" Command="{Binding RunCommand}" Content="Run Commands ▶" Width="auto" Height="30" Margin="10,0,0,0"/>
-                        <Button Command="{Binding CancellationCommand}" Content="Cancel Commands" Width="auto" Height="30" Margin="10,0,0,0"/>
+                        <Button IsEnabled="{Binding CanRunCommands}" Command="{Binding RunCommand}" Content="ℛun Commands ▶" Width="auto" Height="30" Margin="10,0,0,0"/>
+                        <Button Command="{Binding CancellationCommand}" Content="Cancel Commands ✖" Width="auto" Height="30" Margin="10,0,0,0"/>
                     </StackPanel>
                 </StackPanel>
                 <!--#endregion-->

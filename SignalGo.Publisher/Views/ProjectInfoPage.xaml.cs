@@ -34,7 +34,7 @@ namespace SignalGo.Publisher.Views
         //    //var tabItem = (TabItem)sender;
         //    //var vm = tabItem.DataContext as ProjectInfoViewModel;
 
-        //    //tabItem.LayoutUpdated += (x, ee) =>
+        //    //tabItem.LayoutUpdated += (x, ee) =>z
         //    //{
         //    //    // to fix show console window error/bug
         //    //    if (vm.ProjectInfo.CurrentServerBase != null)
