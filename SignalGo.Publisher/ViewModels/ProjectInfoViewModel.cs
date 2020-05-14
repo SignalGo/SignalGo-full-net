@@ -70,6 +70,7 @@ namespace SignalGo.Publisher.ViewModels
             {
                 MoveCommandUpper(x);
             });
+            GitPullCommand = new Command(GitPull);
             PublishCommand = new Command(PublishToServers);
         }
 
@@ -178,6 +179,7 @@ namespace SignalGo.Publisher.ViewModels
         /// </summary>
         public Command RestorePackagesCommand { get; set; }
 
+        public Command GitPullCommand { get; set; }
         public Command PublishCommand { get; set; }
         /// <summary>
         /// Execute Test Cases of Project
@@ -279,6 +281,11 @@ namespace SignalGo.Publisher.ViewModels
         /// <summary>
         /// Cancel/Break All Commands and Queued Commands
         /// </summary>
+        private void GitPull()
+        {
+            if (!ProjectInfo.Commands.Any(x => x is GitCommandInfo))
+                ProjectInfo.AddCommand(new GitCommandInfo());
+        }
         private void CancelCommands()
         {
             try

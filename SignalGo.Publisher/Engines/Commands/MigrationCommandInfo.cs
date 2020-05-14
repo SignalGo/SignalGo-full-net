@@ -22,6 +22,11 @@ namespace SignalGo.Publisher.Engines.Commands
             IsEnabled = true;
         }
 
+        public override bool CalculateStatus(string line)
+        {
+            throw new NotImplementedException();
+        }
+
         public override async Task<RunStatusType> Run(CancellationToken cancellationToken)
         {
             var result = await base.Run(cancellationToken);

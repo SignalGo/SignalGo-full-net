@@ -17,9 +17,8 @@ using System.Collections.Generic;
 
 namespace SignalGo.Publisher.Engines.Commands
 {
-    public abstract class CommandBaseInfo : BaseViewModel, ICommand, IPublish//, IDisposable
+    public abstract class CommandBaseInfo : BaseViewModel, ICommand, IPublish //, IDisposable
     {
-
         private RunStatusType _Status;
         public RunStatusType Status
         {
@@ -28,6 +27,13 @@ namespace SignalGo.Publisher.Engines.Commands
                 _Status = value;
                 OnPropertyChanged(nameof(Status));
                 OnPropertyChanged(nameof(HasStatusError));
+            }
+        }
+        public bool IsComplete
+        {
+            get
+            {
+                return Status == RunStatusType.Error || Status == RunStatusType.Done;
             }
         }
 
@@ -175,7 +181,6 @@ namespace SignalGo.Publisher.Engines.Commands
             {
                 ServerInfo.ServerLogs.Add($"----(Manually)Started at [{DateTime.Now}] ------");
                 // Generate Upload Model based on
-
                 Size = (new FileInfo(dataPath).Length / 1024);
                 UploadInfo uploadInfo = new UploadInfo(this)
                 {
@@ -209,8 +214,8 @@ namespace SignalGo.Publisher.Engines.Commands
                         //}
                         //else, we can't update this server at this moment (Problems are Possible: Server is Offline,refuse || block || Network , unhandled Errors...)
                         //var currentserver = ServerInfo.Servers.FirstOrDefault(s => s.ServerKey == server.ServerKey);
-                        ServerInfo.Servers.FirstOrDefault(s => s.ServerKey == server.ServerKey).ServerStatus = ServerInfo.ServerInfoStatusEnum.UpdateError;
-                        ServerInfo.Servers.FirstOrDefault(s => s.ServerKey == server.ServerKey).IsUpdated = ServerInfo.ServerInfoStatusEnum.UpdateError;
+                        server.ServerStatus = ServerInfo.ServerInfoStatusEnum.UpdateError;
+                        server.IsUpdated = ServerInfo.ServerInfoStatusEnum.UpdateError;
                         //ServerInfo.Servers.FirstOrDefault(s => s.ServerKey == server.ServerKey).ServerLastUpdate = "Couldn't Update";
 
                         currentSrv.ServerStatus = ServerInfo.ServerInfoStatusEnum.UpdateError;
@@ -264,5 +269,10 @@ namespace SignalGo.Publisher.Engines.Commands
             return status;
         }
 
+        public virtual Task Initialize(ProcessStartInfo processStartInfo)
+        {
+            return Task.CompletedTask;
+        }
+        public abstract bool CalculateStatus(string line);
     }
 }

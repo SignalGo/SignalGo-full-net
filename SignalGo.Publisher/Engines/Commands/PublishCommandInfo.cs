@@ -65,5 +65,10 @@ namespace SignalGo.Publisher.Engines.Commands
         {
             return await base.Compress();
         }
+
+        public override bool CalculateStatus(string line)
+        {
+            return false;
+        }
     }
 }

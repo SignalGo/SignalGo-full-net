@@ -46,6 +46,14 @@ namespace SignalGo.Publisher.Models
         /// </summary>
         [JsonIgnore]
         public ObservableCollection<ICommand> Commands { get; set; } = new ObservableCollection<ICommand>();
+        [JsonIgnore]
+        public ICommand TestCommand
+        {
+            get
+            {
+                return Commands.FirstOrDefault(x => x is TestsCommandInfo);
+            }
+        }
 
         private string _Name;
         private Guid _ProjectKey;
@@ -190,6 +198,7 @@ namespace SignalGo.Publisher.Models
         {
             try
             {
+                OnPropertyChanged(nameof(TestCommand));
                 if (cancellationToken.IsCancellationRequested)
                     return;
                 QueueCommandInfo queueCommandInfo = new QueueCommandInfo(Commands.ToList());

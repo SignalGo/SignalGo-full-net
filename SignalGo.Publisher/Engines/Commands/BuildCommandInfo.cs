@@ -1,7 +1,9 @@
 ﻿using SignalGo.Publisher.Engines.Models;
 using SignalGo.Publisher.Models;
+using SignalGo.Shared.Log;
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -56,6 +58,63 @@ namespace SignalGo.Publisher.Engines.Commands
         {
             var result = await base.Run(cancellationToken);
             return result;
+        }
+
+        public override async Task Initialize(ProcessStartInfo processStartInfo)
+        {
+            var projectCount = await LoadSlnProjectsCount(WorkingPath);
+            Size = projectCount;
+
+            processStartInfo.RedirectStandardOutput = true;
+            processStartInfo.FileName = $"{Command}";
+            processStartInfo.CreateNoWindow = true;
+            processStartInfo.Arguments = $" {Arguments}";
+            processStartInfo.WorkingDirectory = WorkingPath;
+        }
+
+        public static async Task<int> LoadSlnProjectsCount(string path)
+        {
+            int count = 0;
+            var slnFile = Directory.GetFiles(path, "*.*").FirstOrDefault(x => x.EndsWith(".sln", StringComparison.OrdinalIgnoreCase));
+            try
+            {
+                foreach (var item in await File.ReadAllLinesAsync(slnFile))
+                {
+                    if (item.Contains("Project("))
+                    {
+                        var pPath = item.Split(',')[1].Replace("\"", "").Trim();
+                        if (pPath.EndsWith(".csproj", StringComparison.OrdinalIgnoreCase))
+                        {
+                            var projectPath = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(slnFile), pPath));
+                            var findLine = File.ReadAllLines(projectPath).FirstOrDefault(x => !x.Contains("<!--") && x.Contains("<TargetFrameworks>"));
+                            if (findLine != null)
+                            {
+                                count += findLine.Split(';').Count();
+                            }
+                            count++;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                AutoLogger.Default.LogError(ex, "CommandRunner(LoadSlnProjectsCount)");
+            }
+            return count;
+        }
+
+        public override bool CalculateStatus(string line)
+        {
+            if (line.Contains("Done Building"))
+            {
+                Position++;
+            }
+            else if (line.StartsWith("Build FAILED."))
+            {
+                Status = RunStatusType.Error;
+                return true;
+            }
+            return false;
         }
     }
 }

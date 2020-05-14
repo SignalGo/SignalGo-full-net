@@ -15,22 +15,22 @@ namespace SignalGo.Publisher.Models
         public ServerInfo()
         {
             This = this;
-            AddToServerQueueCommand = new Command(AddToServerQueue);
+            //AddToServerQueueCommand = new Command(AddToServerQueue);
 
         }
 
         /// <summary>
         /// add server to Server Queue List
         /// </summary>
-        private void AddToServerQueue()
-        {
-            if (!ServerInfo.Servers.Any(x => x.ServerKey == this.ServerKey))
-                AddServerToQueueCommand(new ServerInfo());
-            else
-            {
-                RemoveServerFromQueueCommand(this);
-            }
-        }
+        //private void AddToServerQueue()
+        //{
+        //    if (!ServerInfo.Servers.Any(x => x.ServerKey == this.ServerKey))
+        //        AddServerToQueueCommand(new ServerInfo());
+        //    else
+        //    {
+        //        RemoveServerFromQueueCommand(this);
+        //    }
+        //}
 
         private string _ServerName;
         private Guid _ServerKey;

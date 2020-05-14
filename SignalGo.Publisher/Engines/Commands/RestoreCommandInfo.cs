@@ -21,6 +21,12 @@ namespace SignalGo.Publisher.Engines.Commands
             Arguments = "restore";
             IsEnabled = true;
         }
+
+        public override bool CalculateStatus(string line)
+        {
+            return false;
+        }
+
         public override async Task<RunStatusType> Run(CancellationToken cancellationToken)
         {
             var result = await base.Run(cancellationToken);

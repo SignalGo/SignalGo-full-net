@@ -1,4 +1,7 @@
-﻿using SignalGo.Publisher.Models;
+﻿using SignalGo.Publisher.Engines.Models;
+using SignalGo.Publisher.Models;
+using System.Diagnostics;
+using System.Threading.Tasks;
 
 namespace SignalGo.Publisher.Engines.Interfaces
 {
@@ -40,5 +43,9 @@ namespace SignalGo.Publisher.Engines.Interfaces
         /// parameters
         /// </summary>
         public string Arguments { get; set; }
+
+        public Task Initialize(ProcessStartInfo processStartInfo);
+
+        public bool CalculateStatus(string line);
     }
 }

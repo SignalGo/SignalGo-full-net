@@ -20,11 +20,11 @@ namespace SignalGo.Publisher.Engines.Models
 
         public async static Task<RunStatusType> Run(ICommand command, CancellationToken cancellationToken)
         {
-            bool isTestsFound = false;
+            //bool isTestsFound = false;
             var process = new Process();
             command.Size = 0;
             command.Position = 0;
-            int position = 0;
+            //int position = 0;
             string standardOutputResult;
             try
             {
@@ -33,38 +33,8 @@ namespace SignalGo.Publisher.Engines.Models
                 {
                     File.Create(CommandsLogPath).Close();
                 }
-                if (command.Command.Contains("git"))
-                {
-                    //command.Size = testCount;
 
-                    processInfo.RedirectStandardOutput = true;
-                    processInfo.FileName = $"{command.ExecutableFile}";
-                    processInfo.CreateNoWindow = true;
-                    processInfo.Arguments = $"/c {command.Command} {command.Arguments}";
-                    processInfo.WorkingDirectory = command.WorkingPath;
-                }
-                else if (command.Command.Contains("test"))
-                {
-                    var testCount = await LoadTestsCount(command.WorkingPath);
-                    command.Size = testCount;
-
-                    processInfo.RedirectStandardOutput = true;
-                    processInfo.FileName = $"{command.ExecutableFile}";
-                    processInfo.CreateNoWindow = true;
-                    processInfo.Arguments = $"/c {command.Command} {command.Arguments}";
-                    processInfo.WorkingDirectory = command.WorkingPath;
-                }
-                else // comoile
-                {
-                    var projectCount = LoadSlnProjectsCount(command.WorkingPath);
-                    command.Size = projectCount;
-
-                    processInfo.RedirectStandardOutput = true;
-                    processInfo.FileName = $"{command.Command}";
-                    processInfo.CreateNoWindow = true;
-                    processInfo.Arguments = $" {command.Arguments}";
-                    processInfo.WorkingDirectory = command.WorkingPath;
-                }
+                await command.Initialize(processInfo);
                 process = Process.Start(processInfo);
                 while (true)
                 {
@@ -74,36 +44,15 @@ namespace SignalGo.Publisher.Engines.Models
                         return RunStatusType.Canceled;
                     }
                     standardOutputResult = await process.StandardOutput.ReadLineAsync();
-                    await File.AppendAllTextAsync(CommandsLogPath, standardOutputResult + Environment.NewLine);
-                    if (standardOutputResult.Contains("Done"))
-                    {
-                        break;
-                        //return command.Status = RunStatusType.Done;
-                    }
-                    if (standardOutputResult.Contains("fatal") || standardOutputResult.Contains("Could not read from remote repository."))
-                    {
-                        return command.Status = RunStatusType.Error;
-                    }
                     if (standardOutputResult == null)
                         break;
+                    await File.AppendAllTextAsync(CommandsLogPath, standardOutputResult + Environment.NewLine);
+
                     // check if compiler return error, or test runner return error
-                    if (standardOutputResult.Contains("Failed") || standardOutputResult.Contains("Build FAILED"))
+                    if (command.CalculateStatus(standardOutputResult))
                     {
-                        return command.Status = RunStatusType.Error;
+                        return command.Status;
                     }
-                    if (standardOutputResult.Contains("Done Building"))
-                    {
-                        position++;
-                        command.Position = position;
-                    }
-                    if (isTestsFound)
-                    {
-                        position++;
-                        command.Position = command.Size;
-                    }
-                    if (!isTestsFound && standardOutputResult.Contains("Test Run Successful"))
-                        isTestsFound = true;
-                    Debug.WriteLine($"Progress {position} from {command.Size}");
                 }
                 command.Status = RunStatusType.Done;
             }
@@ -113,79 +62,6 @@ namespace SignalGo.Publisher.Engines.Models
                 Thread.Sleep(500);
             }
             return command.Status;
-        }
-        static async Task<int> LoadTestsCount(string path)
-        {
-            int count = 0;
-            var process = new Process();
-            string standardOutputResult = string.Empty;
-            ProcessStartInfo processInfo = new ProcessStartInfo
-            {
-                RedirectStandardOutput = true,
-                FileName = $"cmd.exe",
-                CreateNoWindow = true,
-                Arguments = $"/c dotnet test -t --no-build -v q --nologo",
-                WorkingDirectory = path
-            };
-            try
-            {
-                process = Process.Start(processInfo);
-                bool isTestsFound = false;
-                while (true)
-                {
-                    standardOutputResult = await process.StandardOutput.ReadLineAsync();
-                    //Debug.WriteLine(standardOutputResult);
-                    if (standardOutputResult == null || standardOutputResult == "")
-                        break;
-                    else
-                    {
-                        if (isTestsFound)
-                            count++;
-                        if (!isTestsFound && standardOutputResult.Contains("Tests are available:"))
-                            isTestsFound = true;
-                    }
-                }
-                Debug.WriteLine($"{count} Tests Are Available");
-            }
-            catch (Exception e)
-            {
-                AutoLogger.Default.LogError(e, "load tests count");
-            }
-            finally
-            {
-                process.Dispose();
-            }
-            return count;
-        }
-        public static int LoadSlnProjectsCount(string path)
-        {
-            int count = 0;
-            var slnFile = Directory.GetFiles(path, "*.*").FirstOrDefault(x => x.EndsWith(".sln", StringComparison.OrdinalIgnoreCase));
-            try
-            {
-                foreach (var item in File.ReadAllLines(slnFile))
-                {
-                    if (item.Contains("Project("))
-                    {
-                        var pPath = item.Split(',')[1].Replace("\"", "").Trim();
-                        if (pPath.EndsWith(".csproj", StringComparison.OrdinalIgnoreCase))
-                        {
-                            var projectPath = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(slnFile), pPath));
-                            var findLine = File.ReadAllLines(projectPath).FirstOrDefault(x => !x.Contains("<!--") && x.Contains("<TargetFrameworks>"));
-                            if (findLine != null)
-                            {
-                                count += findLine.Split(';').Count();
-                            }
-                            count++;
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                AutoLogger.Default.LogError(ex, "CommandRunner(LoadSlnProjectsCount)");
-            }
-            return count;
         }
 
         #region IDisposable Support

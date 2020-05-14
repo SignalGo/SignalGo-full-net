@@ -22,7 +22,8 @@
         <!--#region custome controls and listbox styles -->
         <Style x:Key="White_ListBox" TargetType="{x:Type ListBox}">
             <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"/>
-            <Setter Property="Template">
+            <Setter Property="BorderThickness" Value="0"/>
+            <!--<Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="{x:Type ListBox}">
                         <Border x:Name="Bd">
@@ -32,7 +33,7 @@
                         </Border>
                     </ControlTemplate>
                 </Setter.Value>
-            </Setter>
+            </Setter>-->
         </Style>
         <Style TargetType="CheckBox" x:Key="CircleCheckbox">
             <Setter Property="Cursor" Value="Hand"></Setter>
@@ -237,10 +238,20 @@
                         </DockPanel>
                     </TabItem>
                     <TabItem Header="Designer">
-                        <DockPanel>
-                            <!--<Label FontWeight="Bold" Content="Builder Log:" FontSize="10" VerticalAlignment="Top" DockPanel.Dock="Top" HorizontalAlignment="Left" />-->
-                            <TextBox BorderThickness="0" Width="auto" Height="auto" TextWrapping="WrapWithOverflow" Text="{Binding ServerLogs}" ScrollViewer.CanContentScroll="True" VerticalScrollBarVisibility="Auto"  DockPanel.Dock="Bottom" Margin="0,0,0,0"/>
-                        </DockPanel>
+                        <ListBox BorderThickness="0" ItemsSource="{Binding ProjectInfo.TestCommand.Tests}">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition/>
+                                            <ColumnDefinition/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="{Binding Status}" Padding="5"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding Name}" Padding="5"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
                     </TabItem>
                 </TabControl>
 
@@ -277,18 +288,40 @@
                                                 <tg:DataTriggerInfo Binding="{Binding HasStatusError}" Value="True">
                                                     <tg:DataTriggerInfo.Setters>
                                                         <tg:SetterInfo Property="Foreground" Value="{x:Static Brushes.Red}"/>
-                                                        <tg:SetterInfo Property="Value" Value="☹"/>
-                                                    </tg:DataTriggerInfo.Setters>
-                                                </tg:DataTriggerInfo>
-                                                 <tg:DataTriggerInfo Binding="{Binding HasStatusError}" Value="True">
-                                                    <tg:DataTriggerInfo.Setters>
-                                                        <tg:SetterInfo Property="Value" Value="☻"/>
                                                     </tg:DataTriggerInfo.Setters>
                                                 </tg:DataTriggerInfo>
                                             </tg:TriggerCollections>
                                         </tg:TriggerExtensions.Triggers>
                                     </ProgressBar>
-                                    <TextBlock Text="{Binding ElementName=taskProgressBar, Path=Value, StringFormat={}{0:0} (Kb/Count)}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                        <TextBlock Text="{Binding ElementName=taskProgressBar, Path=Value, StringFormat={}{0:0} (Kb/Count)}" HorizontalAlignment="Center" VerticalAlignment="Center" >
+                                        </TextBlock>
+                                        <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" >
+                                            <tg:TriggerExtensions.Triggers>
+                                                <tg:TriggerCollections>
+                                                    <tg:DataTriggerInfo>
+                                                        <tg:DataTriggerInfo.Conditions>
+                                                            <tg:DataConditionInfo Binding="{Binding IsComplete}" Value="True" />
+                                                            <tg:DataConditionInfo Binding="{Binding HasStatusError}" Value="True" />
+                                                        </tg:DataTriggerInfo.Conditions>
+                                                        <tg:DataTriggerInfo.Setters>
+                                                            <tg:SetterInfo Property="Text" Value="☹"/>
+                                                        </tg:DataTriggerInfo.Setters>
+                                                    </tg:DataTriggerInfo>
+                                                     <tg:DataTriggerInfo>
+                                                        <tg:DataTriggerInfo.Conditions>
+                                                            <tg:DataConditionInfo Binding="{Binding IsComplete}" Value="True" />
+                                                            <tg:DataConditionInfo Binding="{Binding HasStatusError}" Value="False" />
+                                                        </tg:DataTriggerInfo.Conditions>
+                                                        <tg:DataTriggerInfo.Setters>
+                                                            <tg:SetterInfo Property="Text" Value="☻"/>
+                                                        </tg:DataTriggerInfo.Setters>
+                                                    </tg:DataTriggerInfo>
+                                                </tg:TriggerCollections>
+                                            </tg:TriggerExtensions.Triggers>
+                                        </TextBlock>
+                                    </StackPanel>
+
                                 </Grid>
                             </Grid>
                         </HierarchicalDataTemplate>
@@ -336,11 +369,11 @@
                     <!--#endregion-->
 
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" >
-                        <Button Command="{Binding GitPullCommand}" Content="₲it Pull" Width="60" Height="30"/>
+                        <Button Command="{Binding GitPullCommand}" Content="Git Pull" Width="60" Height="30"/>
                         <Button Command="{Binding BuildCommand}" Content="Build ♻" Width="60" Height="30" Margin="10,0,0,0"/>
                         <Button Command="{Binding RunTestsCommand}" Content="Tests ☑" Width="60" Height="30" Margin="10,0,0,0"/>
                         <Button Command="{Binding PublishCommand}" Content="Publish ☢" Width="60" Height="30" Margin="10,0,0,0"/>
-                        <Button IsEnabled="{Binding CanRunCommands}" Command="{Binding RunCommand}" Content="ℛun Commands ▶" Width="auto" Height="30" Margin="10,0,0,0"/>
+                        <Button IsEnabled="{Binding CanRunCommands}" Command="{Binding RunCommand}" Content="Run Commands ▶" Width="auto" Height="30" Margin="10,0,0,0"/>
                         <Button Command="{Binding CancellationCommand}" Content="Cancel Commands ✖" Width="auto" Height="30" Margin="10,0,0,0"/>
                     </StackPanel>
                 </StackPanel>

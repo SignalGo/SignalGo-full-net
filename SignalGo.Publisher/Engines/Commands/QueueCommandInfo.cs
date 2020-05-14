@@ -54,5 +54,10 @@ namespace SignalGo.Publisher.Engines.Commands
             return Status = RunStatusType.Done;
             //return proc;
         }
+
+        public override bool CalculateStatus(string line)
+        {
+            return false;
+        }
     }
 }
