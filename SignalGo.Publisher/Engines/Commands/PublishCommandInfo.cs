@@ -1,5 +1,6 @@
 ﻿using SignalGo.Publisher.Engines.Models;
 using SignalGo.Shared.Models;
+using System.Diagnostics;
 using System.IO.Compression;
 using System.Threading;
 using System.Threading.Tasks;
@@ -37,6 +38,7 @@ namespace SignalGo.Publisher.Engines.Commands
             ServiceName = serviceContract.Name;
             // key of project that must integrate with key of service in ServerManager
             ServiceKey = serviceContract.ServiceKey;
+            IsEnabled = true;
         }
         /// <summary>
         /// run publish tasks like get output and compressed data then upload
@@ -46,9 +48,6 @@ namespace SignalGo.Publisher.Engines.Commands
         public override async Task<RunStatusType> Run(CancellationToken cancellationToken)
         {
             await base.Run(cancellationToken);
-            //var output = result.StartInfo;
-            //Status = Models.RunStatusType.Done;
-            //Status = Models.RunStatusType.Error;
             var compressedData = await Compress();
             var result = await Upload(compressedData, cancellationToken, null, true);
             return Status = result;
@@ -66,6 +65,14 @@ namespace SignalGo.Publisher.Engines.Commands
             return await base.Compress();
         }
 
+        public override async Task Initialize(ProcessStartInfo processStartInfo)
+        {
+            processStartInfo.RedirectStandardOutput = true;
+            processStartInfo.FileName = $"{Command}";
+            processStartInfo.CreateNoWindow = true;
+            processStartInfo.Arguments = $" {Arguments}";
+            processStartInfo.WorkingDirectory = WorkingPath;
+        }
         public override bool CalculateStatus(string line)
         {
             return false;

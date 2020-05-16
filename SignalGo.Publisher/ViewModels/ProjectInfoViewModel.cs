@@ -262,6 +262,8 @@ namespace SignalGo.Publisher.ViewModels
         private void PublishToServers()
         {
             // add compiler command to commands list
+            if (!ProjectInfo.Commands.Any(x => x is GitCommandInfo))
+                ProjectInfo.AddCommand(new GitCommandInfo());
             if (!ProjectInfo.Commands.Any(x => x is BuildCommandInfo))
                 ProjectInfo.AddCommand(new BuildCommandInfo());
             // add TestsRunner Command if not exist in commands list
@@ -326,7 +328,7 @@ namespace SignalGo.Publisher.ViewModels
         /// <summary>
         /// add specified file to Server Ignore Update List settings
         /// </summary>
-        private void AddIgnoreServerFile()
+        public void AddIgnoreServerFile()
         {
             if (!ProjectInfo.ServerIgnoredFiles.Contains(IgnoreServerFileName) && !string.IsNullOrEmpty(IgnoreServerFileName))
             {

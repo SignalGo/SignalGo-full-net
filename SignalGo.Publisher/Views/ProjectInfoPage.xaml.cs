@@ -1,5 +1,6 @@
 ﻿using SignalGo.Publisher.Engines.Commands;
 using SignalGo.Publisher.Engines.Models;
+using SignalGo.Publisher.ViewModels;
 using System;
 using System.Windows;
 using System.Windows.Controls;
@@ -22,6 +23,14 @@ namespace SignalGo.Publisher.Views
         private void txtCmdLogs_TextChanged(object sender, TextChangedEventArgs e)
         {
             txtCmdLogs.ScrollToEnd();
+        }
+
+        private void txtIgnoreServerFileName_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            //if(e.Key == System.Windows.Input.Key.Enter)
+            //{
+                
+            //}
         }
 
         //public IntPtr MainWindowHandle { get; set; }

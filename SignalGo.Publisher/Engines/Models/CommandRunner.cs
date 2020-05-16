@@ -20,11 +20,9 @@ namespace SignalGo.Publisher.Engines.Models
 
         public async static Task<RunStatusType> Run(ICommand command, CancellationToken cancellationToken)
         {
-            //bool isTestsFound = false;
             var process = new Process();
             command.Size = 0;
             command.Position = 0;
-            //int position = 0;
             string standardOutputResult;
             try
             {

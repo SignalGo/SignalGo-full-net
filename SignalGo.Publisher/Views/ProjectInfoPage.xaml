@@ -186,7 +186,7 @@
     </Page.DataContext>
 
     <TabControl>
-        <TabItem Header="☰ Setting" >
+        <TabItem Header="Commander" >
 
             <Grid Margin="10">
                 <Grid.RowDefinitions>
@@ -202,24 +202,6 @@
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="1*" />
                 </Grid.ColumnDefinitions>
-
-                <!--project guid key-->
-                <!--<StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Left">-->
-                <Label Margin="0,5" Grid.Row="0" Content="Guid:" VerticalAlignment="Center" HorizontalAlignment="Left"/>
-                <TextBox Text="{Binding ProjectInfo.ProjectKey}" Grid.Column="1" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Grid.ColumnSpan="2" Margin="10,5,125,5" />
-                <Button Command="{Binding SaveChangeCommand}" Margin="0,5" Content="Save" Grid.Column="3" Width="80" Grid.Row="0" FontWeight="Normal" HorizontalAlignment="Right"/>
-                <!--</StackPanel>-->
-                <!--  -->
-                <!--<StackPanel  Orientation="Horizontal" Margin="0,0,0,20" HorizontalAlignment="Left">-->
-
-                <TextBlock Margin="0,5" Text="Project Folder Path:" Grid.Row="1"/>
-                <TextBox Text="{Binding ProjectInfo.ProjectPath}" Grid.Column="1" HorizontalAlignment="Stretch" Grid.Row="1" VerticalAlignment="Stretch" TextWrapping="NoWrap" Margin="10,5,125,5" Grid.ColumnSpan="2"/>
-
-                <TextBlock Margin="0,5" Text="Project Assemblies Path:" Grid.Row="2"/>
-                <TextBox Text="{Binding ProjectInfo.ProjectAssembliesPath}" Grid.Column="1" HorizontalAlignment="Stretch" Grid.Row="2" VerticalAlignment="Stretch" TextWrapping="WrapWithOverflow" ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Auto" Grid.ColumnSpan="2" Margin="10,5,125,5"/>
-                <Button Margin="0,5" Command="{Binding BrowseAssemblyPathCommand}" Content="..." Grid.Column="3" Width="80" Grid.Row="2" FontWeight="Normal" HorizontalAlignment="Right"/>
-
-                <Button Margin="0,5" Command="{Binding BrowseProjectPathCommand}" Content="..." Grid.Column="3" Width="80" Grid.Row="1" FontWeight="Normal" HorizontalAlignment="Right"/>
 
                 <TabControl Grid.Row="3" Grid.Column="0" Grid.RowSpan="2" Grid.ColumnSpan="2" >
                     <TabItem>
@@ -328,7 +310,7 @@
                     </ListBox.ItemTemplate>
                 </ListBox>
                 <!--#region Publish Servers Detail -->
-                <StackPanel Orientation="Vertical" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Grid.Column="2" Grid.Row="3" Grid.RowSpan="2" >
+                <StackPanel Margin="5" Orientation="Vertical" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Grid.Column="2" Grid.Row="3" Grid.RowSpan="2" >
                     <Expander ExpandDirection="Up" Cursor="Hand">
                         <ListView HorizontalAlignment="Stretch" ItemsSource="{Binding CurrentServerSettingInfo.ServerInfo}" HorizontalContentAlignment="Stretch">
                             <ListView.ItemTemplate>
@@ -360,11 +342,9 @@
                 <!--#region Commands Trigger -->
                 <StackPanel Grid.Row="5" Grid.ColumnSpan="3" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <!--#region Project Status -->
-                    <StackPanel Orientation="Horizontal"  HorizontalAlignment="Center">
-                        <TextBlock Text="Status: " Margin="10"/>
-                        <TextBlock x:Name="cmdStatus" Foreground="Green" Text="{Binding Status}" Margin="10">
-
-                        </TextBlock>
+                    <StackPanel Orientation="Horizontal"  HorizontalAlignment="Center" Margin="10">
+                        <TextBlock Text="Last Update: "/>
+                        <TextBlock Foreground="Green" Text="{Binding ProjectInfo.LastUpdateDateTime}" />
                     </StackPanel>
                     <!--#endregion-->
 
@@ -384,28 +364,52 @@
                 <!--#endregion-->
             </Grid>
         </TabItem>
-        <TabItem Header="File Options">
+
+        <TabItem Header="☰ Setting" >
             <Grid Margin="10">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="auto"/>
                     <RowDefinition Height="auto"/>
-                    <RowDefinition />
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition/>
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="auto" />
-                    <ColumnDefinition  />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="1*" />
                 </Grid.ColumnDefinitions>
 
+
+                <!--project guid key-->
+                <!--<StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Left">-->
+                <Label Margin="0,5" Grid.Row="0" Content="Guid:" VerticalAlignment="Center" HorizontalAlignment="Left"/>
+                <TextBox Text="{Binding ProjectInfo.ProjectKey}" Grid.Column="1" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Grid.ColumnSpan="2" Margin="10,5,125,5" />
+                <Button Command="{Binding SaveChangeCommand}" Margin="0,5" Content="Save" Grid.Column="3" Width="80" Grid.Row="0" FontWeight="Normal" HorizontalAlignment="Right"/>
+                <!--</StackPanel>-->
+                <!--  -->
+                <!--<StackPanel  Orientation="Horizontal" Margin="0,0,0,20" HorizontalAlignment="Left">-->
+
+                <TextBlock Margin="0,5" Text="Project Folder Path:" Grid.Row="1"/>
+                <TextBox Text="{Binding ProjectInfo.ProjectPath}" Grid.Column="1" HorizontalAlignment="Stretch" Grid.Row="1" VerticalAlignment="Stretch" TextWrapping="NoWrap" Margin="10,5,125,5" Grid.ColumnSpan="2"/>
+
+                <TextBlock Margin="0,5" Text="Project Assemblies Path:" Grid.Row="2"/>
+                <TextBox Text="{Binding ProjectInfo.ProjectAssembliesPath}" Grid.Column="1" HorizontalAlignment="Stretch" Grid.Row="2" VerticalAlignment="Stretch" TextWrapping="WrapWithOverflow" ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Auto" Grid.ColumnSpan="2" Margin="10,5,125,5"/>
+                <Button Margin="0,5" Command="{Binding BrowseAssemblyPathCommand}" Content="..." Grid.Column="3" Width="80" Grid.Row="2" FontWeight="Normal" HorizontalAlignment="Right"/>
+
+                <Button Margin="0,5" Command="{Binding BrowseProjectPathCommand}" Content="..." Grid.Column="3" Width="80" Grid.Row="1" FontWeight="Normal" HorizontalAlignment="Right"/>
+
+                <!--#region FileOptions -->
                 <!--server-->
-                <DockPanel>
-                    <TextBlock Margin="5,5" Text="Don't Update this files in server: " HorizontalAlignment="Stretch" VerticalAlignment="Top" DockPanel.Dock="Left"/>
+                <DockPanel Grid.Row="3">
+                    <TextBlock Margin="0,5" Text="Don't Update this files in Server: " HorizontalAlignment="Stretch" VerticalAlignment="Top" DockPanel.Dock="Left"/>
                     <Button  Grid.Column="0" Content="+" HorizontalAlignment="Stretch"  DockPanel.Dock="Right" Command="{Binding AddIgnoreServerFileCommand}" VerticalAlignment="Stretch" MaxWidth="50" Height="25" Padding="5,5,5,5" />
                 </DockPanel>
-                <TextBox TextWrapping="Wrap" Grid.Row="1" Grid.Column="0" Text="{Binding IgnoreServerFileName}" ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Auto" HorizontalAlignment="Stretch" Margin="5" DockPanel.Dock="Left"/>
+                <TextBox x:Name="txtIgnoreServerFileName" TextWrapping="Wrap" Grid.Row="4" Grid.Column="0" Text="{Binding IgnoreServerFileName}" ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Auto" HorizontalAlignment="Stretch" Margin="5" DockPanel.Dock="Left" KeyDown="txtIgnoreServerFileName_KeyDown"/>
 
-                <ListView x:Name="lst_ignoredFiles" ItemsSource="{Binding ProjectInfo.ServerIgnoredFiles}" MinWidth="200" MaxWidth="250" VerticalAlignment="Top" HorizontalAlignment="Stretch" Margin="5" VerticalContentAlignment="Stretch" ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Auto" MinHeight="25" Grid.Row="2">
+                <ListView x:Name="lst_ignoredFiles" ItemsSource="{Binding ProjectInfo.ServerIgnoredFiles}" MinWidth="200" MaxWidth="250" VerticalAlignment="Top" HorizontalAlignment="Stretch" Margin="5" VerticalContentAlignment="Stretch" ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Auto" MinHeight="25" Grid.Row="5" Grid.RowSpan="2">
                     <ListView.ItemTemplate>
                         <DataTemplate>
                             <Grid>
@@ -432,16 +436,16 @@
 
                 </ListView>
                 <!--client-->
-                <DockPanel Grid.Column="1" HorizontalAlignment="Stretch" >
-                    <TextBlock DockPanel.Dock="Left" Margin="5,5" Grid.Column="1" Text="Don't upload this files in Client: " HorizontalAlignment="Stretch" VerticalAlignment="Top"/>
+                <DockPanel Grid.Column="1" Grid.Row="3" HorizontalAlignment="Stretch" >
+                    <TextBlock DockPanel.Dock="Left" Margin="10,5" Grid.Column="1" Text="Don't upload this files in Client: " HorizontalAlignment="Stretch" VerticalAlignment="Top"/>
                     <Button DockPanel.Dock="Right" Command="{Binding AddIgnoreClientFileCommand}" Content="Browse" FontWeight="Normal" HorizontalAlignment="Stretch"   Grid.Column="1" VerticalAlignment="Top" Padding="5,5,5,5"/>
                 </DockPanel>
-                <DockPanel Grid.Row="1" Grid.Column="1" >
-                    <Label DockPanel.Dock="Left" Content="Regex: " HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="5,5,0,5" />
+                <DockPanel Grid.Row="4" Grid.Column="1" >
+                    <Label DockPanel.Dock="Left" Content="Regex: " HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="10,5,0,5" />
                     <TextBox DockPanel.Dock="Right" TextWrapping="Wrap" Text="In next release" IsEnabled="False" ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Auto" HorizontalAlignment="Stretch" Margin="5" VerticalAlignment="Stretch"/>
                 </DockPanel>
 
-                <ListView Grid.Column="1" x:Name="lst_ignoredClientsFiles" ItemsSource="{Binding ProjectInfo.IgnoredFiles}" MinWidth="200" MaxWidth="250" VerticalAlignment="Top" HorizontalAlignment="Stretch" Margin="5" VerticalContentAlignment="Stretch" ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Auto" MinHeight="25" Grid.Row="2">
+                <ListView Grid.Column="1" Grid.Row="5" Grid.RowSpan="2" x:Name="lst_ignoredClientsFiles" ItemsSource="{Binding ProjectInfo.IgnoredFiles}" MinWidth="200" MaxWidth="250" VerticalAlignment="Top" HorizontalAlignment="Stretch" Margin="10,5" VerticalContentAlignment="Stretch" ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Auto" MinHeight="25" >
                     <ListView.ItemTemplate>
                         <DataTemplate>
                             <Grid>
@@ -470,11 +474,29 @@
                 </ListView>
 
 
-                <Button Margin="5,5" Command="{Binding SaveIgnoreFileListCommand}" Content="Save" Width="80" Grid.Row="2" FontWeight="Normal" HorizontalAlignment="Right" Grid.Column="3" VerticalAlignment="Bottom"/>
-
+                <Button Margin="5,5" Command="{Binding SaveIgnoreFileListCommand}" Content="Save" Width="80" Grid.Row="6" FontWeight="Normal" HorizontalAlignment="Right" Grid.Column="3" VerticalAlignment="Bottom"/>
+                <!--#endregion-->
 
             </Grid>
+
         </TabItem>
+
+        <!--<TabItem Header="File Options">
+            <Grid Margin="10">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="auto" />
+                    <ColumnDefinition  />
+                </Grid.ColumnDefinitions>
+
+            </Grid>
+        </TabItem>-->
 
 
         <!--<TabItem Header="Window" Loaded="TabItem_Loaded" >-->

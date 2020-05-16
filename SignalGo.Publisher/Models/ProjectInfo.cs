@@ -56,9 +56,11 @@ namespace SignalGo.Publisher.Models
         }
 
         private string _Name;
+        private string _LastUpdateDateTime;
         private Guid _ProjectKey;
         private string _ProjectPath;
         private string _ProjectAssembliesPath;
+        // TODO: Remove this prop
         private ProjectInfoStatus _Status = ProjectInfoStatus.Stable;
 
         private ObservableCollection<string> _IgnoredFiles { get; set; } = new ObservableCollection<string>();
@@ -98,6 +100,18 @@ namespace SignalGo.Publisher.Models
             {
                 _Name = value;
                 OnPropertyChanged(nameof(Name));
+            }
+        }
+        public string LastUpdateDateTime
+        {
+            get
+            {
+                return _LastUpdateDateTime;
+            }
+            set
+            {
+                _LastUpdateDateTime = value;
+                OnPropertyChanged(nameof(LastUpdateDateTime));
             }
         }
 

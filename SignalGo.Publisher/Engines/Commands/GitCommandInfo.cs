@@ -35,18 +35,31 @@ namespace SignalGo.Publisher.Engines.Commands
             processStartInfo.WorkingDirectory = WorkingPath;
             return Task.CompletedTask;
         }
-        public void CalcProgress(string str)
-        {
-            var zx = str.LastIndexOf("Unpacking objects:  ");
-            long progress = 0;
-            while (progress <= 100)
-            {
-                var p = str.Substring(zx, str.IndexOf("%"));
-                progress = long.Parse(p);
-                Position = progress;
-            }
+        //public void CalcProgress(string str)
+        //{
+        //    var zx = str.LastIndexOf("Unpacking objects:  ");
+        //    long progress = 0;
+        //    while (progress <= 100)
+        //    {
+        //        var p = str.Substring(zx, str.IndexOf("%"));
+        //        progress = long.Parse(p);
+        //        Position = progress;
+        //    }
 
-        }
+        //}
+
+        //public void CalcProgress(string str)
+        //{
+        //    var zx = str.LastIndexOf("Unpacking objects:  ");
+        //    long progress = 0;
+        //    while (progress <= 100)
+        //    {
+        //        var p = str.Substring(zx, str.IndexOf("%"));
+        //        progress = long.Parse(p);
+        //        Position = progress;
+        //    }
+
+        //}
         public override bool CalculateStatus(string line)
         {
             try
@@ -70,6 +83,8 @@ namespace SignalGo.Publisher.Engines.Commands
                 //}
                 if (line.StartsWith("Already up to date."))
                 {
+                    Status = RunStatusType.Done;
+                    Position = Size;
                     return true;
                 }
                 else if (line.TrimStart().StartsWith("fatal: ") || line.TrimStart().StartsWith("error") || line.Contains("Could not read from remote repository."))

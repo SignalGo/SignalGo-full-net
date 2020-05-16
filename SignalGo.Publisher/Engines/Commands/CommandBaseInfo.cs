@@ -199,7 +199,7 @@ namespace SignalGo.Publisher.Engines.Commands
                 {
                     var currentSrv = ServerSettingInfo.CurrentServer.ServerInfo.FirstOrDefault(x => x.ServerKey == server.ServerKey);
                     // Contact with Server Agents and Make the connection if it possible
-                    var contactToProvider = await PublisherServiceProvider.Initialize(server);
+                    bool contactToProvider = await PublisherServiceProvider.Initialize(server);
                     // contacting with Provider is'nt possible;
                     if (!contactToProvider)
                     {
@@ -221,7 +221,7 @@ namespace SignalGo.Publisher.Engines.Commands
                         currentSrv.ServerStatus = ServerInfo.ServerInfoStatusEnum.UpdateError;
                         currentSrv.IsUpdated = ServerInfo.ServerInfoStatusEnum.UpdateError;
                         currentSrv.ServerLastUpdate = "Couldn't Update";
-
+                        
                         ServerSettingInfo.SaveServersSettingInfo();
                         status = RunStatusType.Error;
                         return await Upload(dataPath, cancellationToken);
@@ -243,6 +243,10 @@ namespace SignalGo.Publisher.Engines.Commands
                         currentSrv.ServerStatus = ServerInfo.ServerInfoStatusEnum.Updated;
                         currentSrv.IsUpdated = ServerInfo.ServerInfoStatusEnum.Updated;
                         currentSrv.ServerLastUpdate = DateTime.Now.ToString();
+                        // save project last update status
+                        SettingInfo.Current.ProjectInfo.SingleOrDefault(k => k.ProjectKey == ServiceKey).LastUpdateDateTime = DateTime.Now.ToString();
+
+                        SettingInfo.SaveSettingInfo();
                         ServerSettingInfo.SaveServersSettingInfo();
                         status = RunStatusType.Done;
 
