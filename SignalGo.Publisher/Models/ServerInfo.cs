@@ -15,22 +15,7 @@ namespace SignalGo.Publisher.Models
         public ServerInfo()
         {
             This = this;
-            //AddToServerQueueCommand = new Command(AddToServerQueue);
-
         }
-
-        /// <summary>
-        /// add server to Server Queue List
-        /// </summary>
-        //private void AddToServerQueue()
-        //{
-        //    if (!ServerInfo.Servers.Any(x => x.ServerKey == this.ServerKey))
-        //        AddServerToQueueCommand(new ServerInfo());
-        //    else
-        //    {
-        //        RemoveServerFromQueueCommand(this);
-        //    }
-        //}
 
         private string _ServerName;
         private Guid _ServerKey;
@@ -39,6 +24,7 @@ namespace SignalGo.Publisher.Models
         private string _ServerPort;
         private string _ServerLastUpdate;
         private bool _IsChecked;
+
         private ServerInfoStatusEnum _ServerStatus = ServerInfoStatusEnum.Stable;
         [JsonIgnore]
         private ServerInfoStatusEnum _IsUpdated = ServerInfoStatusEnum.Updating;
@@ -79,7 +65,7 @@ namespace SignalGo.Publisher.Models
                 _ServerLogs = value;
                 //OnPropertyChanged(nameof(ServerLogs));
             }
-        } //= new ObservableCollection<string>();
+        }
 
         public string ServerName
         {
@@ -93,6 +79,7 @@ namespace SignalGo.Publisher.Models
                 OnPropertyChanged(nameof(ServerName));
             }
         }
+
         public string ServerLastUpdate
         {
             get
@@ -130,52 +117,6 @@ namespace SignalGo.Publisher.Models
             {
                 _ServerKey = value;
                 OnPropertyChanged(nameof(ServerKey));
-            }
-        }
-
-        [JsonIgnore]
-        public Command AddToServerQueueCommand { get; set; }
-
-        /// <summary>
-        /// initialize detail of server that must be add to ServerQueue List
-        /// </summary>
-        /// <param name="server"></param>
-        private void AddServerToQueueCommand(ServerInfo server)
-        {
-            try
-            {
-                server.ServerAddress = this.ServerAddress;
-                server.ServerName = this.ServerName;
-                server.ServerPort = this.ServerPort;
-                server.ServerKey = this.ServerKey;
-                if (!Servers.Any(s => s.ServerKey == server.ServerKey))
-                {
-                    Servers.Add(server);
-                }
-                Debug.WriteLine($"Added {server.ServerName} To ServerQueue");
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"cant add {server.ServerName} To ServerQueue");
-            }
-        }
-
-        /// <summary>
-        /// remove a server from ServerQueue List
-        /// </summary>
-        /// <param name="server"></param>
-        public void RemoveServerFromQueueCommand(ServerInfo server)
-        {
-            try
-            {
-                var srv = Servers.FirstOrDefault(x => x.ServerKey == server.ServerKey);
-                srv.ServerStatus = ServerInfoStatusEnum.Disconnected;
-                Servers.Remove(srv);
-                Debug.WriteLine($"Removed {server.ServerName} from ServerQueue");
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"cant remove {server.ServerName} from ServerQueue");
             }
         }
 

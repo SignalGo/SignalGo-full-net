@@ -5,10 +5,10 @@ using System.Threading.Tasks;
 using SignalGo.Shared.Log;
 using SignalGo.Shared.Models;
 using SignalGo.Shared.DataTypes;
-using SignalGo.ServerManager.Engines.Models;
+using SignalGo.ServiceManager.Engines.Models;
 using System.Linq;
 
-namespace SignalGo.ServerManager.Services
+namespace SignalGo.ServiceManager.Services
 {
     /// <summary>
     /// Publisher/Server Manager Stream Gateway svc
@@ -26,7 +26,7 @@ namespace SignalGo.ServerManager.Services
         /// <returns></returns>
         public async Task<string> UploadData(StreamInfo streamInfo, ServiceContract serviceContract)
         {
-            string outFileName = $"{serviceContract.Name}{DateTime.Now.ToString("yyyyMMdd_hhmm")}.zip";
+            string outFileName = $"{serviceContract.Name}{DateTime.Now.ToString("yyyyMMdd_hhmmss")}.zip";
             string outFilePath = Path.GetFullPath(outFileName, Environment.CurrentDirectory);
             try
             {
@@ -43,7 +43,7 @@ namespace SignalGo.ServerManager.Services
                     var lengthWrite = 0;
                     while (lengthWrite != streamInfo.Length)
                     {
-                        byte[] bufferBytes = new byte[1024];
+                        byte[] bufferBytes = new byte[1024 * 1024];
                         int readCount = await streamInfo.Stream.ReadAsync(bufferBytes, bufferBytes.Length);
                         if (readCount <= 0)
                             break;

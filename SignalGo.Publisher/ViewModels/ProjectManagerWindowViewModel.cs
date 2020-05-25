@@ -33,6 +33,7 @@ namespace SignalGo.Publisher.ViewModels
             ExitApplicationCommand = new Command(ExitApplication);
             ShowCompilerLogsCommand = new Command(ShowCompilerLogs);
             ShowServersCommand = new Command(ShowServers);
+            ShowCommandManagerCommand = new Command(ShowCommandManagerPage);
             LoadProjects();
 
             // get application resouce usage in background
@@ -42,6 +43,7 @@ namespace SignalGo.Publisher.ViewModels
 
         public Command ExitApplicationCommand { get; set; }
         public Command ShowAppHelpPageCommand { get; set; }
+        public Command ShowCommandManagerCommand { get; set; }
         public Command AddNewServerCommand { get; set; }
         public Command AddNewProjectCommand { get; set; }
         public Command ShowServersCommand { get; set; }
@@ -82,6 +84,11 @@ namespace SignalGo.Publisher.ViewModels
         private void ShowSettingsPage()
         {
             MainFrame.Navigate(new PublisherSettingManagerPage());
+
+        }
+        private void ShowCommandManagerPage()
+        {
+            MainFrame.Navigate(new CommandManagerPage());
 
         }
         private void AddNewProject()

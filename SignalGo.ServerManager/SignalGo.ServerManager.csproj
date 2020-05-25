@@ -28,12 +28,9 @@ ServerManager can manage the start / stop, Update/Backup operation of your servi
     <ProjectReference Include="..\..\MvvmGo\MvvmGo.WindowsWPF\MvvmGo.WindowsWPF.csproj" />
     <ProjectReference Include="..\..\MvvmGo\MvvmGo\MvvmGo.csproj" />
     <ProjectReference Include="..\SignalGo.Server\SignalGo.Server.csproj" />
+    <ProjectReference Include="..\SignalGo.ServiceManager.BaseViewModels\SignalGo.ServiceManager.BaseViewModels.csproj" />
+    <ProjectReference Include="..\SignalGo.ServiceManager.Core\SignalGo.ServiceManager.Core.csproj" />
     <ProjectReference Include="..\SignalGo.Shared\SignalGo.Shared.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Engines\Commands\" />
-    <Folder Include="Engines\Interfaces\" />
   </ItemGroup>
 
 

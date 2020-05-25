@@ -1,4 +1,4 @@
-﻿using SignalGo.ServerManager.Models;
+﻿using SignalGo.ServiceManager.Models;
 using SignalGo.Shared.Log;
 using SignalGo.Shared.Models;
 using System;
@@ -8,9 +8,8 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Windows;
 
-namespace SignalGo.ServerManager.Engines.Models
+namespace SignalGo.ServiceManager.Engines.Models
 {
     public class ServiceUpdater : IDisposable
     {
@@ -27,7 +26,10 @@ namespace SignalGo.ServerManager.Engines.Models
             ServiceInfo = service;
             UpdateDataPath = updateDataPath;
         }
-
+        /// <summary>
+        /// Update Service
+        /// </summary>
+        /// <returns>Task Status</returns>
         public async Task<TaskStatus> Update()
         {
             try
@@ -40,7 +42,7 @@ namespace SignalGo.ServerManager.Engines.Models
                 }
                 else
                 {
-                    AutoLogger.Default.LogText("Update operation Failed");
+                    AutoLogger.Default.LogText("Update operation Failed ");
                     return TaskStatus.Faulted;
                 }
                 serviceToUpdate.Start();
@@ -84,9 +86,7 @@ namespace SignalGo.ServerManager.Engines.Models
                     ignoredFiles.AddRange(ServiceInfo.IgnoreFiles);
                     foreach (var item in ignoredFiles)
                     {
-                        //var t = filesList.Where(x => x.Contains(item)).ToList();
                         filesList.RemoveAll(x => x.Contains(item));
-                        //filesList.Remove(item);
                     }
                     if (Directory.Exists(Path.Combine(ExtractPath, "publish")))
                         Directory.Delete(Path.Combine(ExtractPath, "publish"), true);
@@ -100,16 +100,25 @@ namespace SignalGo.ServerManager.Engines.Models
                 }
                 if (compressionMethod == CompressionMethodType.Zip)
                     ZipFile.ExtractToDirectory(zipFilePath, ExtractPath);
-                Debug.WriteLine("archive extracted successfully");
+                //Debug.WriteLine("archive extracted successfully");
+                Console.WriteLine("archive extracted successfully");
                 IsSuccess = true;
             }
             catch (Exception ex)
             {
-                AutoLogger.Default.LogError(ex, "Publisher DeCompression Failed");
+                AutoLogger.Default.LogError(ex, "ServiceUpdater DeCompression Failed");
+                Console.WriteLine("archive extraction failed");
             }
             return IsSuccess;
         }
 
+        /// <summary>
+        /// Compress Service Files Backup.
+        /// </summary>
+        /// <param name="compressionMethod"></param>
+        /// <param name="includeParent"></param>
+        /// <param name="compressionLevel"></param>
+        /// <returns></returns>
         public async Task<bool> CompressBackup(CompressionMethodType compressionMethod = CompressionMethodType.Zip, bool includeParent = false, CompressionLevel compressionLevel = CompressionLevel.Optimal)
         {
             IsSuccess = false;
@@ -124,9 +133,9 @@ namespace SignalGo.ServerManager.Engines.Models
                 //return IsSuccess;
             }
             string zipFilePath = string.Empty;
-            string backupArchivePath = DateTime.Now.ToString("yyyyMMdd_hhmm");
+            string backupPostFixName = DateTime.Now.ToString("yyyyMMdd_hhmmss");
             string tempServiceBackupPath = Path.Combine(backupPath, ServiceInfo.Name,
-                $"{ServiceInfo.Name}_backup{backupArchivePath}");
+                $"{ServiceInfo.Name}_backup{backupPostFixName}");
             // get executable service directory
             string servicePath = Path.Combine(GetServicePathParent);
             try
@@ -165,9 +174,9 @@ namespace SignalGo.ServerManager.Engines.Models
                     case CompressionMethodType.None:
                         break;
                     case CompressionMethodType.Zip:
-                        ZipFile.CreateFromDirectory(Path.Combine(backupPath, ServiceInfo.Name, $"{ServiceInfo.Name}_backup{backupArchivePath}"), zipFilePath, CompressionLevel.Optimal, includeParent);
+                        ZipFile.CreateFromDirectory(Path.Combine(backupPath, ServiceInfo.Name, $"{ServiceInfo.Name}_backup{backupPostFixName}"), zipFilePath, CompressionLevel.Optimal, includeParent);
                         IsSuccess = true;
-                        Directory.Delete(Path.Combine(backupPath, ServiceInfo.Name, $"{ServiceInfo.Name}_backup{backupArchivePath}"), true);
+                        Directory.Delete(Path.Combine(backupPath, ServiceInfo.Name, $"{ServiceInfo.Name}_backup{backupPostFixName}"), true);
                         break;
                     case CompressionMethodType.Gzip:
                         throw new NotImplementedException("Gzip method not implemented yet.");

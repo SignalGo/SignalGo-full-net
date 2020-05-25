@@ -1,7 +1,6 @@
 ﻿using MvvmGo.ViewModels;
-using System;
 
-namespace SignalGo.ServerManager.Models
+namespace SignalGo.ServiceManager.Models
 {
     public class UserSetting : BaseViewModel
     {

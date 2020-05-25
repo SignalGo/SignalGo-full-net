@@ -1,7 +1,7 @@
 ﻿using SignalGo.Shared.DataTypes;
 using System.Threading.Tasks;
 
-namespace SignalGo.ServerManager.ClientServices
+namespace SignalGo.ServiceManager.ClientServices
 {
     [ServiceContract("ServerManagerCallback", ServiceType.ClientService, InstanceType.SingleInstance)]
     public interface IServerManagerCallbackClientService : IServerManagerCallbackClientServiceBase

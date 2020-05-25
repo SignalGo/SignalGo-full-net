@@ -1,76 +1,20 @@
 ﻿using Microsoft.Win32;
-using MvvmGo.Commands;
-using MvvmGo.ViewModels;
-using SignalGo.ServerManager.Models;
+using SignalGo.ServiceManager.BaseViewModels;
+using SignalGo.ServiceManager.Models;
 using System;
-using System.Windows;
+using System.Collections.Generic;
+using System.Text;
 
 namespace SignalGo.ServerManager.ViewModels
 {
-    public class ServerInfoViewModel : BaseViewModel
+    public class ServerInfoViewModel : ServerInfoBaseViewModel
     {
-        public ServerInfoViewModel()
+        protected override void Delete()
         {
-            StartCommand = new Command(Start);
-            StopCommand = new Command(Stop);
-            BrowsePathCommand = new Command(BrowsePath);
-            ChangeCommand = new Command(Change);
-            DeleteCommand = new Command(Delete);
-            ClearLogCommand = new Command(ClearLog);
-            CopyCommand = new Command<TextLogInfo>(Copy);
-        }
-
-        public Command StartCommand { get; set; }
-        public Command StopCommand { get; set; }
-        public Command ChangeCommand { get; set; }
-        public Command BrowsePathCommand { get; set; }
-        public Command DeleteCommand { get; set; }
-        public Command ClearLogCommand { get; set; }
-        public Command<TextLogInfo> CopyCommand { get; set; }
-
-        ServerInfo _ServerInfo;
-
-        public ServerInfo ServerInfo
-        {
-            get
-            {
-                return _ServerInfo;
-            }
-
-            set
-            {
-                _ServerInfo = value;
-                OnPropertyChanged(nameof(ServerInfo));
-            }
-        }
-
-        private void Delete()
-        {
-            SettingInfo.Current.ServerInfo.Remove(ServerInfo);
-            SettingInfo.SaveSettingInfo();
             MainWindowViewModel.MainFrame.GoBack();
+            base.Delete();
         }
-
-        private void Stop()
-        {
-            //ServerInfo.Stop();
-            StopServer(ServerInfo);
-        }
-
-        private void Start()
-        {
-            StartServer(ServerInfo);
-        }
-        private void Change()
-        {
-            var gu = Guid.Empty;
-            if (Guid.TryParse(ServerInfo.ServerKey.ToString(), out gu))
-            {
-                ServerInfo.ServerKey = gu;
-            }
-            SettingInfo.SaveSettingInfo();
-        }
-        private void BrowsePath()
+        protected override void BrowsePath()
         {
             OpenFileDialog fileDialog = new OpenFileDialog();
             fileDialog.FileName = ServerInfo.AssemblyPath;
@@ -79,21 +23,7 @@ namespace SignalGo.ServerManager.ViewModels
             SettingInfo.SaveSettingInfo();
         }
 
-        public static void StartServer(ServerInfo serverInfo)
-        {
-            serverInfo.Start();
-        }
-        public static void StopServer(ServerInfo serverInfo)
-        {
-            serverInfo.Stop();
-        }
-
-        private void ClearLog()
-        {
-            ServerInfo.Logs.Clear();
-        }
-
-        private void Copy(TextLogInfo textLogInfo)
+        protected override void Copy(TextLogInfo textLogInfo)
         {
             System.Windows.Forms.Clipboard.SetText(textLogInfo.Text);
         }

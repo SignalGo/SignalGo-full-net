@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 
-namespace SignalGo.ServerManager.ClientServices
+namespace SignalGo.ServiceManager.ClientServices
 {
     /// <summary>
     /// 

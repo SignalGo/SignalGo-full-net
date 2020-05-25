@@ -33,6 +33,7 @@
                         <MenuItem Header="Servers" Command="{Binding ShowServersCommand}"/>
                         <MenuItem Header="New Server" Command="{Binding AddNewServerCommand}"/>
                     </MenuItem>
+                    <MenuItem Header="_Command Manager"  Command="{Binding ShowCommandManagerCommand}"/>
                     <MenuItem Header="_App Logs"  Command="{Binding ShowAppLogsCommand}"/>
                     <MenuItem Header="_Compiler Logs"  Command="{Binding ShowCompilerLogsCommand}"/>
                     <MenuItem Header="_Service Updater" IsCheckable="True" IsChecked="True" />

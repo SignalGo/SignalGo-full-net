@@ -1,13 +1,14 @@
-﻿using System;
+﻿using SignalGo.ServiceManager.Models;
+using SignalGo.Shared.Log;
+using System;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Pipes;
 using System.Threading;
-using System.Diagnostics;
-using SignalGo.Shared.Log;
 
-namespace SignalGo.ServerManager.Models
+namespace SignalGo.ServerManager.Helpers
 {
-    public class ServerProcessInfoBase : IDisposable
+    public class ServerProcessInfo : ServerProcessBaseInfo
     {
         /// <summary>
         /// buffer
@@ -15,7 +16,6 @@ namespace SignalGo.ServerManager.Models
         public const int BUFFER_SIZE = 1024 * 5;
 
         private string m_PipeID;
-        public Process BaseProcess { get; set; }
         private NamedPipeServerStream m_PipeServerStream;
         private bool IsDisposing { get; set; }
         private Thread m_PipeMessagingThread;
@@ -23,14 +23,14 @@ namespace SignalGo.ServerManager.Models
         /// <summary>
         /// ServerProcessInfoBase Constructor
         /// </summary>
-        public ServerProcessInfoBase() { }
+        public ServerProcessInfo() { }
 
         /// <summary>
         /// Starts the IPC server and run the child process
         /// </summary>
         /// <param name="paramUID">Unique ID of the named pipe</param>
         /// <returns></returns>
-        public void Start(string paramUID, string fileName)
+        public override void Start(string paramUID, string fileName,string shell ="cmd")
         {
             if (!File.Exists(fileName))
                 throw new FileNotFoundException("we can't find service executable file. please verify the service path");
@@ -148,12 +148,13 @@ namespace SignalGo.ServerManager.Models
                 try
                 {
                     //I will fails if the process doesn't exist
-                    BaseProcess.Kill();
+                    if (BaseProcess != null)
+                        BaseProcess.Kill();
                 }
                 catch
                 { }
-
-                m_PipeServerStream.Dispose();//This will stop any pipe activity
+                if (m_PipeServerStream != null)
+                    m_PipeServerStream.Dispose();//This will stop any pipe activity
 
                 AutoLogger.Default.LogText(string.Format("Process {0} is Closed", m_PipeID));
             }
@@ -166,7 +167,7 @@ namespace SignalGo.ServerManager.Models
 
         #region IDisposable Members
 
-        public void Dispose()
+        public override void Dispose()
         {
             DisposeClientProcess();
         }

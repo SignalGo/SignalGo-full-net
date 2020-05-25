@@ -1,9 +1,10 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Text;
 
-namespace SignalGo.ServerManager.Models
+namespace SignalGo.ServiceManager.Models
 {
     public class SettingInfo
     {
@@ -23,7 +24,8 @@ namespace SignalGo.ServerManager.Models
                 return _Current;
             }
         }
-        public Guid ServerKey { get; set; }
+        //[JsonIgnore]
+        //public Guid ServerKey { get; set; }
         public ObservableCollection<ServerInfo> ServerInfo { get; set; } = new ObservableCollection<ServerInfo>();
 
         public static SettingInfo LoadSettingInfo()

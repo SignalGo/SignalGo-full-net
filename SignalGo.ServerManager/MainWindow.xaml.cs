@@ -1,16 +1,18 @@
-﻿using System;
-using System.Windows;
-using System.Diagnostics;
-using SignalGo.Shared.Log;
-using System.Windows.Controls;
-using System.Windows.Navigation;
-using SignalGo.ServerManager.Views;
-using SignalGo.ServerManager.Models;
-using System.Windows.Media.Animation;
-using SignalGo.Server.ServiceManager;
-using SignalGo.ServerManager.Services;
+﻿using SignalGo.Server.ServiceManager;
+using SignalGo.ServerManager.Helpers;
 using SignalGo.ServerManager.ViewModels;
-using System.Configuration;
+using SignalGo.ServerManager.Views;
+using SignalGo.ServiceManager.BaseViewModels.Core;
+using SignalGo.ServiceManager.Models;
+using SignalGo.ServiceManager.Services;
+using SignalGo.Shared;
+using SignalGo.Shared.Log;
+using System;
+using System.Diagnostics;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media.Animation;
+using System.Windows.Navigation;
 
 namespace SignalGo.ServerManager
 {
@@ -23,27 +25,17 @@ namespace SignalGo.ServerManager
 
         public MainWindow()
         {
-            try
+            ServerInfo.SendToMainHostForHidden = (process) =>
             {
-                This = this;
-                InitializeComponent();
-                mainframe.Navigate(new FirstPage());
-                Closing += MainWindow_Closing;
-                ServerProvider serverProvider = new ServerProvider();
-                serverProvider.RegisterServerService<ServerManagerService>();
-                serverProvider.RegisterServerService<ServerManagerStreamService>();
-                serverProvider.ProviderSetting.HttpSetting.HandleCrossOriginAccess = true;
-                serverProvider.Start($"http://{UserSettingInfo.Current.UserSettings.ListeningAddress}:{UserSettingInfo.Current.UserSettings.ListeningPort}/ServerManager/SignalGo");
+                ServerInfoPage.SendToMainHostForHidden(process, null);
+            };
 
-                // just for see start info
-                //MessageBox.Show($"Server Manager Started on {UserSettingInfo.Current.UserSettings.ListeningAddress}{UserSettingInfo.Current.UserSettings.ListeningPort}", "start info", MessageBoxButton.OK, MessageBoxImage.Information, MessageBoxResult.OK);
-
-                Debug.WriteLine("server is started");
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message, "MainWindow Error");
-            }
+            ServerProcessBaseInfo.Instance = () => new ServerProcessInfo();
+            This = this;
+            StartUp.Initialize();
+            InitializeComponent();
+            mainframe.Navigate(new FirstPage());
+            Closing += MainWindow_Closing;
         }
 
 
@@ -56,20 +48,7 @@ namespace SignalGo.ServerManager
                 e.Cancel = true;
                 return;
             }
-            AutoLogger.Default.LogText("Manualy user closed the server manager.");
-            foreach (var server in SettingInfo.Current.ServerInfo)
-            {
-                try
-                {
-                    if (server.CurrentServerBase != null)
-                        server.CurrentServerBase.Dispose();
-                }
-                catch (Exception ex)
-                {
-
-                }
-            }
-            Process.GetCurrentProcess().Kill();
+            StartUp.Exit();
         }
 
         private void MainFrame_Navigating(object sender, NavigatingCancelEventArgs e)

@@ -497,7 +497,13 @@ namespace SignalGo.Publisher.ViewModels
                 return ServerSettingInfo.CurrentServer;
             }
         }
-
+        public CommandSettingInfo CurrentCommandSettingInfo
+        {
+            get
+            {
+                return CommandSettingInfo.Current;
+            }
+        }
         ServerInfo _ServerInfo;
 
         public ServerInfo ServerInfo

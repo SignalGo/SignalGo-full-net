@@ -1,14 +1,14 @@
-﻿using System;
+﻿using MvvmGo.ViewModels;
+using Newtonsoft.Json;
+using SignalGo.Shared;
+using SignalGo.Shared.Log;
+using System;
+using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
-using Newtonsoft.Json;
-using MvvmGo.ViewModels;
-using SignalGo.Shared.Log;
-using SignalGo.ServerManager.Views;
-using System.Collections.ObjectModel;
-using System.Windows;
 
-namespace SignalGo.ServerManager.Models
+namespace SignalGo.ServiceManager.Models
 {
     public class ConsoleWriter : TextWriter
     {
@@ -86,11 +86,11 @@ namespace SignalGo.ServerManager.Models
         public ObservableCollection<TextLogInfo> Logs { get; set; } = new ObservableCollection<TextLogInfo>();
 
         [JsonIgnore]
-        public ServerProcessInfoBase CurrentServerBase { get; set; }
+        public ServerProcessBaseInfo CurrentServerBase { get; set; }
         [JsonIgnore]
         public Action ProcessStarted { get; set; }
         private Guid _ServerKey;
-       
+
         private string _Name;
         private string _AssemblyPath;
         private ServerInfoStatus _status = ServerInfoStatus.Stopped;
@@ -173,6 +173,7 @@ namespace SignalGo.ServerManager.Models
                     }
                     catch (Exception ex)
                     {
+                        Console.WriteLine(ex);
                         // if any exception occured
                         AutoLogger.Default.LogError(ex, "Stop Server");
                     }
@@ -187,9 +188,11 @@ namespace SignalGo.ServerManager.Models
             }
         }
 
+        public static Action<Process> SendToMainHostForHidden { get; set; }
+
         public void Start()
         {
-            MainWindow.This.Dispatcher.Invoke(() =>
+            AsyncActions.RunOnUI(() =>
             {
                 // if server status is Stopped
                 if (Status == ServerInfoStatus.Stopped)
@@ -198,12 +201,14 @@ namespace SignalGo.ServerManager.Models
                     {
                         // set server status to Started
                         Status = ServerInfoStatus.Started;
-                        CurrentServerBase = new ServerProcessInfoBase();
+                        CurrentServerBase = ServerProcessBaseInfo.Instance();
                         // start the server from the path
                         CurrentServerBase.Start("App_" + Name, AssemblyPath);
+                        var process = CurrentServerBase.BaseProcess;
                         // Insert/Merge Servers Console Window to Server manager Windows Tab
-                        ServerInfoPage.SendToMainHostForHidden(CurrentServerBase.BaseProcess, null);
+                        SendToMainHostForHidden?.Invoke(process);
                         ProcessStarted?.Invoke();
+                        Console.WriteLine($"Health Check, OK.");
                     }
                     catch (Exception ex)
                     {
@@ -217,8 +222,6 @@ namespace SignalGo.ServerManager.Models
                     }
                     SettingInfo.SaveSettingInfo();
                 }
-                else
-                    MessageBox.Show("Service aleready started!");
             });
         }
     }

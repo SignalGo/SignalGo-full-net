@@ -1,98 +1,40 @@
-﻿using MvvmGo.Commands;
-using MvvmGo.ViewModels;
-using SignalGo.ServerManager.Models;
-using SignalGo.ServerManager.Views;
-using SignalGo.Shared.Log;
+﻿using SignalGo.ServerManager.Views;
+using SignalGo.ServiceManager.BaseViewModels;
+using SignalGo.ServiceManager.Models;
 using System;
-using System.IO;
+using System.Collections.Generic;
+using System.Text;
 using System.Windows.Controls;
 
 namespace SignalGo.ServerManager.ViewModels
 {
-    public class MainWindowViewModel : BaseViewModel
+    public class MainWindowViewModel : MainWindowBaseViewModel
     {
-        public static MainWindowViewModel This { get; set; }
-
-        public MainWindowViewModel()
+        protected override void ExitApplication()
         {
-            This = this;
-            AddNewServerCommand = new Command(AddNewServer);
-            ShowServieLogsCommand = new Command(ShowServieLogs);
-            ExitApplicationCommand = new Command(ExitApplication);
-            ShowSettingPageCommand = new Command(ShowSettingPage);
-            Load();
+            System.Windows.Application.Current.Shutdown();
         }
-
-
-        public Command AddNewServerCommand { get; set; }
-        public Command ShowServieLogsCommand { get; set; }
-        public Command ExitApplicationCommand { get; set; }
-        public Command ShowSettingPageCommand { get; set; }
-
         public static Frame MainFrame { get; set; }
 
-        private ServerInfo _SelectedServerInfo;
-
-        public ServerInfo SelectedServerInfo
+        protected override void AddNewServer()
         {
-            get
-            {
-                return _SelectedServerInfo;
-            }
-            set
-            {
-                _SelectedServerInfo = value;
-                OnPropertyChanged(nameof(SelectedServerInfo));
-                ServerInfoPage page = new ServerInfoPage();
-                ServerInfoViewModel vm = page.DataContext as ServerInfoViewModel;
-                vm.ServerInfo = value;
-                MainFrame.Navigate(page);
-            }
+            MainFrame.Navigate(new AddNewServerPage());
         }
 
-        public SettingInfo CurrentSettingInfo
-        {
-            get
-            {
-                return SettingInfo.Current;
-            }
-        }
-        public void ShowServieLogs()
-        {
-            System.Diagnostics.Process.Start(
-                "notepad",
-                Path.Combine(Environment.CurrentDirectory, "AppLogs.log"));
-        }
-        public void ShowSettingPage()
+        protected override void ShowSettingPage()
         {
             ServerManagerSettingsPage page = new ServerManagerSettingsPage();
             //ServerManagerSettingsViewModel vm = page.DataContext as ServerManagerSettingsViewModel;
             //vm. = value;
             MainFrame.Navigate(page);
         }
-        public void ExitApplication()
-        {
-            System.Windows.Application.Current.Shutdown();
-        }
-        private void AddNewServer()
-        {
-            MainFrame.Navigate(new AddNewServerPage());
-        }
 
-        public void Load()
+        protected override void ShowServerInfoPage(ServerInfo serverInfo)
         {
-            try
-            {
-                foreach (ServerInfo server in SettingInfo.Current.ServerInfo)
-                {
-                    server.Status = ServerInfoStatus.Stopped;
-                    ServerInfoViewModel.StartServer(server);
-                }
-            }
-            catch (Exception ex)
-            {
-                AutoLogger.Default.LogError(ex, "Load");
-            }
+            ServerInfoPage page = new ServerInfoPage();
+            ServerInfoBaseViewModel vm = page.DataContext as ServerInfoBaseViewModel;
+            vm.ServerInfo = serverInfo;
+            MainFrame.Navigate(page);
         }
     }
 }

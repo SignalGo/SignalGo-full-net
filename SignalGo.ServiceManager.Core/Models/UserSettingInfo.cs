@@ -2,7 +2,7 @@
 using System.IO;
 using System.Text;
 
-namespace SignalGo.ServerManager.Models
+namespace SignalGo.ServiceManager.Models
 {
     public class UserSettingInfo
     {
