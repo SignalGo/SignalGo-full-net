@@ -1,4 +1,5 @@
-﻿using SignalGo.Server.ServiceManager;
+﻿using SignalGo.Server.Models;
+using SignalGo.Server.ServiceManager;
 using SignalGo.Shared.DataTypes;
 using SignalGo.Shared.Helpers;
 using SignalGo.Shared.Models;
@@ -15,7 +16,7 @@ namespace SignalGo.Server.Helpers
     public class ServiceReferenceHelper
     {
         public bool IsRenameDuplicateMethodNames { get; set; }
-
+        public ClientServiceReferenceConfigInfo ClientServiceReferenceConfigInfo { get; set; }
         /// <summary>
         /// 
         /// </summary>
@@ -78,6 +79,12 @@ namespace SignalGo.Server.Helpers
 #else
             Assembly assm = type.Assembly;
 #endif
+            var fileName = System.IO.Path.GetFileName(assm.Location);
+            if (ClientServiceReferenceConfigInfo != null && ClientServiceReferenceConfigInfo.SkipAssemblies != null)
+            {
+                if (ClientServiceReferenceConfigInfo.SkipAssemblies.Any(x => x.ToLower() == fileName.ToLower()))
+                    return true;
+            }
             if (ModellingReferencesAssemblies.Contains(type.GetAssembly()) || assm.CodeBase.ToLower() == BaseAssemblyPath || assm.CodeBase.ToLower().StartsWith(BaseAssemblyPath))
                 return true;
             return false;
