@@ -1559,6 +1559,8 @@ namespace SignalGo.Client.ClientManager
         {
             try
             {
+                if (_clientStream == null)
+                    throw new Exception($"Client is not connected on {ServerUrl}");
                 //                if (IsWebSocket)
                 //                {
                 //                    string json = ClientSerializationHelper.SerializeObject(callback) + "#end";
