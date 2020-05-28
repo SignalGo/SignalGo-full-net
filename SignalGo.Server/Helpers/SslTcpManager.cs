@@ -17,7 +17,7 @@ namespace SignalGo.Server.Helpers
                 client.GetStream(), false);
             // Authenticate the server but don't require the client to authenticate.
             await sslStream.AuthenticateAsServerAsync(x509Certificate,
-                 false, SslProtocols.Tls, true);
+                 false, SslProtocols.Tls | SslProtocols.Tls12 | SslProtocols.Ssl2 | SslProtocols.Ssl3, true);
 
             return sslStream;
         }
