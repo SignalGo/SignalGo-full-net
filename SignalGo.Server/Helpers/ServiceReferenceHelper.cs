@@ -608,12 +608,19 @@ namespace SignalGo.Server.Helpers
                                 int index = 0;
                                 foreach (var ca in ng)
                                 {
-                                    foreach (var val in (IEnumerable<System.Reflection.CustomAttributeTypedArgument>)ca.Value)
+                                    try
                                     {
-                                        result.Append($"{GetFullNameOfType(tupleGenerics[index], true, null, property)} ");
-                                        result.Append($"{val.Value}");
-                                        result.Append(", ");
-                                        index++;
+                                        foreach (var val in (IEnumerable<System.Reflection.CustomAttributeTypedArgument>)ca.Value)
+                                        {
+                                            result.Append($"{GetFullNameOfType(tupleGenerics[index], true, null, property)} ");
+                                            result.Append($"{val.Value}");
+                                            result.Append(", ");
+                                            index++;
+                                        }
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        break;
                                     }
                                 }
                             }
