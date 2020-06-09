@@ -104,7 +104,7 @@ namespace SignalGo.Server.IO
                 if (!text.StartsWith(TextHelper.NewLine))
                 {
                     lineLen = 2;
-                    _Length -= 2;
+                    //_Length -= 2;
                 }
                 //Console.WriteLine("ok&" + (endBuffer.Length - needRead - lineLen));
                 List<byte> newBuffer = endBuffer.ToList().GetRange(0, endBuffer.Length - needRead - lineLen);

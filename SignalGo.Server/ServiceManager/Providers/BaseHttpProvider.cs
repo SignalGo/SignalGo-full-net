@@ -775,7 +775,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 if (findFile)
                 {
                     StreamGo stream = new StreamGo(client.ClientStream);
-                    stream.SetOfStreamLength(len - content.Length - fileHeaderCount, boundary.Length + 12 - 6);// + 6 ; -6 ezafe shode
+                    stream.SetOfStreamLength(len - content.Length - fileHeaderCount, boundary.Length + 6);// + 6 ; -6 ezafe shode
                     fileInfo = new HttpPostedFileInfo()
                     {
                         Name = name,
@@ -1010,7 +1010,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 }
             }
             response = Encoding.UTF8.GetString(bytes.ToArray());
-            if (response.Contains("--") && string.IsNullOrEmpty(boundary))
+            if (response.Contains("--"))
             {
                 string[] split = response.Split(new string[] { TextHelper.NewLine }, StringSplitOptions.RemoveEmptyEntries);
                 foreach (string item in split)
