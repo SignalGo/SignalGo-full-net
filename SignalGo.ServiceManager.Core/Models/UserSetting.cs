@@ -1,6 +1,6 @@
 ﻿using MvvmGo.ViewModels;
 
-namespace SignalGo.ServiceManager.Models
+namespace SignalGo.ServiceManager.Core.Models
 {
     public class UserSetting : BaseViewModel
     {
@@ -9,6 +9,7 @@ namespace SignalGo.ServiceManager.Models
 
         }
 
+        private string _DotNetPath;
         private string _BackupPath;
         private string _LoggerPath;
         private string _ListeningPort;
@@ -69,6 +70,16 @@ namespace SignalGo.ServiceManager.Models
             {
                 _BackupPath = value;
                 OnPropertyChanged(nameof(BackupPath));
+            }
+        }
+        
+        public string DotNetPath
+        {
+            get { return _DotNetPath; }
+            set
+            {
+                _DotNetPath = value;
+                OnPropertyChanged(nameof(DotNetPath));
             }
         }
 

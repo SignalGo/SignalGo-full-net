@@ -1,12 +1,12 @@
 ﻿using SignalGo.Server.Models;
-using SignalGo.ServiceManager.ClientServices;
-using SignalGo.ServiceManager.Models;
+using SignalGo.ServiceManager.Core.ClientServices;
+using SignalGo.ServiceManager.Core.Models;
 using SignalGo.Shared.DataTypes;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace SignalGo.ServiceManager.Services
+namespace SignalGo.ServiceManager.Core.Services
 {
     [ServiceContract("ServerManager", ServiceType.ServerService, InstanceType.SingleInstance)]
     public class ServerManagerService

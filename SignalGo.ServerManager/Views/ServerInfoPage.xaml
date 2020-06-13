@@ -37,13 +37,18 @@
                 </Grid.ColumnDefinitions>
 
                 <Label Content="Guid:" VerticalContentAlignment="Center"/>
-                <TextBox  Margin="5" Text="{Binding ServerInfo.ServerKey}" Grid.Column="1" VerticalAlignment="Center" Height="27"/>
-                <Button Command="{Binding ChangeCommand}" Content="Change" Grid.Column="3" Grid.Row="0" Margin="10,0,0,0" Width="100" Height="25"/>
-                
-                <TextBlock Text="Server File Path:" Grid.Row="1"/>
-                <TextBox Margin="5" Text="{Binding ServerInfo.AssemblyPath}" TextWrapping="WrapWithOverflow" ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Auto" Height="auto" MaxHeight="40" Grid.Row="1" Grid.Column="1"/>
-                <Button Command="{Binding BrowsePathCommand}" Content="..." Grid.Column="3" Grid.Row="1" Margin="10,0,0,0" Width="100" Height="25"/>
+                <TextBox  Margin="5" Text="{Binding ServerInfo.ServerKey}" Grid.Column="1" VerticalAlignment="Stretch" Height="25"/>
+                <!--<Button Command="{Binding SaveCommand}" Content="Save" Grid.Column="3" Grid.Row="0" Margin="10,0,0,0" Width="100" Height="25"/>-->
 
+                <TextBlock Text="Server File Path:" Grid.Row="1"/>
+                <TextBox Margin="5" Text="{Binding ServerInfo.AssemblyPath}" TextWrapping="WrapWithOverflow" ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Auto" Height="25" MaxHeight="40" Grid.Row="1" Grid.Column="1"/>
+                <Button Command="{Binding BrowsePathCommand}" Content="..." Grid.Column="3" Grid.Row="1" Width="75" Height="25"/>
+                <StackPanel Margin="5" Grid.Row="2" Grid.Column="0" Orientation="Horizontal"
+                            Grid.ColumnSpan="2" VerticalAlignment="Top"
+                            HorizontalAlignment="Stretch">
+                    <TextBlock Text="Start Delay(sec):"/>
+                    <TextBox Margin="0" MaxWidth="100" MinWidth="50" Text="{Binding ServerInfo.StartDelay}" />
+                </StackPanel>
 
                 <StackPanel Grid.Row="2" Grid.ColumnSpan="3" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <StackPanel Orientation="Horizontal"  HorizontalAlignment="Center">
@@ -55,7 +60,11 @@
                         <Button Command="{Binding StopCommand}" Content="Stop" Width="100" Height="30" Margin="10,0,0,0"/>
                     </StackPanel>
                 </StackPanel>
-                <Button Command="{Binding DeleteCommand}" Grid.Row="2" Grid.Column="2" VerticalAlignment="Bottom" Content="Delete" Width="100" Height="30" Margin="10,0,0,0"/>
+                <StackPanel Orientation="Vertical" Grid.Row="2" Grid.Column="2" VerticalAlignment="Bottom" >
+
+                    <Button Command="{Binding SaveCommand}" VerticalAlignment="Bottom" Content="Save" Width="100" Height="30" Margin="0,5,0,5"/>
+                    <Button Command="{Binding DeleteCommand}" VerticalAlignment="Bottom" Content="Delete!" Width="100" Height="30" Margin="0,5,0,5"/>
+                </StackPanel>
             </Grid>
         </TabItem>
         <TabItem Header="Window" Loaded="TabItem_Loaded">
@@ -64,10 +73,11 @@
                     <RowDefinition Height="auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
-                <StackPanel Grid.Row="0" Orientation="Horizontal">
+
+                <!--<StackPanel Grid.Row="0" Orientation="Horizontal">
                     <Button Command="{Binding ClearLogCommand}" Content="Clear" Padding="10"/>
-                </StackPanel>
-                <ListView Grid.Row="1" ItemsSource="{Binding ServerInfo.Logs}">
+                </StackPanel>-->
+                <!--<ListView Grid.Row="1" ItemsSource="{Binding ServerInfo.Logs}">
                     <ListView.Resources>
                         <Style TargetType="ListViewItem">
                             <Setter Property="ContextMenu">
@@ -86,7 +96,7 @@
                             </Grid>
                         </DataTemplate>
                     </ListView.ItemTemplate>
-                </ListView>
+                </ListView>-->
             </Grid>
         </TabItem>
     </TabControl>

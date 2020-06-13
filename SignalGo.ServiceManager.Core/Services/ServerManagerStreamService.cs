@@ -1,24 +1,25 @@
 ﻿using System;
-using System.Diagnostics;
 using System.IO;
-using System.Threading.Tasks;
+using System.Linq;
+using System.Diagnostics;
 using SignalGo.Shared.Log;
 using SignalGo.Shared.Models;
+using System.Threading.Tasks;
 using SignalGo.Shared.DataTypes;
-using SignalGo.ServiceManager.Engines.Models;
-using System.Linq;
+using SignalGo.ServiceManager.Core.Engines.Models;
+using SignalGo.Publisher.Shared.Models;
+using SignalGo.ServiceManager.Core.Models;
 
-namespace SignalGo.ServiceManager.Services
+namespace SignalGo.ServiceManager.Core.Services
 {
     /// <summary>
     /// Publisher/Server Manager Stream Gateway svc
     /// </summary>
-    [ServiceContract("ServerStreamManager", ServiceType.HttpService, InstanceType.SingleInstance)]
     [ServiceContract("ServerStreamManager", ServiceType.StreamService, InstanceType.SingleInstance)]
     public class ServerManagerStreamService
     {
-        ServiceUpdater ServiceUpdater { get; set; }
-        public FileStream FileStream { get; set; }
+        //ServiceUpdater ServiceUpdater { get; set; }
+        //public FileStream FileStream { get; set; }
         /// <summary>
         /// Download Data from client as stream service
         /// </summary>
@@ -39,7 +40,7 @@ namespace SignalGo.ServiceManager.Services
 
                 try
                 {
-                    FileStream = new FileStream(outFilePath, FileMode.Create, FileAccess.ReadWrite, FileShare.ReadWrite);
+                    using var fileStream = new FileStream(outFilePath, FileMode.Create, FileAccess.ReadWrite, FileShare.ReadWrite);
                     var lengthWrite = 0;
                     while (lengthWrite != streamInfo.Length)
                     {
@@ -47,7 +48,7 @@ namespace SignalGo.ServiceManager.Services
                         int readCount = await streamInfo.Stream.ReadAsync(bufferBytes, bufferBytes.Length);
                         if (readCount <= 0)
                             break;
-                        await FileStream.WriteAsync(bufferBytes, 0, readCount);
+                        await fileStream.WriteAsync(bufferBytes, 0, readCount);
                         lengthWrite += readCount;
                         progress += lengthWrite * 100.0 / streamInfo.Length;
                     }
@@ -57,10 +58,10 @@ namespace SignalGo.ServiceManager.Services
                 {
                     AutoLogger.Default.LogError(ex, "DownloadUploadData");
                 }
-                finally
-                {
-                    Dispose();
-                }
+                //finally
+                //{
+                //    Dispose();
+                //}
 
                 var service = new ServiceContract
                 {
@@ -69,9 +70,9 @@ namespace SignalGo.ServiceManager.Services
                     ServiceKey = serviceToUpdate.ServerKey,
                     IgnoreFiles = serviceContract.IgnoreFiles
                 };
-                using (ServiceUpdater = new ServiceUpdater(service, outFilePath))
+                using (var serviceUpdater = new ServiceUpdater(service, outFilePath))
                 {
-                    await ServiceUpdater.Update();
+                    await serviceUpdater.Update();
                 }
                 //return MessageContract.Success();
             }
@@ -81,18 +82,66 @@ namespace SignalGo.ServiceManager.Services
             }
             return "success";
         }
-        public void Dispose()
+
+        /// <summary>
+        /// downlaod file from service
+        /// </summary>
+        /// <param name="filePath"></param>
+        /// <param name="serviceKey"></param>
+        /// <returns></returns>
+        public StreamInfo DownloadFileData(string filePath, Guid serviceKey)
         {
-            try
-            {
-                FileStream.Close();
-                FileStream.Dispose();
-                //GC.Collect();
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine(ex.Message);
-            }
+            CheckServerPath(filePath, serviceKey);
+            var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+            return new StreamInfo(stream) { Length = stream.Length, FileName = Path.GetFileName(filePath) };
         }
+
+        /// <summary>
+        /// save data to service
+        /// </summary>
+        /// <param name="stream"></param>
+        /// <param name="serviceKey"></param>
+        /// <returns></returns>
+        public async Task<bool> SaveFileData(StreamInfo<string> stream, Guid serviceKey)
+        {
+            CheckServerPath(stream.Data, serviceKey);
+            using FileStream fileStream = new FileStream(stream.Data, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite);
+            fileStream.SetLength(0);
+            var lengthWrite = 0;
+            while (lengthWrite < stream.Length)
+            {
+                byte[] bufferBytes = new byte[1024 * 1024];
+                int readCount = await stream.Stream.ReadAsync(bufferBytes, bufferBytes.Length);
+                if (readCount <= 0)
+                    break;
+                await fileStream.WriteAsync(bufferBytes, 0, readCount);
+                lengthWrite += readCount;
+            }
+            return true;
+        }
+
+        private ServerInfo CheckServerPath(string filePath, Guid serviceKey)
+        {
+            var find = SettingInfo.Current.ServerInfo.FirstOrDefault(x => x.ServerKey == serviceKey);
+            if (find == null)
+                throw new Exception($"Service {serviceKey} not found!");
+            else if (Path.GetDirectoryName(find.AssemblyPath) != Path.GetDirectoryName(filePath))
+                throw new Exception($"Access to the path denied!");
+            return find;
+        }
+
+        //private void Dispose()
+        //{
+        //    try
+        //    {
+        //        FileStream.Close();
+        //        FileStream.Dispose();
+        //        //GC.Collect();
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Debug.WriteLine(ex.Message);
+        //    }
+        //}
     }
 }

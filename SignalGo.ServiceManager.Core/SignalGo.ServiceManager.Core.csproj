@@ -2,11 +2,12 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
-    <RootNamespace>SignalGo.ServiceManager</RootNamespace>
+    <RootNamespace>SignalGo.ServiceManager.Core</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\MvvmGo\MvvmGo\MvvmGo.csproj" />
+    <ProjectReference Include="..\SignalGo.Publisher.Shared\SignalGo.Publisher.Shared.csproj" />
     <ProjectReference Include="..\SignalGo.Server\SignalGo.Server.csproj" />
     <ProjectReference Include="..\SignalGo.Shared\SignalGo.Shared.csproj" />
   </ItemGroup>

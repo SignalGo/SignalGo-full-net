@@ -1,13 +1,15 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using SignalGo.ServiceManager.Core.Helpers;
+using SignalGo.Shared.Log;
+using System;
 using System.IO;
 using System.Text;
 
-namespace SignalGo.ServiceManager.Models
+namespace SignalGo.ServiceManager.Core.Models
 {
     public class UserSettingInfo
     {
         private static UserSettingInfo _Current = null;
-
         private readonly static string UserSettingsDbName = "UserData.json";
 
         public static UserSettingInfo Current
@@ -19,6 +21,7 @@ namespace SignalGo.ServiceManager.Models
                     _Current = LoadUserSettingInfo();
                     SaveUserSettingInfo();
                 }
+
                 return _Current;
             }
         }
@@ -29,23 +32,27 @@ namespace SignalGo.ServiceManager.Models
             try
             {
                 string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, UserSettingsDbName);
-                if (!File.Exists(path) || File.ReadAllLinesAsync(path).Result.Length <= 0)
+                if (!File.Exists(path) || File.ReadAllLines(path).Length <= 0)
                 {
+                    File.Create(path).Dispose();
                     return new UserSettingInfo()
                     {
                         UserSettings = new UserSetting
                         {
-                            BackupPath = "C:\\ServerManagerBackups",
+                            DotNetPath = Utils.FindDotNetPath(),
+                            BackupPath = Utils.FindBackupPath(),
                             ListeningPort = "6464",
                             ListeningAddress = "localhost",
-                            LoggerPath = "AppLogs.log"
+                            LoggerPath = Path.Combine(Environment.CurrentDirectory, "AppLogs.log"),
+                            ServiceUpdaterLogFilePath = Path.Combine(Environment.CurrentDirectory, "ServiceUpdateLogs.log")
                         }
                     };
                 }
-                return Newtonsoft.Json.JsonConvert.DeserializeObject<UserSettingInfo>(File.ReadAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, UserSettingsDbName), Encoding.UTF8));
+                return JsonConvert.DeserializeObject<UserSettingInfo>(File.ReadAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, UserSettingsDbName), Encoding.UTF8));
             }
-            catch
+            catch (Exception ex)
             {
+                AutoLogger.Default.LogError(ex, "LoadUserSettingInfo");
                 return new UserSettingInfo()
                 {
                     UserSettings = new UserSetting()
@@ -55,7 +62,7 @@ namespace SignalGo.ServiceManager.Models
 
         public static void SaveUserSettingInfo()
         {
-            File.WriteAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, UserSettingsDbName), Newtonsoft.Json.JsonConvert.SerializeObject(Current), Encoding.UTF8);
+            File.WriteAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, UserSettingsDbName), JsonConvert.SerializeObject(Current, Formatting.Indented), Encoding.UTF8);
         }
     }
 }

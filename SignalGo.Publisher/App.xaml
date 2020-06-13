@@ -4,6 +4,10 @@
              xmlns:local="clr-namespace:SignalGo.Publisher"
              StartupUri="ProjectManagerWindow.xaml">
     <Application.Resources>
-         
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/SignalGo.Publisher;component/Resources/Converters.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
     </Application.Resources>
 </Application>

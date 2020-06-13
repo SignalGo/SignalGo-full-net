@@ -1,11 +1,11 @@
 ﻿using MvvmGo.Commands;
 using MvvmGo.ViewModels;
-using SignalGo.ServiceManager.Models;
+using SignalGo.ServiceManager.Core.Models;
 using SignalGo.Shared.Log;
 using System;
 using System.IO;
 
-namespace SignalGo.ServiceManager.BaseViewModels
+namespace SignalGo.ServiceManager.Core.BaseViewModels
 {
     public class MainWindowBaseViewModel : BaseViewModel
     {

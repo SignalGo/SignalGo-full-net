@@ -9,8 +9,4 @@
     <ProjectReference Include="..\SignalGo.ServiceManager.Core\SignalGo.ServiceManager.Core.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Helpers\" />
-  </ItemGroup>
-
 </Project>

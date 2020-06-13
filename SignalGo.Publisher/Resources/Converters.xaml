@@ -1,6 +1,38 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:sys="clr-namespace:System;assembly=System.Runtime" 
+                    xmlns:win="clr-namespace:System.Windows;assembly=PresentationCore" 
                     xmlns:conv="clr-namespace:MvvmGo.Converters;assembly=MvvmGo.WindowsWPF">
-    
+
+
+    <conv:EverythingConverter x:Key="BooleanToVisibilityConverter">
+        <conv:EverythingConverter.Conditions>
+            <conv:EverythingConverterValue ResultValue="{x:Static Visibility.Visible}">
+                <conv:EverythingConverterValue.ConditionValue>
+                    <sys:Boolean>True</sys:Boolean>
+                </conv:EverythingConverterValue.ConditionValue>
+            </conv:EverythingConverterValue>
+            <conv:EverythingConverterValue ResultValue="{x:Static Visibility.Collapsed}">
+                <conv:EverythingConverterValue.ConditionValue>
+                    <sys:Boolean>False</sys:Boolean>
+                </conv:EverythingConverterValue.ConditionValue>
+            </conv:EverythingConverterValue>
+        </conv:EverythingConverter.Conditions>
+    </conv:EverythingConverter>
+
+    <conv:EverythingConverter x:Key="NullToVisibilityConverter">
+        <conv:EverythingConverter.Conditions>
+            <conv:EverythingConverterValue ConditionValue="{x:Null}" >
+                <conv:EverythingConverterValue.ResultValue>
+                    <win:Visibility>Collapsed</win:Visibility>
+                </conv:EverythingConverterValue.ResultValue>
+            </conv:EverythingConverterValue>
+            <conv:EverythingConverterValue ConditionValue="{x:Null}"  IsInverseCondition="True">
+                <conv:EverythingConverterValue.ResultValue>
+                    <win:Visibility>Visible</win:Visibility>
+                </conv:EverythingConverterValue.ResultValue>
+            </conv:EverythingConverterValue>
+        </conv:EverythingConverter.Conditions>
+    </conv:EverythingConverter>
 </ResourceDictionary>
+    

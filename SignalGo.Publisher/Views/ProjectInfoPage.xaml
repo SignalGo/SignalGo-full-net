@@ -8,12 +8,14 @@
       xmlns:models="clr-namespace:SignalGo.Publisher.Models;assembly=SignalGo.Publisher"
       xmlns:wf="clr-namespace:System.Windows.Forms;assembly=System.Windows.Forms"
       xmlns:tg="clr-namespace:MvvmGo.Triggers;assembly=MvvmGo.WindowsWPF"
+      xmlns:conv="clr-namespace:SignalGo.Publisher.Converters"
       mc:Ignorable="d"
       d:DesignHeight="450" d:DesignWidth="800"
       Title="ProjectInfoPage" Background="White">
 
 
     <Page.Resources>
+        <conv:DirectoryToFileNameConverter x:Key="DirectoryToFileNameConverter"/>
         <vm:ProjectInfoViewModel x:Key="ProjectInfoViewModel"/>
 
         <Style TargetType="TextBlock">
@@ -254,7 +256,7 @@
                     </ListBox.ItemTemplate>-->
 
                 </ListBox>
-                <ListBox Style="{DynamicResource White_ListBox}" x:Name="lst_CommandsQueue" ItemsSource="{Binding ProjectInfo.Commands}" MinWidth="150" Grid.Column="2" Grid.Row="3" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Margin="0,5,0,20" VerticalContentAlignment="Stretch" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto" Grid.RowSpan="1">
+                <ListBox Style="{DynamicResource White_ListBox}" x:Name="lst_CommandsQueue" ItemsSource="{Binding ProjectInfo.Commands}" MinWidth="150" Grid.Column="2" Grid.Row="3" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Margin="0,5,0,50" VerticalContentAlignment="Stretch" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto" Grid.RowSpan="2">
                     <ListBox.ItemTemplate>
                         <HierarchicalDataTemplate>
                             <Grid>
@@ -404,7 +406,6 @@
                 <!--<StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Left">-->
                 <Label Margin="0,5" Grid.Row="0" Content="Guid:" VerticalAlignment="Center" HorizontalAlignment="Left"/>
                 <TextBox Text="{Binding ProjectInfo.ProjectKey}" Grid.Column="1" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Grid.ColumnSpan="2" Margin="10,5,125,5" />
-                <Button Command="{Binding SaveChangeCommand}" Margin="0,5" Content="Save" Grid.Column="3" Width="80" Grid.Row="0" FontWeight="Normal" HorizontalAlignment="Right"/>
                 <!--</StackPanel>-->
                 <!--  -->
                 <!--<StackPanel  Orientation="Horizontal" Margin="0,0,0,20" HorizontalAlignment="Left">-->
@@ -445,7 +446,7 @@
                                             CommandParameter="{Binding }"
                                             BorderThickness="0" Content="✘" Padding="0"
                                             Foreground="Red" Grid.Column="0" HorizontalAlignment="Right" />
-                                <TextBlock Text="{Binding }" Grid.Column="1"
+                                <CheckBox IsChecked="{Binding IsEnabled}" Content="{Binding FileName}" Grid.Column="1"
                                                Padding="5" HorizontalAlignment="Stretch"/>
                             </Grid>
                         </DataTemplate>
@@ -481,8 +482,8 @@
                                             CommandParameter="{Binding }"
                                             BorderThickness="0" Content="✘" Padding="0"
                                             Foreground="Red" Grid.Column="0" HorizontalAlignment="Right" />
-                                <TextBlock x:Name="lstitem_ignorefileName" 
-                                               Text="{Binding }" Grid.Column="1"
+                                <CheckBox x:Name="lstitem_ignorefileName"  IsChecked="{Binding IsEnabled}"
+                                               Content="{Binding FileName}" Grid.Column="1"
                                                Padding="5" HorizontalAlignment="Stretch"/>
                             </Grid>
                         </DataTemplate>
@@ -491,13 +492,66 @@
                 </ListView>
 
 
-                <Button Margin="5,5" Command="{Binding SaveIgnoreFileListCommand}" Content="Save" Width="80" Grid.Row="6" FontWeight="Normal" HorizontalAlignment="Right" Grid.Column="3" VerticalAlignment="Bottom"/>
+                <Button Margin="5,5" Command="{Binding SaveChangeCommand}" Content="Save" Width="80" Grid.Row="6" FontWeight="Normal" HorizontalAlignment="Right" Grid.Column="3" VerticalAlignment="Bottom"/>
                 <!--#endregion-->
 
             </Grid>
 
         </TabItem>
+        <TabItem Header="File Manager">
+            <Grid Margin="10">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="30"/>
+                    <RowDefinition/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                    <ColumnDefinition/>
+                </Grid.ColumnDefinitions>
+                <StackPanel HorizontalAlignment="Left" Orientation="Horizontal" >
+                    <Button Command="{Binding FetchFilesCommand}" Content="Fetch" Width="100"/>
+                    <ComboBox ItemsSource="{Binding Servers}" SelectedItem="{Binding SelectedServerInfo}" DisplayMemberPath="ServerName" Margin="10,0,0,0" Width="200" >
+                        <tg:TriggerExtensions.Triggers>
+                            <tg:TriggerCollections>
+                                <!--نقدی-->
+                                <tg:EventTriggerInfo EventName="SelectionChanged" >
+                                    <!--<tg:DataTriggerInfo.Conditions>
+                                        <tg:DataConditionInfo Binding="{Binding FetchFilesCommand}" Value="{x:Null}" IsInvert="True"/>
+                                    </tg:DataTriggerInfo.Conditions>-->
+                                    <tg:EventTriggerInfo.Setters>
+                                        <tg:EventSetterInfo  EventName="SelectionChanged" Command="{Binding ClearServerFileListCommand,Source={StaticResource ProjectInfoViewModel}}"/>
+                                    </tg:EventTriggerInfo.Setters>
+                                </tg:EventTriggerInfo>
+                            </tg:TriggerCollections>
+                        </tg:TriggerExtensions.Triggers>
+                    </ComboBox>
+                </StackPanel>
+                <ListBox Grid.Row="1" BorderThickness="0" ItemsSource="{Binding ProjectInfo.ServerFiles}">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition/>
+                                    <ColumnDefinition Width="100"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="{Binding Converter={StaticResource DirectoryToFileNameConverter}}" Padding="5"/>
+                                <Button Margin="10,0,10,0" Grid.Column="1" Padding="5" Content="Load" Command="{Binding LoadFileCommmand,Source={StaticResource ProjectInfoViewModel}}" CommandParameter="{Binding}"/>
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
 
+                <Grid Grid.Column="1"  Grid.RowSpan="2">
+                    <Grid.RowDefinitions>
+                        <RowDefinition/>
+                        <RowDefinition Height="30"/>
+                    </Grid.RowDefinitions>
+                    <TextBox Text="{Binding FileContent}" AcceptsReturn="True" Height="auto" VerticalScrollBarVisibility="Auto"/>
+                    <Button Content="Update" Grid.Row="1" Command="{Binding UploadFileCommmand}" />
+                </Grid>
+            </Grid>
+
+        </TabItem>
         <!--<TabItem Header="File Options">
             <Grid Margin="10">
                 <Grid.RowDefinitions>

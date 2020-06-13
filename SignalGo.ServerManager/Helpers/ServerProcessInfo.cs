@@ -1,4 +1,4 @@
-﻿using SignalGo.ServiceManager.Models;
+﻿using SignalGo.ServiceManager.Core.Models;
 using SignalGo.Shared.Log;
 using System;
 using System.Diagnostics;

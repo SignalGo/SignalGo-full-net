@@ -1,9 +1,10 @@
 ﻿using MvvmGo.Commands;
 using MvvmGo.ViewModels;
-using SignalGo.ServiceManager.Models;
+using SignalGo.ServiceManager.Core.Models;
 using System;
+using System.Linq;
 
-namespace SignalGo.ServiceManager.BaseViewModels
+namespace SignalGo.ServiceManager.Core.BaseViewModels
 {
     public class ServerInfoBaseViewModel : BaseViewModel
     {
@@ -71,7 +72,26 @@ namespace SignalGo.ServiceManager.BaseViewModels
         {
 
         }
+        public static void Delete(ServerInfo serverInfo)
+        {
+            StopServer(serverInfo);
+            SettingInfo.Current.ServerInfo.Remove(serverInfo);
+            SettingInfo.SaveSettingInfo();
+        }
+        public static void Delete(string serviceName)
+        {
+            try
+            {
+                var server = SettingInfo.Current.ServerInfo.FirstOrDefault(x => x.Name == serviceName);
+                StopServer(server);
+                SettingInfo.Current.ServerInfo.Remove(server);
+                SettingInfo.SaveSettingInfo();
+            }
+            catch (Exception ex)
+            {
 
+            }
+        }
         public static void StartServer(ServerInfo serverInfo)
         {
             serverInfo.Start();
@@ -83,7 +103,7 @@ namespace SignalGo.ServiceManager.BaseViewModels
 
         private void ClearLog()
         {
-            ServerInfo.Logs.Clear();
+            //ServerInfo.Logs.Clear();
         }
 
         protected virtual void Copy(TextLogInfo textLogInfo)

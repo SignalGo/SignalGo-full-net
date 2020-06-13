@@ -41,9 +41,17 @@ namespace SignalGo.Publisher.Models
                         ProjectInfo = new ObservableCollection<ProjectInfo>()
                     };
                 }
-                return JsonConvert.DeserializeObject<SettingInfo>(File.ReadAllText(path, Encoding.UTF8));
+                var result =  SignalGo.Client.ClientSerializationHelper.DeserializeObject<SettingInfo>(File.ReadAllText(path, Encoding.UTF8));
+                if (result == null)
+                {
+                    return new SettingInfo()
+                    {
+                        ProjectInfo = new ObservableCollection<ProjectInfo>()
+                    };
+                }
+                return result;
             }
-            catch
+            catch (Exception ex)
             {
                 return new SettingInfo()
                 {

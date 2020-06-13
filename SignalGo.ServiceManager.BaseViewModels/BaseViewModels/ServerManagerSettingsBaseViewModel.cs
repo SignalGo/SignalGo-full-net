@@ -1,10 +1,10 @@
 ﻿using MvvmGo.Commands;
 using MvvmGo.ViewModels;
-using SignalGo.ServiceManager.Models;
+using SignalGo.ServiceManager.Core.Models;
 using System;
 using System.Diagnostics;
 
-namespace SignalGo.ServiceManager.BaseViewModels
+namespace SignalGo.ServiceManager.Core.BaseViewModels
 {
     public class ServerManagerSettingsBaseViewModel : BaseViewModel
     {

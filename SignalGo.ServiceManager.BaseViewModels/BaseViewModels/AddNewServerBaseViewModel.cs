@@ -1,11 +1,9 @@
 ﻿using MvvmGo.Commands;
 using MvvmGo.ViewModels;
-using SignalGo.ServiceManager.Models;
+using SignalGo.ServiceManager.Core.Models;
 using System;
-using System.IO;
-using System.Linq;
 
-namespace SignalGo.ServiceManager.BaseViewModels
+namespace SignalGo.ServiceManager.Core.BaseViewModels
 {
     public class AddNewServerBaseViewModel : BaseViewModel
     {

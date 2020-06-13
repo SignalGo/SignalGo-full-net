@@ -1,4 +1,5 @@
-﻿using SignalGo.ServiceManager.Models;
+﻿using SignalGo.Publisher.Shared.Models;
+using SignalGo.ServiceManager.Core.Models;
 using SignalGo.Shared.Log;
 using SignalGo.Shared.Models;
 using System;
@@ -9,7 +10,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace SignalGo.ServiceManager.Engines.Models
+namespace SignalGo.ServiceManager.Core.Engines.Models
 {
     public class ServiceUpdater : IDisposable
     {
@@ -83,7 +84,7 @@ namespace SignalGo.ServiceManager.Engines.Models
                     var allFiles = Directory.GetFiles(ExtractPath);
                     var filesList = allFiles.ToList();
                     var ignoredFiles = filesList.Where(f => f.Contains(".zip")).ToList();
-                    ignoredFiles.AddRange(ServiceInfo.IgnoreFiles);
+                    ignoredFiles.AddRange(ServiceInfo.IgnoreFiles.Where(e => e.IsEnabled).Select(x => x.FileName));
                     foreach (var item in ignoredFiles)
                     {
                         filesList.RemoveAll(x => x.Contains(item));

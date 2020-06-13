@@ -2,10 +2,8 @@
 using Newtonsoft.Json;
 using MvvmGo.ViewModels;
 using System.Collections.ObjectModel;
-using System.Linq;
-using MvvmGo.Commands;
-using System.Diagnostics;
-using System.Windows;
+using SignalGo.Publisher.Engines.Models;
+using System.Security.Cryptography;
 
 namespace SignalGo.Publisher.Models
 {
@@ -18,6 +16,7 @@ namespace SignalGo.Publisher.Models
         }
 
         private string _ServerName;
+        private string _ProtectionPassword;
         private Guid _ServerKey;
         private string _ServerEndPoint;
         private string _ServerAddress;
@@ -67,6 +66,40 @@ namespace SignalGo.Publisher.Models
             }
         }
 
+        //public byte[] ProtectionPassword
+        //{
+        //    get
+        //    {
+        //        if (_ProtectionPassword == null) return null;
+        //        byte[] plaintext = ProtectedData.Unprotect(_ProtectionPassword, null, DataProtectionScope.CurrentUser);
+        //        return plaintext;
+        //    }
+        //    set
+        //    {
+        //        if (_ProtectionPassword == null && value == null)
+        //        {
+        //            return;
+        //        }
+        //        //using (RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider())
+        //        //{
+        //        //    rng.GetBytes(entropy);
+        //        //}
+        //        byte[] ciphertext = ProtectedData.Protect(value, null, DataProtectionScope.CurrentUser);
+        //        _ProtectionPassword = ciphertext;
+        //        OnPropertyChanged(nameof(ProtectionPassword));
+        //    }
+        //}
+        public string ProtectionPassword
+        {
+            get
+            {
+                return _ProtectionPassword;
+            }
+            set
+            {
+                _ProtectionPassword = value;
+            }
+        }
         public string ServerName
         {
             get

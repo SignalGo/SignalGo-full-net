@@ -1,9 +1,6 @@
 ﻿using SignalGo.ServerManager.Views;
-using SignalGo.ServiceManager.BaseViewModels;
-using SignalGo.ServiceManager.Models;
-using System;
-using System.Collections.Generic;
-using System.Text;
+using SignalGo.ServiceManager.Core.BaseViewModels;
+using SignalGo.ServiceManager.Core.Models;
 using System.Windows.Controls;
 
 namespace SignalGo.ServerManager.ViewModels

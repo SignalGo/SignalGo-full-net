@@ -19,7 +19,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServerConsoleTest", "Server
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SignalGo.Client", "SignalGo.Client\SignalGo.Client.csproj", "{DA4F99A9-69E4-48F1-8850-5298F7762AB9}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SignalGo.ServerManager", "SignalGo.ServerManager\SignalGo.ServerManager.csproj", "{1380D040-51EB-4E03-BA87-78020071FB7A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SignalGo.ServerManager.WpfApp", "SignalGo.ServerManager\SignalGo.ServerManager.WpfApp.csproj", "{1380D040-51EB-4E03-BA87-78020071FB7A}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SignalGo.Server.Owin", "SignalGo.Server.Owin\SignalGo.Server.Owin.csproj", "{D2EDF2E0-8691-40A0-A0EF-1895B72C3DE7}"
 EndProject
@@ -45,11 +45,15 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Client", "Client", "{C67FFE
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Server", "Server", "{E3FDA112-AF36-4A34-B0B7-2E214C456FA5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SignalGo.ServiceManager.Core", "SignalGo.ServiceManager.Core\SignalGo.ServiceManager.Core.csproj", "{37D1C198-3AB5-43E8-AE2D-68529AC7A2D3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SignalGo.ServiceManager.Core", "SignalGo.ServiceManager.Core\SignalGo.ServiceManager.Core.csproj", "{37D1C198-3AB5-43E8-AE2D-68529AC7A2D3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SignalGo.ServiceManager.BaseViewModels", "SignalGo.ServiceManager.BaseViewModels\SignalGo.ServiceManager.BaseViewModels.csproj", "{346FE072-B836-4752-836A-53C5C3D4F242}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SignalGo.ServiceManager.BaseViewModels", "SignalGo.ServiceManager.BaseViewModels\SignalGo.ServiceManager.BaseViewModels.csproj", "{346FE072-B836-4752-836A-53C5C3D4F242}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SignalGo.ServiceManager.ConsoleApp", "SignalGo.ServiceManager.ConsoleApp\SignalGo.ServiceManager.ConsoleApp.csproj", "{360BE24F-84F1-4DBA-850D-EDC1578A0E46}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SignalGo.ServiceManager.ConsoleApp", "SignalGo.ServiceManager.ConsoleApp\SignalGo.ServiceManager.ConsoleApp.csproj", "{360BE24F-84F1-4DBA-850D-EDC1578A0E46}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared", "Shared", "{5C556893-4C5B-4924-AAFA-FD8B1CA24240}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SignalGo.Publisher.Shared", "SignalGo.Publisher.Shared\SignalGo.Publisher.Shared.csproj", "{F68A67A4-B722-4DCE-A244-831F639A4CE8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -121,6 +125,10 @@ Global
 		{360BE24F-84F1-4DBA-850D-EDC1578A0E46}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{360BE24F-84F1-4DBA-850D-EDC1578A0E46}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{360BE24F-84F1-4DBA-850D-EDC1578A0E46}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F68A67A4-B722-4DCE-A244-831F639A4CE8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F68A67A4-B722-4DCE-A244-831F639A4CE8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F68A67A4-B722-4DCE-A244-831F639A4CE8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F68A67A4-B722-4DCE-A244-831F639A4CE8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -144,6 +152,8 @@ Global
 		{37D1C198-3AB5-43E8-AE2D-68529AC7A2D3} = {E3FDA112-AF36-4A34-B0B7-2E214C456FA5}
 		{346FE072-B836-4752-836A-53C5C3D4F242} = {E3FDA112-AF36-4A34-B0B7-2E214C456FA5}
 		{360BE24F-84F1-4DBA-850D-EDC1578A0E46} = {E3FDA112-AF36-4A34-B0B7-2E214C456FA5}
+		{5C556893-4C5B-4924-AAFA-FD8B1CA24240} = {609A9005-82AD-4BF0-BF0F-DB3050BCA93E}
+		{F68A67A4-B722-4DCE-A244-831F639A4CE8} = {5C556893-4C5B-4924-AAFA-FD8B1CA24240}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {BA45D984-D832-4852-8459-2B21C09E673C}

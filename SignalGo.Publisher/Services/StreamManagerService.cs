@@ -6,13 +6,13 @@ using SignalGo.Publisher.Models;
 using SignalGo.Shared.Log;
 using System.Threading;
 using SignalGo.Shared.Models;
+using SignalGo.Publisher.Shared.Models;
 
 namespace SignalGo.Publisher.Services
 {
     public class StreamManagerService
     {
-        static ServerManagerService.StreamServices.ServerManagerStreamService service = new ServerManagerService.StreamServices.ServerManagerStreamService(PublisherServiceProvider.CurrentClientProvider);
-        public static async Task<UploadInfo> UploadAsync(UploadInfo uploadInfo, CancellationToken cancellationToken, ServiceContract serviceContract)
+        public static async Task<UploadInfo> UploadAsync(UploadInfo uploadInfo, CancellationToken cancellationToken, ServiceContract serviceContract, ServerInfo serverInfo)
         {
             if (cancellationToken.IsCancellationRequested)
             {
@@ -49,13 +49,16 @@ namespace SignalGo.Publisher.Services
                         }
                         // cancellation occured, Release All Resources and report back
                         uploadInfo.Status = false;
-                        await DisposeAsync();
+                        //await DisposeAsync();
                         uploadInfo.Description = "Upload Cancelled By User";
                         ServerInfo.ServerLogs.Add("Upload Cancelled By User!");
                         break;
                     }
                     await Task.FromCanceled(cancellationToken);
                 };
+
+                var provider = PublisherServiceProvider.Initialize(serverInfo);
+                var service = new ServerManagerService.StreamServices.ServerManagerStreamService(provider.CurrentClientProvider);
                 result = await service.UploadDataAsync(streamInfo, serviceContract);
                 Debug.WriteLine(result);
                 if (result == "success")
@@ -77,14 +80,14 @@ namespace SignalGo.Publisher.Services
             return uploadInfo;
         }
 
-        public static async Task DisposeAsync()
-        {
-            //streamInfo.Stream.Dispose();
-            //streamInfo.Dispose();
-            //stream.Close();
-            //stream.Dispose();
-            await service.DisposeStreamAsync();
-        }
+        //public static async Task DisposeAsync()
+        //{
+        //    //streamInfo.Stream.Dispose();
+        //    //streamInfo.Dispose();
+        //    //stream.Close();
+        //    //stream.Dispose();
+        //    await service.DisposeStreamAsync();
+        //}
 
     }
 }

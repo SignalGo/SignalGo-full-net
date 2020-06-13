@@ -1,9 +1,6 @@
 ﻿using Microsoft.Win32;
-using SignalGo.ServiceManager.BaseViewModels;
-using SignalGo.ServiceManager.Models;
-using System;
-using System.Collections.Generic;
-using System.Text;
+using SignalGo.ServiceManager.Core.BaseViewModels;
+using SignalGo.ServiceManager.Core.Models;
 
 namespace SignalGo.ServerManager.ViewModels
 {
@@ -23,9 +20,9 @@ namespace SignalGo.ServerManager.ViewModels
             SettingInfo.SaveSettingInfo();
         }
 
-        protected override void Copy(TextLogInfo textLogInfo)
-        {
-            System.Windows.Forms.Clipboard.SetText(textLogInfo.Text);
-        }
+        //protected override void Copy(TextLogInfo textLogInfo)
+        //{
+        //    System.Windows.Forms.Clipboard.SetText(textLogInfo.Text);
+        //}
     }
 }

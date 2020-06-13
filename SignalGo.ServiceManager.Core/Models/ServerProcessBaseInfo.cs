@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
 
-namespace SignalGo.ServiceManager.Models
+namespace SignalGo.ServiceManager.Core.Models
 {
     public abstract class ServerProcessBaseInfo : IDisposable
     {

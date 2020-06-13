@@ -5,6 +5,7 @@ using ServerManagerService.Interfaces;
 using System.Threading.Tasks;
 using SignalGo.Publisher.Models;
 using SignalGo.Shared.Log;
+using System.Collections.Generic;
 
 namespace SignalGo.Publisher.Services
 {
@@ -14,104 +15,81 @@ namespace SignalGo.Publisher.Services
     /// </summary>
     public class PublisherServiceProvider //: IDisposable
     {
-        //static PublisherServiceProvider()
-        //{
 
-        //}
-        /// <summary>
-        /// instance of client(publisher)
-        /// </summary>
-        public static ClientProvider CurrentClientProvider { get; set; }
-        public static string RemoteServer { get; set; }
+        public static Dictionary<string, PublisherServiceProvider> Providers { get; set; } = new Dictionary<string, PublisherServiceProvider>();
         /// <summary>
         /// instance of server manager service
         /// </summary>
-        public static IServerManagerService ServerManagerService { get; set; }
+        public IServerManagerService ServerManagerService { get; set; }
+        public IFileManagerService FileManagerService { get; set; }
+
+        /// <summary>
+        /// instance of client(publisher)
+        /// </summary>
+        public ClientProvider CurrentClientProvider { get; set; }
+        public string RemoteServer { get; set; }
+
 
         /// <summary>
         /// init client connection to server manager service
         /// </summary>
-        public static async Task<bool> Initialize(ServerInfo serverInfo)
+        public static PublisherServiceProvider Initialize(ServerInfo serverInfo)
         {
-            // simple "http://localhost:5468"
-            bool isSuccess = false;
+            PublisherServiceProvider publisherServiceProvider = null;
             try
             {
-                RemoteServer = string.Concat("http://", serverInfo.ServerAddress, ":", serverInfo.ServerPort);
-                if (CurrentClientProvider != null)
+                var serverAddress = string.Concat("http://", serverInfo.ServerAddress, ":", serverInfo.ServerPort);
+                if (Providers.TryGetValue(serverAddress, out publisherServiceProvider))
                 {
-                    //Debug.WriteLine($"CurrentClientProvider not null");
-                    //Debug.WriteLineIf(CurrentClientProvider.IsConnected, "CurrentClientProvider is Connected");
-                    CurrentClientProvider.Dispose();
                 }
-                CurrentClientProvider = new ClientProvider();
-                //CurrentClientProvider.ProtocolType = Client.ClientManager.ClientProtocolType.WebSocket; // = asp core
-                ServerManagerService = CurrentClientProvider
-                    .RegisterServerService<ServerManagerService.ServerServices.ServerManagerService>(CurrentClientProvider);
-                //await CheckConnectionQuality();
-                CurrentClientProvider.Connect(RemoteServer);
-                //, async (isConnected) =>
-                //{
-                //if (isConnected)
-                //{
-                //try
-                //{
-                isSuccess = await CheckConnectionQuality();
-                //}
-                //catch (Exception ex)
-                //{
-                //    AutoLogger.Default.LogError(ex, "Bad Connection Quality");
-                //}
-                //}
-                //else
-                //{
-                //    isSuccess = false;
-                //    ServerInfo.This.ServerLogs.Add($"Bad Connection, isConnected:{isConnected}");
-                //}
-                //isConnected connection state changed
-                //});
+                else
+                {
+                    publisherServiceProvider = new PublisherServiceProvider();
+                    publisherServiceProvider.CurrentClientProvider = new ClientProvider();
+                    //CurrentClientProvider.ProtocolType = Client.ClientManager.ClientProtocolType.WebSocket; // = asp core
+
+                    publisherServiceProvider.ServerManagerService = publisherServiceProvider.CurrentClientProvider
+                        .RegisterServerService<ServerManagerService.ServerServices.ServerManagerService>(publisherServiceProvider.CurrentClientProvider);
+                    publisherServiceProvider.FileManagerService = publisherServiceProvider.CurrentClientProvider
+                        .RegisterServerService<ServerManagerService.ServerServices.FileManagerService>(publisherServiceProvider.CurrentClientProvider);
+                    TaskCompletionSource<bool> completeConnection = new TaskCompletionSource<bool>();
+                    publisherServiceProvider.CurrentClientProvider.ConnectAsyncAutoReconnect(serverAddress, x =>
+                    {
+                        try
+                        {
+                            if (x)
+                                publisherServiceProvider.CheckConnectionQuality();
+                        }
+                        catch (Exception ex) { }
+                        finally
+                        {
+                            completeConnection.SetResult(true);
+                        }
+                    });
+                    completeConnection.Task.Wait();
+                    Providers.Add(serverAddress, publisherServiceProvider);
+                }
             }
             catch (Exception ex)
             {
-                isSuccess = false;
+                //isSuccess = false;
                 AutoLogger.Default.LogError(ex, "initialize client provider error");
                 ServerInfo.ServerLogs.Add("error while contacting to server");
             }
-            return isSuccess;
-        }
-        public static async Task RestartServices()
-        {
-            Guid serviceGuid = Guid.Parse("ae58b3ba-b6ca-45dc-a432-569a2fbd3a88");
-            await ServerManagerService.RestartServerAsync(serviceGuid, true);
-            ServerInfo.ServerLogs.Add($"-> from ({RemoteServer}): Service Restarted During Update...");
-        }
-        public static async Task StartServices()
-        {
-            Guid serviceGuid = Guid.Parse("ae58b3ba-b6ca-45dc-a432-569a2fbd3a88");
-            await ServerManagerService.StartServerAsync(serviceGuid);
-            ServerInfo.ServerLogs.Add($"-> from ({RemoteServer}): Service Started After Update...");
-        }
-        public static async Task StopServices()
-        {
-            Guid serviceGuid = Guid.Parse("ae58b3ba-b6ca-45dc-a432-569a2fbd3a88");
-            await ServerManagerService.StopServerAsync(serviceGuid);
-            ServerInfo.ServerLogs.Add($"-> from ({RemoteServer}): Service Stopped Before Update...");
+            return publisherServiceProvider;
         }
         #region Utility Methods For Connection
         /// <summary>
         /// call server hello method to get simple response
         /// </summary>
-        public static async Task<bool> CheckConnectionQuality()
+        public bool CheckConnectionQuality()
         {
             var watch = new Stopwatch();
             watch.Start();
             bool isServerAvailaible = false;
             try
             {
-                await Task.Run(async () =>
-                {
-                    isServerAvailaible = await CurrentClientProvider.SendPingAndWaitToReceiveAsync();
-                });
+                isServerAvailaible = CurrentClientProvider.SendPingAndWaitToReceive();
 #if Debug
                     Debug.WriteLine($"-> {ServerManagerService.SayHello("saeed")} ,connection is ok.");
                     ServerInfo.This.ServerLogs.Add($"-> {ServerManagerService.SayHello("saeed")} ,connection is ok.");

@@ -34,7 +34,7 @@ namespace SignalGo.ServerManager.Views
             {
                 // to fix show console window error/bug
                 tabItem.Header = $"Window ({grid.ActualWidth},{grid.ActualHeight})";
-                if (vm.ServerInfo.CurrentServerBase != null)
+                if (vm?.ServerInfo?.CurrentServerBase != null)
                     SetWindowPos(vm.ServerInfo.CurrentServerBase.BaseProcess.MainWindowHandle, IntPtr.Zero, 0, 0, (int)grid.ActualWidth, (int)grid.ActualHeight, SWP_NOZORDER | SWP_NOACTIVATE);
             };
             WindowsFormsHost host = new WindowsFormsHost()
@@ -47,7 +47,7 @@ namespace SignalGo.ServerManager.Views
             host.Child = p;
             grid.Children.Add(host);
             tabItem.Content = grid;
-            if (vm.ServerInfo.CurrentServerBase != null)
+            if (vm?.ServerInfo?.CurrentServerBase != null)
                 ChangeParent(vm.ServerInfo.CurrentServerBase.BaseProcess.MainWindowHandle, p.Handle, vm.ServerInfo.CurrentServerBase.BaseProcess, p);
             vm.ServerInfo.ProcessStarted = () =>
             {

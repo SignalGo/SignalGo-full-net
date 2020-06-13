@@ -48,6 +48,7 @@ namespace SignalGo.Publisher.ViewModels
                 OnPropertyChanged(nameof(CommandSetting));
             }
         }
+
         public CommandSettingInfo CurrentCommandSettingInfo
         {
             get

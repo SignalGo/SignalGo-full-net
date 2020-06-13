@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text;
 
-namespace SignalGo.Shared.Models
+namespace SignalGo.Publisher.Shared.Models
 {
     /// <summary>
     /// information about service
@@ -19,7 +20,7 @@ namespace SignalGo.Shared.Models
         private Guid _ServiceKey;
         private string _Name;
         private string _ServiceAssembliesPath;
-        private List<string> _IgnoreFiles;
+        private List<IgnoreFileInfo> _IgnoreFiles;
 
         /// <summary>
         /// name of service
@@ -68,7 +69,7 @@ namespace SignalGo.Shared.Models
         /// <summary>
         /// files to ignore in service updates
         /// </summary>
-        public List<string> IgnoreFiles
+        public List<IgnoreFileInfo> IgnoreFiles
         {
             get
             {

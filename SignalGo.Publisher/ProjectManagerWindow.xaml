@@ -68,6 +68,7 @@
                 </DataTemplate>
             </ListView.ItemTemplate>
         </ListView>
+        
         <Frame x:Name="mainframe" Grid.Column="1" Grid.Row="1" JournalOwnership="OwnsJournal" Loaded="Frame_Loaded" ClipToBounds="True" Background="#f6f6f7" Navigating="MainFrame_Navigating" NavigationUIVisibility="Hidden" VerticalAlignment="Stretch"/>
         <StatusBar Grid.Row="2" Grid.ColumnSpan="2" Background="Transparent">
             <StatusBarItem>

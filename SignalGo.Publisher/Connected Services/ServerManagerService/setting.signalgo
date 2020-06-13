@@ -1,1 +1,1 @@
-﻿{"ServiceUrl":"http://localhost:5468/ServerManager/SignalGo","ServiceNameSpace":"ServerManagerService","LanguageType":0,"ServiceType":0,"IsJustGenerateServices":false,"IsGenerateAsyncMethods":true,"IsAutomaticSyncAndAsyncDetection":true,"CustomNameSpaces":"","ReplaceNameSpaces":[]}
+﻿{"ServiceUrl":"http://localhost:6464/ServerManager/SignalGo","ServiceNameSpace":"ServerManagerService","LanguageType":0,"ServiceType":0,"IsJustGenerateServices":false,"IsGenerateAsyncMethods":true,"IsAutomaticSyncAndAsyncDetection":true,"CustomNameSpaces":"","ReplaceNameSpaces":[]}

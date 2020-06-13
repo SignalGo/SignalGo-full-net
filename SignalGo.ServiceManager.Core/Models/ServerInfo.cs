@@ -3,55 +3,52 @@ using Newtonsoft.Json;
 using SignalGo.Shared;
 using SignalGo.Shared.Log;
 using System;
-using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.IO;
-using System.Text;
 
-namespace SignalGo.ServiceManager.Models
+namespace SignalGo.ServiceManager.Core.Models
 {
-    public class ConsoleWriter : TextWriter
-    {
-        public string ServerName { get; set; }
-        public Action<string, string> TextAddedAction { get; set; }
+    //public class ConsoleWriter : TextWriter
+    //{
+    //    public string ServerName { get; set; }
+    //    public Action<string, string> TextAddedAction { get; set; }
 
-        public ConsoleWriter()
-        {
-        }
+    //    public ConsoleWriter()
+    //    {
+    //    }
 
-        public override void Write(char value)
-        {
-            try
-            {
-                TextAddedAction?.Invoke(ServerName, value.ToString());
-            }
-            catch (Exception ex)
-            {
-                AutoLogger.Default.LogError(ex, "Write char");
-            }
-        }
+    //    public override void Write(char value)
+    //    {
+    //        try
+    //        {
+    //            TextAddedAction?.Invoke(ServerName, value.ToString());
+    //        }
+    //        catch (Exception ex)
+    //        {
+    //            AutoLogger.Default.LogError(ex, "Write char");
+    //        }
+    //    }
 
-        /// <summary>
-        /// write action
-        /// </summary>
-        /// <param name="value"></param>
-        public override void Write(string value)
-        {
-            try
-            {
-                TextAddedAction?.Invoke(ServerName, value);
-            }
-            catch (Exception ex)
-            {
-                AutoLogger.Default.LogError(ex, "Write string");
-            }
-        }
+    //    /// <summary>
+    //    /// write action
+    //    /// </summary>
+    //    /// <param name="value"></param>
+    //    public override void Write(string value)
+    //    {
+    //        try
+    //        {
+    //            TextAddedAction?.Invoke(ServerName, value);
+    //        }
+    //        catch (Exception ex)
+    //        {
+    //            AutoLogger.Default.LogError(ex, "Write string");
+    //        }
+    //    }
 
-        public override Encoding Encoding
-        {
-            get { return Encoding.UTF8; }
-        }
-    }
+    //    public override Encoding Encoding
+    //    {
+    //        get { return Encoding.UTF8; }
+    //    }
+    //}
 
     public enum ServerInfoStatus : byte
     {
@@ -82,18 +79,22 @@ namespace SignalGo.ServiceManager.Models
 
     public class ServerInfo : BaseViewModel
     {
-        [JsonIgnore]
-        public ObservableCollection<TextLogInfo> Logs { get; set; } = new ObservableCollection<TextLogInfo>();
+        //[JsonIgnore]
+        //public ObservableCollection<TextLogInfo> Logs { get; set; } = new ObservableCollection<TextLogInfo>();
 
         [JsonIgnore]
         public ServerProcessBaseInfo CurrentServerBase { get; set; }
+
         [JsonIgnore]
         public Action ProcessStarted { get; set; }
-        private Guid _ServerKey;
 
+        private Guid _ServerKey;
         private string _Name;
+        private int _StartDelay = 0;
         private string _AssemblyPath;
-        private ServerInfoStatus _status = ServerInfoStatus.Stopped;
+        private ServerInfoStatus _Status = ServerInfoStatus.Stopped;
+
+
         public Guid ServerKey
         {
             get
@@ -116,10 +117,7 @@ namespace SignalGo.ServiceManager.Models
         }
         public string Name
         {
-            get
-            {
-                return _Name;
-            }
+            get => _Name;
             set
             {
                 _Name = value;
@@ -145,11 +143,11 @@ namespace SignalGo.ServiceManager.Models
         {
             get
             {
-                return _status;
+                return _Status;
             }
             set
             {
-                _status = value;
+                _Status = value;
                 OnPropertyChanged(nameof(Status));
             }
         }
@@ -189,16 +187,28 @@ namespace SignalGo.ServiceManager.Models
         }
 
         public static Action<Process> SendToMainHostForHidden { get; set; }
+        public int StartDelay
+        {
+            get { return _StartDelay; }
+            set
+            {
+                _StartDelay = value;
+                OnPropertyChanged(nameof(StartDelay));
+            }
+        }
 
         public void Start()
         {
+            // delay starting of service based on user config
+            //Task.Delay(StartDelay * 1000);
             AsyncActions.RunOnUI(() =>
             {
                 // if server status is Stopped
-                if (Status == ServerInfoStatus.Stopped)
+                if (Status == ServerInfoStatus.Stopped && Status != ServerInfoStatus.Disabled)
                 {
                     try
                     {
+                       
                         // set server status to Started
                         Status = ServerInfoStatus.Started;
                         CurrentServerBase = ServerProcessBaseInfo.Instance();

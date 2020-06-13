@@ -1,11 +1,8 @@
 ﻿using Microsoft.Win32;
-using SignalGo.ServiceManager.BaseViewModels;
-using SignalGo.ServiceManager.Models;
-using System;
-using System.Collections.Generic;
+using SignalGo.ServiceManager.Core.BaseViewModels;
+using SignalGo.ServiceManager.Core.Models;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Windows;
 
 namespace SignalGo.ServerManager.ViewModels

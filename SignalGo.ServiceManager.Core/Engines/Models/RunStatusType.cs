@@ -1,4 +1,4 @@
-﻿namespace SignalGo.ServiceManager.Engines.Models
+﻿namespace SignalGo.ServiceManager.Core.Engines.Models
 {
     public enum RunStatusType
     {

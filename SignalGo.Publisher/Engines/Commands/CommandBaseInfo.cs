@@ -14,6 +14,7 @@ using SignalGo.Publisher.Engines.Interfaces;
 using SignalGo.Shared.Models;
 using SignalGo.Publisher.ViewModels;
 using System.Collections.Generic;
+using SignalGo.Publisher.Shared.Models;
 
 namespace SignalGo.Publisher.Engines.Commands
 {
@@ -193,49 +194,47 @@ namespace SignalGo.Publisher.Engines.Commands
                 {
                     Name = ServiceName,
                     ServiceKey = ServiceKey,
-                    IgnoreFiles = new List<string>(SettingInfo.Current.ProjectInfo.FirstOrDefault(p => p.ProjectKey == ServiceKey).ServerIgnoredFiles)
+                    IgnoreFiles = new List<IgnoreFileInfo>(SettingInfo.Current.ProjectInfo.FirstOrDefault(p => p.ProjectKey == ServiceKey).ServerIgnoredFiles.Where(e => e.IsEnabled).ToList())
                 };
                 foreach (var server in ServerInfo.Servers.Where(x => x.IsUpdated != ServerInfo.ServerInfoStatusEnum.UpdateError).ToList().Where(y => y.IsUpdated != ServerInfo.ServerInfoStatusEnum.Updated).ToList())
                 {
                     var currentSrv = ServerSettingInfo.CurrentServer.ServerInfo.FirstOrDefault(x => x.ServerKey == server.ServerKey);
                     // Contact with Server Agents and Make the connection if it possible
-                    bool contactToProvider = await PublisherServiceProvider.Initialize(server);
-                    // contacting with Provider is'nt possible;
-                    if (!contactToProvider)
-                    {
-                        //if (retryCounter < 3)
-                        //{
-                        //    // increase try counter
-                        //    retryCounter++;
-                        //    // wait and retry up to 3 time
-                        //    await Task.Delay(2000);
-                        //    // Try to update current server again
-                        //    await Upload(dataPath, cancellationToken);
-                        //}
-                        //else, we can't update this server at this moment (Problems are Possible: Server is Offline,refuse || block || Network , unhandled Errors...)
-                        //var currentserver = ServerInfo.Servers.FirstOrDefault(s => s.ServerKey == server.ServerKey);
-                        server.ServerStatus = ServerInfo.ServerInfoStatusEnum.UpdateError;
-                        server.IsUpdated = ServerInfo.ServerInfoStatusEnum.UpdateError;
-                        //ServerInfo.Servers.FirstOrDefault(s => s.ServerKey == server.ServerKey).ServerLastUpdate = "Couldn't Update";
+                    //bool contactToProvider = PublisherServiceProvider.Initialize(server);
+                    //// contacting with Provider is'nt possible;
+                    //if (!contactToProvider)
+                    //{
+                    //    //if (retryCounter < 3)
+                    //    //{
+                    //    //    // increase try counter
+                    //    //    retryCounter++;
+                    //    //    // wait and retry up to 3 time
+                    //    //    await Task.Delay(2000);
+                    //    //    // Try to update current server again
+                    //    //    await Upload(dataPath, cancellationToken);
+                    //    //}
+                    //    //else, we can't update this server at this moment (Problems are Possible: Server is Offline,refuse || block || Network , unhandled Errors...)
+                    //    //var currentserver = ServerInfo.Servers.FirstOrDefault(s => s.ServerKey == server.ServerKey);
+                    //    server.ServerStatus = ServerInfo.ServerInfoStatusEnum.UpdateError;
+                    //    server.IsUpdated = ServerInfo.ServerInfoStatusEnum.UpdateError;
+                    //    //ServerInfo.Servers.FirstOrDefault(s => s.ServerKey == server.ServerKey).ServerLastUpdate = "Couldn't Update";
 
-                        currentSrv.ServerStatus = ServerInfo.ServerInfoStatusEnum.UpdateError;
-                        currentSrv.IsUpdated = ServerInfo.ServerInfoStatusEnum.UpdateError;
-                        currentSrv.ServerLastUpdate = "Couldn't Update";
+                    //    currentSrv.ServerStatus = ServerInfo.ServerInfoStatusEnum.UpdateError;
+                    //    currentSrv.IsUpdated = ServerInfo.ServerInfoStatusEnum.UpdateError;
+                    //    currentSrv.ServerLastUpdate = "Couldn't Update";
                         
-                        ServerSettingInfo.SaveServersSettingInfo();
-                        status = RunStatusType.Error;
-                        return await Upload(dataPath, cancellationToken);
-                    }
+                    //    ServerSettingInfo.SaveServersSettingInfo();
+                    //    status = RunStatusType.Error;
+                    //    return await Upload(dataPath, cancellationToken);
+                    //}
                     //if (forceUpdate)
                     //    await PublisherServiceProvider.StopServices();
                     // contacting with Provider is OK and server is available.
 
                     currentSrv.ServerStatus = ServerInfo.ServerInfoStatusEnum.Updating;
-                    var uploadResult = await StreamManagerService.UploadAsync(uploadInfo, cancellationToken, serviceContract);
+                    var uploadResult = await StreamManagerService.UploadAsync(uploadInfo, cancellationToken, serviceContract, currentSrv);
                     if (uploadResult.Status)
                     {
-                        //if (forceUpdate)
-                        //    await PublisherServiceProvider.StartServices();
                         ServerInfo.ServerLogs.Add($"------ Ended at [{DateTime.Now}] ------");
                         server.IsUpdated = ServerInfo.ServerInfoStatusEnum.Updated;
                         server.ServerStatus = ServerInfo.ServerInfoStatusEnum.Updated;

@@ -3,15 +3,14 @@ using MvvmGo.ViewModels;
 using Newtonsoft.Json;
 using SignalGo.Publisher.Engines.Commands;
 using SignalGo.Publisher.Engines.Interfaces;
+using SignalGo.Publisher.Shared.Models;
 using SignalGo.Publisher.ViewModels;
 using SignalGo.Shared.Log;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows.Documents;
 
 namespace SignalGo.Publisher.Models
 {
@@ -31,13 +30,16 @@ namespace SignalGo.Publisher.Models
                     AutoLogger.Default.LogError(ex, "ProjectInfo Constructor, Commands Initialize");
                 }
             });
+
         }
+
 
         /// <summary>
         /// Run Command Prop
         /// </summary>
         [JsonIgnore]
         public Command<ICommand> RunCommmand { get; set; }
+
         [JsonIgnore]
         public Command RunCommmands { get; set; }
 
@@ -63,9 +65,14 @@ namespace SignalGo.Publisher.Models
         // TODO: Remove this prop
         private ProjectInfoStatus _Status = ProjectInfoStatus.Stable;
 
-        private ObservableCollection<string> _IgnoredFiles { get; set; } = new ObservableCollection<string>();
-        private ObservableCollection<string> _ServerIgnoredFiles { get; set; } = new ObservableCollection<string>();
-        public ObservableCollection<string> ServerIgnoredFiles
+        #region File Manager
+        [JsonIgnore]
+        public ObservableCollection<string> ServerFiles { get; set; } = new ObservableCollection<string>();
+        #endregion
+        private ObservableCollection<IgnoreFileInfo> _IgnoredFiles { get; set; } = new ObservableCollection<IgnoreFileInfo>();
+        private ObservableCollection<IgnoreFileInfo> _ServerIgnoredFiles { get; set; } = new ObservableCollection<IgnoreFileInfo>();
+
+        public ObservableCollection<IgnoreFileInfo> ServerIgnoredFiles
         {
             get
             {
@@ -78,7 +85,7 @@ namespace SignalGo.Publisher.Models
             }
         }
 
-        public ObservableCollection<string> IgnoredFiles
+        public ObservableCollection<IgnoreFileInfo> IgnoredFiles
         {
             get
             {

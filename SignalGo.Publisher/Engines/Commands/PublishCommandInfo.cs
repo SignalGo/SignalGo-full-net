@@ -1,4 +1,5 @@
 ﻿using SignalGo.Publisher.Engines.Models;
+using SignalGo.Publisher.Shared.Models;
 using SignalGo.Shared.Models;
 using System.Diagnostics;
 using System.IO.Compression;

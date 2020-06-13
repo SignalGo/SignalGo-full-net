@@ -1,1 +1,12 @@
-﻿{"UserSettings":{"LoggerPath":"AppLogs.log","ListeningAddress":"localhost","ListeningPort":"6464","BackupPath":"C:\\ServiceBackups","IsBusy":false,"AllMessages":[],"HasError":false,"MessagesByProperty":{}}}
+﻿{
+  "UserSettings": {
+    "LoggerPath": "AppLogs.log",
+    "ListeningAddress": "localhost",
+    "ListeningPort": "6464",
+    "BackupPath": "C:\\ServiceBackups",
+    "IsBusy": false,
+    "AllMessages": [],
+    "HasError": false,
+    "MessagesByProperty": {}
+  }
+}

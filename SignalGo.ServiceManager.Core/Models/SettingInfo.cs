@@ -4,7 +4,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Text;
 
-namespace SignalGo.ServiceManager.Models
+namespace SignalGo.ServiceManager.Core.Models
 {
     public class SettingInfo
     {
@@ -41,7 +41,7 @@ namespace SignalGo.ServiceManager.Models
                         ServerInfo = new ObservableCollection<ServerInfo>()
                     };
                 }
-                return Newtonsoft.Json.JsonConvert.DeserializeObject<SettingInfo>(File.ReadAllText(System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ServerDbName), Encoding.UTF8));
+                return JsonConvert.DeserializeObject<SettingInfo>(File.ReadAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ServerDbName), Encoding.UTF8));
             }
             catch
             {
@@ -54,7 +54,7 @@ namespace SignalGo.ServiceManager.Models
 
         public static void SaveSettingInfo()
         {
-            File.WriteAllText(System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ServerDbName), Newtonsoft.Json.JsonConvert.SerializeObject(Current), Encoding.UTF8);
+            File.WriteAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ServerDbName), JsonConvert.SerializeObject(Current,Formatting.Indented), Encoding.UTF8);
         }
     }
 }

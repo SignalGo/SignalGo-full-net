@@ -1,10 +1,13 @@
 ﻿using MvvmGo.Commands;
 using MvvmGo.ViewModels;
+using SignalGo.Publisher.Engines.Models;
 using SignalGo.Publisher.Models;
 using SignalGo.Publisher.Views;
+using SignalGo.Publisher.Views.Extra;
 using SignalGo.Shared.Log;
 using System;
 using System.Collections.Generic;
+using System.Security.Cryptography;
 using System.Text;
 using System.Windows;
 
@@ -21,6 +24,7 @@ namespace SignalGo.Publisher.ViewModels
             RemoveServerCommand = new Command(Delete);
             BackCommand = new Command(Back);
             SaveChangesCommand = new Command(SaveChanges);
+            ProtectServerCommand = new Command(ProtectServer);
 
             //LoadServers();
         }
@@ -43,6 +47,7 @@ namespace SignalGo.Publisher.ViewModels
         public Command RemoveServerCommand { get; set; }
         public Command BackCommand { get; set; }
         public Command SaveChangesCommand { get; set; }
+        public Command ProtectServerCommand { get; set; }
 
         private ServerInfo _SelectedServerInfo;
 
@@ -101,6 +106,19 @@ namespace SignalGo.Publisher.ViewModels
         {
             ProjectManagerWindowViewModel.MainFrame.GoBack();
 
+        }
+        private void ProtectServer()
+        {
+            InputDialogWindow inputDialog = new InputDialogWindow("Please enter your password:");
+            if (inputDialog.ShowDialog() == true)
+            {
+                if (string.IsNullOrEmpty(inputDialog.Answer))
+                {
+                    ServerInfo.ProtectionPassword = null;
+                }
+                else
+                    ServerInfo.ProtectionPassword = PasswordEncoder.ComputeHash(inputDialog.Answer, new SHA256CryptoServiceProvider());
+            }
         }
         private void SaveChanges()
         {

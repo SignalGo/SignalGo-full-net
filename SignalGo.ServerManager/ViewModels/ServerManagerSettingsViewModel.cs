@@ -1,7 +1,4 @@
-﻿using SignalGo.ServiceManager.BaseViewModels;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using SignalGo.ServiceManager.Core.BaseViewModels;
 using System.Windows.Forms;
 
 namespace SignalGo.ServerManager.ViewModels

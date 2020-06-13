@@ -14,6 +14,13 @@ using System.Threading;
 using System.Diagnostics;
 using System.Collections.ObjectModel;
 using SignalGo.Shared.Log;
+using SignalGo.Publisher.Shared.Models;
+using SignalGo.Publisher.Services;
+using SignalGo.Shared;
+using ServerManagerService.StreamServices;
+using SignalGo.Publisher.Views.Extra;
+using SignalGo.Publisher.Engines.Models;
+using System.Security.Cryptography;
 
 namespace SignalGo.Publisher.ViewModels
 {
@@ -34,19 +41,14 @@ namespace SignalGo.Publisher.ViewModels
             BuildCommand = new Command(Build);
             BrowseProjectPathCommand = new Command(BrowseProjectPath);
             BrowseAssemblyPathCommand = new Command(BrowseAssemblyPath);
-            CancellationCommand = new Command(() =>
-            {
-                CancelCommands();
-            });
+            ClearServerFileListCommand = new EventCommand(ClearServerFileList);
+            CancellationCommand = new Command(CancelCommands);
             DeleteCommand = new Command(Delete);
             RunTestsCommand = new Command(RunTests);
             RunCommand = new Command(RunCMD);
             RestorePackagesCommand = new Command(RestorePackages);
-            RemoveIgnoredServerFileCommand = new Command<string>(RemoveIgnoredServerFile);
-            RemoveIgnoredFileCommand = new Command<string>((s) =>
-            {
-                RemoveIgnoredFile(s);
-            });
+            RemoveIgnoredServerFileCommand = new Command<IgnoreFileInfo>(RemoveIgnoredServerFile);
+            RemoveIgnoredFileCommand = new Command<IgnoreFileInfo>(RemoveIgnoredFile);
             AddIgnoreClientFileCommand = new Command(AddIgnoreClientFile);
             AddIgnoreServerFileCommand = new Command(AddIgnoreServerFile);
             RemoveCommand = new Command<ICommand>((x) =>
@@ -62,17 +64,33 @@ namespace SignalGo.Publisher.ViewModels
                     await ReadCommandLog();
                 });
             });
-            ToDownCommand = new Command<ICommand>((x) =>
-            {
-                MoveCommandLower(x);
-            });
-            ToUpCommand = new Command<ICommand>((x) =>
-            {
-                MoveCommandUpper(x);
-            });
+            ToDownCommand = new Command<ICommand>(MoveCommandLower);
+            ToUpCommand = new Command<ICommand>(MoveCommandUpper);
             GitPullCommand = new Command(GitPull);
             PublishCommand = new Command(PublishToServers);
+
+            FetchFilesCommand = new Command(() =>
+            {
+                IsBusy = true;
+                FetchFilesCommand.ValidateCanExecute();
+                _ = FetchFiles();
+            }, () => !IsBusy);
+
+            LoadFileCommmand = new Command<string>((filePath) =>
+            {
+                IsBusy = true;
+                LoadFileCommmand.ValidateCanExecute(filePath);
+                _ = LoadFileDataFromServer(filePath);
+            }, (x) => !IsBusy);
+
+            UploadFileCommmand = new Command(() =>
+            {
+                IsBusy = true;
+                UploadFileCommmand.ValidateCanExecute();
+                _ = UploadFileDataFromServer();
+            }, () => !IsBusy);
         }
+
 
         /// <summary>
         /// read log of excecuted commands
@@ -123,6 +141,7 @@ namespace SignalGo.Publisher.ViewModels
             var gu = Guid.Empty;
             if (Guid.TryParse(ProjectInfo.ProjectKey.ToString(), out gu))
                 ProjectInfo.ProjectKey = gu;
+            SaveIgnoreFileList();
             SettingInfo.SaveSettingInfo();
         }
 
@@ -161,13 +180,53 @@ namespace SignalGo.Publisher.ViewModels
         public Command CancellationCommand { get; set; }
         public Command SaveIgnoreFileListCommand { get; set; }
         public Command<ICommand> RemoveCommand { get; set; }
-        public Command<string> RemoveIgnoredFileCommand { get; set; }
-        public Command<string> RemoveIgnoredServerFileCommand { get; set; }
+        public Command<IgnoreFileInfo> RemoveIgnoredFileCommand { get; set; }
+        public Command<IgnoreFileInfo> RemoveIgnoredServerFileCommand { get; set; }
         public Command AddIgnoreClientFileCommand { get; set; }
         public Command AddIgnoreServerFileCommand { get; set; }
         public Command<ICommand> RetryCommand { get; set; }
         public Command<ICommand> ToDownCommand { get; set; }
         public Command<ICommand> ToUpCommand { get; set; }
+        public Command<string> LoadFileCommmand { get; set; }
+        public Command UploadFileCommmand { get; set; }
+        public string SelectedServerFile { get; set; }
+
+        public ObservableCollection<ServerInfo> Servers
+        {
+            get
+            {
+                return CurrentServerSettingInfo.ServerInfo;
+            }
+        }
+        ServerInfo _SelectedServerInfo;
+        public ServerInfo SelectedServerInfo
+        {
+            get
+            {
+                return _SelectedServerInfo;
+            }
+            set
+            {
+                _SelectedServerInfo = value;
+                OnPropertyChanged(nameof(SelectedServerInfo));
+            }
+        }
+        private string _fileContent;
+        public string FileContent
+        {
+            get
+            {
+                return _fileContent;
+            }
+            set
+            {
+                _fileContent = value;
+                OnPropertyChanged(nameof(FileContent));
+            }
+        }
+
+        public EventCommand ClearServerFileListCommand { get; set; }
+        public Command FetchFilesCommand { get; set; }
         /// <summary>
         /// run a custome command/expression
         /// </summary>
@@ -272,7 +331,7 @@ namespace SignalGo.Publisher.ViewModels
             // add publish command with peroject data|key
             if (!ProjectInfo.Commands.Any(x => x is PublishCommandInfo))
             {
-                ProjectInfo.AddCommand(new PublishCommandInfo(new Shared.Models.ServiceContract
+                ProjectInfo.AddCommand(new PublishCommandInfo(new ServiceContract
                 {
                     Name = ProjectInfo.Name,
                     ServiceKey = ProjectInfo.ProjectKey
@@ -319,9 +378,9 @@ namespace SignalGo.Publisher.ViewModels
             fileDialog.Multiselect = true;
             if (fileDialog.ShowDialog().GetValueOrDefault())
             {
-                if (!ProjectInfo.IgnoredFiles.Contains(fileDialog.SafeFileName) && fileDialog.CheckFileExists)
+                if (!ProjectInfo.IgnoredFiles.Any(x => x.FileName == fileDialog.SafeFileName) && fileDialog.CheckFileExists)
                 {
-                    ProjectInfo.IgnoredFiles.Add(fileDialog.SafeFileName);
+                    ProjectInfo.IgnoredFiles.Add(new IgnoreFileInfo() { FileName = fileDialog.SafeFileName, IsEnabled = true });
                 }
             }
         }
@@ -330,9 +389,9 @@ namespace SignalGo.Publisher.ViewModels
         /// </summary>
         public void AddIgnoreServerFile()
         {
-            if (!ProjectInfo.ServerIgnoredFiles.Contains(IgnoreServerFileName) && !string.IsNullOrEmpty(IgnoreServerFileName))
+            if (!ProjectInfo.ServerIgnoredFiles.Any(x => x.FileName == IgnoreServerFileName) && !string.IsNullOrEmpty(IgnoreServerFileName))
             {
-                ProjectInfo.ServerIgnoredFiles.Add(IgnoreServerFileName);
+                ProjectInfo.ServerIgnoredFiles.Add(new IgnoreFileInfo() { FileName = IgnoreServerFileName, IsEnabled = true });
                 IgnoreServerFileName = string.Empty;
             }
             else
@@ -341,31 +400,44 @@ namespace SignalGo.Publisher.ViewModels
         /// <summary>
         /// Save all ignore file settings to user settings
         /// </summary>
+        private void ClearServerFileList()
+        {
+            ProjectInfo.ServerFiles.Clear();
+        }
         private void SaveIgnoreFileList()
         {
-            var clientIgnoreList = CurrentProjectSettingInfo.ProjectInfo.Select(x => x.IgnoredFiles).ToList();
-            var serverIgnoreList = CurrentProjectSettingInfo.ProjectInfo.Select(x => x.ServerIgnoredFiles).ToList();
-            clientIgnoreList.Add(ProjectInfo.IgnoredFiles);
-            serverIgnoreList.Add(ProjectInfo.ServerIgnoredFiles);
-            SettingInfo.SaveSettingInfo();
-            clientIgnoreList.Clear();
-            serverIgnoreList.Clear();
+            try
+            {
+                var clientIgnoreList = CurrentProjectSettingInfo.ProjectInfo.Select(x => x.IgnoredFiles).ToList();
+                var serverIgnoreList = CurrentProjectSettingInfo.ProjectInfo.Select(x => x.ServerIgnoredFiles).ToList();
+                clientIgnoreList.Add(ProjectInfo.IgnoredFiles);
+                serverIgnoreList.Add(ProjectInfo.ServerIgnoredFiles);
+                clientIgnoreList.Clear();
+                serverIgnoreList.Clear();
+            }
+            catch (Exception ex)
+            {
+                AutoLogger.Default.LogError(ex, "save ignore file list");
+            }
+            finally
+            {
+                SettingInfo.SaveSettingInfo();
+            }
         }
         /// <summary>
         /// remove specified file from server ignore list
         /// </summary>
         /// <param name="name"></param>
-        private void RemoveIgnoredServerFile(string name)
+        private void RemoveIgnoredServerFile(IgnoreFileInfo ignoreFileInfo)
         {
-            if (ProjectInfo.ServerIgnoredFiles.Contains(name))
-                ProjectInfo.ServerIgnoredFiles.Remove(name);
+            ProjectInfo.ServerIgnoredFiles.Remove(ProjectInfo.ServerIgnoredFiles.FirstOrDefault(x => x == ignoreFileInfo));
             //SaveIgnoreFileList();
         }
+
         /// remove specified file from client(publisher) ignore list
-        private void RemoveIgnoredFile(string name)
+        private void RemoveIgnoredFile(IgnoreFileInfo ignoreFileInfo)
         {
-            if (ProjectInfo.IgnoredFiles.Contains(name))
-                ProjectInfo.IgnoredFiles.Remove(name);
+            ProjectInfo.IgnoredFiles.Remove(ProjectInfo.IgnoredFiles.FirstOrDefault(x => x == ignoreFileInfo));
             //SaveIgnoreFileList();
 
         }
@@ -386,11 +458,27 @@ namespace SignalGo.Publisher.ViewModels
             {
                 CanRunCommands = false;
                 ServerInfo.Servers.Clear();
+                bool hasPublishCommand = ProjectInfo.Commands.Any(x => x is PublishCommandInfo);
+
                 foreach (var item in CurrentServerSettingInfo.ServerInfo.Where(x => x.IsChecked))
                 {
+                    //if (hasPublishCommand & item.ProtectionPassword != null)
+                    //{
+                    //GetThePass:
+                    //    InputDialogWindow inputDialog = new InputDialogWindow("Please enter your password:");
+                    //    if (inputDialog.ShowDialog() == true)
+                    //    {
+                    //        if (item.ProtectionPassword != PasswordEncoder.ComputeHash(inputDialog.Answer, new SHA256CryptoServiceProvider()))
+                    //        {
+                    //            MessageBox.Show("password does't match!");
+                    //            goto GetThePass;
+                    //        }
+                    //    }
+                    //    else continue;
+                    //}
                     ServerInfo.Servers.Add(item.Clone());
                 }
-                if (ProjectInfo.Commands.Any(x => x is PublishCommandInfo) && ServerInfo.Servers.Count <= 0)
+                if (hasPublishCommand && ServerInfo.Servers.Count <= 0)
                 {
                     System.Windows.MessageBox.Show("No Server Selected", "Specify Remote Target", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
                 }
@@ -454,7 +542,7 @@ namespace SignalGo.Publisher.ViewModels
                 }
                 await ProjectInfo.RunCommands(CancellationToken);
             }
-            catch (Exception ex)
+            catch (ArgumentNullException ex)
             {
 
             }
@@ -541,5 +629,92 @@ namespace SignalGo.Publisher.ViewModels
             }
         }
 
+
+        public async Task FetchFiles()
+        {
+            try
+            {
+                var result = PublisherServiceProvider.Initialize(SelectedServerInfo);
+                var files = await result.FileManagerService.GetTextFilesAsync(ProjectInfo.ProjectKey);
+
+                RunOnUIAction(() =>
+                {
+                    ProjectInfo.ServerFiles.Clear();
+                    foreach (var item in files)
+                    {
+                        ProjectInfo.ServerFiles.Add(item);
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                AutoLogger.Default.LogError(ex, "Fetch Files From server");
+            }
+            finally
+            {
+                IsBusy = false;
+                FetchFilesCommand.ValidateCanExecute();
+            }
+        }
+        private async Task LoadFileDataFromServer(string filePath)
+        {
+            try
+            {
+                SelectedServerFile = filePath;
+                var result = PublisherServiceProvider.Initialize(SelectedServerInfo);
+                ServerManagerStreamService serverManagerStreamService = new ServerManagerStreamService(result.CurrentClientProvider);
+                var stream = await serverManagerStreamService.DownloadFileDataAsync(filePath, ProjectInfo.ProjectKey);
+                var lengthWrite = 0;
+                using var memoryStream = new MemoryStream();
+                while (lengthWrite != stream.Length)
+                {
+                    byte[] bufferBytes = new byte[1024];
+                    int readCount = await stream.Stream.ReadAsync(bufferBytes, bufferBytes.Length);
+                    if (readCount <= 0)
+                        break;
+                    await memoryStream.WriteAsync(bufferBytes, 0, readCount);
+                    lengthWrite += readCount;
+                }
+
+                FileContent = Encoding.UTF8.GetString(memoryStream.ToArray());
+            }
+            catch (Exception ex)
+            {
+                AutoLogger.Default.LogError(ex, "LoadFileDataFromServer");
+            }
+            finally
+            {
+                IsBusy = false;
+                LoadFileCommmand.ValidateCanExecute(filePath);
+            }
+        }
+
+        private async Task UploadFileDataFromServer()
+        {
+            try
+            {
+                var providerResult = PublisherServiceProvider.Initialize(SelectedServerInfo);
+                ServerManagerStreamService serverManagerStreamService = new ServerManagerStreamService(providerResult.CurrentClientProvider);
+                using MemoryStream memoryStream = new MemoryStream();
+                if (string.IsNullOrEmpty(FileContent))
+                    return;
+                await memoryStream.WriteAsync(Encoding.UTF8.GetBytes(FileContent));
+                memoryStream.Seek(0, SeekOrigin.Begin);
+                bool result = await serverManagerStreamService.SaveFileDataAsync(new SignalGo.Shared.Models.StreamInfo<string>(memoryStream)
+                {
+                    Length = memoryStream.Length,
+                    Data = SelectedServerFile
+                }, ProjectInfo.ProjectKey);
+            }
+            catch (Exception ex)
+            {
+                AutoLogger.Default.LogError(ex, "UploadFileDataFromServer");
+            }
+            finally
+            {
+                IsBusy = false;
+                UploadFileCommmand.ValidateCanExecute();
+            }
+        }
     }
 }

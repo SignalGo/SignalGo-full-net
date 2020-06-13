@@ -22,59 +22,13 @@
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="auto"/>
-            <RowDefinition Height="auto"/>
-            <RowDefinition Height="auto"/>
-            <RowDefinition Height="auto"/>
-            <RowDefinition Height="auto"/>
-            <RowDefinition Height="auto"/>
             <RowDefinition/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="auto" />
             <ColumnDefinition Width="*" />
-            <ColumnDefinition />
-            <ColumnDefinition Width="1*" />
         </Grid.ColumnDefinitions>
 
-        <Label Margin="10" Grid.Row="0" Grid.Column="1" Content="Guid:" VerticalContentAlignment="Center" HorizontalAlignment="Left"/>
-        <TextBox Margin="10" Grid.Row="0" Text="{Binding ServerInfo.ServerKey}" Grid.Column="2" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Grid.ColumnSpan="2" />
-
-        <Label Margin="10" Grid.Row="2" Grid.Column="1" Content="ServerName:" VerticalContentAlignment="Center" HorizontalAlignment="Left"/>
-        <TextBox Margin="10" Grid.Row="2" Text="{Binding ServerInfo.ServerName}" Grid.Column="2" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Grid.ColumnSpan="2" />
-
-        <Label Margin="10" Grid.Row="3" Grid.Column="1" Content="ServerAddress:" VerticalContentAlignment="Center" HorizontalAlignment="Left"/>
-        <TextBox Margin="10" Grid.Row="3" Text="{Binding ServerInfo.ServerAddress}" Grid.Column="2" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Grid.ColumnSpan="2" />
-
-        <Label Margin="10" Grid.Row="4" Grid.Column="1" Content="ServerPort:" VerticalContentAlignment="Center" HorizontalAlignment="Left"/>
-        <TextBox Margin="10" Grid.Row="4" Text="{Binding ServerInfo.ServerPort}" Grid.Column="2" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Grid.ColumnSpan="2" />
-
-        <Label Margin="10" Grid.Row="5" Grid.Column="1" Content="ServerEndPoint:" VerticalContentAlignment="Center" HorizontalAlignment="Left"/>
-        <TextBox Margin="10" Grid.Row="5" Text="{Binding ServerInfo.ServerEndPoint}" Grid.Column="2" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Grid.ColumnSpan="2" />
-
-        <StackPanel Grid.Row="6" Grid.Column="1" Orientation="Horizontal" Grid.ColumnSpan="3" HorizontalAlignment="Center" VerticalAlignment="Center">
-            <StackPanel Orientation="Horizontal"  HorizontalAlignment="Center">
-                <TextBlock Text="Server Status: " Margin="10"/>
-                <ComboBox x:Name="serverStatusCombo" VerticalAlignment="Center" SelectedItem="{Binding ServerInfo.ServerStatus}" >
-                </ComboBox>
-            </StackPanel>
-            <StackPanel Margin="10,0,0,0" Orientation="Horizontal" HorizontalAlignment="Center">
-                <TextBlock Text="Server Last Update: " Margin="10"/>
-                <TextBlock HorizontalAlignment="Stretch" VerticalAlignment="Center" Text="{Binding ServerInfo.ServerLastUpdate}" />
-            </StackPanel>
-            <!--<StackPanel Orientation="Horizontal" >
-                <Button Command="{Binding StartCommand}" Content="Start" Width="100" Height="30"/>
-                <Button Command="{Binding StopCommand}" Content="Stop" Width="100" Height="30" Margin="10,0,0,0"/>
-            </StackPanel>-->
-        </StackPanel>
-        <StackPanel Orientation="Horizontal" Grid.Row="6" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Bottom" Grid.ColumnSpan="3">
-            <Button Margin="10" Command="{Binding SaveChangesCommand}" Grid.Row="6" Grid.Column="3" Content="Save" Width="100" Height="30" />
-            <Button Margin="10" Command="{Binding RemoveServerCommand}" Grid.Row="6" Grid.Column="3" Content="Delete" Width="100" Height="30" />
-            <Button Margin="10" Command="{Binding BackCommand}" Grid.Row="6" Grid.Column="3" Content="Back" Width="100" Height="30" />
-        </StackPanel>
-
-        <!--<StackPanel Orientation="Horizontal">-->
-        <!--<Button Command="{Binding AddNewServerCommand}" Content="Add new server" Padding="10,0,10,0" Margin="0,0,0,0"/>-->
-        <!--</StackPanel>-->
         <ListView Grid.Row="0" Grid.RowSpan="7" Width="150" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" ItemsSource="{Binding CurrentServerSettingInfo.ServerInfo}" SelectedItem="{Binding SelectedServerInfo}" HorizontalContentAlignment="Stretch">
             <ListView.ItemTemplate>
                 <DataTemplate>
@@ -82,6 +36,64 @@
                 </DataTemplate>
             </ListView.ItemTemplate>
         </ListView>
+        <!--Visibility="{Binding ServerInfo,Converter={StaticResource NullToVisibilityConverter}}"-->
+        <Grid Grid.Column="1" Grid.ColumnSpan="1" Grid.RowSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Visibility="{Binding ServerInfo,Converter={StaticResource NullToVisibilityConverter}}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="auto"/>
+            </Grid.RowDefinitions>
+            <Label Margin="10" Grid.Row="0" Content="Guid:" VerticalContentAlignment="Center" HorizontalAlignment="Left"/>
+            <TextBox Margin="10" Grid.Row="0" Text="{Binding ServerInfo.ServerKey}" Grid.Column="1" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Grid.ColumnSpan="2" />
+
+            <Label Margin="10" Grid.Row="2" Content="ServerName:" VerticalContentAlignment="Center" HorizontalAlignment="Left"/>
+            <TextBox Margin="10" Grid.Row="2" Text="{Binding ServerInfo.ServerName}" Grid.Column="1" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Grid.ColumnSpan="2" />
+
+            <Label Margin="10" Grid.Row="3" Content="ServerAddress:" VerticalContentAlignment="Center" HorizontalAlignment="Left"/>
+            <TextBox Margin="10" Grid.Row="3" Text="{Binding ServerInfo.ServerAddress}" Grid.Column="1" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Grid.ColumnSpan="2" />
+
+            <Label Margin="10" Grid.Row="4" Content="ServerPort:" VerticalContentAlignment="Center" HorizontalAlignment="Left"/>
+            <TextBox Margin="10" Grid.Row="4" Text="{Binding ServerInfo.ServerPort}" Grid.Column="1" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Grid.ColumnSpan="2" />
+
+            <Label Margin="10" Grid.Row="5" Content="ServerEndPoint:" VerticalContentAlignment="Center" HorizontalAlignment="Left"/>
+            <TextBox Margin="10" Grid.Row="5" Text="{Binding ServerInfo.ServerEndPoint}" Grid.Column="1" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" />
+
+            <StackPanel Grid.Row="6" Orientation="Horizontal" Grid.ColumnSpan="3" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <StackPanel Orientation="Horizontal"  HorizontalAlignment="Center">
+                    <TextBlock Text="Server Status: " Margin="10"/>
+                    <ComboBox x:Name="serverStatusCombo" VerticalAlignment="Center" SelectedItem="{Binding ServerInfo.ServerStatus}" >
+                    </ComboBox>
+                </StackPanel>
+                <StackPanel Margin="10,0,0,0" Orientation="Horizontal" HorizontalAlignment="Center">
+                    <TextBlock Text="Server Last Update: " Margin="10"/>
+                    <TextBlock HorizontalAlignment="Stretch" VerticalAlignment="Center" Text="{Binding ServerInfo.ServerLastUpdate}" />
+                </StackPanel>
+                <!--<StackPanel Orientation="Horizontal" >
+                <Button Command="{Binding StartCommand}" Content="Start" Width="100" Height="30"/>
+                <Button Command="{Binding StopCommand}" Content="Stop" Width="100" Height="30" Margin="10,0,0,0"/>
+            </StackPanel>-->
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Grid.Row="7" HorizontalAlignment="Center" VerticalAlignment="Bottom" Grid.ColumnSpan="3">
+                <Button Margin="10" Command="{Binding SaveChangesCommand}" Grid.Row="6" Grid.Column="3" Content="Save" Width="100" Height="30" />
+                <Button Margin="10" Command="{Binding ProtectServerCommand}" Grid.Row="6" Grid.Column="3" Content="Protect Server" Width="100" Height="30" />
+                <Button Margin="10" Command="{Binding RemoveServerCommand}" Grid.Row="6" Grid.Column="3" Content="Delete" Width="100" Height="30" />
+                <Button Margin="10" Command="{Binding BackCommand}" Grid.Row="6" Grid.Column="3" Content="Back" Width="100" Height="30" />
+            </StackPanel>
+        </Grid>
+
+        <!--<StackPanel Orientation="Horizontal">-->
+        <!--<Button Command="{Binding AddNewServerCommand}" Content="Add new server" Padding="10,0,10,0" Margin="0,0,0,0"/>-->
+        <!--</StackPanel>-->
+
     </Grid>
 
 </Page>

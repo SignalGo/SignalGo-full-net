@@ -1,14 +1,10 @@
-﻿using SignalGo.Server.ServiceManager;
-using SignalGo.ServerManager.Helpers;
+﻿using SignalGo.ServerManager.Helpers;
 using SignalGo.ServerManager.ViewModels;
 using SignalGo.ServerManager.Views;
 using SignalGo.ServiceManager.BaseViewModels.Core;
-using SignalGo.ServiceManager.Models;
-using SignalGo.ServiceManager.Services;
-using SignalGo.Shared;
+using SignalGo.ServiceManager.Core.Models;
 using SignalGo.Shared.Log;
 using System;
-using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Animation;
