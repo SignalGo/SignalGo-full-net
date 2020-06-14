@@ -5,7 +5,7 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
-    <Version>1.9</Version>
+    <Version>1.9.2</Version>
     <Authors>AliYousefi, SaeedRezayi</Authors>
     <Company>SignalGo</Company>
     <Description>Publisher Project Manager is an project management software for you project &amp; sources.
@@ -14,9 +14,9 @@ Publisher Project Manager can manage the Services(projects) Source Update/Backup
 Its complement is SignalGo Server Manager Software and need you match you'r services key with project key.</Description>
     <NeutralLanguage>en</NeutralLanguage>
     <PackageProjectUrl>https://github.com/SignalGo/SignalGo-full-net</PackageProjectUrl>
-    <AssemblyVersion>1.9.0.0</AssemblyVersion>
+    <AssemblyVersion>1.9.2.0</AssemblyVersion>
     <ApplicationIcon>cloudPublish.ico</ApplicationIcon>
-    <FileVersion>1.9.0.0</FileVersion>
+    <FileVersion>1.9.2.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>

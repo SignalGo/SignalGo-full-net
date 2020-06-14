@@ -131,7 +131,7 @@ namespace SignalGo.Publisher.Engines.Commands
             try
             {
                 string[] directories = Directory.GetDirectories(AssembliesPath);
-                string publishDir = directories.SingleOrDefault(x => x.Contains("publish"));
+                string publishDir = directories.FirstOrDefault(x => x.Contains("publish"));
 
                 zipFilePath = Path.Combine(AssembliesPath, $"{ServiceName}.zip");
                 if (File.Exists(zipFilePath))
@@ -194,7 +194,7 @@ namespace SignalGo.Publisher.Engines.Commands
                 {
                     Name = ServiceName,
                     ServiceKey = ServiceKey,
-                    IgnoreFiles = new List<IgnoreFileInfo>(SettingInfo.Current.ProjectInfo.FirstOrDefault(p => p.ProjectKey == ServiceKey).ServerIgnoredFiles.Where(e => e.IsEnabled).ToList())
+                    IgnoreFiles = SettingInfo.Current.ProjectInfo.FirstOrDefault(p => p.ProjectKey == ServiceKey).ServerIgnoredFiles.Where(e => e.IsEnabled).ToList()
                 };
                 foreach (var server in ServerInfo.Servers.Where(x => x.IsUpdated != ServerInfo.ServerInfoStatusEnum.UpdateError).ToList().Where(y => y.IsUpdated != ServerInfo.ServerInfoStatusEnum.Updated).ToList())
                 {

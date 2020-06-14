@@ -513,11 +513,7 @@
                     <ComboBox ItemsSource="{Binding Servers}" SelectedItem="{Binding SelectedServerInfo}" DisplayMemberPath="ServerName" Margin="10,0,0,0" Width="200" >
                         <tg:TriggerExtensions.Triggers>
                             <tg:TriggerCollections>
-                                <!--نقدی-->
                                 <tg:EventTriggerInfo EventName="SelectionChanged" >
-                                    <!--<tg:DataTriggerInfo.Conditions>
-                                        <tg:DataConditionInfo Binding="{Binding FetchFilesCommand}" Value="{x:Null}" IsInvert="True"/>
-                                    </tg:DataTriggerInfo.Conditions>-->
                                     <tg:EventTriggerInfo.Setters>
                                         <tg:EventSetterInfo  EventName="SelectionChanged" Command="{Binding ClearServerFileListCommand,Source={StaticResource ProjectInfoViewModel}}"/>
                                     </tg:EventTriggerInfo.Setters>

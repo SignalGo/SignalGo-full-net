@@ -41,7 +41,7 @@ namespace SignalGo.Publisher.ViewModels
             BuildCommand = new Command(Build);
             BrowseProjectPathCommand = new Command(BrowseProjectPath);
             BrowseAssemblyPathCommand = new Command(BrowseAssemblyPath);
-            ClearServerFileListCommand = new EventCommand(ClearServerFileList);
+            ClearServerFileListCommand = new EventCommand(ClearFileList);
             CancellationCommand = new Command(CancelCommands);
             DeleteCommand = new Command(Delete);
             RunTestsCommand = new Command(RunTests);
@@ -400,8 +400,9 @@ namespace SignalGo.Publisher.ViewModels
         /// <summary>
         /// Save all ignore file settings to user settings
         /// </summary>
-        private void ClearServerFileList()
+        private void ClearFileList()
         {
+            FileContent = string.Empty;
             ProjectInfo.ServerFiles.Clear();
         }
         private void SaveIgnoreFileList()
@@ -462,20 +463,20 @@ namespace SignalGo.Publisher.ViewModels
 
                 foreach (var item in CurrentServerSettingInfo.ServerInfo.Where(x => x.IsChecked))
                 {
-                    //if (hasPublishCommand & item.ProtectionPassword != null)
-                    //{
-                    //GetThePass:
-                    //    InputDialogWindow inputDialog = new InputDialogWindow("Please enter your password:");
-                    //    if (inputDialog.ShowDialog() == true)
-                    //    {
-                    //        if (item.ProtectionPassword != PasswordEncoder.ComputeHash(inputDialog.Answer, new SHA256CryptoServiceProvider()))
-                    //        {
-                    //            MessageBox.Show("password does't match!");
-                    //            goto GetThePass;
-                    //        }
-                    //    }
-                    //    else continue;
-                    //}
+                    if (hasPublishCommand & item.ProtectionPassword != null)
+                    {
+                    GetThePass:
+                        InputDialogWindow inputDialog = new InputDialogWindow("Please enter your password:");
+                        if (inputDialog.ShowDialog() == true)
+                        {
+                            if (item.ProtectionPassword != PasswordEncoder.ComputeHash(inputDialog.Answer, new SHA256CryptoServiceProvider()))
+                            {
+                                MessageBox.Show("password does't match!");
+                                goto GetThePass;
+                            }
+                        }
+                        else continue;
+                    }
                     ServerInfo.Servers.Add(item.Clone());
                 }
                 if (hasPublishCommand && ServerInfo.Servers.Count <= 0)
@@ -629,11 +630,11 @@ namespace SignalGo.Publisher.ViewModels
             }
         }
 
-
         public async Task FetchFiles()
         {
             try
             {
+                //ClearServerFileListCommand.Execute();
                 var result = PublisherServiceProvider.Initialize(SelectedServerInfo);
                 var files = await result.FileManagerService.GetTextFilesAsync(ProjectInfo.ProjectKey);
 
