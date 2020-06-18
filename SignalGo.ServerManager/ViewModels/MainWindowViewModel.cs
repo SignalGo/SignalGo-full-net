@@ -12,6 +12,7 @@ namespace SignalGo.ServerManager.ViewModels
             System.Windows.Application.Current.Shutdown();
         }
         public static Frame MainFrame { get; set; }
+        public static ServerInfoPage CurrentServerInfoPage { get; set; }
 
         protected override void AddNewServer()
         {
@@ -28,10 +29,10 @@ namespace SignalGo.ServerManager.ViewModels
 
         protected override void ShowServerInfoPage(ServerInfo serverInfo)
         {
-            ServerInfoPage page = new ServerInfoPage();
-            ServerInfoBaseViewModel vm = page.DataContext as ServerInfoBaseViewModel;
+            CurrentServerInfoPage = new ServerInfoPage();
+            ServerInfoBaseViewModel vm = CurrentServerInfoPage.DataContext as ServerInfoBaseViewModel;
             vm.ServerInfo = serverInfo;
-            MainFrame.Navigate(page);
+            MainFrame.Navigate(CurrentServerInfoPage);
         }
     }
 }

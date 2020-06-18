@@ -3,12 +3,13 @@ using System.IO;
 using System.Linq;
 using System.Diagnostics;
 using SignalGo.Shared.Log;
-using SignalGo.Shared.Models;
 using System.Threading.Tasks;
+using SignalGo.Shared.Models;
+using System.Drawing.Imaging;
 using SignalGo.Shared.DataTypes;
-using SignalGo.ServiceManager.Core.Engines.Models;
 using SignalGo.Publisher.Shared.Models;
 using SignalGo.ServiceManager.Core.Models;
+using SignalGo.ServiceManager.Core.Engines.Models;
 
 namespace SignalGo.ServiceManager.Core.Services
 {
@@ -18,8 +19,6 @@ namespace SignalGo.ServiceManager.Core.Services
     [ServiceContract("ServerStreamManager", ServiceType.StreamService, InstanceType.SingleInstance)]
     public class ServerManagerStreamService
     {
-        //ServiceUpdater ServiceUpdater { get; set; }
-        //public FileStream FileStream { get; set; }
         /// <summary>
         /// Download Data from client as stream service
         /// </summary>
@@ -35,9 +34,6 @@ namespace SignalGo.ServiceManager.Core.Services
                 if (serviceToUpdate == null)
                     return "failed";
                 double? progress = 0;
-                //string fileExtension = streamInfo.FileName.Split('.')[1];
-                //string fileName = streamInfo.FileName.Split('.')[0];
-
                 try
                 {
                     using var fileStream = new FileStream(outFilePath, FileMode.Create, FileAccess.ReadWrite, FileShare.ReadWrite);
@@ -52,17 +48,12 @@ namespace SignalGo.ServiceManager.Core.Services
                         lengthWrite += readCount;
                         progress += lengthWrite * 100.0 / streamInfo.Length;
                     }
-                    Debug.WriteLine("Upload Data Downloaded Successfully");
+                    Console.WriteLine("Upload Data, Downloaded Successfully");
                 }
                 catch (Exception ex)
                 {
                     AutoLogger.Default.LogError(ex, "DownloadUploadData");
                 }
-                //finally
-                //{
-                //    Dispose();
-                //}
-
                 var service = new ServiceContract
                 {
                     Name = serviceToUpdate.Name,
@@ -91,9 +82,13 @@ namespace SignalGo.ServiceManager.Core.Services
         /// <returns></returns>
         public StreamInfo DownloadFileData(string filePath, Guid serviceKey)
         {
-            CheckServerPath(filePath, serviceKey);
+            ServerInfo.CheckServerPath(filePath, serviceKey);
             var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-            return new StreamInfo(stream) { Length = stream.Length, FileName = Path.GetFileName(filePath) };
+            return new StreamInfo(stream)
+            {
+                Length = stream.Length,
+                FileName = Path.GetFileName(filePath)
+            };
         }
 
         /// <summary>
@@ -104,7 +99,7 @@ namespace SignalGo.ServiceManager.Core.Services
         /// <returns></returns>
         public async Task<bool> SaveFileData(StreamInfo<string> stream, Guid serviceKey)
         {
-            CheckServerPath(stream.Data, serviceKey);
+            ServerInfo.CheckServerPath(stream.Data, serviceKey);
             using FileStream fileStream = new FileStream(stream.Data, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite);
             fileStream.SetLength(0);
             var lengthWrite = 0;
@@ -120,28 +115,42 @@ namespace SignalGo.ServiceManager.Core.Services
             return true;
         }
 
-        private ServerInfo CheckServerPath(string filePath, Guid serviceKey)
-        {
-            var find = SettingInfo.Current.ServerInfo.FirstOrDefault(x => x.ServerKey == serviceKey);
-            if (find == null)
-                throw new Exception($"Service {serviceKey} not found!");
-            else if (Path.GetDirectoryName(find.AssemblyPath) != Path.GetDirectoryName(filePath))
-                throw new Exception($"Access to the path denied!");
-            return find;
-        }
+        /// <summary>
+        /// using to focus specified service tab, in server manager
+        /// </summary>
+        public static Func<ServerInfo, Task> FocusTabFunc;
 
-        //private void Dispose()
-        //{
-        //    try
-        //    {
-        //        FileStream.Close();
-        //        FileStream.Dispose();
-        //        //GC.Collect();
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Debug.WriteLine(ex.Message);
-        //    }
-        //}
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="serviceKey"></param>
+        /// <returns></returns>
+        public async Task<StreamInfo> CaptureApplicationProcess(Guid serviceKey)
+        {
+            //BufferedStream bufferedStream;
+            MemoryStream memoryStream = new MemoryStream();
+            //bufferedStream = new BufferedStream(memoryStream);
+            try
+            {
+                ServerInfo find = SettingInfo.Current.ServerInfo.FirstOrDefault(x => x.ServerKey == serviceKey);
+                if (find == null)
+                    throw new Exception($"Service {serviceKey} not found!");
+                using (Process proc = find.CurrentServerBase.BaseProcess)
+                {
+                    await FocusTabFunc(find);
+                    WindowRectangleInfo.GetWindowRect(proc.MainWindowHandle, out WindowRectangleInfo.WindowRectangleStruct windowRectangle);
+                    var bmp = WindowRectangleInfo.CaptureWindowImage(proc.MainWindowHandle, windowRectangle);
+                    bmp.Save(memoryStream, ImageFormat.Png);
+                }
+                memoryStream.Seek(0, SeekOrigin.Begin);
+            }
+            catch (Exception ex)
+            {
+                AutoLogger.Default.LogError(ex, "CaptureApplicationProcess");
+                return null;
+            }
+            return new StreamInfo(memoryStream) { Length = memoryStream.Length, };
+        }
     }
+
 }

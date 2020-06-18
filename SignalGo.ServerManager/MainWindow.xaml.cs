@@ -3,8 +3,11 @@ using SignalGo.ServerManager.ViewModels;
 using SignalGo.ServerManager.Views;
 using SignalGo.ServiceManager.BaseViewModels.Core;
 using SignalGo.ServiceManager.Core.Models;
+using SignalGo.ServiceManager.Core.Services;
+using SignalGo.Shared;
 using SignalGo.Shared.Log;
 using System;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Animation;
@@ -21,11 +24,22 @@ namespace SignalGo.ServerManager
 
         public MainWindow()
         {
+            ServerManagerStreamService.FocusTabFunc = async (server) =>
+            {
+                AsyncActions.RunOnUI(() =>
+                {
+                    if (lstProjects.SelectedItem != server)
+                        lstProjects.SelectedItem = server;
+                    MainWindowViewModel.CurrentServerInfoPage.tabWindow.IsSelected = true;
+                });
+            };
+
             ServerInfo.SendToMainHostForHidden = (process) =>
             {
                 ServerInfoPage.SendToMainHostForHidden(process, null);
             };
 
+            AsyncActions.InitializeUIThread();
             ServerProcessBaseInfo.Instance = () => new ServerProcessInfo();
             This = this;
             StartUp.Initialize();

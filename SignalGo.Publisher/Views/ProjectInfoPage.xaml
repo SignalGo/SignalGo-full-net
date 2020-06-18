@@ -188,8 +188,13 @@
     </Page.DataContext>
 
     <TabControl>
-        <TabItem Header="Commander" >
-
+        <TabItem>
+            <TabItem.Header>
+                <TextBlock>
+                    <Run Text="💻"/>
+                    <Run Text="Commander"/>
+                </TextBlock>
+            </TabItem.Header>
             <Grid Margin="10">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="auto"/>
@@ -215,7 +220,7 @@
                             <TextBox BorderThickness="0" TextChanged="txtCmdLogs_TextChanged" x:Name="txtCmdLogs" TextWrapping="WrapWithOverflow" Width="auto" Height="auto" Text="{Binding CmdLogs}" ScrollViewer.CanContentScroll="True" VerticalScrollBarVisibility="Auto" DockPanel.Dock="Bottom" Margin="0,0,0,0"/>
                         </DockPanel>
                     </TabItem>
-                    <TabItem Header="ServerLog">
+                    <TabItem Header="🖧 ServerLog">
                         <DockPanel>
                             <!--<Label FontWeight="Bold" Content="Builder Log:" FontSize="10" VerticalAlignment="Top" DockPanel.Dock="Top" HorizontalAlignment="Left" />-->
                             <TextBox BorderThickness="0" x:Name="CmdServerLogs" Width="auto" Height="auto" TextWrapping="WrapWithOverflow" Text="{Binding ServerLogs}" ScrollViewer.CanContentScroll="True" VerticalScrollBarVisibility="Auto"  DockPanel.Dock="Bottom" Margin="0,0,0,0"/>
@@ -278,7 +283,7 @@
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Grid.Column="1" HorizontalAlignment="Stretch">
                                     <Button FontSize="14" Background="Transparent" HorizontalAlignment="Stretch" Cursor="Hand" Command="{Binding RemoveCommand,Source={StaticResource ProjectInfoViewModel}}" CommandParameter="{Binding}" BorderThickness="0" Content="✘" Padding="5" Foreground="Red"/>
-                                    <Button FontSize="14" Background="Transparent" HorizontalAlignment="Stretch" Cursor="Hand" Command="{Binding RetryCommand,Source={StaticResource ProjectInfoViewModel}}" CommandParameter="{Binding}" BorderThickness="0" Content="⟲" Padding="5" Foreground="DodgerBlue"/>
+                                    <Button FontSize="14" Background="Transparent" HorizontalAlignment="Stretch" Cursor="Hand" Command="{Binding RetryCommand,Source={StaticResource ProjectInfoViewModel}}" CommandParameter="{Binding}" BorderThickness="0" Content="⭯" Padding="5" Foreground="DodgerBlue"/>
                                     <Button FontSize="14" HorizontalAlignment="Stretch" Cursor="Hand" Command="{Binding ToDownCommand,Source={StaticResource ProjectInfoViewModel}}" CommandParameter="{Binding}" BorderThickness="0" Content="↓" Padding="5" Background="Transparent" Foreground="Green"/>
                                     <Button FontSize="14" HorizontalAlignment="Stretch" Cursor="Hand" Command="{Binding ToUpCommand,Source={StaticResource ProjectInfoViewModel}}" CommandParameter="{Binding}" BorderThickness="0" Content="↑" Padding="5" Background="Transparent" Foreground="Green"/>
                                 </StackPanel>
@@ -306,7 +311,8 @@
                                                             <tg:DataConditionInfo Binding="{Binding HasStatusError}" Value="True" />
                                                         </tg:DataTriggerInfo.Conditions>
                                                         <tg:DataTriggerInfo.Setters>
-                                                            <tg:SetterInfo Property="Text" Value="☹"/>
+                                                            <!--<tg:SetterInfo Property="Text" Value="☹"/>-->
+                                                            <tg:SetterInfo Property="Text" Value="💩"/>
                                                         </tg:DataTriggerInfo.Setters>
                                                     </tg:DataTriggerInfo>
                                                      <tg:DataTriggerInfo>
@@ -340,11 +346,9 @@
                                             <ColumnDefinition/>
                                             <ColumnDefinition/>
                                         </Grid.ColumnDefinitions>
-                                        <!--<CheckBox Style="{StaticResource CircleCheckbox}" Grid.Column="0"  -->
                                         <CheckBox Style="{StaticResource CircleCheckbox}" Grid.Column="0"
                                                   IsChecked="{Binding IsChecked}"
-                                                  Content="{Binding ServerName}"
-                                                  />
+                                                  Content="{Binding ServerName}"/>
                                         <TextBlock Padding="5" HorizontalAlignment="Center" Grid.Column="1" Foreground="DarkGray" Text="{Binding ServerLastUpdate}">
                                         </TextBlock>
                                         <TextBlock Padding="5" HorizontalAlignment="Right" Grid.Column="2" Foreground="Green" Text="{Binding ServerStatus}">
@@ -367,24 +371,30 @@
                     </StackPanel>
                     <!--#endregion-->
 
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" >
-                        <Button Command="{Binding GitPullCommand}" Content="Git Pull" Width="60" Height="30"/>
-                        <Button Command="{Binding BuildCommand}" Content="Build ♻" Width="60" Height="30" Margin="10,0,0,0"/>
-                        <Button Command="{Binding RunTestsCommand}" Content="Tests ☑" Width="60" Height="30" Margin="10,0,0,0"/>
-                        <Button Command="{Binding PublishCommand}" Content="Publish ☢" Width="60" Height="30" Margin="10,0,0,0"/>
-                        <Button IsEnabled="{Binding CanRunCommands}" Command="{Binding RunCommand}" Content="Run Commands ▶" Width="auto" Height="30" Margin="10,0,0,0"/>
-                        <Button Command="{Binding CancellationCommand}" Content="Cancel Commands ✖" Width="auto" Height="30" Margin="10,0,0,0"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" >
+                        <Button Padding="5" Command="{Binding GitPullCommand}" Content="Git Pull" />
+                        <Button Padding="5" Command="{Binding BuildCommand}" Content="Build ♻"  Margin="10,0,0,0"/>
+                        <Button Padding="5" Command="{Binding RunTestsCommand}" Content="Tests ☑" Margin="10,0,0,0"/>
+                        <Button Padding="5" Command="{Binding PublishCommand}" Content="Publish ☢" Margin="10,0,0,0"/>
+                        <Button Padding="5" IsEnabled="{Binding CanRunCommands}" Command="{Binding RunCommand}" Content="Run Commands ▶" Margin="10,0,0,0"/>
+                        <Button Padding="5" Command="{Binding CancellationCommand}" Content="Cancel ✖" Margin="10,0,0,0"/>
                     </StackPanel>
                 </StackPanel>
                 <!--#endregion-->
 
                 <!--#region Project Remove Command -->
-                <Button Command="{Binding DeleteCommand}" Grid.Column="2" VerticalAlignment="Bottom" Content="Delete" Width="100" Height="30" Grid.Row="5" HorizontalAlignment="Right"/>
+                <Button Command="{Binding DeleteCommand}" Grid.Column="2" VerticalAlignment="Bottom" Content="Delete" Width="100" Padding="5" Grid.Row="5" HorizontalAlignment="Right"/>
                 <!--#endregion-->
             </Grid>
         </TabItem>
 
-        <TabItem Header="☰ Setting" >
+        <TabItem>
+            <TabItem.Header>
+                <TextBlock>
+                    <Run Text="☰"/>
+                    <Run Text="Setting"/>
+                </TextBlock>
+            </TabItem.Header>
             <Grid Margin="10">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="auto"/>
@@ -491,14 +501,22 @@
 
                 </ListView>
 
-
-                <Button Margin="5,5" Command="{Binding SaveChangeCommand}" Content="Save" Width="80" Grid.Row="6" FontWeight="Normal" HorizontalAlignment="Right" Grid.Column="3" VerticalAlignment="Bottom"/>
+                <StackPanel Grid.Column="3" Grid.Row="6" HorizontalAlignment="Right" VerticalAlignment="Bottom" Orientation="Horizontal">
+                    <Button Margin="5,5" Command="{Binding OpenProjectFolderCommand}" Content="🔍 Open Folder" Width="100" Padding="5" FontWeight="Normal"/>
+                    <Button Margin="5,5" Command="{Binding SaveChangeCommand}" Content="Save" Width="80" Padding="5" FontWeight="Normal"/>
+                </StackPanel>
                 <!--#endregion-->
 
             </Grid>
 
         </TabItem>
-        <TabItem Header="File Manager">
+        <TabItem>
+            <TabItem.Header>
+                <TextBlock>
+                    <Run Text="📁"/>
+                    <Run Text="Server Manager"/>
+                </TextBlock>
+            </TabItem.Header>
             <Grid Margin="10">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="30"/>
@@ -509,8 +527,9 @@
                     <ColumnDefinition/>
                 </Grid.ColumnDefinitions>
                 <StackPanel HorizontalAlignment="Left" Orientation="Horizontal" >
-                    <Button Command="{Binding FetchFilesCommand}" Content="Fetch" Width="100"/>
-                    <ComboBox ItemsSource="{Binding Servers}" SelectedItem="{Binding SelectedServerInfo}" DisplayMemberPath="ServerName" Margin="10,0,0,0" Width="200" >
+                    <Button Command="{Binding FetchFilesCommand}" Content=" Fetch" Width="80"/>
+                    <Button Command="{Binding GetServerScreenShotCommand}" Margin="10,0,0,0" Content="Get ScreenShot" Width="100"/>
+                    <ComboBox ItemsSource="{Binding Servers}" SelectedItem="{Binding SelectedServerInfo}" DisplayMemberPath="ServerName" Margin="10,0,0,0" Width="185" >
                         <tg:TriggerExtensions.Triggers>
                             <tg:TriggerCollections>
                                 <tg:EventTriggerInfo EventName="SelectionChanged" >
@@ -522,7 +541,7 @@
                         </tg:TriggerExtensions.Triggers>
                     </ComboBox>
                 </StackPanel>
-                <ListBox Grid.Row="1" BorderThickness="0" ItemsSource="{Binding ProjectInfo.ServerFiles}">
+                <ListBox Margin="5" Grid.Row="1" BorderThickness="0" ItemsSource="{Binding ProjectInfo.ServerFiles}">
                     <ListBox.ItemTemplate>
                         <DataTemplate>
                             <Grid>
@@ -542,8 +561,13 @@
                         <RowDefinition/>
                         <RowDefinition Height="30"/>
                     </Grid.RowDefinitions>
-                    <TextBox Text="{Binding FileContent}" AcceptsReturn="True" Height="auto" VerticalScrollBarVisibility="Auto"/>
-                    <Button Content="Update" Grid.Row="1" Command="{Binding UploadFileCommmand}" />
+                    <Image x:Name="ServerProcessCaptureImage" Source="{Binding ServerScreenCapture}" Visibility="{Binding IsFetch,Converter={StaticResource InverseBooleanToVisibilityConverter}}"/>
+                    <TextBox Margin="5" Text="{Binding FileContent}" AcceptsReturn="True" Height="auto" VerticalScrollBarVisibility="Auto" Visibility="{Binding IsFetch,Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                    <StackPanel  Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button Padding="5" Content="Download" Command="{Binding DownloadFileCommmand}" />
+                        <Button Padding="5" Margin="10,0,0,0" Content="Update" Command="{Binding UploadFileCommmand}" />
+
+                    </StackPanel>
                 </Grid>
             </Grid>
 

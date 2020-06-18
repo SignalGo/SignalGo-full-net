@@ -3,6 +3,7 @@ using SignalGo.Publisher.Models;
 using SignalGo.Publisher.Services;
 using SignalGo.Publisher.ViewModels;
 using SignalGo.Publisher.Views;
+using SignalGo.Shared;
 using System;
 using System.IO;
 using System.Threading.Tasks;
@@ -25,6 +26,7 @@ namespace SignalGo.Publisher
 
         public ProjectManagerWindow()
         {
+            //AsyncActions.InitializeUIThread();
             BaseViewModel.Initialize();
             BaseViewModel.RunOnUIAction = (x) =>
             {

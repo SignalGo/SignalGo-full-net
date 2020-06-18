@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using System.Windows.Forms.Integration;
 using SignalGo.ServerManager.ViewModels;
 using System.Windows.Media;
+using SignalGo.ServiceManager.Core.Models;
 
 namespace SignalGo.ServerManager.Views
 {
@@ -53,6 +54,11 @@ namespace SignalGo.ServerManager.Views
             {
                 ChangeParent(vm.ServerInfo.CurrentServerBase.BaseProcess.MainWindowHandle, p.Handle, vm.ServerInfo.CurrentServerBase.BaseProcess, p);
             };
+        }
+
+        public static void UpdateServerInfoLayout(System.Diagnostics.Process process)
+        {
+            SetWindowPos(process.MainWindowHandle, IntPtr.Zero, 0, 0, (int)MainWindow.This.ActualWidth, (int)MainWindow.This.ActualHeight, SWP_NOZORDER | SWP_NOACTIVATE);
         }
 
         static WindowsFormsHost mainHost = new WindowsFormsHost();

@@ -20,6 +20,21 @@
         </conv:EverythingConverter.Conditions>
     </conv:EverythingConverter>
 
+    <conv:EverythingConverter x:Key="InverseBooleanToVisibilityConverter">
+        <conv:EverythingConverter.Conditions>
+            <conv:EverythingConverterValue ResultValue="{x:Static Visibility.Visible}">
+                <conv:EverythingConverterValue.ConditionValue>
+                    <sys:Boolean>False</sys:Boolean>
+                </conv:EverythingConverterValue.ConditionValue>
+            </conv:EverythingConverterValue>
+            <conv:EverythingConverterValue ResultValue="{x:Static Visibility.Collapsed}">
+                <conv:EverythingConverterValue.ConditionValue>
+                    <sys:Boolean>True</sys:Boolean>
+                </conv:EverythingConverterValue.ConditionValue>
+            </conv:EverythingConverterValue>
+        </conv:EverythingConverter.Conditions>
+    </conv:EverythingConverter>
+    
     <conv:EverythingConverter x:Key="NullToVisibilityConverter">
         <conv:EverythingConverter.Conditions>
             <conv:EverythingConverterValue ConditionValue="{x:Null}" >

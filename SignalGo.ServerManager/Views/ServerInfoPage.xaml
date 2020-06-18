@@ -67,7 +67,7 @@
                 </StackPanel>
             </Grid>
         </TabItem>
-        <TabItem Header="Window" Loaded="TabItem_Loaded">
+        <TabItem x:Name="tabWindow" Header="Window" Loaded="TabItem_Loaded">
             <Grid Margin="10">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="auto"/>

@@ -80,6 +80,23 @@ namespace SignalGo.Publisher.Services
             return uploadInfo;
         }
 
+        //public async Task<bool> CaptureApplicationProcessAsync(StreamInfo<string> stream)
+        //{
+        //    using FileStream fileStream = new FileStream(stream.Data, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite);
+        //    fileStream.SetLength(0);
+        //    var lengthWrite = 0;
+        //    while (lengthWrite < stream.Length)
+        //    {
+        //        byte[] bufferBytes = new byte[1024 * 1024];
+        //        int readCount = await stream.Stream.ReadAsync(bufferBytes, bufferBytes.Length);
+        //        if (readCount <= 0)
+        //            break;
+        //        await fileStream.WriteAsync(bufferBytes, 0, readCount);
+        //        lengthWrite += readCount;
+        //    }
+        //    return true;
+        //}
+
         //public static async Task DisposeAsync()
         //{
         //    //streamInfo.Stream.Dispose();

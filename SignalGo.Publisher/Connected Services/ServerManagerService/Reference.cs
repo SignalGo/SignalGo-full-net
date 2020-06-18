@@ -37,6 +37,24 @@ namespace ServerManagerService.Interfaces
     public partial interface IServerManagerService: IServerManagerServiceAsync, IServerManagerServiceSync
     {
     }
+    public partial interface IServerManagerStreamServiceSync
+    {
+        string UploadData(SignalGo.Shared.Models.StreamInfo streamInfo, SignalGo.Publisher.Shared.Models.ServiceContract serviceContract);
+        SignalGo.Shared.Models.StreamInfo DownloadFileData(string filePath, System.Guid serviceKey);
+        bool SaveFileData(SignalGo.Shared.Models.StreamInfo<string> stream, System.Guid serviceKey);
+        SignalGo.Shared.Models.StreamInfo CaptureApplicationProcess(System.Guid serviceKey);
+    }
+    public partial interface IServerManagerStreamServiceAsync
+    {
+        Task<string> UploadDataAsync(SignalGo.Shared.Models.StreamInfo streamInfo, SignalGo.Publisher.Shared.Models.ServiceContract serviceContract);
+        Task<SignalGo.Shared.Models.StreamInfo> DownloadFileDataAsync(string filePath, System.Guid serviceKey);
+        Task<bool> SaveFileDataAsync(SignalGo.Shared.Models.StreamInfo<string> stream, System.Guid serviceKey);
+        Task<SignalGo.Shared.Models.StreamInfo> CaptureApplicationProcessAsync(System.Guid serviceKey);
+    }
+    [ServiceContract("serverstreammanagerstreamservice", ServiceType.StreamService, InstanceType.SingleInstance)]
+    public partial interface IServerManagerStreamService: IServerManagerStreamServiceAsync, IServerManagerStreamServiceSync
+    {
+    }
     public partial interface IFileManagerServiceSync
     {
         System.Collections.Generic.List<string> GetTextFiles(System.Guid serviceKey);
@@ -47,22 +65,6 @@ namespace ServerManagerService.Interfaces
     }
     [ServiceContract("filemanagerserverservice", ServiceType.ServerService, InstanceType.SingleInstance)]
     public partial interface IFileManagerService: IFileManagerServiceAsync, IFileManagerServiceSync
-    {
-    }
-    public partial interface IServerManagerStreamServiceSync
-    {
-        string UploadData(SignalGo.Shared.Models.StreamInfo streamInfo, SignalGo.Publisher.Shared.Models.ServiceContract serviceContract);
-        SignalGo.Shared.Models.StreamInfo DownloadFileData(string filePath, System.Guid serviceKey);
-        bool SaveFileData(SignalGo.Shared.Models.StreamInfo<string> stream, System.Guid serviceKey);
-    }
-    public partial interface IServerManagerStreamServiceAsync
-    {
-        Task<string> UploadDataAsync(SignalGo.Shared.Models.StreamInfo streamInfo, SignalGo.Publisher.Shared.Models.ServiceContract serviceContract);
-        Task<SignalGo.Shared.Models.StreamInfo> DownloadFileDataAsync(string filePath, System.Guid serviceKey);
-        Task<bool> SaveFileDataAsync(SignalGo.Shared.Models.StreamInfo<string> stream, System.Guid serviceKey);
-    }
-    [ServiceContract("serverstreammanagerstreamservice", ServiceType.StreamService, InstanceType.SingleInstance)]
-    public partial interface IServerManagerStreamService: IServerManagerStreamServiceAsync, IServerManagerStreamServiceSync
     {
     }
 }
@@ -233,6 +235,20 @@ namespace ServerManagerService.StreamServices
                          new  SignalGo.Shared.Models.ParameterInfo() { Name = nameof(stream),Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(stream) },
                          new  SignalGo.Shared.Models.ParameterInfo() { Name = nameof(serviceKey),Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(serviceKey) },
                 }, stream);
+        }
+        public SignalGo.Shared.Models.StreamInfo CaptureApplicationProcess(System.Guid serviceKey)
+        {
+                return  SignalGo.Client.ClientProvider.UploadStreamSync<SignalGo.Shared.Models.StreamInfo>(CurrentProvider, ServerAddress, Port, ServiceName ,"CaptureApplicationProcess", new SignalGo.Shared.Models.ParameterInfo[]
+                {
+                         new  SignalGo.Shared.Models.ParameterInfo() { Name = nameof(serviceKey),Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(serviceKey) },
+                }, null);
+        }
+        public Task<SignalGo.Shared.Models.StreamInfo> CaptureApplicationProcessAsync(System.Guid serviceKey)
+        {
+                return SignalGo.Client.ClientProvider.UploadStreamAsync<SignalGo.Shared.Models.StreamInfo>(CurrentProvider, ServerAddress, Port, ServiceName ,"CaptureApplicationProcess", new SignalGo.Shared.Models.ParameterInfo[]
+                {
+                         new  SignalGo.Shared.Models.ParameterInfo() { Name = nameof(serviceKey),Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(serviceKey) },
+                }, null);
         }
     }
 }

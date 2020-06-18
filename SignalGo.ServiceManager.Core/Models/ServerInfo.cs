@@ -4,6 +4,8 @@ using SignalGo.Shared;
 using SignalGo.Shared.Log;
 using System;
 using System.Diagnostics;
+using System.IO;
+using System.Linq;
 
 namespace SignalGo.ServiceManager.Core.Models
 {
@@ -196,7 +198,15 @@ namespace SignalGo.ServiceManager.Core.Models
                 OnPropertyChanged(nameof(StartDelay));
             }
         }
-
+        public static ServerInfo CheckServerPath(string filePath, Guid serviceKey)
+        {
+            var find = SettingInfo.Current.ServerInfo.FirstOrDefault(x => x.ServerKey == serviceKey);
+            if (find == null)
+                throw new Exception($"Service {serviceKey} not found!");
+            else if (Path.GetDirectoryName(find.AssemblyPath) != Path.GetDirectoryName(filePath))
+                throw new Exception($"Access to the path denied!");
+            return find;
+        }
         public void Start()
         {
             // delay starting of service based on user config

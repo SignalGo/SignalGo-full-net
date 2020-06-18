@@ -37,7 +37,7 @@
             </ListView.ItemTemplate>
         </ListView>
         <!--Visibility="{Binding ServerInfo,Converter={StaticResource NullToVisibilityConverter}}"-->
-        <Grid Grid.Column="1" Grid.ColumnSpan="1" Grid.RowSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Visibility="{Binding ServerInfo,Converter={StaticResource NullToVisibilityConverter}}">
+        <Grid Grid.Column="1" Grid.ColumnSpan="1" Grid.RowSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Visibility="Visible">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="auto" />
                 <ColumnDefinition Width="*" />
@@ -84,7 +84,7 @@
             </StackPanel>
             <StackPanel Orientation="Horizontal" Grid.Row="7" HorizontalAlignment="Center" VerticalAlignment="Bottom" Grid.ColumnSpan="3">
                 <Button Margin="10" Command="{Binding SaveChangesCommand}" Grid.Row="6" Grid.Column="3" Content="Save" Width="100" Height="30" />
-                <Button Margin="10" Command="{Binding ProtectServerCommand}" Grid.Row="6" Grid.Column="3" Content="Protect Server" Width="100" Height="30" />
+                <Button Margin="10" Command="{Binding ProtectServerCommand}" Grid.Row="6" Grid.Column="3" Content="🔐 Protect Server" Width="100" Height="30" />
                 <Button Margin="10" Command="{Binding RemoveServerCommand}" Grid.Row="6" Grid.Column="3" Content="Delete" Width="100" Height="30" />
                 <Button Margin="10" Command="{Binding BackCommand}" Grid.Row="6" Grid.Column="3" Content="Back" Width="100" Height="30" />
             </StackPanel>

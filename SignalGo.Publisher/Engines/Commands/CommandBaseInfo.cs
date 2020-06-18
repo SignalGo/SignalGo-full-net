@@ -48,7 +48,6 @@ namespace SignalGo.Publisher.Engines.Commands
 
         private long _Size = 0;
         private long _Position = 0;
-        //private int retryCounter = 0;
 
         /// <summary>
         /// size of data/file

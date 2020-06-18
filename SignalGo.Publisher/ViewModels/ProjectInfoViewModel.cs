@@ -16,11 +16,11 @@ using System.Collections.ObjectModel;
 using SignalGo.Shared.Log;
 using SignalGo.Publisher.Shared.Models;
 using SignalGo.Publisher.Services;
-using SignalGo.Shared;
 using ServerManagerService.StreamServices;
 using SignalGo.Publisher.Views.Extra;
 using SignalGo.Publisher.Engines.Models;
 using System.Security.Cryptography;
+using System.Windows.Media.Imaging;
 
 namespace SignalGo.Publisher.ViewModels
 {
@@ -42,8 +42,16 @@ namespace SignalGo.Publisher.ViewModels
             BrowseProjectPathCommand = new Command(BrowseProjectPath);
             BrowseAssemblyPathCommand = new Command(BrowseAssemblyPath);
             ClearServerFileListCommand = new EventCommand(ClearFileList);
+            GetServerScreenShotCommand = new Command(() =>
+            {
+                IsFetch = false;
+                IsBusy = true;
+                GetServerScreenShotCommand.ValidateCanExecute();
+                _ = CaptureApplicationProcess();
+            }, () => !IsBusy);
             CancellationCommand = new Command(CancelCommands);
-            DeleteCommand = new Command(Delete);
+            DeleteCommand = new Command(DeleteProject);
+            OpenProjectFolderCommand = new Command(OpenProjectFolder);
             RunTestsCommand = new Command(RunTests);
             RunCommand = new Command(RunCMD);
             RestorePackagesCommand = new Command(RestorePackages);
@@ -71,6 +79,7 @@ namespace SignalGo.Publisher.ViewModels
 
             FetchFilesCommand = new Command(() =>
             {
+                IsFetch = true;
                 IsBusy = true;
                 FetchFilesCommand.ValidateCanExecute();
                 _ = FetchFiles();
@@ -176,6 +185,7 @@ namespace SignalGo.Publisher.ViewModels
         public Command SaveChangeCommand { get; set; }
         public Command BrowseProjectPathCommand { get; set; }
         public Command BrowseAssemblyPathCommand { get; set; }
+        public Command OpenProjectFolderCommand { get; set; }
         public Command BuildCommand { get; set; }
         public Command CancellationCommand { get; set; }
         public Command SaveIgnoreFileListCommand { get; set; }
@@ -227,6 +237,7 @@ namespace SignalGo.Publisher.ViewModels
 
         public EventCommand ClearServerFileListCommand { get; set; }
         public Command FetchFilesCommand { get; set; }
+        public Command GetServerScreenShotCommand { get; set; }
         /// <summary>
         /// run a custome command/expression
         /// </summary>
@@ -240,6 +251,35 @@ namespace SignalGo.Publisher.ViewModels
 
         public Command GitPullCommand { get; set; }
         public Command PublishCommand { get; set; }
+
+        BitmapSource _ServerScreenCapture;
+        public BitmapSource ServerScreenCapture
+        {
+            get
+            {
+                return _ServerScreenCapture;
+            }
+            set
+            {
+                _ServerScreenCapture = value;
+                OnPropertyChanged(nameof(ServerScreenCapture));
+            }
+        }
+
+        bool _IsFetch = false;
+        public bool IsFetch
+        {
+            get
+            {
+                return _IsFetch;
+            }
+            set
+            {
+                _IsFetch = value;
+                OnPropertyChanged(nameof(IsFetch));
+            }
+        }
+
         /// <summary>
         /// Execute Test Cases of Project
         /// </summary>
@@ -307,8 +347,13 @@ namespace SignalGo.Publisher.ViewModels
         public Command DeleteCommand { get; set; }
         public Command ClearLogCommand { get; set; }
 
-        private void Delete()
+        /// <summary>
+        /// Delete Project From publisher if user confirm it
+        /// </summary>
+        private void DeleteProject()
         {
+            if (MessageBox.Show("Are you srue you want to delete this project?", "Delete Project", MessageBoxButtons.YesNo) != DialogResult.Yes)
+                return;
             SettingInfo.Current.ProjectInfo.Remove(ProjectInfo);
             SettingInfo.SaveSettingInfo();
             ProjectManagerWindowViewModel.MainFrame.GoBack();
@@ -405,6 +450,29 @@ namespace SignalGo.Publisher.ViewModels
             FileContent = string.Empty;
             ProjectInfo.ServerFiles.Clear();
         }
+
+        /// <summary>
+        /// open the project folder path
+        /// </summary>
+        private void OpenProjectFolder()
+        {
+            try
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = "explorer.exe",
+                    Arguments = ProjectInfo.ProjectPath
+                });
+            }
+            catch (Exception ex)
+            {
+                AutoLogger.Default.LogError(ex, "open project folder");
+                MessageBox.Show("error", ex.Message);
+            }
+        }
+        /// <summary>
+        /// save files that defined as ignore
+        /// </summary>
         private void SaveIgnoreFileList()
         {
             try
@@ -630,6 +698,7 @@ namespace SignalGo.Publisher.ViewModels
             }
         }
 
+
         public async Task FetchFiles()
         {
             try
@@ -657,6 +726,73 @@ namespace SignalGo.Publisher.ViewModels
                 FetchFilesCommand.ValidateCanExecute();
             }
         }
+
+        //static MemoryStream LastMemoryStream { get; set; }
+        /// <summary>
+        /// Capture Service Process Screenshot from server manager (by service key)
+        /// </summary>
+        /// <returns></returns>
+        private async Task CaptureApplicationProcess()
+        {
+            MemoryStream memoryStream = new MemoryStream();
+            try
+            {
+                var result = PublisherServiceProvider.Initialize(SelectedServerInfo);
+                ServerManagerStreamService serverManagerStreamService = new ServerManagerStreamService(result.CurrentClientProvider);
+                // Call CaptureApplicationProcess Service from server manager and using porojectKey(serviceKey)
+                var stream = await serverManagerStreamService.CaptureApplicationProcessAsync(ProjectInfo.ProjectKey);
+                var lengthWrite = 0;
+                while (lengthWrite != stream.Length)
+                {
+                    byte[] bufferBytes = new byte[1024];
+                    int readCount = await stream.Stream.ReadAsync(bufferBytes, bufferBytes.Length);
+                    if (readCount <= 0)
+                        break;
+                    await memoryStream.WriteAsync(bufferBytes, 0, readCount);
+                    lengthWrite += readCount;
+                }
+                //await AsyncActions.RunOnUIAsync(() =>
+                RunOnUIAction(() =>
+                {
+                    try
+                    {
+                        PngBitmapDecoder decoder = new PngBitmapDecoder(memoryStream, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.None);
+                        ServerScreenCapture = decoder.Frames[0];
+                    }
+                    catch (Exception ex)
+                    {
+                        AutoLogger.Default.LogError(ex, "CaptureApplicationProcess, RunOnUIAction");
+                    }
+                    finally
+                    {
+                        IsBusy = false;
+                        GetServerScreenShotCommand.ValidateCanExecute();
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                IsBusy = false;
+                GetServerScreenShotCommand.ValidateCanExecute();
+                MessageBox.Show("can't connect to server");
+                AutoLogger.Default.LogError(ex, "CaptureApplicationProcess");
+            }
+            finally
+            {
+                await Task.Delay(1000);
+                await memoryStream.DisposeAsync();
+                Debug.WriteLine("Capture Process stream disposed");
+                //GC.Collect();
+                //GC.WaitForPendingFinalizers();
+                //GC.Collect();
+            }
+        }
+
+        /// <summary>
+        /// Load Selected service file from server
+        /// </summary>
+        /// <param name="filePath"></param>
+        /// <returns></returns>
         private async Task LoadFileDataFromServer(string filePath)
         {
             try
@@ -690,6 +826,10 @@ namespace SignalGo.Publisher.ViewModels
             }
         }
 
+        /// <summary>
+        /// upload/save selected file to server
+        /// </summary>
+        /// <returns></returns>
         private async Task UploadFileDataFromServer()
         {
             try
