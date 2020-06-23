@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using SignalGo.ServiceManager.Core.Helpers;
 using System;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -32,6 +33,7 @@ namespace SignalGo.ServiceManager.Core.Models
         {
             try
             {
+                ServerDetailsManager.StartEngine();
                 string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ServerDbName);
                 if (!File.Exists(path) || File.ReadAllLinesAsync(path).Result.Length <= 0)
                 {
@@ -41,7 +43,12 @@ namespace SignalGo.ServiceManager.Core.Models
                         ServerInfo = new ObservableCollection<ServerInfo>()
                     };
                 }
-                return JsonConvert.DeserializeObject<SettingInfo>(File.ReadAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ServerDbName), Encoding.UTF8));
+                var result =  JsonConvert.DeserializeObject<SettingInfo>(File.ReadAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ServerDbName), Encoding.UTF8));
+                foreach (var item in result.ServerInfo)
+                {
+                    ServerDetailsManager.AddServer(item);
+                }
+                return result;
             }
             catch
             {

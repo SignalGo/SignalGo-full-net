@@ -37,7 +37,7 @@ namespace SignalGo.Publisher.ViewModels
             LoadProjects();
 
             // get application resouce usage in background
-            GetAppUsage();
+            _ = GetAppUsage();
         }
 
 
@@ -146,29 +146,14 @@ namespace SignalGo.Publisher.ViewModels
         {
             try
             {
-                Task.Factory.StartNew(async () =>
+                _ = Task.Factory.StartNew(async () =>
                 {
                     ApplicationRAMUsage = (Process.GetCurrentProcess().PrivateMemorySize64 / 1000000).ToString();
                     await Task.Delay(20000);
-                    GetAppUsage();
+                    _ = GetAppUsage();
                 }, TaskCreationOptions.LongRunning);
-                //ApplicationRAMUsage = GC.GetTotalMemory(true) / 10000;v
-                //if (GC.GetGCMemoryInfo().MemoryLoadBytes == 0)
-                //    GC.GetTotalMemory(true);
-                //ApplicationRAMUsage = (GC.GetGCMemoryInfo().MemoryLoadBytes / 100000).ToString("N0");
-                //var cpuSet = ;
-                //ApplicationCPUUsage = (cpuSet / 100).ToString();
-
-
             }
-            catch (Exception e)
-            {
-
-            }
-            finally
-            {
-            }
-
+            catch (Exception ex) { }
         }
         //private void worker_DoWork(object sender, DoWorkEventArgs e)
         //{
@@ -187,7 +172,7 @@ namespace SignalGo.Publisher.ViewModels
         {
             get
             {
-                return $"< { _ApplicationRAMUsage}";
+                return $"{ _ApplicationRAMUsage}";
             }
             set
             {

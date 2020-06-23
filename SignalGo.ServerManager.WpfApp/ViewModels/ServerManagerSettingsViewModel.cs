@@ -1,7 +1,7 @@
 ﻿using SignalGo.ServiceManager.Core.BaseViewModels;
 using System.Windows.Forms;
 
-namespace SignalGo.ServerManager.ViewModels
+namespace SignalGo.ServerManager.WpfApp.ViewModels
 {
     public class ServerManagerSettingsViewModel : ServerManagerSettingsBaseViewModel
     {

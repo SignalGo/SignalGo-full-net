@@ -1,6 +1,7 @@
-﻿using System.Windows.Controls;
+﻿using System;
+using System.Windows.Controls;
 
-namespace SignalGo.ServerManager.Views
+namespace SignalGo.ServerManager.WpfApp.Views
 {
     /// <summary>
     /// Interaction logic for AddNewServerPage.xaml

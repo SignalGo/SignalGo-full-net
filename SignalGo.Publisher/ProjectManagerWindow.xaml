@@ -55,41 +55,73 @@
         <ListView x:Name="ProjectsListView" Grid.Row="1" MinWidth="150" Width="200" MaxWidth="300" ItemsSource="{Binding CurrentSettingInfo.ProjectInfo}" SelectedItem="{Binding SelectedProjectInfo}" HorizontalContentAlignment="Stretch">
             <ListView.ItemTemplate>
                 <DataTemplate>
-                    <TextBlock Background="#FFECEAEA" Padding="5">
-                        <TextBox Text="{Binding Name}" BorderThickness="0" Background="Transparent" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+                    <TextBlock>
+                        <TextBox Text="{Binding Name}">
                             <TextBox.Style>
                                 <Style TargetType="TextBox">
-                                    <EventSetter Event="MouseDoubleClick" Handler="projectItem_MouseDoubleClick" />
                                     <EventSetter Event="KeyDown" Handler="projectItem_KeyDown" />
                                 </Style>
                             </TextBox.Style>
-                            </TextBox>
+                        </TextBox>
                     </TextBlock>
                 </DataTemplate>
             </ListView.ItemTemplate>
+            
+            <ListView.Resources>
+                <ControlTemplate x:Key="SelectedTemplate" TargetType="ListViewItem">
+                    <Border  Background="CadetBlue" CornerRadius="2,15,15,2" BorderThickness="1" BorderBrush="Transparent" Padding="5" HorizontalAlignment="Stretch" Margin="2" Cursor="Hand" >
+                        <TextBlock>
+                            <TextBox Padding="5" Text="{Binding Name}">
+                                <TextBox.Style>
+                                    <Style TargetType="TextBox">
+                                        <EventSetter Event="KeyDown" Handler="projectItem_KeyDown" />
+                                     </Style>
+                                </TextBox.Style>
+                             </TextBox>
+                        </TextBlock>
+                    </Border>
+                </ControlTemplate>
+                <Style TargetType="ListViewItem">
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="ListViewItem">
+                                <Border CornerRadius="0" BorderThickness="0" Background="WhiteSmoke" Padding="5" HorizontalAlignment="Stretch" Margin="0" Cursor="Hand" >
+                                    <TextBlock>
+                                    <TextBlock Padding="5" Text="{Binding Name}">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                <EventSetter Event="KeyDown" Handler="projectItem_KeyDown" />
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                    </TextBlock>
+                                </Border>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                    <Style.Triggers>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsSelected" Value="true" />
+                            </MultiTrigger.Conditions>
+                            <Setter Property="Template" Value="{StaticResource SelectedTemplate}" />
+                        </MultiTrigger>
+                    </Style.Triggers>
+                </Style>
+            </ListView.Resources>
         </ListView>
-        
+
         <Frame x:Name="mainframe" Grid.Column="1" Grid.Row="1" JournalOwnership="OwnsJournal" Loaded="Frame_Loaded" ClipToBounds="True" Background="#f6f6f7" Navigating="MainFrame_Navigating" NavigationUIVisibility="Hidden" VerticalAlignment="Stretch"/>
         <StatusBar Grid.Row="2" Grid.ColumnSpan="2" Background="Transparent">
             <StatusBarItem>
                 <Grid>
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="RAM Usage: "/>
+                        <TextBlock Text="RAM Usage: > "/>
                         <TextBlock Text="{Binding ApplicationRAMUsage}"/>
                         <TextBlock Text=" Mb"/>
                     </StackPanel>
                 </Grid>
             </StatusBarItem>
-            <!--<Separator />-->
-            <!--<StatusBarItem>
-                <Grid>
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="Cpu Usage: "/>
-                        <TextBlock Text="{Binding ApplicationCPUUsage}"/>
-                        <TextBlock Text=" %"/>
-                    </StackPanel>
-                </Grid>
-            </StatusBarItem>-->
         </StatusBar>
     </Grid>
 

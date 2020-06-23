@@ -1,6 +1,6 @@
 ﻿using System.Windows.Controls;
 
-namespace SignalGo.ServerManager.Views
+namespace SignalGo.ServerManager.WpfApp.Views
 {
     /// <summary>
     /// Interaction logic for ServerManagerSettingsPage.xaml

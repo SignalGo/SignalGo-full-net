@@ -1,9 +1,9 @@
-﻿using SignalGo.ServerManager.Views;
+﻿using SignalGo.ServerManager.WpfApp.Views;
 using SignalGo.ServiceManager.Core.BaseViewModels;
 using SignalGo.ServiceManager.Core.Models;
 using System.Windows.Controls;
 
-namespace SignalGo.ServerManager.ViewModels
+namespace SignalGo.ServerManager.WpfApp.ViewModels
 {
     public class MainWindowViewModel : MainWindowBaseViewModel
     {

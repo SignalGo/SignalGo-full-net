@@ -19,7 +19,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServerConsoleTest", "Server
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SignalGo.Client", "SignalGo.Client\SignalGo.Client.csproj", "{DA4F99A9-69E4-48F1-8850-5298F7762AB9}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SignalGo.ServerManager.WpfApp", "SignalGo.ServerManager\SignalGo.ServerManager.WpfApp.csproj", "{1380D040-51EB-4E03-BA87-78020071FB7A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SignalGo.ServerManager.WpfApp", "SignalGo.ServerManager.WpfApp\SignalGo.ServerManager.WpfApp.csproj", "{1380D040-51EB-4E03-BA87-78020071FB7A}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SignalGo.Server.Owin", "SignalGo.Server.Owin\SignalGo.Server.Owin.csproj", "{D2EDF2E0-8691-40A0-A0EF-1895B72C3DE7}"
 EndProject

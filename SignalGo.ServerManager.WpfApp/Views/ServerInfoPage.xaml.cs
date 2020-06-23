@@ -3,11 +3,10 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Runtime.InteropServices;
 using System.Windows.Forms.Integration;
-using SignalGo.ServerManager.ViewModels;
+using SignalGo.ServerManager.WpfApp.ViewModels;
 using System.Windows.Media;
-using SignalGo.ServiceManager.Core.Models;
 
-namespace SignalGo.ServerManager.Views
+namespace SignalGo.ServerManager.WpfApp.Views
 {
     /// <summary>
     /// Interaction logic for ServerInfoPage.xaml
@@ -22,11 +21,12 @@ namespace SignalGo.ServerManager.Views
         public IntPtr MainWindowHandle { get; set; }
         [DllImport("user32.dll", SetLastError = true)]
         private static extern long SetParent(IntPtr hWndChild, IntPtr hWndNewParent);
-
+        int counter = 0;
         private void TabItem_Loaded(object sender, RoutedEventArgs e)
         {
             var tabItem = (TabItem)sender;
             var vm = tabItem.DataContext as ServerInfoViewModel;
+
             Grid grid = new Grid()
             {
                 Background = Brushes.DarkGray
@@ -34,7 +34,11 @@ namespace SignalGo.ServerManager.Views
             tabItem.LayoutUpdated += (x, ee) =>
             {
                 // to fix show console window error/bug
+                //TODO: This infinite code(line 38) slow down cpu Performance
                 tabItem.Header = $"Window ({grid.ActualWidth},{grid.ActualHeight})";
+                System.Diagnostics.Debug.WriteLine(
+                    $"tabitem layout updated {counter++}");
+
                 if (vm?.ServerInfo?.CurrentServerBase != null)
                     SetWindowPos(vm.ServerInfo.CurrentServerBase.BaseProcess.MainWindowHandle, IntPtr.Zero, 0, 0, (int)grid.ActualWidth, (int)grid.ActualHeight, SWP_NOZORDER | SWP_NOACTIVATE);
             };

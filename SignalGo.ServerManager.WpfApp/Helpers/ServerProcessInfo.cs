@@ -6,7 +6,7 @@ using System.IO;
 using System.IO.Pipes;
 using System.Threading;
 
-namespace SignalGo.ServerManager.Helpers
+namespace SignalGo.ServerManager.WpfApp.Helpers
 {
     public class ServerProcessInfo : ServerProcessBaseInfo
     {

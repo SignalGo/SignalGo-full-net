@@ -86,7 +86,8 @@ namespace SignalGo.ServiceManager.Core.Models
 
         [JsonIgnore]
         public ServerProcessBaseInfo CurrentServerBase { get; set; }
-
+        [JsonIgnore]
+        public ServerDetailsInfo Details { get; set; }
         [JsonIgnore]
         public Action ProcessStarted { get; set; }
 
@@ -168,6 +169,8 @@ namespace SignalGo.ServiceManager.Core.Models
                         CurrentServerBase = null;
                         // ser server status to stopped
                         Status = ServerInfoStatus.Stopped;
+                        // remove from service usage monitoring dic
+                        Helpers.ServerDetailsManager.ServerDetails.Remove(this);
                         // get out
                         break;
                     }
@@ -209,16 +212,15 @@ namespace SignalGo.ServiceManager.Core.Models
         }
         public void Start()
         {
-            // delay starting of service based on user config
-            //Task.Delay(StartDelay * 1000);
-            AsyncActions.RunOnUI(() =>
+            AsyncActions.RunOnUI(async () =>
             {
+                // delay starting of service based on user config
+                await System.Threading.Tasks.Task.Delay(StartDelay * 1000);
                 // if server status is Stopped
                 if (Status == ServerInfoStatus.Stopped && Status != ServerInfoStatus.Disabled)
                 {
                     try
                     {
-                       
                         // set server status to Started
                         Status = ServerInfoStatus.Started;
                         CurrentServerBase = ServerProcessBaseInfo.Instance();
@@ -228,6 +230,7 @@ namespace SignalGo.ServiceManager.Core.Models
                         // Insert/Merge Servers Console Window to Server manager Windows Tab
                         SendToMainHostForHidden?.Invoke(process);
                         ProcessStarted?.Invoke();
+                        // doing health check
                         Console.WriteLine($"Health Check, OK.");
                     }
                     catch (Exception ex)

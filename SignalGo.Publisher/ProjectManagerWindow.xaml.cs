@@ -108,25 +108,6 @@ namespace SignalGo.Publisher
                      as InlineUIContainer).Parent.SetValue(TextBlock.BackgroundProperty, Brushes.Yellow);
                     break;
             }
-
-            //if (e.Key == Key.Enter)
-            //{
-            //    ((e.OriginalSource as TextBox).DataContext as ProjectInfo).Name = (e.OriginalSource as TextBox).Text;
-            //    SettingInfo.SaveSettingInfo();
-            //}
-            //else if (e.Key == Key.Escape)
-            //{
-            //    //(e.OriginalSource as TextBox).Text = (src.DataContext as ProjectInfo).Name;
-            //    (e.OriginalSource as TextBox).Undo();// = (src.DataContext as ProjectInfo).Name;
-
-            //}
-        }
-        private void projectItem_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-        {
-            //var x = e.Source as TextBox;
-            //var obj = item.Content as ProjectInfo;
-            //var Name = x.Text;
-            //SettingInfo.SaveSettingInfo();
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)

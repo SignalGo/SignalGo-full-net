@@ -5,7 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Windows;
 
-namespace SignalGo.ServerManager.ViewModels
+namespace SignalGo.ServerManager.WpfApp.ViewModels
 {
     public class AddNewServerViewModel : AddNewServerBaseViewModel
     {

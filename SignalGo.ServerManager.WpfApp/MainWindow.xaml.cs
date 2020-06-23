@@ -1,19 +1,18 @@
-﻿using SignalGo.ServerManager.Helpers;
-using SignalGo.ServerManager.ViewModels;
-using SignalGo.ServerManager.Views;
+﻿using System;
+using SignalGo.ServerManager.WpfApp.Helpers;
+using SignalGo.ServerManager.WpfApp.ViewModels;
 using SignalGo.ServiceManager.BaseViewModels.Core;
 using SignalGo.ServiceManager.Core.Models;
 using SignalGo.ServiceManager.Core.Services;
 using SignalGo.Shared;
 using SignalGo.Shared.Log;
-using System;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Animation;
 using System.Windows.Navigation;
+using MvvmGo.ViewModels;
 
-namespace SignalGo.ServerManager
+namespace SignalGo.ServerManager.WpfApp.Views
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
@@ -38,7 +37,11 @@ namespace SignalGo.ServerManager
             {
                 ServerInfoPage.SendToMainHostForHidden(process, null);
             };
-
+            BaseViewModel.Initialize();
+            BaseViewModel.RunOnUIAction = (x) =>
+            {
+                Dispatcher.BeginInvoke(x);
+            };
             AsyncActions.InitializeUIThread();
             ServerProcessBaseInfo.Instance = () => new ServerProcessInfo();
             This = this;

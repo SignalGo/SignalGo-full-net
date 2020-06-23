@@ -527,9 +527,9 @@
                     <ColumnDefinition/>
                 </Grid.ColumnDefinitions>
                 <StackPanel HorizontalAlignment="Left" Orientation="Horizontal" >
-                    <Button Command="{Binding FetchFilesCommand}" Content=" Fetch" Width="80"/>
-                    <Button Command="{Binding GetServerScreenShotCommand}" Margin="10,0,0,0" Content="Get ScreenShot" Width="100"/>
-                    <ComboBox ItemsSource="{Binding Servers}" SelectedItem="{Binding SelectedServerInfo}" DisplayMemberPath="ServerName" Margin="10,0,0,0" Width="185" >
+                    <Button Command="{Binding FetchFilesCommand}" Content=" Fetch" Width="50"/>
+                    <Button Command="{Binding GetServerScreenShotCommand}" Margin="5,0,0,0" Content="Get ScreenShot" Width="100"/>
+                    <ComboBox ItemsSource="{Binding Servers}" SelectedItem="{Binding SelectedServerInfo}" DisplayMemberPath="ServerName" Margin="5,0,0,0" Width="200" >
                         <tg:TriggerExtensions.Triggers>
                             <tg:TriggerCollections>
                                 <tg:EventTriggerInfo EventName="SelectionChanged" >
@@ -561,12 +561,11 @@
                         <RowDefinition/>
                         <RowDefinition Height="30"/>
                     </Grid.RowDefinitions>
-                    <Image x:Name="ServerProcessCaptureImage" Source="{Binding ServerScreenCapture}" Visibility="{Binding IsFetch,Converter={StaticResource InverseBooleanToVisibilityConverter}}"/>
-                    <TextBox Margin="5" Text="{Binding FileContent}" AcceptsReturn="True" Height="auto" VerticalScrollBarVisibility="Auto" Visibility="{Binding IsFetch,Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                    <Image x:Name="ServerProcessCaptureImage" Source="{Binding ServerScreenCapture}"  Visibility="{Binding IsFetch,Converter={StaticResource InverseBooleanToVisibilityConverter}}"/>
+                    <TextBox FontSize="16" Margin="5" Text="{Binding FileContent}" AcceptsReturn="True" Height="auto" VerticalScrollBarVisibility="Auto" Visibility="{Binding IsFetch,Converter={StaticResource BooleanToVisibilityConverter}}"/>
                     <StackPanel  Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">
-                        <Button Padding="5" Content="Download" Command="{Binding DownloadFileCommmand}" />
+                        <!--<Button Padding="5" Content="Download" Command="{Binding DownloadFileCommmand}" />-->
                         <Button Padding="5" Margin="10,0,0,0" Content="Update" Command="{Binding UploadFileCommmand}" />
-
                     </StackPanel>
                 </Grid>
             </Grid>

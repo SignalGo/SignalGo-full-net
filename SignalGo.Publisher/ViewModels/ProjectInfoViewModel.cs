@@ -697,8 +697,10 @@ namespace SignalGo.Publisher.ViewModels
                 OnPropertyChanged(nameof(IgnoreServerFileName));
             }
         }
-
-
+        /// <summary>
+        /// Fetch service files list from server
+        /// </summary>
+        /// <returns></returns>
         public async Task FetchFiles()
         {
             try
@@ -727,7 +729,6 @@ namespace SignalGo.Publisher.ViewModels
             }
         }
 
-        //static MemoryStream LastMemoryStream { get; set; }
         /// <summary>
         /// Capture Service Process Screenshot from server manager (by service key)
         /// </summary>
@@ -735,12 +736,15 @@ namespace SignalGo.Publisher.ViewModels
         private async Task CaptureApplicationProcess()
         {
             MemoryStream memoryStream = new MemoryStream();
+            //FileStream fileStream = new FileStream(Path.Combine(Path.GetTempPath(), "TempCaptureImage"), FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite);
             try
             {
                 var result = PublisherServiceProvider.Initialize(SelectedServerInfo);
                 ServerManagerStreamService serverManagerStreamService = new ServerManagerStreamService(result.CurrentClientProvider);
                 // Call CaptureApplicationProcess Service from server manager and using porojectKey(serviceKey)
-                var stream = await serverManagerStreamService.CaptureApplicationProcessAsync(ProjectInfo.ProjectKey);
+                using var stream = await serverManagerStreamService.CaptureApplicationProcessAsync(ProjectInfo.ProjectKey);
+                // for memory stream method:
+
                 var lengthWrite = 0;
                 while (lengthWrite != stream.Length)
                 {
@@ -751,12 +755,26 @@ namespace SignalGo.Publisher.ViewModels
                     await memoryStream.WriteAsync(bufferBytes, 0, readCount);
                     lengthWrite += readCount;
                 }
-                //await AsyncActions.RunOnUIAsync(() =>
+
+                // for file stream method:
+
+                //fileStream.SetLength(0);
+                //var lengthWrite = 0;
+                //while (lengthWrite < stream.Length)
+                //{
+                //    byte[] bufferBytes = new byte[1024 * 1024];
+                //    int readCount = await stream.Stream.ReadAsync(bufferBytes, bufferBytes.Length);
+                //    if (readCount <= 0)
+                //        break;
+                //    await fileStream.WriteAsync(bufferBytes, 0, readCount);
+                //    lengthWrite += readCount;
+                //}
+
                 RunOnUIAction(() =>
                 {
                     try
                     {
-                        PngBitmapDecoder decoder = new PngBitmapDecoder(memoryStream, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.None);
+                        PngBitmapDecoder decoder = new PngBitmapDecoder(memoryStream, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.Default);
                         ServerScreenCapture = decoder.Frames[0];
                     }
                     catch (Exception ex)
@@ -779,12 +797,10 @@ namespace SignalGo.Publisher.ViewModels
             }
             finally
             {
-                await Task.Delay(1000);
+                await Task.Delay(100);
                 await memoryStream.DisposeAsync();
+                //await fileStream.DisposeAsync();
                 Debug.WriteLine("Capture Process stream disposed");
-                //GC.Collect();
-                //GC.WaitForPendingFinalizers();
-                //GC.Collect();
             }
         }
 
