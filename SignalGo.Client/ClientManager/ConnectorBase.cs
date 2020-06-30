@@ -1500,7 +1500,10 @@ namespace SignalGo.Client.ClientManager
             }
         }
 #endif
-
+        /// <summary>
+        /// request ping with default 3 sec timeout
+        /// </summary>
+        /// <returns></returns>
         public bool SendPingAndWaitToReceive()
         {
             try
@@ -1508,6 +1511,25 @@ namespace SignalGo.Client.ClientManager
                 PingAndWaitForPong.Reset();
                 StreamHelper.WriteToStream(_clientStream, new byte[] { (byte)DataType.PingPong });
                 return PingAndWaitForPong.WaitOne(new TimeSpan(0, 0, 3));
+            }
+            catch (Exception ex)
+            {
+                AutoLogger.LogError(ex, "ConnectorBase SendData");
+                return false;
+            }
+        }
+        /// <summary>
+        /// request ping with specified timeout
+        /// </summary>
+        /// <param name="timeOut">Max Time To Wait(TimeSpan Base) </param>
+        /// <returns></returns>
+        public bool SendPingAndWaitToReceive(TimeSpan timeOut)
+        {
+            try
+            {
+                PingAndWaitForPong.Reset();
+                StreamHelper.WriteToStream(_clientStream, new byte[] { (byte)DataType.PingPong });
+                return PingAndWaitForPong.WaitOne(timeOut);
             }
             catch (Exception ex)
             {
