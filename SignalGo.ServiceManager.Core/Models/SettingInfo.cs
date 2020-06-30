@@ -25,8 +25,6 @@ namespace SignalGo.ServiceManager.Core.Models
                 return _Current;
             }
         }
-        //[JsonIgnore]
-        //public Guid ServerKey { get; set; }
         public ObservableCollection<ServerInfo> ServerInfo { get; set; } = new ObservableCollection<ServerInfo>();
 
         public static SettingInfo LoadSettingInfo()
@@ -43,11 +41,11 @@ namespace SignalGo.ServiceManager.Core.Models
                         ServerInfo = new ObservableCollection<ServerInfo>()
                     };
                 }
-                var result =  JsonConvert.DeserializeObject<SettingInfo>(File.ReadAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ServerDbName), Encoding.UTF8));
-                foreach (var item in result.ServerInfo)
-                {
-                    ServerDetailsManager.AddServer(item);
-                }
+                var result = JsonConvert.DeserializeObject<SettingInfo>(File.ReadAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ServerDbName), Encoding.UTF8));
+                //foreach (var item in result.ServerInfo)
+                //{
+                //    ServerDetailsManager.AddServer(item);
+                //}
                 return result;
             }
             catch

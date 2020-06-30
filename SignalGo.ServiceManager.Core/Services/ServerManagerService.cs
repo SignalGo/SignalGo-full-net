@@ -2,6 +2,7 @@
 using SignalGo.ServiceManager.Core.ClientServices;
 using SignalGo.ServiceManager.Core.Models;
 using SignalGo.Shared.DataTypes;
+using SignalGo.Shared.Log;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -22,12 +23,12 @@ namespace SignalGo.ServiceManager.Core.Services
         //    find.Stop();
         //    return true;
         //}
-        public bool StopServer(Guid serverKey)
+        public bool StopService(Guid serviceKey)
         {
             // Current.ServerKey not set yet!
             //if (serverKey != SettingInfo.Current.ServerKey)
             //    return false;
-            var find = SettingInfo.Current.ServerInfo.FirstOrDefault(x => x.ServerKey == serverKey);
+            var find = SettingInfo.Current.ServerInfo.FirstOrDefault(x => x.ServerKey == serviceKey);
             if (find == null)
                 return false;
             find.Stop();
@@ -43,50 +44,45 @@ namespace SignalGo.ServiceManager.Core.Services
         //    find.Start();
         //    return true;
         //}
-        public bool StartServer(Guid serverKey)
+        public bool StartService(Guid serviceKey)
         {
             //if (serverKey != SettingInfo.Current.ServerKey)
             //    return false;
-            var find = SettingInfo.Current.ServerInfo.FirstOrDefault(x => x.ServerKey == serverKey);
+            var find = SettingInfo.Current.ServerInfo.FirstOrDefault(x => x.ServerKey == serviceKey);
             if (find == null)
                 return false;
             find.Start();
             return true;
         }
-        //public bool RestartServer(Guid serverKey, string name, bool force = false)
-        //{
-        //    // find server
-        //    if (serverKey != SettingInfo.Current.ServerKey)
-        //        return false;
-        //    var find = SettingInfo.Current.ServerInfo.FirstOrDefault(x => x.Name == name);
-        //    if (find == null)
-        //        return false;
-        //    // stop 
-        //    find.Stop();
 
-        //    // start 
-        //    find.Start();
+        /// <summary>
+        /// restart a service in server
+        /// </summary>
+        /// <param name="serverKey">key of service</param>
+        /// <param name="force">force restart</param>
+        /// <returns></returns>
+        public bool RestartService(Guid serviceKey, bool force = false)
+        {
+            // find server
+            try
+            {
+                ServerInfo find = SettingInfo.Current.ServerInfo.FirstOrDefault(x => x.ServerKey == serviceKey);
+                if (find == null)
+                    return false;
+                // stop 
+                find.Stop();
 
-        //    return true;
+                // start 
+                find.Start();
+            }
+            catch (Exception ex)
+            {
+                AutoLogger.Default.LogError(ex, "Restart Server Service");
+            }
 
-        //}
-        //public bool RestartServer(Guid serverKey, bool force = false)
-        //{
-        //    // find server
-        //    if (serverKey != SettingInfo.Current.ServerKey)
-        //        return false;
-        //    var find = SettingInfo.Current.ServerInfo.FirstOrDefault(x => x.ServerKey == serverKey);
-        //    if (find == null)
-        //        return false;
-        //    // stop 
-        //    find.Stop();
+            return true;
 
-        //    // start 
-        //    find.Start();
-
-        //    return true;
-
-        //}
+        }
 
         public async Task<string> CallClientService(string message)
         {
@@ -100,16 +96,6 @@ namespace SignalGo.ServiceManager.Core.Services
                 }
             }
             return message;
-        }
-
-        /// <summary>
-        /// test hello
-        /// </summary>
-        /// <param name="name"></param>
-        /// <returns></returns>
-        public string SayHello(string name = "")
-        {
-            return $"Hello Dear {name}";
         }
     }
 }

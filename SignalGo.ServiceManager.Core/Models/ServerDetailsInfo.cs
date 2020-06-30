@@ -5,6 +5,7 @@ namespace SignalGo.ServiceManager.Core.Models
     public class ServerDetailsInfo : NotifyPropertyChangedBase
     {
         public bool IsEnabled { get; set; }
+
         public string _ServiceMemoryUsage;
         public string ServiceMemoryUsage
         {

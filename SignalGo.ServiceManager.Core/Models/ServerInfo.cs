@@ -170,7 +170,8 @@ namespace SignalGo.ServiceManager.Core.Models
                         // ser server status to stopped
                         Status = ServerInfoStatus.Stopped;
                         // remove from service usage monitoring dic
-                        Helpers.ServerDetailsManager.ServerDetails.Remove(this);
+                        this.Details.ServiceMemoryUsage = "0";
+                        Helpers.ServerDetailsManager.StopEngine(this);
                         // get out
                         break;
                     }
@@ -231,6 +232,9 @@ namespace SignalGo.ServiceManager.Core.Models
                         SendToMainHostForHidden?.Invoke(process);
                         ProcessStarted?.Invoke();
                         // doing health check
+                        // enable service monitor
+                        Helpers.ServerDetailsManager.AddServer(this);
+                        Helpers.ServerDetailsManager.Enable(this);
                         Console.WriteLine($"Health Check, OK.");
                     }
                     catch (Exception ex)
