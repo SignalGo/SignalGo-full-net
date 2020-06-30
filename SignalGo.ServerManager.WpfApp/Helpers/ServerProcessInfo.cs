@@ -82,7 +82,6 @@ namespace SignalGo.ServerManager.WpfApp.Helpers
                     PipeOptions.Asynchronous,
                     BUFFER_SIZE,
                     BUFFER_SIZE);
-
             }
 
             // Wait for a client to connect

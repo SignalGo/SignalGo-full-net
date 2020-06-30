@@ -24,7 +24,7 @@
     <Page.DataContext>
         <Binding Source="{StaticResource ServerInfoViewModel}"/>
     </Page.DataContext>
-    <TabControl>
+    <TabControl SelectionChanged="TabControl_SelectionChanged">
         <TabItem Header="Setting">
             <Grid Margin="10">
                 <Grid.RowDefinitions>
@@ -71,7 +71,7 @@
                     <StatusBarItem>
                         <Grid>
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="RAM Usage: > "/>
+                                <TextBlock Text="RAM Usage: "/>
                                 <TextBlock Text="{Binding ServerInfo.Details.ServiceMemoryUsage}"/>
                                 <TextBlock Text=" Mb"/>
                             </StackPanel>

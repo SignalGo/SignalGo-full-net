@@ -35,7 +35,7 @@ namespace SignalGo.ServerManager.WpfApp.Views
 
             ServerInfo.SendToMainHostForHidden = (process) =>
             {
-                ServerInfoPage.SendToMainHostForHidden(process, null);
+                TabInfo.SendToMainHostForHidden(process, null);
             };
             BaseViewModel.Initialize();
             BaseViewModel.RunOnUIAction = (x) =>
