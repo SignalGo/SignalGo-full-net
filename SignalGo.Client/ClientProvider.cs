@@ -197,6 +197,64 @@ namespace SignalGo.Client
                 }
             });
         }
+
+        int retryAttempted = 0;
+
+        /// <summary>
+        /// Connect to server and reconnect if disconnected by specified timeout(for max retry)
+        /// </summary>
+        /// <param name="url"></param>
+        /// <param name="connectedAction"></param>
+        /// <param name="retryAttempt">retry attempt/count</param>
+        public void ConnectAsyncAutoReconnect(string url, Action<bool> connectedAction, int retryAttempt)
+        {
+            Task.Run(async () =>
+            {
+                ProviderSetting.AutoReconnect = true;
+                while (retryAttempted <= retryAttempt)
+                {
+                    try
+                    {
+                        await ConnectAsync(url);
+                        try
+                        {
+                            connectedAction(true);
+                        }
+                        catch
+                        {
+
+                        }
+                        await AutoReconnectWaitToDisconnectTaskResult.Task;
+                        await Task.Delay(1000);
+                        AutoReconnectWaitToDisconnectTaskResult = new TaskCompletionSource<object>();
+                        retryAttempted++;
+                    }
+                    catch (Exception ex)
+                    {
+                        while (retryAttempted <= retryAttempt)
+                        {
+                            try
+                            {
+                                connectedAction(false);
+                            }
+                            catch
+                            {
+
+                            }
+                            Disconnect();
+                            await Task.Delay(1000);
+                            AutoReconnectWaitToDisconnectTaskResult = new TaskCompletionSource<object>();
+                            retryAttempted++;
+                        }
+                    }
+                    finally
+                    {
+                        retryAttempted = 0;
+                    }
+                    break;
+                }
+            });
+        }
 #endif
 
         /// <summary>
@@ -308,7 +366,7 @@ namespace SignalGo.Client
 
         private void GetClientIdIfNeed()
         {
-            if (ProviderSetting.AutoDetectRegisterServices && ProtocolType != ClientProtocolType.HttpDuplex && ProtocolType !=  ClientProtocolType.WebSocket)
+            if (ProviderSetting.AutoDetectRegisterServices && ProtocolType != ClientProtocolType.HttpDuplex && ProtocolType != ClientProtocolType.WebSocket)
             {
                 byte[] data = new byte[]
                 {
