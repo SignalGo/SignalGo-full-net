@@ -21,17 +21,17 @@ namespace ServerManagerService.Interfaces
 
     public partial interface IServerManagerServiceSync
     {
-        bool StopServer(System.Guid serverKey);
-        bool StartServer(System.Guid serverKey);
+        bool StopService(System.Guid serviceKey);
+        bool StartService(System.Guid serviceKey);
+        bool RestartService(System.Guid serviceKey, bool force);
         string CallClientService(string message);
-        string SayHello(string name);
     }
     public partial interface IServerManagerServiceAsync
     {
-        Task<bool> StopServerAsync(System.Guid serverKey);
-        Task<bool> StartServerAsync(System.Guid serverKey);
+        Task<bool> StopServiceAsync(System.Guid serviceKey);
+        Task<bool> StartServiceAsync(System.Guid serviceKey);
+        Task<bool> RestartServiceAsync(System.Guid serviceKey, bool force);
         Task<string> CallClientServiceAsync(string message);
-        Task<string> SayHelloAsync(string name);
     }
     [ServiceContract("servermanagerserverservice", ServiceType.ServerService, InstanceType.SingleInstance)]
     public partial interface IServerManagerService: IServerManagerServiceAsync, IServerManagerServiceSync
@@ -81,32 +81,48 @@ namespace ServerManagerService.ServerServices
             CurrentProvider = clientProvider;
             ServiceName = this.GetType().GetServerServiceName(true);
         }
-        public bool StopServer(System.Guid serverKey)
+        public bool StopService(System.Guid serviceKey)
         {
-                return  SignalGo.Client.ClientManager.ConnectorExtensions.SendDataSync<bool>(CurrentProvider, ServiceName,"StopServer", new SignalGo.Shared.Models.ParameterInfo[]
+                return  SignalGo.Client.ClientManager.ConnectorExtensions.SendDataSync<bool>(CurrentProvider, ServiceName,"StopService", new SignalGo.Shared.Models.ParameterInfo[]
                 {
-                         new  SignalGo.Shared.Models.ParameterInfo() { Name = nameof(serverKey),Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(serverKey) },
+                         new  SignalGo.Shared.Models.ParameterInfo() { Name = nameof(serviceKey),Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(serviceKey) },
                 });
         }
-        public Task<bool> StopServerAsync(System.Guid serverKey)
+        public Task<bool> StopServiceAsync(System.Guid serviceKey)
         {
-                return SignalGo.Client.ClientManager.ConnectorExtensions.SendDataAsync<bool>(CurrentProvider, ServiceName,"StopServer", new SignalGo.Shared.Models.ParameterInfo[]
+                return SignalGo.Client.ClientManager.ConnectorExtensions.SendDataAsync<bool>(CurrentProvider, ServiceName,"StopService", new SignalGo.Shared.Models.ParameterInfo[]
                 {
-                         new  SignalGo.Shared.Models.ParameterInfo() { Name = nameof(serverKey),Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(serverKey) },
+                         new  SignalGo.Shared.Models.ParameterInfo() { Name = nameof(serviceKey),Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(serviceKey) },
                 });
         }
-        public bool StartServer(System.Guid serverKey)
+        public bool StartService(System.Guid serviceKey)
         {
-                return  SignalGo.Client.ClientManager.ConnectorExtensions.SendDataSync<bool>(CurrentProvider, ServiceName,"StartServer", new SignalGo.Shared.Models.ParameterInfo[]
+                return  SignalGo.Client.ClientManager.ConnectorExtensions.SendDataSync<bool>(CurrentProvider, ServiceName,"StartService", new SignalGo.Shared.Models.ParameterInfo[]
                 {
-                         new  SignalGo.Shared.Models.ParameterInfo() { Name = nameof(serverKey),Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(serverKey) },
+                         new  SignalGo.Shared.Models.ParameterInfo() { Name = nameof(serviceKey),Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(serviceKey) },
                 });
         }
-        public Task<bool> StartServerAsync(System.Guid serverKey)
+        public Task<bool> StartServiceAsync(System.Guid serviceKey)
         {
-                return SignalGo.Client.ClientManager.ConnectorExtensions.SendDataAsync<bool>(CurrentProvider, ServiceName,"StartServer", new SignalGo.Shared.Models.ParameterInfo[]
+                return SignalGo.Client.ClientManager.ConnectorExtensions.SendDataAsync<bool>(CurrentProvider, ServiceName,"StartService", new SignalGo.Shared.Models.ParameterInfo[]
                 {
-                         new  SignalGo.Shared.Models.ParameterInfo() { Name = nameof(serverKey),Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(serverKey) },
+                         new  SignalGo.Shared.Models.ParameterInfo() { Name = nameof(serviceKey),Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(serviceKey) },
+                });
+        }
+        public bool RestartService(System.Guid serviceKey, bool force)
+        {
+                return  SignalGo.Client.ClientManager.ConnectorExtensions.SendDataSync<bool>(CurrentProvider, ServiceName,"RestartService", new SignalGo.Shared.Models.ParameterInfo[]
+                {
+                         new  SignalGo.Shared.Models.ParameterInfo() { Name = nameof(serviceKey),Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(serviceKey) },
+                         new  SignalGo.Shared.Models.ParameterInfo() { Name = nameof(force),Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(force) },
+                });
+        }
+        public Task<bool> RestartServiceAsync(System.Guid serviceKey, bool force)
+        {
+                return SignalGo.Client.ClientManager.ConnectorExtensions.SendDataAsync<bool>(CurrentProvider, ServiceName,"RestartService", new SignalGo.Shared.Models.ParameterInfo[]
+                {
+                         new  SignalGo.Shared.Models.ParameterInfo() { Name = nameof(serviceKey),Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(serviceKey) },
+                         new  SignalGo.Shared.Models.ParameterInfo() { Name = nameof(force),Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(force) },
                 });
         }
         public string CallClientService(string message)
@@ -121,20 +137,6 @@ namespace ServerManagerService.ServerServices
                 return SignalGo.Client.ClientManager.ConnectorExtensions.SendDataAsync<string>(CurrentProvider, ServiceName,"CallClientService", new SignalGo.Shared.Models.ParameterInfo[]
                 {
                          new  SignalGo.Shared.Models.ParameterInfo() { Name = nameof(message),Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(message) },
-                });
-        }
-        public string SayHello(string name)
-        {
-                return  SignalGo.Client.ClientManager.ConnectorExtensions.SendDataSync<string>(CurrentProvider, ServiceName,"SayHello", new SignalGo.Shared.Models.ParameterInfo[]
-                {
-                         new  SignalGo.Shared.Models.ParameterInfo() { Name = nameof(name),Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(name) },
-                });
-        }
-        public Task<string> SayHelloAsync(string name)
-        {
-                return SignalGo.Client.ClientManager.ConnectorExtensions.SendDataAsync<string>(CurrentProvider, ServiceName,"SayHello", new SignalGo.Shared.Models.ParameterInfo[]
-                {
-                         new  SignalGo.Shared.Models.ParameterInfo() { Name = nameof(name),Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(name) },
                 });
         }
     }
