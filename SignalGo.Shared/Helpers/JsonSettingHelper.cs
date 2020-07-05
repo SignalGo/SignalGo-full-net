@@ -4,6 +4,7 @@ using Newtonsoft.Json.Serialization;
 using SignalGo.Shared.Log;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace SignalGo.Shared.Helpers
 {
@@ -19,8 +20,13 @@ namespace SignalGo.Shared.Helpers
             {
                 if (reader.Value is DateTime dateTime)
                 {
-                    if (dateTime.Kind != DateTimeKind.Utc)
+                    if (dateTime.Kind == DateTimeKind.Local)
                         return dateTime.ToUniversalTime();
+                    else if (dateTime.Kind == DateTimeKind.Unspecified)
+                    {
+                        dateTime = new DateTime(dateTime.Ticks, DateTimeKind.Utc);
+                        return dateTime;
+                    }
                     else
                         return dateTime;
                 }
@@ -40,8 +46,13 @@ namespace SignalGo.Shared.Helpers
             {
                 if (value is DateTime dateTime)
                 {
-                    if (dateTime.Kind != DateTimeKind.Utc)
+                    if (dateTime.Kind == DateTimeKind.Local)
                         writer.WriteValue(dateTime.ToUniversalTime());
+                    else if (dateTime.Kind == DateTimeKind.Unspecified)
+                    {
+                        dateTime = new DateTime(dateTime.Ticks, DateTimeKind.Utc);
+                        writer.WriteValue(dateTime);
+                    }
                     else
                         writer.WriteValue(dateTime);
                 }
@@ -143,6 +154,10 @@ namespace SignalGo.Shared.Helpers
     /// </summary>
     public class JsonSettingHelper
     {
+        public JsonSettingHelper()
+        {
+            CurrentDateTimeSetting = new ToRealDateTimeConvertor() { AutoLogger = AutoLogger };
+        }
         public DateTimeConverterBase CurrentDateTimeSetting { get; set; }
         /// <summary>
         /// log erros and warnings
@@ -160,13 +175,23 @@ namespace SignalGo.Shared.Helpers
                     ReferenceLoopHandling = ReferenceLoopHandling.Ignore
                 };
 
-                if (CurrentDateTimeSetting != null)
-                    setting.Converters.Add(CurrentDateTimeSetting);
-                else
-                    setting.Converters.Add(new ToRealDateTimeConvertor() { AutoLogger = AutoLogger });
-
+                setting.Converters.Add(CurrentDateTimeSetting);
                 return setting;
             };
+        }
+
+        public IList<JsonConverter> GetConverters(params JsonConverter[] yourConverters)
+        {
+            if (yourConverters != null)
+            {
+                var result = yourConverters.ToList();
+                result.Insert(0, CurrentDateTimeSetting);
+                return result;
+            }
+            else
+            {
+                return new List<JsonConverter>() { CurrentDateTimeSetting };
+            }
         }
 
         public void HandleDeserializationError(object sender, ErrorEventArgs errorArgs)

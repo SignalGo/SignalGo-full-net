@@ -84,7 +84,7 @@ namespace SignalGo.Client.ClientManager
         public bool UseHttpStream { get; set; } = false;
 
         internal ISignalGoStream StreamHelper { get; set; } = null;
-        internal JsonSettingHelper JsonSettingHelper { get; set; } = new JsonSettingHelper();
+        public JsonSettingHelper JsonSettingHelper { get; set; } = new JsonSettingHelper();
         internal AutoLogger AutoLogger { get; set; } = new AutoLogger() { FileName = "ConnectorBase Logs.log" };
         //internal ConcurrentList<AutoResetEvent> HoldMethodsToReconnect = new ConcurrentList<AutoResetEvent>();
         internal ConcurrentList<Delegate> PriorityActionsAfterConnected = new ConcurrentList<Delegate>();

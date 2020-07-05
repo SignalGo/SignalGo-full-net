@@ -3,6 +3,7 @@ using SignalGo.Server.Models;
 using SignalGo.Server.ServiceManager;
 using SignalGo.Shared.Converters;
 using SignalGo.Shared.DataTypes;
+using SignalGo.Shared.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -14,6 +15,7 @@ namespace SignalGo.Server.Helpers
     /// </summary>
     public static class ServerSerializationHelper
     {
+        public static JsonSettingHelper JsonSettingHelper { get; set; } = new JsonSettingHelper();
         /// <summary>
         /// serialize an object
         /// </summary>
@@ -33,19 +35,17 @@ namespace SignalGo.Server.Helpers
             {
                 bool isReferenceResolver = isEnabledReferenceResolver.GetValueOrDefault(serverBase.ProviderSetting.IsEnabledReferenceResolver);
                 bool isReferenceResolverForArray = isEnabledReferenceResolverForArray.GetValueOrDefault(serverBase.ProviderSetting.IsEnabledReferenceResolverForArray);
-                var converters = new List<JsonConverter>()
-                {
-                    new CustomICollectionCreationConverter(), new DataExchangeConverter(LimitExchangeType.OutgoingCall, customDataExchanger)
-                    {
-                        CurrentTaskId = Task.CurrentId, Server = serverBase, Client = client, IsEnabledReferenceResolver =isReferenceResolver , IsEnabledReferenceResolverForArray =isReferenceResolverForArray
-                    } 
-                };
-                //if (serverBase.JsonSettingHelper.CurrentDateTimeSetting != null)
-                //    converters.Add(serverBase.JsonSettingHelper.CurrentDateTimeSetting);
                 return JsonConvert.SerializeObject(obj, Formatting.None, new JsonSerializerSettings()
                 {
                     ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
-                    Converters = converters,
+                    Converters = JsonSettingHelper.GetConverters(new CustomICollectionCreationConverter(), new DataExchangeConverter(LimitExchangeType.OutgoingCall, customDataExchanger)
+                    {
+                        CurrentTaskId = Task.CurrentId,
+                        Server = serverBase,
+                        Client = client,
+                        IsEnabledReferenceResolver = isReferenceResolver,
+                        IsEnabledReferenceResolverForArray = isReferenceResolverForArray
+                    }),
                     Formatting = Formatting.None,
                     NullValueHandling = nullValueHandling
                 });
@@ -82,7 +82,7 @@ namespace SignalGo.Server.Helpers
             if (string.IsNullOrEmpty(json))
                 return null;
             if (serverBase != null && serverBase.ProviderSetting.IsEnabledDataExchanger)
-                return JsonConvert.DeserializeObject(json, type, new JsonSerializerSettings() { ReferenceLoopHandling = ReferenceLoopHandling.Ignore, Converters = new List<JsonConverter>() { new CustomICollectionCreationConverter(), new DataExchangeConverter(LimitExchangeType.IncomingCall, customDataExchanger) { CurrentTaskId = Task.CurrentId, ValidationRuleInfoManager = serverBase?.ValidationRuleInfoManager, Server = serverBase, Client = client, IsEnabledReferenceResolver = serverBase.ProviderSetting.IsEnabledReferenceResolver, IsEnabledReferenceResolverForArray = serverBase.ProviderSetting.IsEnabledReferenceResolverForArray } }, Formatting = Formatting.None, NullValueHandling = nullValueHandling });
+                return JsonConvert.DeserializeObject(json, type, new JsonSerializerSettings() { ReferenceLoopHandling = ReferenceLoopHandling.Ignore, Converters = JsonSettingHelper.GetConverters(new CustomICollectionCreationConverter(), new DataExchangeConverter(LimitExchangeType.IncomingCall, customDataExchanger) { CurrentTaskId = Task.CurrentId, ValidationRuleInfoManager = serverBase?.ValidationRuleInfoManager, Server = serverBase, Client = client, IsEnabledReferenceResolver = serverBase.ProviderSetting.IsEnabledReferenceResolver, IsEnabledReferenceResolverForArray = serverBase.ProviderSetting.IsEnabledReferenceResolverForArray }), Formatting = Formatting.None, NullValueHandling = nullValueHandling });
             return JsonConvert.DeserializeObject(json, type, new JsonSerializerSettings() { Formatting = Formatting.None, NullValueHandling = nullValueHandling, ReferenceLoopHandling = ReferenceLoopHandling.Ignore });
         }
 
@@ -103,7 +103,7 @@ namespace SignalGo.Server.Helpers
             if (!IsValidJson(json))
                 json = SerializeObject(json, serverBase, nullValueHandling, customDataExchanger, client);
             if (serverBase != null && serverBase.ProviderSetting.IsEnabledDataExchanger)
-                return JsonConvert.DeserializeObject(json, type, new JsonSerializerSettings() { ReferenceLoopHandling = ReferenceLoopHandling.Ignore, Converters = new List<JsonConverter>() { new CustomICollectionCreationConverter(), new DataExchangeConverter(LimitExchangeType.IncomingCall, customDataExchanger) { CurrentTaskId = Task.CurrentId, ValidationRuleInfoManager = serverBase?.ValidationRuleInfoManager, Server = serverBase, Client = client, IsEnabledReferenceResolver = serverBase.ProviderSetting.IsEnabledReferenceResolver, IsEnabledReferenceResolverForArray = serverBase.ProviderSetting.IsEnabledReferenceResolverForArray } }, Formatting = Formatting.None, NullValueHandling = nullValueHandling });
+                return JsonConvert.DeserializeObject(json, type, new JsonSerializerSettings() { ReferenceLoopHandling = ReferenceLoopHandling.Ignore, Converters = JsonSettingHelper.GetConverters(new CustomICollectionCreationConverter(), new DataExchangeConverter(LimitExchangeType.IncomingCall, customDataExchanger) { CurrentTaskId = Task.CurrentId, ValidationRuleInfoManager = serverBase?.ValidationRuleInfoManager, Server = serverBase, Client = client, IsEnabledReferenceResolver = serverBase.ProviderSetting.IsEnabledReferenceResolver, IsEnabledReferenceResolverForArray = serverBase.ProviderSetting.IsEnabledReferenceResolverForArray }), Formatting = Formatting.None, NullValueHandling = nullValueHandling });
             return JsonConvert.DeserializeObject(json, type, new JsonSerializerSettings() { Formatting = Formatting.None, NullValueHandling = nullValueHandling, ReferenceLoopHandling = ReferenceLoopHandling.Ignore });
         }
 

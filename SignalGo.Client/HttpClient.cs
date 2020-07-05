@@ -85,7 +85,26 @@ namespace SignalGo.Client
             JsonSettingHelper.Initialize();
         }
 
-        internal JsonSettingHelper JsonSettingHelper { get; set; } = new JsonSettingHelper();
+        /// <summary>
+        /// default 
+        /// </summary>
+        public static JsonSettingHelper DefaultJsonSettingHelper { get; set; } = new JsonSettingHelper();
+
+        JsonSettingHelper _JsonSettingHelper;
+        public JsonSettingHelper JsonSettingHelper
+        {
+            get
+            {
+                if (_JsonSettingHelper == null)
+                    return DefaultJsonSettingHelper;
+                return _JsonSettingHelper;
+            }
+            set
+            {
+                _JsonSettingHelper = value;
+                _JsonSettingHelper.Initialize();
+            }
+        }
         /// <summary>
         /// encoding system
         /// </summary>
