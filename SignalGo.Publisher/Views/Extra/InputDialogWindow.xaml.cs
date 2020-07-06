@@ -12,7 +12,7 @@ namespace SignalGo.Publisher.Views.Extra
         {
             InitializeComponent();
             lblQuestion.Content = question;
-            txtAnswer.Text = defaultAnswer;
+            txtAnswer.Password = defaultAnswer;
         }
         private void btnDialogOk_Click(object sender, RoutedEventArgs e)
         {
@@ -25,7 +25,7 @@ namespace SignalGo.Publisher.Views.Extra
         }
         public string Answer
         {
-            get { return txtAnswer.Text; }
+            get { return txtAnswer.Password; }
         }
     }
 }
