@@ -21,7 +21,6 @@ namespace SignalGo.Client
         /// connect to server
         /// </summary>
         /// <param name="url">server url address</param>
-        /// <param name="isWebsocket"></param>
         public override void Connect(string url)
         {
 #if (!NETSTANDARD2_0 && !NET45)
@@ -58,13 +57,13 @@ namespace SignalGo.Client
                 OnConnectionChanged?.Invoke(ConnectionStatus.Connected);
         }
 
+
+#if (!NET40 && !NET35)
         /// <summary>
         /// connect to server
         /// </summary>
         /// <param name="url"></param>
-        /// <param name="isWebsocket"></param>
         /// <returns></returns>
-#if (!NET40 && !NET35)
         public override async Task ConnectAsync(string url)
         {
 #if (!NETSTANDARD2_0 && !NET45)
@@ -101,14 +100,15 @@ namespace SignalGo.Client
         private readonly bool _oneTimeConnectedAsyncCalledWithAutoReconnect = false;
 
         private AutoResetEvent HoldThreadResetEvent { get; set; } = new AutoResetEvent(false);
-        /// <summary>
-        /// connect to server is background Thread
-        /// </summary>
-        /// <param name="url">url of server to connect</param>
-        /// <param name="connectedAction">call this action after connect successfully</param>
-        /// <param name="isAutoRecconect">if you want system try to reConnect when server or network is not avalable</param>
-        /// <param name="isHoldMethodCallsWhenDisconnected">hold method calls when provider is disconnected and call all after connected</param>
-        /// <param name="isWebsocket">is web socket system</param>
+
+        ///// <summary>
+        ///// connect to server is background Thread
+        ///// </summary>
+        ///// <param name="url">url of server to connect</param>
+        ///// <param name="connectedAction">call this action after connect successfully</param>
+        ///// <param name="isAutoRecconect">if you want system try to reConnect when server or network is not avalable</param>
+        ///// <param name="isHoldMethodCallsWhenDisconnected">hold method calls when provider is disconnected and call all after connected</param>
+        ///// <param name="isWebsocket">is web socket system</param>
         //public void ConnectAsync(string url, Action<bool> connectedAction, bool isAutoRecconect, bool isHoldMethodCallsWhenDisconnected, bool isWebsocket = false)
         //{
         //    AsyncActions.Run(() =>

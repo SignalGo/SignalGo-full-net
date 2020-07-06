@@ -170,12 +170,13 @@ namespace SignalGo.Client.ClientManager
 
         internal string _address = "";
         internal int _port = 0;
+
+#if (!NET35 && !NET40)
         /// <summary>
         /// connect to server
         /// </summary>
         /// <param name="address">server address</param>
         /// <param name="port">server port</param>
-#if (!NET35 && !NET40)
         internal async Task ConnectAsync(string address, int port)
         {
             if (IsConnected)
@@ -344,7 +345,8 @@ namespace SignalGo.Client.ClientManager
         /// T type must inherited OprationCalls interface
         /// T type must not be an interface
         /// </summary>
-        /// <typeparam name="T">type of class for call server methods</typeparam>
+        /// <param name="type">type of class for call server methods</param>
+        /// <param name="constructors"></param>
         /// <returns>return instance class for call methods</returns>
         public object RegisterServerService(Type type, params object[] constructors)
         {
@@ -1165,12 +1167,12 @@ namespace SignalGo.Client.ClientManager
             return obj;
         }
 
-        /// <summary>
+        ///<summary>
         /// register a callback interface and get dynamic calls
         /// works for all platform like windows ,android ,ios and ...
         /// </summary>
-        /// <typeparam name="T">interface type for use dynamic call</typeparam>
-        /// <returns>return dynamic type to call methods</returns>
+        /// <param name="serviceName"></param>
+        /// <returns></returns>
         public dynamic RegisterServerServiceDynamic(string serviceName)
         {
             if (IsDisposed)
@@ -1333,13 +1335,16 @@ namespace SignalGo.Client.ClientManager
 #endif
             return (CompressMode)int.Parse(character.ToString());
         }
+
+#if (NET35 || NET40)
         /// <summary>
         /// start client to reading stream and data from server
         /// </summary>
-        /// <param name="client"></param>
-#if (NET35 || NET40)
         internal void StartToReadingClientData()
 #else
+        /// <summary>
+        /// start client to reading stream and data from server
+        /// </summary>
         internal async void StartToReadingClientData()
 
 #endif
@@ -1564,7 +1569,7 @@ namespace SignalGo.Client.ClientManager
         /// <summary>
         /// send data to call server method
         /// </summary>
-        /// <param name="Data"></param>
+        /// <param name="data"></param>
         internal void SendData(MethodCallInfo data)
         {
             AsyncActions.Run(() =>
