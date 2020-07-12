@@ -1673,7 +1673,19 @@ namespace SignalGo.Client.ClientManager
                 //                var method = service.GetType().GetMethod(callInfo.MethodName, RuntimeTypeHelper.GetMethodTypes(service.GetType(), callInfo).ToArray());
                 //#endif
                 if (method == null)
-                    throw new Exception($"Method {callInfo.MethodName} from service {callInfo.ServiceName} not found! serviceType: {service.GetType().FullName}");
+                {
+                    if (callInfo.MethodName.EndsWith("async", StringComparison.OrdinalIgnoreCase))
+                    {
+                        callInfo.MethodName = callInfo.MethodName.Substring(0, callInfo.MethodName.IndexOf("async"));
+                    }
+                    else
+                    {
+                        callInfo.MethodName += "Async";
+                    }
+                    method = service.GetType().FindMethod(callInfo.MethodName);
+                    if (method == null)
+                        throw new Exception($"Method {callInfo.MethodName} from service {callInfo.ServiceName} not found! serviceType: {service.GetType().FullName}");
+                }
                 List<object> parameters = new List<object>();
                 int index = 0;
                 foreach (System.Reflection.ParameterInfo item in method.GetParameters())
