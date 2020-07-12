@@ -1523,6 +1523,7 @@ namespace SignalGo.Client.ClientManager
                 return false;
             }
         }
+#if (!NET40 && !NET35)
         /// <summary>
         /// request ping with specified timeout
         /// </summary>
@@ -1542,6 +1543,7 @@ namespace SignalGo.Client.ClientManager
                 return false;
             }
         }
+#endif
 
         internal byte[] DecryptBytes(byte[] bytes)
         {

@@ -199,7 +199,6 @@ namespace SignalGo.Client
         }
 
         int retryAttempted = 0;
-
         /// <summary>
         /// Connect to server and reconnect if disconnected by specified timeout(for max retry)
         /// </summary>
@@ -225,7 +224,7 @@ namespace SignalGo.Client
 
                         }
                         await AutoReconnectWaitToDisconnectTaskResult.Task;
-                        await Task.Delay(1000);
+                        await Task.Delay(500);
                         AutoReconnectWaitToDisconnectTaskResult = new TaskCompletionSource<object>();
                         retryAttempted++;
                     }
@@ -242,7 +241,7 @@ namespace SignalGo.Client
 
                             }
                             Disconnect();
-                            await Task.Delay(1000);
+                            await Task.Delay(500);
                             AutoReconnectWaitToDisconnectTaskResult = new TaskCompletionSource<object>();
                             retryAttempted++;
                         }
