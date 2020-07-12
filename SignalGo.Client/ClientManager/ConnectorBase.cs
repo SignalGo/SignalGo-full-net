@@ -1202,9 +1202,18 @@ namespace SignalGo.Client.ClientManager
         /// <returns>return instance if type</returns>
         public T RegisterClientService<T>()
         {
+            return (T)RegisterClientService(typeof(T));
+        }
+
+        /// <summary>
+        /// register client service class, it's client methods that server call them
+        /// </summary>
+        /// <typeparam name="T">type of your class</typeparam>
+        /// <returns>return instance if type</returns>
+        public object RegisterClientService(Type type)
+        {
             if (IsDisposed)
                 throw new ObjectDisposedException("Connector");
-            Type type = typeof(T);
             string name = type.GetClientServiceName(true);
 
             object objectInstance = Activator.CreateInstance(type);
@@ -1213,8 +1222,9 @@ namespace SignalGo.Client.ClientManager
 
             Callbacks.TryAdd(name, new KeyValue<SynchronizationContext, object>(SynchronizationContext.Current, objectInstance));
             OperationContract.SetConnector(objectInstance, this);
-            return (T)objectInstance;
+            return objectInstance;
         }
+
 #if (NET40 || NET35)
         Func<CompressMode, string> ReadJsonFromStreamFunction { get; set; }
 #else

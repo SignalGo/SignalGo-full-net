@@ -225,6 +225,7 @@ namespace SignalGo.Server.ServiceManager
             if (service != null)
             {
                 string name = service.GetServiceName(false).ToLower();
+                name = ServiceContractExtensions.GetServiceNameWithGeneric(serviceType, name);
                 if (!RegisteredServiceTypes.ContainsKey(name))
                     RegisteredServiceTypes.TryAdd(name, serviceType);
             }
