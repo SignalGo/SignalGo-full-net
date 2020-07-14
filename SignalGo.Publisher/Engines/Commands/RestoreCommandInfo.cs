@@ -1,8 +1,4 @@
 ﻿using SignalGo.Publisher.Engines.Models;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -27,12 +23,9 @@ namespace SignalGo.Publisher.Engines.Commands
             return false;
         }
 
-        public override async Task<RunStatusType> Run(CancellationToken cancellationToken)
+        public override async Task<RunStatusType> Run(CancellationToken cancellationToken,string caller)
         {
-            var result = await base.Run(cancellationToken);
-            //var output = result.StartInfo;
-            //Status = Models.RunStatusType.Done;
-            //Status = Models.RunStatusType.Error;
+            var result = await base.Run(cancellationToken,caller);
             return result;
         }
     }

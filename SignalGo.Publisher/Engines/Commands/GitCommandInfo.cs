@@ -1,8 +1,6 @@
 ﻿using System;
 using SignalGo.Publisher.Engines.Models;
-using SignalGo.Publisher.Models;
 using System.Diagnostics;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using SignalGo.Shared.Log;
@@ -20,9 +18,9 @@ namespace SignalGo.Publisher.Engines.Commands
             IsEnabled = true;
         }
 
-        public override async Task<RunStatusType> Run(CancellationToken cancellationToken)
+        public override async Task<RunStatusType> Run(CancellationToken cancellationToken, string caller)
         {
-            var result = await base.Run(cancellationToken);
+            var result = await base.Run(cancellationToken, caller);
             return result;
         }
 

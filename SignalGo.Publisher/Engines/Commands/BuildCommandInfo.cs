@@ -50,13 +50,13 @@ namespace SignalGo.Publisher.Engines.Commands
             buildType = Configuration.IsBuild ? "Build" : "Rebuild";
             outputType = Configuration.IsRelease ? "Release" : "Debug";
 
-            Arguments = $"-t:{buildType} -r:{Configuration.IsRestore} -p:Configuration={outputType} -noWarn:CS1591 -nologo";
+            Arguments = $"-t:{buildType} -r:{Configuration.IsRestore} -p:Configuration={outputType} -noWarn:MSB4011;CS1591 -nologo";
             IsEnabled = true;
         }
 
-        public override async Task<RunStatusType> Run(CancellationToken cancellationToken)
+        public override async Task<RunStatusType> Run(CancellationToken cancellationToken, string caller)
         {
-            var result = await base.Run(cancellationToken);
+            var result = await base.Run(cancellationToken,caller);
             return result;
         }
 
@@ -64,7 +64,6 @@ namespace SignalGo.Publisher.Engines.Commands
         {
             var projectCount = await LoadSlnProjectsCount(WorkingPath);
             Size = projectCount;
-
             processStartInfo.RedirectStandardOutput = true;
             processStartInfo.FileName = $"{Command}";
             processStartInfo.CreateNoWindow = true;
