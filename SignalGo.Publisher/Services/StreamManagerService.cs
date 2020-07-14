@@ -1,18 +1,19 @@
 ﻿using System;
 using System.IO;
-using System.Diagnostics;
 using System.Threading.Tasks;
 using SignalGo.Publisher.Models;
 using SignalGo.Shared.Log;
 using System.Threading;
 using SignalGo.Shared.Models;
 using SignalGo.Publisher.Shared.Models;
+using SignalGo.Publisher.Models.Extra;
+using System.Diagnostics;
 
 namespace SignalGo.Publisher.Services
 {
     public class StreamManagerService
     {
-        public static async Task<UploadInfo> UploadAsync(UploadInfo uploadInfo, CancellationToken cancellationToken, ServiceContract serviceContract, ServerInfo serverInfo)
+        public static async Task<UploadInfo> UploadAsync(UploadInfo uploadInfo, CancellationToken cancellationToken, ServiceContract serviceContract, Client.ClientProvider clientProvider)
         {
             if (cancellationToken.IsCancellationRequested)
             {
@@ -23,7 +24,6 @@ namespace SignalGo.Publisher.Services
             string result = string.Empty;
             try
             {
-
                 using Stream stream = File.OpenRead(uploadInfo.FilePath);
                 using var streamInfo = new StreamInfo()
                 {
@@ -31,7 +31,6 @@ namespace SignalGo.Publisher.Services
                     Length = stream.Length,
                     Stream = stream,
                 };
-
                 streamInfo.WriteManuallyAsync = async (streamWriter) =>
                 {
                     long len = streamInfo.Length.Value;
@@ -49,7 +48,6 @@ namespace SignalGo.Publisher.Services
                         }
                         // cancellation occured, Release All Resources and report back
                         uploadInfo.Status = false;
-                        //await DisposeAsync();
                         uploadInfo.Description = "Upload Cancelled By User";
                         ServerInfo.ServerLogs.Add("Upload Cancelled By User!");
                         break;
@@ -57,54 +55,29 @@ namespace SignalGo.Publisher.Services
                     await Task.FromCanceled(cancellationToken);
                 };
 
-                var provider = PublisherServiceProvider.Initialize(serverInfo);
-                var service = new ServerManagerService.StreamServices.ServerManagerStreamService(provider.CurrentClientProvider);
+                //var provider = PublisherServiceProvider.Initialize(serverInfo, serviceContract.Name);
+                var service = new ServerManagerService.StreamServices.ServerManagerStreamService(clientProvider);
                 result = await service.UploadDataAsync(streamInfo, serviceContract);
-                Debug.WriteLine(result);
                 if (result == "success")
                 {
                     uploadInfo.Status = true;
-                    Debug.WriteLine("Streaming Completed.");
+                    Debug.WriteLine("Stream Completed.");
+                    LogModule.AddLog(serviceContract.Name, SectorType.Server, "Stream Completed.", LogTypeEnum.System);
                     return uploadInfo;
                 }
                 else
                     uploadInfo.Status = false;
+                LogModule.AddLog(serviceContract.Name, SectorType.Server, "Stream Completed.", LogTypeEnum.System);
                 Debug.WriteLine("Problem Occured In Stream");
             }
             catch (Exception ex)
             {
                 uploadInfo.Status = false;
-                Debug.WriteLine(ex.Message);
+                Console.WriteLine(ex.Message);
+                LogModule.AddLog(serviceContract.Name, SectorType.Server, ex.Message, LogTypeEnum.Error);
                 AutoLogger.Default.LogError(ex, "StreamManagerService(UploadAsync)");
             }
             return uploadInfo;
         }
-
-        //public async Task<bool> CaptureApplicationProcessAsync(StreamInfo<string> stream)
-        //{
-        //    using FileStream fileStream = new FileStream(stream.Data, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite);
-        //    fileStream.SetLength(0);
-        //    var lengthWrite = 0;
-        //    while (lengthWrite < stream.Length)
-        //    {
-        //        byte[] bufferBytes = new byte[1024 * 1024];
-        //        int readCount = await stream.Stream.ReadAsync(bufferBytes, bufferBytes.Length);
-        //        if (readCount <= 0)
-        //            break;
-        //        await fileStream.WriteAsync(bufferBytes, 0, readCount);
-        //        lengthWrite += readCount;
-        //    }
-        //    return true;
-        //}
-
-        //public static async Task DisposeAsync()
-        //{
-        //    //streamInfo.Stream.Dispose();
-        //    //streamInfo.Dispose();
-        //    //stream.Close();
-        //    //stream.Dispose();
-        //    await service.DisposeStreamAsync();
-        //}
-
     }
 }

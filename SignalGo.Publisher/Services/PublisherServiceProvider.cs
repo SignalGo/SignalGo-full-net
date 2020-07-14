@@ -1,11 +1,14 @@
 ﻿using System;
 using SignalGo.Client;
+using SignalGo.Shared;
 using System.Diagnostics;
-using ServerManagerService.Interfaces;
+using SignalGo.Shared.Log;
 using System.Threading.Tasks;
 using SignalGo.Publisher.Models;
-using SignalGo.Shared.Log;
 using System.Collections.Generic;
+using SignalGo.Publisher.Extensions;
+using SignalGo.Publisher.Models.Extra;
+using ServerManagerService.Interfaces;
 
 namespace SignalGo.Publisher.Services
 {
@@ -13,10 +16,10 @@ namespace SignalGo.Publisher.Services
     /// init instance of publisher client that connect to signalGo server manager service
     /// simply check the connection state and reliability
     /// </summary>
-    public class PublisherServiceProvider //: IDisposable
+    public class PublisherServiceProvider
     {
+        //public static Dictionary<string, PublisherServiceProvider> Providers { get; set; } = new Dictionary<string, PublisherServiceProvider>();
 
-        public static Dictionary<string, PublisherServiceProvider> Providers { get; set; } = new Dictionary<string, PublisherServiceProvider>();
         /// <summary>
         /// instance of server manager service
         /// </summary>
@@ -27,81 +30,119 @@ namespace SignalGo.Publisher.Services
         /// instance of client(publisher)
         /// </summary>
         public ClientProvider CurrentClientProvider { get; set; }
-        public string RemoteServer { get; set; }
-
+        //public string RemoteServer { get; set; }
 
         /// <summary>
-        /// init client connection to server manager service
+        /// Connect Publisher Client to ServerManager/Service Providers.
         /// </summary>
-        public static PublisherServiceProvider Initialize(ServerInfo serverInfo)
+        /// <param name="serverInfo">remote server</param>
+        /// <param name="caller">who requesting (project, client's). need for logging in ui</param>
+        /// <returns></returns>
+        public async static Task<PublisherServiceProvider> Initialize(ServerInfo serverInfo, string caller)
         {
+            bool isAllowed = false;
+            await AsyncActions.RunOnUIAsync(() =>
+            {
+                //isAllowed = Helpers.CommandAuthenticator.Authorize(ref serverInfo);
+                isAllowed = serverInfo.HasAccess();
+                //if (!isAllowed)
+                //{
+                //    LogModule.AddLog(caller, SectorType.Management, "Access Denied! Secret does't match.", DateTime.Now.ToLongTimeString(), LogTypeEnum.Warning);
+                //    //isAllowed = true;
+                //}
+            });
+            if (!isAllowed)
+            {
+                LogModule.AddLog(caller, SectorType.Management, "Access Denied! Secret does't match.", DateTime.Now.ToLongTimeString(), LogTypeEnum.Warning);
+                return null;
+            }
+            //if (!isAllowed) 
+            //    return null;
+            string serverAddress = string.Empty;
             PublisherServiceProvider publisherServiceProvider = null;
+            LogModule.AddLog(caller, SectorType.Management, $"Initializing Server {serverInfo.ServerName}", DateTime.Now.ToLongTimeString(), LogTypeEnum.System);
+
             try
             {
-                var serverAddress = string.Concat("http://", serverInfo.ServerAddress, ":", serverInfo.ServerPort);
-                if (Providers.TryGetValue(serverAddress, out publisherServiceProvider))
-                {
-                }
-                else
-                {
-                    publisherServiceProvider = new PublisherServiceProvider();
-                    publisherServiceProvider.CurrentClientProvider = new ClientProvider();
-                    //CurrentClientProvider.ProtocolType = Client.ClientManager.ClientProtocolType.WebSocket; // = asp core
+                serverAddress = string.Concat("http://", serverInfo.ServerAddress, ":", serverInfo.ServerPort);
+                //if (Providers.TryGetValue(serverAddress, out publisherServiceProvider))
+                //{
 
-                    publisherServiceProvider.ServerManagerService = publisherServiceProvider.CurrentClientProvider
-                        .RegisterServerService<ServerManagerService.ServerServices.ServerManagerService>(publisherServiceProvider.CurrentClientProvider);
-                    publisherServiceProvider.FileManagerService = publisherServiceProvider.CurrentClientProvider
-                        .RegisterServerService<ServerManagerService.ServerServices.FileManagerService>(publisherServiceProvider.CurrentClientProvider);
-                    TaskCompletionSource<bool> completeConnection = new TaskCompletionSource<bool>();
-                    publisherServiceProvider.CurrentClientProvider.ConnectAsyncAutoReconnect(serverAddress, x =>
-                    {
-                        try
-                        {
-                            if (x)
-                                publisherServiceProvider.CheckConnectionQuality();
-                        }
-                        catch (Exception ex) { }
-                        finally
-                        {
-                            completeConnection.SetResult(true);
-                        }
-                    });
-                    completeConnection.Task.Wait();
-                    Providers.Add(serverAddress, publisherServiceProvider);
-                }
+                //}
+                //else
+                //{
+
+                publisherServiceProvider = new PublisherServiceProvider();
+                publisherServiceProvider.CurrentClientProvider = new ClientProvider();
+
+                #region |Register SignalGo Server Manager Services|
+
+                publisherServiceProvider.ServerManagerService = publisherServiceProvider.CurrentClientProvider
+                    .RegisterServerService<ServerManagerService.ServerServices.ServerManagerService>(publisherServiceProvider.CurrentClientProvider);
+                publisherServiceProvider.FileManagerService = publisherServiceProvider.CurrentClientProvider
+                    .RegisterServerService<ServerManagerService.ServerServices.FileManagerService>(publisherServiceProvider.CurrentClientProvider);
+
+                #endregion
+
+                #region | ConnectAsync & AutoReconnect |
+
+                //TaskCompletionSource<bool> completeConnection = new TaskCompletionSource<bool>();
+                //publisherServiceProvider.CurrentClientProvider
+                //   .ConnectAsyncAutoReconnect(serverAddress, isConnected =>
+                //   {
+                //       try
+                //       {
+                //           if (isConnected)
+                //           {
+                //               publisherServiceProvider.CheckConnectionQuality(ref caller, ref serverInfo);
+
+                //           }
+                //       }
+                //       catch (Exception ex)
+                //       {
+                //           AutoLogger.Default.LogError(ex, "PublisherServiceProvider Initialize");
+                //       }
+                //       finally
+                //       {
+                //           completeConnection.SetResult(true);
+                //       }
+                //   },3);
+                //completeConnection.Task.Wait();
+
+                //Providers.Add(serverAddress, publisherServiceProvider);
+
+                #endregion
+
+                //}
+                #region Connect Async Once
+                await publisherServiceProvider.CurrentClientProvider.ConnectAsync(serverAddress);
+                #endregion
+                publisherServiceProvider.CheckConnectionQuality(ref caller, ref serverInfo);
             }
             catch (Exception ex)
             {
-                //isSuccess = false;
                 AutoLogger.Default.LogError(ex, "initialize client provider error");
                 ServerInfo.ServerLogs.Add("error while contacting to server");
             }
             return publisherServiceProvider;
         }
+
         #region Utility Methods For Connection
         /// <summary>
         /// call server hello method to get simple response
         /// </summary>
-        public bool CheckConnectionQuality()
+        public bool CheckConnectionQuality(ref string caller, ref ServerInfo serverInfo)
         {
-            var watch = new Stopwatch();
-            watch.Start();
+            Stopwatch pingWatch = new Stopwatch();
+            pingWatch.Start();
             bool isServerAvailaible = false;
             try
             {
-                isServerAvailaible = CurrentClientProvider.SendPingAndWaitToReceive();
-#if Debug
-                    Debug.WriteLine($"-> {ServerManagerService.SayHello("saeed")} ,connection is ok.");
-                    ServerInfo.This.ServerLogs.Add($"-> {ServerManagerService.SayHello("saeed")} ,connection is ok.");
-                    //Debug.WriteLine($"-> ping is {isServerAvailaible}");
-                    ServerInfo.This.ServerLogs.Add($"-> ping is {isServerAvailaible} in {watch.Elapsed}");
-                    Debug.WriteLine($-> "time elapsed: {watch.Elapsed}");
-#else
-                Debug.WriteLine($"-> connection is {isServerAvailaible}");
-                //ServerInfo.ServerLogs.Add($"-> from ({RemoteServer}): {ServerManagerService.SayHello("saeed")} ,connection is ok.");
-                ServerInfo.ServerLogs.Add($"-> ping is {isServerAvailaible} in {watch.Elapsed}");
-#endif
-                watch.Stop();
+                isServerAvailaible = CurrentClientProvider.SendPingAndWaitToReceiveAsync().Result;
+                pingWatch.Stop();
+
+                ServerInfo.ServerLogs.Add($"-> ping is {isServerAvailaible} in {pingWatch.Elapsed}");
+                LogModule.AddLog(caller, SectorType.Management, $"Server {serverInfo.ServerName} Connection is {isServerAvailaible} in {pingWatch.Elapsed}", DateTime.Now.ToLongTimeString(), LogTypeEnum.System);
             }
             catch (Exception ex)
             {
@@ -109,43 +150,6 @@ namespace SignalGo.Publisher.Services
             }
             return isServerAvailaible;
         }
-        #endregion
-
-        #region IDisposable Support
-        //private bool disposedValue = false; // To detect redundant calls
-
-        //protected virtual void Dispose(bool disposing)
-        //{
-        //    if (!disposedValue)
-        //    {
-        //        if (disposing)
-        //        {
-        //            // TODO: dispose managed state (managed objects).
-        //        }
-
-        //        // TODO: free unmanaged resources (unmanaged objects) and override a finalizer below.
-        //        // TODO: set large fields to null.
-        //        //CurrentClientProvider.Dispose();
-
-        //        disposedValue = true;
-        //    }
-        //}
-
-        //// TODO: override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources.
-        //// ~PublisherServiceProvider()
-        //// {
-        ////   // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
-        ////   Dispose(false);
-        //// }
-
-        //// This code added to correctly implement the disposable pattern.
-        //public void Dispose()
-        //{
-        //    // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
-        //    Dispose(true);
-        //    // TODO: uncomment the following line if the finalizer is overridden above.
-        //    // GC.SuppressFinalize(this);
-        //}
         #endregion
     }
 }
