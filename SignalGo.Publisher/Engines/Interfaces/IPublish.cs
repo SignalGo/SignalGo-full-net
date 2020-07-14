@@ -17,7 +17,7 @@ namespace SignalGo.Publisher.Engines.Interfaces
         public Guid ServiceKey { get; set; }
 
         public Task<string> Compress(CompressionMethodType compressionMethod = CompressionMethodType.Zip, bool includeParent = false, CompressionLevel compressionLevel = CompressionLevel.Fastest);
-        public Task<RunStatusType> Upload(string dataPath, CancellationToken cancellationToken, ServerInfo serverInfo, bool forceUpdate = false);
+        public Task<RunStatusType> Upload(string dataPath, CancellationToken cancellationToken,bool forceUpdate = false);
 
     }
 }

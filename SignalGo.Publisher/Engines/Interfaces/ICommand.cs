@@ -1,6 +1,4 @@
-﻿using SignalGo.Publisher.Engines.Models;
-using SignalGo.Publisher.Models;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Threading.Tasks;
 
 namespace SignalGo.Publisher.Engines.Interfaces
@@ -27,13 +25,6 @@ namespace SignalGo.Publisher.Engines.Interfaces
         /// postion of file/stream for reporting it's progress value
         /// </summary>
         public long Position { get; set; }
-        //public UserSetting CurrentSettings
-        //{
-        //    get
-        //    {
-        //        return UserSettingInfo.Current.UserSettings;
-        //    }
-        //}
         /// <summary>
         /// shell (cmd,bash...)
         /// </summary>

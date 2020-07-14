@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Diagnostics;
 using SignalGo.Shared.Log;
@@ -14,13 +13,12 @@ namespace SignalGo.Publisher.Engines.Models
     /// <summary>
     /// Mother of command executers
     /// </summary>
-    public class CommandRunner : IDisposable
+    public class CommandRunner //: IDisposable
     {
         static readonly string CommandsLogPath = Path.Combine(UserSettingInfo.Current.UserSettings.CommandRunnerLogsPath);
 
         public async static Task<RunStatusType> Run(ICommand command, CancellationToken cancellationToken)
         {
-            var process = new Process();
             command.Size = 0;
             command.Position = 0;
             string standardOutputResult;
@@ -29,11 +27,11 @@ namespace SignalGo.Publisher.Engines.Models
                 ProcessStartInfo processInfo = new ProcessStartInfo();
                 if (!File.Exists(CommandsLogPath))
                 {
-                    File.Create(CommandsLogPath).Close();
+                    await File.Create(CommandsLogPath).DisposeAsync();
                 }
 
                 await command.Initialize(processInfo);
-                process = Process.Start(processInfo);
+                using var process = Process.Start(processInfo);
                 while (true)
                 {
                     if (cancellationToken.IsCancellationRequested)
@@ -44,7 +42,17 @@ namespace SignalGo.Publisher.Engines.Models
                     standardOutputResult = await process.StandardOutput.ReadLineAsync();
                     if (standardOutputResult == null)
                         break;
-                    await File.AppendAllTextAsync(CommandsLogPath, standardOutputResult + Environment.NewLine);
+
+                    // to reduce log file size
+
+                    //if (standardOutputResult.TrimStart().StartsWith("Skipping") || standardOutputResult.TrimStart().StartsWith("Copying"))
+                    //{
+                    //    continue;
+                    //}
+                    //else
+                    //{
+                    await File.AppendAllTextAsync(CommandsLogPath, standardOutputResult + Environment.NewLine, cancellationToken);
+                    //}
 
                     // check if compiler return error, or test runner return error
                     if (command.CalculateStatus(standardOutputResult))
@@ -59,44 +67,38 @@ namespace SignalGo.Publisher.Engines.Models
                 AutoLogger.Default.LogError(ex, "CommandRunner(Run)");
                 Thread.Sleep(500);
             }
+            finally
+            {
+
+            }
             return command.Status;
         }
 
         #region IDisposable Support
-        private bool disposedValue = false; // To detect redundant calls
+        //private bool disposedValue = false; // To detect redundant calls
 
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!disposedValue)
-            {
-                if (disposing)
-                {
-                    // TODO: dispose managed state (managed objects).
+        //protected virtual void Dispose(bool disposing)
+        //{
+        //    if (!disposedValue)
+        //    {
+        //        if (disposing)
+        //        {
+        //        }
 
-                }
+        //        disposedValue = true;
+        //    }
+        //}
 
-                // TODO: free unmanaged resources (unmanaged objects) and override a finalizer below.
-                // TODO: set large fields to null.
+        //~CommandRunner()
+        //{
+        //    Dispose(false);
+        //}
 
-                disposedValue = true;
-            }
-        }
-
-        // TODO: override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources.
-        // ~CommandRunner()
-        // {
-        //   // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
-        //   Dispose(false);
-        // }
-
-        // This code added to correctly implement the disposable pattern.
-        public void Dispose()
-        {
-            // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
-            Dispose(true);
-            // TODO: uncomment the following line if the finalizer is overridden above.
-            GC.SuppressFinalize(this);
-        }
+        //public void Dispose()
+        //{
+        //    Dispose(true);
+        //    GC.SuppressFinalize(this);
+        //}
         #endregion
     }
 }
