@@ -15,6 +15,15 @@ namespace SignalGo.Publisher.Engines.Models
 
             return BitConverter.ToString(hashedBytes);
         }
+
+        public static string ComputeHash(string input)
+        {
+            byte[] inputBytes = Encoding.UTF8.GetBytes(input);
+
+            byte[] hashedBytes = SHA256.Create().ComputeHash(inputBytes);
+
+            return BitConverter.ToString(hashedBytes);
+        }
         public static string ComputeHash(string input, HashAlgorithm algorithm, Byte[] salt)
         {
             Byte[] inputBytes = Encoding.UTF8.GetBytes(input);
