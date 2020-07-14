@@ -12,13 +12,15 @@ using SignalGo.Publisher.Services;
 using SignalGo.Publisher.Engines.Models;
 using SignalGo.Publisher.Engines.Interfaces;
 using SignalGo.Shared.Models;
-using SignalGo.Publisher.ViewModels;
-using System.Collections.Generic;
 using SignalGo.Publisher.Shared.Models;
+using SignalGo.Publisher.Models.Extra;
+using System.Collections.Generic;
+using SignalGo.Publisher.ViewModels;
+using SignalGo.Publisher.Extensions;
 
 namespace SignalGo.Publisher.Engines.Commands
 {
-    public abstract class CommandBaseInfo : BaseViewModel, ICommand, IPublish //, IDisposable
+    public abstract class CommandBaseInfo : BaseViewModel, ICommand, IPublish 
     {
         private RunStatusType _Status;
         public RunStatusType Status
@@ -37,7 +39,6 @@ namespace SignalGo.Publisher.Engines.Commands
                 return Status == RunStatusType.Error || Status == RunStatusType.Done;
             }
         }
-
         public bool HasStatusError
         {
             get
@@ -97,28 +98,30 @@ namespace SignalGo.Publisher.Engines.Commands
         public Guid ServiceKey { get; set; }
 
         /// <summary>
-        /// Base Virtual Run
+        /// Base Run Module for commands
         /// </summary>
         /// <returns></returns>
-        public virtual async Task<RunStatusType> Run(CancellationToken cancellationToken)
+        public virtual async Task<RunStatusType> Run(CancellationToken cancellationToken,string caller)
         {
             try
             {
                 Status = RunStatusType.Running;
                 if (cancellationToken.IsCancellationRequested)
                 {
-                    Debug.WriteLine("Runner Cancellation Requested");
+                    Debug.WriteLine("Cancellation Requested in Runner Module");
                     Status = RunStatusType.Canceled;
                     return RunStatusType.Canceled;
                 }
+
                 var processStatus = await CommandRunner.Run(this, cancellationToken);
                 if (processStatus == RunStatusType.Error || processStatus == RunStatusType.Canceled)
                     Status = RunStatusType.Error;
+
                 return processStatus;
             }
             catch (Exception ex)
             {
-                AutoLogger.Default.LogError(ex, "Runner CommandBaseInfo");
+                AutoLogger.Default.LogError(ex, "Runner Module, CommandBaseInfo");
                 Status = RunStatusType.Error;
                 return RunStatusType.Canceled;
             }
@@ -169,7 +172,7 @@ namespace SignalGo.Publisher.Engines.Commands
             return Task.FromResult(zipFilePath);
         }
 
-        public virtual async Task<RunStatusType> Upload(string dataPath, CancellationToken cancellationToken, ServerInfo serverInfo = null, bool forceUpdate = false)
+        public virtual async Task<RunStatusType> Upload(string dataPath, CancellationToken cancellationToken, bool forceUpdate = false)
         {
             var status = RunStatusType.Error;
             if (cancellationToken.IsCancellationRequested)
@@ -180,6 +183,8 @@ namespace SignalGo.Publisher.Engines.Commands
             try
             {
                 ServerInfo.ServerLogs.Add($"----(Manually)Started at [{DateTime.Now}] ------");
+                LogModule.AddLog(ServiceName, SectorType.Server, $"----(Manually)Started at [{DateTime.Now}] ------", LogTypeEnum.System);
+
                 // Generate Upload Model based on
                 Size = (new FileInfo(dataPath).Length / 1024);
                 UploadInfo uploadInfo = new UploadInfo(this)
@@ -195,46 +200,27 @@ namespace SignalGo.Publisher.Engines.Commands
                     ServiceKey = ServiceKey,
                     IgnoreFiles = SettingInfo.Current.ProjectInfo.FirstOrDefault(p => p.ProjectKey == ServiceKey).ServerIgnoredFiles.Where(e => e.IsEnabled).ToList()
                 };
-                foreach (var server in ServerInfo.Servers.Where(x => x.IsUpdated != ServerInfo.ServerInfoStatusEnum.UpdateError).ToList().Where(y => y.IsUpdated != ServerInfo.ServerInfoStatusEnum.Updated).ToList())
-                {
-                    var currentSrv = ServerSettingInfo.CurrentServer.ServerInfo.FirstOrDefault(x => x.ServerKey == server.ServerKey);
-                    // Contact with Server Agents and Make the connection if it possible
-                    //bool contactToProvider = PublisherServiceProvider.Initialize(server);
-                    //// contacting with Provider is'nt possible;
-                    //if (!contactToProvider)
-                    //{
-                    //    //if (retryCounter < 3)
-                    //    //{
-                    //    //    // increase try counter
-                    //    //    retryCounter++;
-                    //    //    // wait and retry up to 3 time
-                    //    //    await Task.Delay(2000);
-                    //    //    // Try to update current server again
-                    //    //    await Upload(dataPath, cancellationToken);
-                    //    //}
-                    //    //else, we can't update this server at this moment (Problems are Possible: Server is Offline,refuse || block || Network , unhandled Errors...)
-                    //    //var currentserver = ServerInfo.Servers.FirstOrDefault(s => s.ServerKey == server.ServerKey);
-                    //    server.ServerStatus = ServerInfo.ServerInfoStatusEnum.UpdateError;
-                    //    server.IsUpdated = ServerInfo.ServerInfoStatusEnum.UpdateError;
-                    //    //ServerInfo.Servers.FirstOrDefault(s => s.ServerKey == server.ServerKey).ServerLastUpdate = "Couldn't Update";
+                List<ServerInfo> selectedServers = ServerSettingInfo.CurrentServer.ServerInfo.Where(x => x.IsChecked).ToList();
 
-                    //    currentSrv.ServerStatus = ServerInfo.ServerInfoStatusEnum.UpdateError;
-                    //    currentSrv.IsUpdated = ServerInfo.ServerInfoStatusEnum.UpdateError;
-                    //    currentSrv.ServerLastUpdate = "Couldn't Update";
-                        
-                    //    ServerSettingInfo.SaveServersSettingInfo();
-                    //    status = RunStatusType.Error;
-                    //    return await Upload(dataPath, cancellationToken);
-                    //}
-                    //if (forceUpdate)
-                    //    await PublisherServiceProvider.StopServices();
-                    // contacting with Provider is OK and server is available.
+                //List<ServerInfo> serversToUpdate = selectedServers.Where(x => x.IsUpdated != ServerInfo.ServerInfoStatusEnum.UpdateError).ToList().Where(y => y.IsUpdated != ServerInfo.ServerInfoStatusEnum.Updated).ToList();
+
+                for (int i = 0; i < selectedServers.Count; i++)
+                {
+                    ServerInfo server = selectedServers[i];
+                    var currentSrv = ServerSettingInfo.CurrentServer.ServerInfo.FirstOrDefault(x => x.ServerKey == server.ServerKey);
 
                     currentSrv.ServerStatus = ServerInfo.ServerInfoStatusEnum.Updating;
-                    var uploadResult = await StreamManagerService.UploadAsync(uploadInfo, cancellationToken, serviceContract, currentSrv);
+
+                    ProjectManagerWindowViewModel.This.IsAccessControlUnlocked = false;
+                    var provider = await PublisherServiceProvider.Initialize(currentSrv, serviceContract.Name);
+                    if (!provider.HasValue()) 
+                        return RunStatusType.Error;
+                    var uploadResult = await StreamManagerService.UploadAsync(uploadInfo, cancellationToken, serviceContract, provider.CurrentClientProvider);
+
                     if (uploadResult.Status)
                     {
                         ServerInfo.ServerLogs.Add($"------ Ended at [{DateTime.Now}] ------");
+                        LogModule.AddLog(ServiceName, SectorType.Server, $"------ Ended at [{DateTime.Now}] ------", LogTypeEnum.System);
                         server.IsUpdated = ServerInfo.ServerInfoStatusEnum.Updated;
                         server.ServerStatus = ServerInfo.ServerInfoStatusEnum.Updated;
 
@@ -248,7 +234,7 @@ namespace SignalGo.Publisher.Engines.Commands
                         ServerSettingInfo.SaveServersSettingInfo();
                         status = RunStatusType.Done;
 
-                    } // end server collection foreach
+                    } // end server collection for
                     else
                     {
                         server.IsUpdated = ServerInfo.ServerInfoStatusEnum.UpdateError;
@@ -265,9 +251,9 @@ namespace SignalGo.Publisher.Engines.Commands
             {
                 // may be service is in use and started before. so i need compile it
                 ServerInfo.ServerLogs.Add(ex.Message);
-
             }
             ServerInfo.ServerLogs.Add($"------ Exited at [{DateTime.Now}] ------");
+            LogModule.AddLog(ServiceName, SectorType.Server, $"------ Exited at [{DateTime.Now}] ------", LogTypeEnum.System);
             return status;
         }
 
