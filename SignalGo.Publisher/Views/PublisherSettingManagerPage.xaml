@@ -108,12 +108,16 @@
                 <Button Margin="5" Command="{Binding SaveCommand}" Content="Save" Width="80" Grid.Row="3" FontWeight="Normal" HorizontalAlignment="Right" Grid.Column="3" VerticalAlignment="Bottom"/>
                 <TextBlock Text="Global Configs: " Grid.Column="3"/>
                 <WrapPanel Margin="5" Grid.Row="1" Grid.Column="3" VerticalAlignment="Stretch">
+                    <TextBlock Margin="5"  Text="Log Verbosity:"/>
+                    <ComboBox Margin="5" x:Name="logVerbosityCombo" SelectedItem="{Binding CurrentUserSettingInfo.UserSettings.LoggingVerbosity}" Grid.Row="4" Grid.Column="0" />
+                    <!--<CheckBox Margin="5" Content="Full Logging" IsChecked="{Binding CurrentUserSettingInfo.UserSettings.IsFullLogging}" VerticalContentAlignment="Center" />-->
+                    <CheckBox Margin="5" Content="UI Virtualization" IsChecked="{Binding CurrentUserSettingInfo.UserSettings.IsUiVirtualization}" VerticalContentAlignment="Center" />
                     <CheckBox Margin="5" Content="Stop if Error" IsChecked="True" VerticalContentAlignment="Center" />
                     <CheckBox Margin="5" Content="SignalGo Duplex" IsChecked="True" IsEnabled="False" VerticalAlignment="Stretch" HorizontalAlignment="Stretch"/>
                     <CheckBox Margin="5" Content="Administrative" IsChecked="True" IsEnabled="False" VerticalContentAlignment="Center"/>
                     <!--<CheckBox Margin="5" Content="Task Scheduler" IsChecked="False" IsEnabled="False" VerticalContentAlignment="Center"/>-->
                 </WrapPanel>
-                <StackPanel Grid.Row="1" Grid.Column="3" Orientation="Vertical" VerticalAlignment="Bottom">
+                <StackPanel Grid.Row="2" Grid.Column="3" Orientation="Vertical" VerticalAlignment="Bottom">
                     <TextBlock VerticalAlignment="Stretch" Margin="5">
                         <Run Text="Max Threads: "/>
                         <Run Text="{Binding ElementName=maxThreadsSlider, Path=Value}"/>

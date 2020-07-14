@@ -15,6 +15,9 @@ namespace SignalGo.Publisher.Views
             InitializeComponent();
             testRunnersCombo.ItemsSource = Enum.GetValues(typeof(UserSetting.TestRunnersEnum))
                 .Cast<UserSetting.TestRunnersEnum>();
+
+            logVerbosityCombo.ItemsSource = Enum.GetValues(typeof(UserSetting.LoggingVerbosityEnum))
+                .Cast<UserSetting.LoggingVerbosityEnum>();
         }
     }
 }
