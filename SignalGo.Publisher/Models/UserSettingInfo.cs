@@ -47,6 +47,7 @@ namespace SignalGo.Publisher.Models
                             IsDebug = true,
                             IsRebuild = true,
                             IsRestore = true,
+                            IsUiVirtualization = true
                         }
                     };
                 }

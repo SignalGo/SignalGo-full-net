@@ -1,13 +1,10 @@
-﻿using MvvmGo.ViewModels;
+﻿using Newtonsoft.Json;
 using System;
-using System.Collections.Generic;
-using System.Threading;
 using System.Windows;
-using System.Windows.Documents;
 
 namespace SignalGo.Publisher.Models
 {
-    public class UserSetting : BaseViewModel
+    public class UserSetting : MvvmGo.ViewModels.BaseViewModel
     {
         public UserSetting()
         {
@@ -20,15 +17,24 @@ namespace SignalGo.Publisher.Models
             VsTestConsole = 2,
             UserDefined = 3
         }
+        [Flags]
+        public enum LoggingVerbosityEnum
+        {
+            Full = 1,
+            Minimuum = 2,
+            Quiet = 3
+        }
 
+        private bool _IsUiVirtualization;
         private string _MsbuildPath;
         private string _TestRunnerExecutableFile;
         private string _LoggerPath;
         private string _CommandRunnerLogsPath;
         private string _StartPriority;
-
         private string _ServiceUpdaterLogFilePath;
+
         private TestRunnersEnum _DefaultTestRunner = TestRunnersEnum.NetCoreSDK;
+        private LoggingVerbosityEnum _LoggingVerbosity = LoggingVerbosityEnum.Minimuum;
 
         public TestRunnersEnum DefaultTestRunner
         {
@@ -39,6 +45,34 @@ namespace SignalGo.Publisher.Models
                 OnPropertyChanged(nameof(DefaultTestRunner));
             }
         }
+        /// <summary>
+        /// amount of output logs verbosity
+        /// </summary>
+        public LoggingVerbosityEnum LoggingVerbosity
+        {
+            get { return _LoggingVerbosity; }
+            set
+            {
+                _LoggingVerbosity = value;
+                OnPropertyChanged(nameof(LoggingVerbosity));
+            }
+        }
+
+        //private bool _IsAccessControlUnlocked = false;
+        //public bool IsAccessControlUnlocked
+        //{
+        //    get
+        //    {
+        //        return
+        //          _IsAccessControlUnlocked;
+        //    }
+        //    set
+        //    {
+        //        _IsAccessControlUnlocked = value;
+        //        OnPropertyChanged(nameof(IsAccessControlUnlocked));
+        //    }
+        //}
+
         public string TestRunnerExecutableFile
         {
             get { return _TestRunnerExecutableFile; }
@@ -100,7 +134,6 @@ namespace SignalGo.Publisher.Models
         private bool _IsBuild;
         private bool _IsRestore;
         private int _MaxThreads;
-
 
         public int MaxThreads
         {
@@ -175,6 +208,25 @@ namespace SignalGo.Publisher.Models
 
             }
         }
+
+        /// <summary>
+        /// setting used in ui list's and big item collection's. 
+        /// true will optimize memory usage (but decrease performancce) and trigger GC every items change
+        /// false will cache objects to memory and increase memory usage but better performance and ui reactions
+        /// </summary>
+        public bool IsUiVirtualization
+        {
+            get
+            {
+                return _IsUiVirtualization;
+            }
+            set
+            {
+                _IsUiVirtualization = value;
+                OnPropertyChanged(nameof(IsUiVirtualization));
+
+            }
+        }
         public bool IsBuild
         {
             get
@@ -189,14 +241,27 @@ namespace SignalGo.Publisher.Models
             }
         }
 
-        //public enum CompileOptionsEnum
-        //{
-        //    Restore = 1,
-        //    Clean = 2,
-        //    Build = 3,
-        //    Rebuild = 4,
-        //    Debug = 5,
-        //    Release = 6,
-        //}
+        #region Ignore Some MvvmGo Properties From Saving in file
+        [JsonIgnore]
+        public override bool IsBusy { get => base.IsBusy; set => base.IsBusy = value; }
+        [JsonIgnore]
+        public override MvvmGo.Models.ValidationMessageInfo FirstMessage { get => base.FirstMessage; }
+        [JsonIgnore]
+        public override string BusyContent { get => base.BusyContent; set => base.BusyContent = value; }
+        [JsonIgnore]
+        public override Action<string> BusyContentChangedAction { get => base.BusyContentChangedAction; set => base.BusyContentChangedAction = value; }
+        [JsonIgnore]
+        public override Action<bool, string> IsBusyChangedAction { get => base.IsBusyChangedAction; set => base.IsBusyChangedAction = value; }
+        [JsonIgnore]
+        public override System.Collections.ObjectModel.ObservableCollection<MvvmGo.Models.ValidationMessageInfo> AllMessages { get => base.AllMessages; set => base.AllMessages = value; }
+        [JsonIgnore]
+        public override bool HasError { get => base.HasError; set => base.HasError = value; }
+        [JsonIgnore]
+        public override bool IsChangeBusyWhenCommandExecute { get => base.IsChangeBusyWhenCommandExecute; set => base.IsChangeBusyWhenCommandExecute = value; }
+        [JsonIgnore]
+        public override System.Collections.Concurrent.ConcurrentDictionary<string, MvvmGo.Models.ViewModelItemsInfo> MessagesByProperty { get => base.MessagesByProperty; set => base.MessagesByProperty = value; }
+        [JsonIgnore]
+        public override Action<string> PropertyChangedAction { get => base.PropertyChangedAction; set => base.PropertyChangedAction = value; }
+        #endregion
     }
 }
