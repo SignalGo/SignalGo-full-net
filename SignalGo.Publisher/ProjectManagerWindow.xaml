@@ -5,13 +5,40 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SignalGo.Publisher"
         xmlns:vm="clr-namespace:SignalGo.Publisher.ViewModels"
-        mc:Ignorable="d" WindowStartupLocation="CenterScreen" Title="ProjectManagerWindow" Height="560" Width="1030" Background="White" Closing="Window_Closing">
+        mc:Ignorable="d" WindowStartupLocation="CenterScreen" Title="ProjectManagerWindow" Height="560" Width="1030" Background="White" >
 
     <Window.DataContext>
         <vm:ProjectManagerWindowViewModel/>
     </Window.DataContext>
-
-    <Grid Margin="10">
+    <Window.Resources>
+        <!--#region button styles -->
+        <Style TargetType="Button" x:Key="btnRamUsage">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Content" Value="RAM Usage"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                            BorderThickness="0"
+                                Padding="2"
+                            BorderBrush="#000">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center">
+                            </ContentPresenter>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True" >
+                    <Setter Property="Content" Value="Clear Cache?"/>
+                    <Setter Property="Background" Value="Green"/>
+                    <Setter Property="Foreground" Value="#fff"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <!--#endregion-->
+    </Window.Resources>
+    <Grid Margin="5,0">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="auto"/>
             <ColumnDefinition Width="*"/>
@@ -29,20 +56,25 @@
                 </MenuItem>
                 <MenuItem Header="_Management">
                     <MenuItem Header="_Add Project" Command="{Binding AddNewProjectCommand}" />
-                    <MenuItem Header="_Server Managers" >
-                        <MenuItem Header="Servers" Command="{Binding ShowServersCommand}"/>
-                        <MenuItem Header="New Server" Command="{Binding AddNewServerCommand}"/>
+                    <MenuItem Header="_Category Manager" >
+                        <MenuItem Header="_All Categories" Command="{Binding ShowServersCommand}"/>
+                        <MenuItem Header="_Add Category" Command="{Binding AddNewCategoryCommand}" />
                     </MenuItem>
-                    <MenuItem Header="_Command Manager"  Command="{Binding ShowCommandManagerCommand}"/>
+                    <MenuItem Header="_Server Manager" >
+                        <MenuItem Header="_All Servers" Command="{Binding ShowServersCommand}"/>
+                        <MenuItem Header="_New Server" Command="{Binding AddNewServerCommand}"/>
+                    </MenuItem>
+                    <MenuItem Header="_Command Manager" Command="{Binding ShowCommandManagerCommand}"/>
                     <MenuItem Header="_App Logs"  Command="{Binding ShowAppLogsCommand}"/>
                     <MenuItem Header="_Compiler Logs"  Command="{Binding ShowCompilerLogsCommand}"/>
+                    <MenuItem Header="Application _Backups"  Command="{Binding ShowAppBackupsCommand}"/>
                     <MenuItem Header="_Service Updater" IsCheckable="True" IsChecked="True" />
                     <MenuItem Header="_Scheduler" IsCheckable="True" IsChecked="False" />
                 </MenuItem>
                 <MenuItem Header="_Help" >
+                    <MenuItem Header="Publisher Self _Update" Command="{Binding RunSelfUpdateCommand}"/>
                     <MenuItem Header="_How to use" Command="{Binding ShowAppHelpPageCommand}"/>
                     <MenuItem Header="_About"/>
-
                 </MenuItem>
             </Menu>
         </DockPanel>
@@ -52,7 +84,7 @@
             <Button Command="{Binding ShowLogsCommand}" Content="Logs" Padding="10" Margin="0,0,0,10"/>
         </StackPanel>-->
 
-        <ListView x:Name="ProjectsListView" Grid.Row="1" MinWidth="150" Width="200" MaxWidth="300" ItemsSource="{Binding CurrentSettingInfo.ProjectInfo}" SelectedItem="{Binding SelectedProjectInfo}" HorizontalContentAlignment="Stretch">
+        <ListView x:Name="ProjectsListView" Grid.Row="1" MinWidth="150" Width="200" MaxWidth="300" ItemsSource="{Binding CurrentProjectsSettingInfo.ProjectInfo}" SelectedItem="{Binding SelectedProjectInfo}" HorizontalContentAlignment="Stretch">
             <ListView.ItemTemplate>
                 <DataTemplate>
                     <TextBlock>
@@ -66,7 +98,7 @@
                     </TextBlock>
                 </DataTemplate>
             </ListView.ItemTemplate>
-            
+
             <ListView.Resources>
                 <ControlTemplate x:Key="SelectedTemplate" TargetType="ListViewItem">
                     <Border  Background="CadetBlue" CornerRadius="2,15,15,2" BorderThickness="1" BorderBrush="Transparent" Padding="5" HorizontalAlignment="Stretch" Margin="2" Cursor="Hand" >
@@ -85,14 +117,14 @@
                     <Setter Property="Template">
                         <Setter.Value>
                             <ControlTemplate TargetType="ListViewItem">
-                                <Border CornerRadius="0" BorderThickness="0" Background="WhiteSmoke" Padding="5" HorizontalAlignment="Stretch" Margin="0" Cursor="Hand" >
+                                <Border CornerRadius="0" BorderThickness="1" Background="WhiteSmoke" Padding="5" HorizontalAlignment="Stretch" Margin="0" Cursor="Hand" >
                                     <TextBlock>
                                     <TextBlock Padding="5" Text="{Binding Name}">
                                             <TextBlock.Style>
                                                 <Style TargetType="TextBlock">
-                                                <EventSetter Event="KeyDown" Handler="projectItem_KeyDown" />
-                                            </Style>
-                                        </TextBlock.Style>
+                                                    <EventSetter Event="KeyDown" Handler="projectItem_KeyDown" />
+                                                </Style>
+                                            </TextBlock.Style>
                                     </TextBlock>
                                     </TextBlock>
                                 </Border>
@@ -113,16 +145,29 @@
 
         <Frame x:Name="mainframe" Grid.Column="1" Grid.Row="1" JournalOwnership="OwnsJournal" Loaded="Frame_Loaded" ClipToBounds="True" Background="#f6f6f7" Navigating="MainFrame_Navigating" NavigationUIVisibility="Hidden" VerticalAlignment="Stretch"/>
         <StatusBar Grid.Row="2" Grid.ColumnSpan="2" Background="Transparent">
-            <StatusBarItem>
+            <StatusBarItem Background="WhiteSmoke" HorizontalAlignment="Left">
                 <Grid>
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="RAM Usage: > "/>
-                        <TextBlock Text="{Binding ApplicationRAMUsage}"/>
-                        <TextBlock Text=" Mb"/>
+
+                        <Ellipse x:Name="UsageStatusIndicator" Width="10" Height="10" Fill="#FF40C921" />
+
+                        <Button ToolTip="Free Application Heap Memory And All Cached Log's In Modules. Useful When You Wan't Clear All Log's From Ui Or App Memory Usage Is Very High." Style="{StaticResource btnRamUsage}"  Command="{Binding CleanMemoryCommand}" />
+
+                        <TextBlock Padding="2" >
+                                    <Run Text=" ~ "/>
+                                    <Run Text="{Binding ApplicationRAMUsage}"/>
+                                    <Run Text="MB"/>
+                        </TextBlock>
+
                     </StackPanel>
                 </Grid>
             </StatusBarItem>
+            <StatusBarItem HorizontalAlignment="Right">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock VerticalAlignment="Center" Text="AccessControl: "/>
+                    <ToggleButton IsChecked="{Binding IsAccessControlUnlocked}" Margin="0" Width="60" Height="30" Content="AccessControl" Command="{Binding ChangeAccessControlCommand}" CommandParameter="{Binding IsChecked,RelativeSource={RelativeSource Self}}" Style="{StaticResource SwitchTypeToggleButton}" ToolTip="If Enabled, No Authorization Need For Executing Command's On Protected Server's And Password Will Not Be Asked. Except For Publishing." />
+                </StackPanel>
+            </StatusBarItem>
         </StatusBar>
     </Grid>
-
 </Window>
