@@ -37,12 +37,12 @@ namespace SignalGo.ServerManager.WpfApp.ViewModels
                     FileName = "explorer.exe",
                     Arguments = Directory.GetParent(ServerInfo.AssemblyPath).FullName
                 });
-        }
+            }
             catch (Exception ex)
             {
                 Shared.Log.AutoLogger.Default.LogError(ex, "open project folder");
                 System.Windows.MessageBox.Show("error", ex.Message);
             }
-}
+        }
     }
 }
