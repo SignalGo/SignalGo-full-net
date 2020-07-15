@@ -5,16 +5,14 @@
         xmlns:vm="clr-namespace:SignalGo.Publisher.ViewModels.Extra"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SignalGo.Publisher.Views.Extra"
-        Title="Input" SizeToContent="WidthAndHeight" WindowStartupLocation="CenterScreen"
+        Title="" SizeToContent="WidthAndHeight" WindowStartupLocation="CenterScreen"
         ContentRendered="Window_ContentRendered"
-        mc:Ignorable="d" Background="White" >
-
-
+        mc:Ignorable="d" Background="White" ResizeMode="NoResize" Width="290">
     <Window.DataContext>
         <vm:InputDialogControlViewModel/>
     </Window.DataContext>
-    
-    <Grid Margin="15">
+
+    <Grid Margin="10">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto" />
             <ColumnDefinition Width="*" />
@@ -24,12 +22,15 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-        <Label Name="lblQuestion" Grid.Column="1">Question:</Label>
-        <PasswordBox Name="txtAnswer" Grid.Column="1" Grid.Row="1" MinWidth="250"></PasswordBox>
+        <WrapPanel  Grid.Column="1" HorizontalAlignment="Center">
+            <TextBlock HorizontalAlignment="Left" Name="lblQuestion" Grid.Column="1" Margin="0,5">Question:</TextBlock>
+            <TextBlock Margin="5" Name="lblImportantText" Foreground="MediumVioletRed" Grid.Column="1" FontWeight="Bold" HorizontalAlignment="Right" />
+        </WrapPanel>
+        <PasswordBox Name="txtAnswer" Grid.Column="1" Grid.Row="1" MinWidth="250"/>
 
         <WrapPanel Grid.Row="2" Grid.ColumnSpan="2" HorizontalAlignment="Right" Margin="0,15,0,0">
             <Button IsDefault="True" Name="btnDialogOk" Click="btnDialogOk_Click" MinWidth="60" Margin="0,0,10,0">_Ok</Button>
-            <Button IsCancel="True" MinWidth="60">_Cancel</Button>
+            <Button Padding="2" IsCancel="True" MinWidth="60">_Cancel</Button>
         </WrapPanel>
     </Grid>
 </Window>
