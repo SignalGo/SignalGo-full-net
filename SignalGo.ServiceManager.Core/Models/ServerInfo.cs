@@ -9,49 +9,7 @@ using System.Linq;
 
 namespace SignalGo.ServiceManager.Core.Models
 {
-    //public class ConsoleWriter : TextWriter
-    //{
-    //    public string ServerName { get; set; }
-    //    public Action<string, string> TextAddedAction { get; set; }
-
-    //    public ConsoleWriter()
-    //    {
-    //    }
-
-    //    public override void Write(char value)
-    //    {
-    //        try
-    //        {
-    //            TextAddedAction?.Invoke(ServerName, value.ToString());
-    //        }
-    //        catch (Exception ex)
-    //        {
-    //            AutoLogger.Default.LogError(ex, "Write char");
-    //        }
-    //    }
-
-    //    /// <summary>
-    //    /// write action
-    //    /// </summary>
-    //    /// <param name="value"></param>
-    //    public override void Write(string value)
-    //    {
-    //        try
-    //        {
-    //            TextAddedAction?.Invoke(ServerName, value);
-    //        }
-    //        catch (Exception ex)
-    //        {
-    //            AutoLogger.Default.LogError(ex, "Write string");
-    //        }
-    //    }
-
-    //    public override Encoding Encoding
-    //    {
-    //        get { return Encoding.UTF8; }
-    //    }
-    //}
-
+    
     public enum ServerInfoStatus : byte
     {
         Started = 1,
@@ -81,8 +39,6 @@ namespace SignalGo.ServiceManager.Core.Models
 
     public class ServerInfo : BaseViewModel
     {
-        //[JsonIgnore]
-        //public ObservableCollection<TextLogInfo> Logs { get; set; } = new ObservableCollection<TextLogInfo>();
 
         [JsonIgnore]
         public ServerProcessBaseInfo CurrentServerBase { get; set; }
@@ -251,5 +207,28 @@ namespace SignalGo.ServiceManager.Core.Models
                 }
             });
         }
+
+        #region Ignore Some MvvmGo Properties From Saving in file
+        [JsonIgnore]
+        public override bool IsBusy { get => base.IsBusy; set => base.IsBusy = value; }
+        [JsonIgnore]
+        public override MvvmGo.Models.ValidationMessageInfo FirstMessage { get => base.FirstMessage; }
+        [JsonIgnore]
+        public override string BusyContent { get => base.BusyContent; set => base.BusyContent = value; }
+        [JsonIgnore]
+        public override Action<string> BusyContentChangedAction { get => base.BusyContentChangedAction; set => base.BusyContentChangedAction = value; }
+        [JsonIgnore]
+        public override Action<bool, string> IsBusyChangedAction { get => base.IsBusyChangedAction; set => base.IsBusyChangedAction = value; }
+        [JsonIgnore]
+        public override System.Collections.ObjectModel.ObservableCollection<MvvmGo.Models.ValidationMessageInfo> AllMessages { get => base.AllMessages; set => base.AllMessages = value; }
+        [JsonIgnore]
+        public override bool HasError { get => base.HasError; set => base.HasError = value; }
+        [JsonIgnore]
+        public override bool IsChangeBusyWhenCommandExecute { get => base.IsChangeBusyWhenCommandExecute; set => base.IsChangeBusyWhenCommandExecute = value; }
+        [JsonIgnore]
+        public override System.Collections.Concurrent.ConcurrentDictionary<string, MvvmGo.Models.ViewModelItemsInfo> MessagesByProperty { get => base.MessagesByProperty; set => base.MessagesByProperty = value; }
+        [JsonIgnore]
+        public override Action<string> PropertyChangedAction { get => base.PropertyChangedAction; set => base.PropertyChangedAction = value; }
+        #endregion
     }
 }
