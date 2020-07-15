@@ -1,21 +1,24 @@
-﻿using MvvmGo.Commands;
-using MvvmGo.ViewModels;
+﻿using System;
+using System.Linq;
 using Newtonsoft.Json;
+using MvvmGo.Commands;
+using System.Threading;
+using MvvmGo.ViewModels;
+using SignalGo.Shared.Log;
+using System.Threading.Tasks;
 using SignalGo.Publisher.Engines.Commands;
 using SignalGo.Publisher.Engines.Interfaces;
 using SignalGo.Publisher.Shared.Models;
 using SignalGo.Publisher.ViewModels;
-using SignalGo.Shared.Log;
-using System;
 using System.Collections.ObjectModel;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace SignalGo.Publisher.Models
 {
     public class ProjectInfo : BaseViewModel
     {
+        /// <summary>
+        /// Project Info Model, Conation All Project Properties
+        /// </summary>
         public ProjectInfo()
         {
             RunCommmands = new Command(async () =>
@@ -30,9 +33,7 @@ namespace SignalGo.Publisher.Models
                     AutoLogger.Default.LogError(ex, "ProjectInfo Constructor, Commands Initialize");
                 }
             });
-
         }
-
 
         /// <summary>
         /// Run Command Prop
@@ -62,13 +63,51 @@ namespace SignalGo.Publisher.Models
         private Guid _ProjectKey;
         private string _ProjectPath;
         private string _ProjectAssembliesPath;
-        // TODO: Remove this prop
-        private ProjectInfoStatus _Status = ProjectInfoStatus.Stable;
 
+        /// <summary>
+        /// ProjectName
+        /// </summary>
+        public string Name
+        {
+            get
+            {
+                return _Name;
+            }
+            set
+            {
+                _Name = value;
+                OnPropertyChanged(nameof(Name));
+            }
+        }
+        /// <summary>
+        /// unique key of project
+        /// </summary>
+        public Guid ProjectKey
+        {
+            get
+            {
+                if (_ProjectKey != Guid.Empty)
+                {
+                    return _ProjectKey;
+                }
+                else
+                {
+                    _ProjectKey = Guid.NewGuid();
+                    return _ProjectKey;
+                }
+            }
+            set
+            {
+                _ProjectKey = value;
+                OnPropertyChanged(nameof(ProjectKey));
+            }
+        }
         #region File Manager
         [JsonIgnore]
         public ObservableCollection<string> ServerFiles { get; set; } = new ObservableCollection<string>();
         #endregion
+
+        #region Ignore Files
         private ObservableCollection<IgnoreFileInfo> _IgnoredFiles { get; set; } = new ObservableCollection<IgnoreFileInfo>();
         private ObservableCollection<IgnoreFileInfo> _ServerIgnoredFiles { get; set; } = new ObservableCollection<IgnoreFileInfo>();
 
@@ -97,18 +136,7 @@ namespace SignalGo.Publisher.Models
                 OnPropertyChanged(nameof(IgnoredFiles));
             }
         }
-        public string Name
-        {
-            get
-            {
-                return _Name;
-            }
-            set
-            {
-                _Name = value;
-                OnPropertyChanged(nameof(Name));
-            }
-        }
+        #endregion
         public string LastUpdateDateTime
         {
             get
@@ -119,30 +147,6 @@ namespace SignalGo.Publisher.Models
             {
                 _LastUpdateDateTime = value;
                 OnPropertyChanged(nameof(LastUpdateDateTime));
-            }
-        }
-
-        /// <summary>
-        /// unique key of project
-        /// </summary>
-        public Guid ProjectKey
-        {
-            get
-            {
-                if (_ProjectKey != Guid.Empty)
-                {
-                    return _ProjectKey;
-                }
-                else
-                {
-                    _ProjectKey = Guid.NewGuid();
-                    return _ProjectKey;
-                }
-            }
-            set
-            {
-                _ProjectKey = value;
-                OnPropertyChanged(nameof(ProjectKey));
             }
         }
 
@@ -178,42 +182,9 @@ namespace SignalGo.Publisher.Models
         }
 
         /// <summary>
-        /// status of server
+        /// run async each commands, in queue 
         /// </summary>
-        [JsonIgnore]
-        public ProjectInfoStatus Status
-        {
-            get
-            {
-                return _Status;
-            }
-            set
-            {
-                _Status = value;
-                OnPropertyChanged(nameof(Status));
-            }
-        }
-
-        //public async void Build()
-        //{
-        //    try
-        //    {
-        //        var cmd = new BuildCommandInfo()
-        //        {
-        //            Path = AssemblyPath
-        //        };
-        //        await cmd.Run();
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        AutoLogger.Default.LogError(ex, "Build Command");
-        //    }
-
-        //}
-
-        /// <summary>
-        /// run each commands in queue async
-        /// </summary>
+        /// <param name="cancellationToken">token for request cancellation</param>
         /// <returns></returns>
         public async Task RunCommands(CancellationToken cancellationToken)
         {
@@ -223,7 +194,7 @@ namespace SignalGo.Publisher.Models
                 if (cancellationToken.IsCancellationRequested)
                     return;
                 QueueCommandInfo queueCommandInfo = new QueueCommandInfo(Commands.ToList());
-                await queueCommandInfo.Run(cancellationToken);
+                await queueCommandInfo.Run(cancellationToken, caller:Name);
             }
             catch (Exception ex)
             {
@@ -241,134 +212,28 @@ namespace SignalGo.Publisher.Models
             command.AssembliesPath = ProjectAssembliesPath;
             Commands.Add(command);
         }
-        //public void UpdateDatabase()
-        //{
 
-        //}
-
-        //public void ApplyMigrations()
-        //{
-
-        //}
-
-        //public void Publish()
-        //{
-        //    List<ICommand> multipleCommands = new List<ICommand>();
-        //    // call compiler
-        //    multipleCommands.Add(new BuildCommandInfo
-        //    {
-        //        Path = AssemblyPath
-        //    });
-        //    //buildCommands.Add(new TestsCommand());
-        //    // call publish tool
-        //    multipleCommands.Add(new PublishCommandInfo
-        //    {
-        //        Path = AssemblyPath
-        //    });
-
-        //    foreach (var item in multipleCommands)
-        //    {
-        //        item.Run();
-        //    }
-
-        //}
-
-        //public async Task RunTestsAsync()
-        //{
-        //    var cmd = new TestsCommandInfo()
-        //    {
-        //        Path = AssemblyPath
-        //    };
-        //    await cmd.Run();
-        //}
-
-        /// <summary>
-        /// dotnet restore
-        /// </summary>
-        //public async Task RestorePackagesAsync()
-        //{
-        //    var cmd = new RestoreCommandInfo()
-        //    {
-        //        Path = AssemblyPath
-        //    };
-        //    await cmd.Run();
-        //}
-
-        ///Console Writer
-        //public class ConsoleWriter : TextWriter
-        //{
-        //    public string ProjectName { get; set; }
-        //    public Action<string, string> TextAddedAction { get; set; }
-
-        //    public ConsoleWriter()
-        //    {
-        //    }
-
-        //    public override void Write(char value)
-        //    {
-        //        try
-        //        {
-        //            TextAddedAction?.Invoke(ProjectName, value.ToString());
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            AutoLogger.Default.LogError(ex, "Write char");
-        //        }
-        //    }
-
-        //    /// <summary>
-        //    /// write action
-        //    /// </summary>
-        //    /// <param name="value"></param>
-        //    public override void Write(string value)
-        //    {
-        //        try
-        //        {
-        //            TextAddedAction?.Invoke(ProjectName, value);
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            AutoLogger.Default.LogError(ex, "Write string");
-        //        }
-        //    }
-
-        //    public override Encoding Encoding
-        //    {
-        //        get { return Encoding.UTF8; }
-        //    }
-        //}
-
-        /// <summary>
-        /// status if server
-        /// </summary>
-        public enum ProjectInfoStatus : byte
-        {
-            Stable = 1,
-            NotStable = 2,
-            Updating = 3,
-            Restarting = 4,
-            Disabled = 5
-        }
-        /// <summary>
-        /// TextLog
-        /// </summary>
-        //public class TextLogInfo : BaseViewModel
-        //{
-        //    private string _Text;
-        //    public string Text
-        //    {
-        //        get
-        //        {
-        //            return _Text;
-        //        }
-        //        set
-        //        {
-        //            _Text = value;
-        //            OnPropertyChanged(nameof(Text));
-        //        }
-        //    }
-        //    public bool IsDone { get; set; }
-        //}
-
+        #region Ignore Some MvvmGo Properties From Saving in file
+        [JsonIgnore]
+        public override bool IsBusy { get => base.IsBusy; set => base.IsBusy = value; }
+        [JsonIgnore]
+        public override MvvmGo.Models.ValidationMessageInfo FirstMessage { get => base.FirstMessage; }
+        [JsonIgnore]
+        public override string BusyContent { get => base.BusyContent; set => base.BusyContent = value; }
+        [JsonIgnore]
+        public override Action<string> BusyContentChangedAction { get => base.BusyContentChangedAction; set => base.BusyContentChangedAction = value; }
+        [JsonIgnore]
+        public override Action<bool, string> IsBusyChangedAction { get => base.IsBusyChangedAction; set => base.IsBusyChangedAction = value; }
+        [JsonIgnore]
+        public override System.Collections.ObjectModel.ObservableCollection<MvvmGo.Models.ValidationMessageInfo> AllMessages { get => base.AllMessages; set => base.AllMessages = value; }
+        [JsonIgnore]
+        public override bool HasError { get => base.HasError; set => base.HasError = value; }
+        [JsonIgnore]
+        public override bool IsChangeBusyWhenCommandExecute { get => base.IsChangeBusyWhenCommandExecute; set => base.IsChangeBusyWhenCommandExecute = value; }
+        [JsonIgnore]
+        public override System.Collections.Concurrent.ConcurrentDictionary<string, MvvmGo.Models.ViewModelItemsInfo> MessagesByProperty { get => base.MessagesByProperty; set => base.MessagesByProperty = value; }
+        [JsonIgnore]
+        public override Action<string> PropertyChangedAction { get => base.PropertyChangedAction; set => base.PropertyChangedAction = value; }
+        #endregion
     }
 }

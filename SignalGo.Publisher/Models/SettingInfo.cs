@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using SignalGo.Publisher.Extensions;
 using System;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -6,6 +7,9 @@ using System.Text;
 
 namespace SignalGo.Publisher.Models
 {
+    /// <summary>
+    /// Publisher Projects Setting 
+    /// </summary>
     public class SettingInfo
     {
         const string PublisherDbName = "PublisherData.json";
@@ -24,8 +28,7 @@ namespace SignalGo.Publisher.Models
                 return _Current;
             }
         }
-        [JsonIgnore]
-        public Guid ProjectKey { get; set; }
+
         public ObservableCollection<ProjectInfo> ProjectInfo { get; set; } = new ObservableCollection<ProjectInfo>();
 
         public static SettingInfo LoadSettingInfo()
@@ -38,15 +41,15 @@ namespace SignalGo.Publisher.Models
                     File.Delete(path);
                     return new SettingInfo()
                     {
-                        ProjectInfo = new ObservableCollection<ProjectInfo>()
+                        ProjectInfo = new ObservableCollection<ProjectInfo>(),
                     };
                 }
-                var result =  SignalGo.Client.ClientSerializationHelper.DeserializeObject<SettingInfo>(File.ReadAllText(path, Encoding.UTF8));
-                if (result == null)
+                var result = SignalGo.Client.ClientSerializationHelper.DeserializeObject<SettingInfo>(File.ReadAllText(path, Encoding.UTF8));
+                if (!result.HasValue())
                 {
                     return new SettingInfo()
                     {
-                        ProjectInfo = new ObservableCollection<ProjectInfo>()
+                        ProjectInfo = new ObservableCollection<ProjectInfo>(),
                     };
                 }
                 return result;
@@ -55,10 +58,11 @@ namespace SignalGo.Publisher.Models
             {
                 return new SettingInfo()
                 {
-                    ProjectInfo = new ObservableCollection<ProjectInfo>()
+                    ProjectInfo = new ObservableCollection<ProjectInfo>(),
                 };
             }
         }
+
         public static void SaveSettingInfo()
         {
             string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, PublisherDbName);

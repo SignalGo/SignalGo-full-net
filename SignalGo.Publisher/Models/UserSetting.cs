@@ -10,6 +10,23 @@ namespace SignalGo.Publisher.Models
         {
 
         }
+        private bool _IsDebug;
+        private bool _IsRelease;
+        private bool _IsRebuild;
+        private bool _IsBuild;
+        private bool _IsRestore;
+        private int _MaxThreads;
+        private bool _IsUiVirtualization;
+        private string _MsbuildPath;
+        private string _TestRunnerExecutableFile;
+        private string _LoggerPath;
+        private string _CommandRunnerLogsPath;
+        private string _StartPriority;
+        private string _ServiceUpdaterLogFilePath;
+
+        private TestRunnersEnum _DefaultTestRunner = TestRunnersEnum.NetCoreSDK;
+        private LoggingVerbosityEnum _LoggingVerbosity = LoggingVerbosityEnum.Minimuum;
+
         [Flags]
         public enum TestRunnersEnum
         {
@@ -24,17 +41,6 @@ namespace SignalGo.Publisher.Models
             Minimuum = 2,
             Quiet = 3
         }
-
-        private bool _IsUiVirtualization;
-        private string _MsbuildPath;
-        private string _TestRunnerExecutableFile;
-        private string _LoggerPath;
-        private string _CommandRunnerLogsPath;
-        private string _StartPriority;
-        private string _ServiceUpdaterLogFilePath;
-
-        private TestRunnersEnum _DefaultTestRunner = TestRunnersEnum.NetCoreSDK;
-        private LoggingVerbosityEnum _LoggingVerbosity = LoggingVerbosityEnum.Minimuum;
 
         public TestRunnersEnum DefaultTestRunner
         {
@@ -57,21 +63,6 @@ namespace SignalGo.Publisher.Models
                 OnPropertyChanged(nameof(LoggingVerbosity));
             }
         }
-
-        //private bool _IsAccessControlUnlocked = false;
-        //public bool IsAccessControlUnlocked
-        //{
-        //    get
-        //    {
-        //        return
-        //          _IsAccessControlUnlocked;
-        //    }
-        //    set
-        //    {
-        //        _IsAccessControlUnlocked = value;
-        //        OnPropertyChanged(nameof(IsAccessControlUnlocked));
-        //    }
-        //}
 
         public string TestRunnerExecutableFile
         {
@@ -128,12 +119,6 @@ namespace SignalGo.Publisher.Models
             }
         }
 
-        private bool _IsDebug;
-        private bool _IsRelease;
-        private bool _IsRebuild;
-        private bool _IsBuild;
-        private bool _IsRestore;
-        private int _MaxThreads;
 
         public int MaxThreads
         {
