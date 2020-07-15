@@ -56,7 +56,7 @@
                 </MenuItem>
                 <MenuItem Header="_Management">
                     <MenuItem Header="_Add Project" Command="{Binding AddNewProjectCommand}" />
-                    <MenuItem Header="_Category Manager" >
+                    <MenuItem IsEnabled="False" Header="_Category Manager" >
                         <MenuItem Header="_All Categories" Command="{Binding ShowServersCommand}"/>
                         <MenuItem Header="_Add Category" Command="{Binding AddNewCategoryCommand}" />
                     </MenuItem>

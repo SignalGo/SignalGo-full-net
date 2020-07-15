@@ -43,53 +43,54 @@ namespace SignalGo.Publisher
                 catch { }
             };
             // this event execute code's after app loaded
-            Loaded += async (s, e) =>
+            Loaded += (s, e) =>
             {
-                    try
+                try
+                {
+                    // check if application log files is for past, and then backup
+                    string backupPath = Path.Combine(Environment.CurrentDirectory, "AppBackups", "Logs");
+                    var fileDate = File.GetCreationTime(UserSettingInfo.Current.UserSettings.LoggerPath);
+
+                    if (fileDate.Date < DateTime.Now.Date)
                     {
-                        // check if application log files is for past, and then backup
-                        string backupPath = Path.Combine(Environment.CurrentDirectory, "AppBackups", "Logs");
-                        var fileDate = File.GetCreationTime(UserSettingInfo.Current.UserSettings.LoggerPath);
-
-                        if (fileDate.Date < DateTime.Now.Date)
-                        {
-                            // backup logs to a new file with it's date
-                            string outFileName = $"{Path.GetFileNameWithoutExtension(UserSettingInfo.Current.UserSettings.LoggerPath)}{fileDate: _MMddyyyy}.log";
-                            File.Move(UserSettingInfo.Current.UserSettings.LoggerPath,
-                                Path.Combine(backupPath, outFileName), false);
-                            File.Create(UserSettingInfo.Current.UserSettings.LoggerPath).Dispose();
-                        }
-                        #region to multiple backup
-                        //Dictionary<string, DateTime> logsInfo = new Dictionary<string, DateTime>();
-
-                        //logsInfo.Add(UserSettingInfo.Current.UserSettings.CommandRunnerLogsPath, File.GetCreationTime(UserSettingInfo.Current.UserSettings.CommandRunnerLogsPath));
-                        //logsInfo.Add(UserSettingInfo.Current.UserSettings.LoggerPath, File.GetCreationTime(UserSettingInfo.Current.UserSettings.LoggerPath));
-
-                        //if (!Directory.Exists(backupPath))
-                        //    Directory.CreateDirectory(backupPath);
-
-                        //foreach (var item in logsInfo)
-                        //{
-                        //    //var day = item.Value.Date.Day;
-                        //    if (item.Value.Date != DateTime.Now.Date)
-                        //    {
-                        //        // backup logs to a new file with it's date
-                        //        string outFileName = $"{Path.GetFileNameWithoutExtension(item.Key)}{item.Value: _MMddyyyy}.log";
-                        //        try
-                        //        {
-                        //            File.Copy(item.Key,
-                        //                Path.Combine(backupPath, outFileName), true);
-                        //        }
-                        //        catch { }
-                        //    }
-
-                        //}
-                        #endregion
+                        // backup logs to a new file with it's date
+                        string outFileName = $"{Path.GetFileNameWithoutExtension(UserSettingInfo.Current.UserSettings.LoggerPath)}{fileDate: _MMddyyyy}.log";
+                        File.Move(UserSettingInfo.Current.UserSettings.LoggerPath,
+                            Path.Combine(backupPath, outFileName), false);
+                        File.Create(UserSettingInfo.Current.UserSettings.LoggerPath).Dispose();
+                        File.SetCreationTime(UserSettingInfo.Current.UserSettings.LoggerPath, DateTime.Now);
                     }
-                    catch (Exception ex)
-                    {
+                    #region to multiple backup
+                    //Dictionary<string, DateTime> logsInfo = new Dictionary<string, DateTime>();
 
-                    }
+                    //logsInfo.Add(UserSettingInfo.Current.UserSettings.CommandRunnerLogsPath, File.GetCreationTime(UserSettingInfo.Current.UserSettings.CommandRunnerLogsPath));
+                    //logsInfo.Add(UserSettingInfo.Current.UserSettings.LoggerPath, File.GetCreationTime(UserSettingInfo.Current.UserSettings.LoggerPath));
+
+                    //if (!Directory.Exists(backupPath))
+                    //    Directory.CreateDirectory(backupPath);
+
+                    //foreach (var item in logsInfo)
+                    //{
+                    //    //var day = item.Value.Date.Day;
+                    //    if (item.Value.Date != DateTime.Now.Date)
+                    //    {
+                    //        // backup logs to a new file with it's date
+                    //        string outFileName = $"{Path.GetFileNameWithoutExtension(item.Key)}{item.Value: _MMddyyyy}.log";
+                    //        try
+                    //        {
+                    //            File.Copy(item.Key,
+                    //                Path.Combine(backupPath, outFileName), true);
+                    //        }
+                    //        catch { }
+                    //    }
+
+                    //}
+                    #endregion
+                }
+                catch (Exception ex)
+                {
+
+                }
             };
         }
 

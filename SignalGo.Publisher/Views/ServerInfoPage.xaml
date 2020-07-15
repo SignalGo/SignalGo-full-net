@@ -32,12 +32,30 @@
         <ListView Grid.Row="0" Grid.RowSpan="7" Width="150" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" ItemsSource="{Binding CurrentServerSettingInfo.ServerInfo}" SelectedItem="{Binding SelectedServerInfo}" HorizontalContentAlignment="Stretch">
             <ListView.ItemTemplate>
                 <DataTemplate>
-                    <TextBlock Background="DarkGray" Padding="5" Text="{Binding ServerName}"/>
+                    <TextBlock Padding="5" Text="{Binding ServerName}"/>
                 </DataTemplate>
             </ListView.ItemTemplate>
+            <ListView.Resources>
+                <ControlTemplate x:Key="SelectedTemplate" TargetType="ListViewItem">
+                    <Border Background="CadetBlue" BorderThickness="1" BorderBrush="Transparent" Padding="5" HorizontalAlignment="Stretch" Margin="2" Cursor="Hand" >
+                        <TextBlock Padding="5" Text="{Binding ServerName}"/>
+                    </Border>
+                </ControlTemplate>
+                <Style TargetType="ListViewItem">
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="ListViewItem">
+                                <Border CornerRadius="0" BorderThickness="1" Background="WhiteSmoke" Padding="5" HorizontalAlignment="Stretch" Margin="0" Cursor="Hand" >
+                                    <TextBlock Padding="5" Text="{Binding ServerName}"/>
+                                </Border>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </ListView.Resources>
         </ListView>
         <!--Visibility="{Binding ServerInfo,Converter={StaticResource NullToVisibilityConverter}}"-->
-        <Grid Grid.Column="1" Grid.ColumnSpan="1" Grid.RowSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Visibility="Visible">
+        <Grid Grid.Column="1" Grid.ColumnSpan="1" Grid.RowSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Visibility="{Binding ServerInfo,Converter={StaticResource NullToVisibilityConverter}}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="auto" />
                 <ColumnDefinition Width="*" />
@@ -83,10 +101,10 @@
             </StackPanel>-->
             </StackPanel>
             <StackPanel Orientation="Horizontal" Grid.Row="7" HorizontalAlignment="Center" VerticalAlignment="Bottom" Grid.ColumnSpan="3">
-                <Button Margin="10" Command="{Binding SaveChangesCommand}" Grid.Row="6" Grid.Column="3" Content="Save" Width="100" Height="30" />
+                <Button Margin="10" Command="{Binding SaveChangesCommand}" Grid.Row="6" Grid.Column="3" Content="💾  Save" Width="100" Height="30" />
                 <Button Margin="10" Command="{Binding ProtectServerCommand}" Grid.Row="6" Grid.Column="3" Content="🔐 Protect Server" Width="100" Height="30" />
-                <Button Margin="10" Command="{Binding RemoveServerCommand}" Grid.Row="6" Grid.Column="3" Content="Delete" Width="100" Height="30" />
-                <Button Margin="10" Command="{Binding BackCommand}" Grid.Row="6" Grid.Column="3" Content="Back" Width="100" Height="30" />
+                <Button Margin="10" Command="{Binding RemoveServerCommand}" Grid.Row="6" Grid.Column="3" Content="✘ Delete" Width="100" Height="30" />
+                <Button Margin="10" Command="{Binding BackCommand}" Grid.Row="6" Grid.Column="3" Content="❮  Back" Width="100" Height="30" />
             </StackPanel>
         </Grid>
 

@@ -8,20 +8,11 @@ namespace SignalGo.Publisher.Views
     public partial class ProjectInfoPage : Page
     {
         /// <summary>
-        /// Server Manager Servers Information Page
+        /// Project's Info And Command's Page
         /// </summary>
         public ProjectInfoPage()
         {
             InitializeComponent();
-        }
-        private void txtCmdLogs_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            txtCmdLogs.ScrollToEnd();
-        }
-
-        private void txtIgnoreServerFileName_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
-        {
-
         }
     }
 }

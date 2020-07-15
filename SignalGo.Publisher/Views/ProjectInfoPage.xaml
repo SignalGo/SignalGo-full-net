@@ -22,21 +22,7 @@
             <Setter Property="VerticalAlignment" Value="Center"/>
         </Style>
         <!--#region custome controls and listbox styles -->
-        <Style x:Key="White_ListBox" TargetType="{x:Type ListBox}">
-            <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <!--<Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="{x:Type ListBox}">
-                        <Border x:Name="Bd">
-                            <ScrollViewer Focusable="false">
-                                <ItemsPresenter/>
-                            </ScrollViewer>
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>-->
-        </Style>
+
         <Style TargetType="CheckBox" x:Key="CircleCheckbox">
             <Setter Property="Cursor" Value="Hand"></Setter>
             <Setter Property="Content" Value=""></Setter>
@@ -82,7 +68,22 @@
                 </Setter.Value>
             </Setter>
         </Style>
-        <Style TargetType="{x:Type ListBoxItem}">
+        <Style x:Key="White_ListBox" TargetType="{x:Type ListBox}">
+            <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <!--<Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ListBox}">
+                        <Border x:Name="Bd">
+                            <ScrollViewer Focusable="false">
+                                <ItemsPresenter/>
+                            </ScrollViewer>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>-->
+        </Style>
+        <!--<Style TargetType="{x:Type ListBoxItem}">
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="{x:Type ListBoxItem}">
@@ -120,8 +121,8 @@
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
-        </Style>
-        <Style TargetType="{x:Type ScrollBar}">
+        </Style>-->
+        <!--<Style TargetType="{x:Type ScrollBar}">
             <Setter Property="Stylus.IsFlicksEnabled" Value="false"/>
             <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"/>
             <Setter Property="Template">
@@ -158,8 +159,8 @@
             </Setter>
             <Setter Property="Margin" Value="-20,0,0,0"/>
             <Setter Property="Width" Value="10"/>
-        </Style>
-        <Style TargetType="{x:Type Thumb}">
+        </Style>-->
+        <!--<Style TargetType="{x:Type Thumb}">
             <Setter Property="Stylus.IsPressAndHoldEnabled" Value="false"/>
             <Setter Property="Background" Value="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"/>
             <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"/>
@@ -174,7 +175,7 @@
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
-        </Style>
+        </Style>-->
         <!--#endregion-->
 
         <Style TargetType="TextBox">
@@ -210,23 +211,77 @@
                     <ColumnDefinition Width="1*" />
                 </Grid.ColumnDefinitions>
 
-                <TabControl Grid.Row="3" Grid.Column="0" Grid.RowSpan="2" Grid.ColumnSpan="2" >
-                    <TabItem>
+                <TabControl x:Name="projectSectorsTabControl" Grid.Row="3" Grid.Column="0" Grid.RowSpan="2" Grid.ColumnSpan="2" >
+                    <!--#region compiler and builder sector -->
+                    <TabItem x:Name="compilerTabSector" ToolTip="Compiler's Output">
                         <TabItem.Header>
                             <TextBlock Text="Builder"/>
                         </TabItem.Header>
-                        <DockPanel>
-                            <!--<Label FontWeight="Bold" Content="Builder Log:" FontSize="10" VerticalAlignment="Top" DockPanel.Dock="Top" HorizontalAlignment="Left" />-->
-                            <TextBox BorderThickness="0" TextChanged="txtCmdLogs_TextChanged" x:Name="txtCmdLogs" TextWrapping="WrapWithOverflow" Width="auto" Height="auto" Text="{Binding CmdLogs}" ScrollViewer.CanContentScroll="True" VerticalScrollBarVisibility="Auto" DockPanel.Dock="Bottom" Margin="0,0,0,0"/>
-                        </DockPanel>
+                        <ListView VirtualizingPanel.IsVirtualizing="{Binding CurrentUserSettingInfo.UserSettings.IsUiVirtualization}" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.CanContentScroll="True" ItemsSource="{Binding BuilderLogs}" ClipToBounds="True" >
+                            <ListView.View>
+                                <GridView>
+                                    <GridViewColumn Header="Type" Width="60">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Path=LogType}" />
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="Time" Width="80">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Path=LogDateTime}" />
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="Message" Width="210">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock TextWrapping="WrapWithOverflow" TextTrimming="WordEllipsis" Text="{Binding Path=LogText}" />
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                </GridView>
+                            </ListView.View>
+                        </ListView>
                     </TabItem>
-                    <TabItem Header="🖧 ServerLog">
-                        <DockPanel>
-                            <!--<Label FontWeight="Bold" Content="Builder Log:" FontSize="10" VerticalAlignment="Top" DockPanel.Dock="Top" HorizontalAlignment="Left" />-->
+                    <!--#endregion-->
+
+                    <!--#region Server Publish and Logs/ Messages sector -->
+                    <TabItem x:Name="serverTabSector" ToolTip="Server's Output and Messages" Header="🖧 ServerLog">
+                        <ListView  ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.CanContentScroll="True" ItemsSource="{Binding ServerLogs}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
+                            <ListView.View>
+                                <GridView>
+                                    <GridViewColumn Header="Type">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Path=LogType}" />
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="Time">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Path=LogDateTime}" />
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="Message">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Path=LogText}" />
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                </GridView>
+                            </ListView.View>
+                        </ListView>
+                        <!--<DockPanel>
                             <TextBox BorderThickness="0" x:Name="CmdServerLogs" Width="auto" Height="auto" TextWrapping="WrapWithOverflow" Text="{Binding ServerLogs}" ScrollViewer.CanContentScroll="True" VerticalScrollBarVisibility="Auto"  DockPanel.Dock="Bottom" Margin="0,0,0,0"/>
-                        </DockPanel>
+                        </DockPanel>-->
                     </TabItem>
-                    <TabItem Header="Designer">
+                    <!--#endregion-->
+                    <TabItem ToolTip="Test Runner and Automatic Task's Output" Header="Designer">
                         <ListBox BorderThickness="0" ItemsSource="{Binding ProjectInfo.TestCommand.Tests}">
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
@@ -259,7 +314,6 @@
                             </Grid>
                         </DataTemplate>
                     </ListBox.ItemTemplate>-->
-
                 </ListBox>
                 <ListBox Style="{DynamicResource White_ListBox}" x:Name="lst_CommandsQueue" ItemsSource="{Binding ProjectInfo.Commands}" MinWidth="150" Grid.Column="2" Grid.Row="3" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Margin="0,5,0,50" VerticalContentAlignment="Stretch" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto" Grid.RowSpan="2">
                     <ListBox.ItemTemplate>
@@ -277,7 +331,6 @@
                                     <TextBlock Text="{Binding Name}">
                                     </TextBlock>
                                     <TextBlock Foreground="Green">
-                                        <!--<Run Text="⌛"/>-->
                                         <Run Text="{Binding Status}"/>
                                     </TextBlock>
                                 </StackPanel>
@@ -334,7 +387,9 @@
                         </HierarchicalDataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
-                <!--#region Publish Servers Detail -->
+                <Button ToolTip="Clear Project Logs from the list and memory" Grid.Column="0" Grid.Row="5" Padding="5" Command="{Binding ClearLogsCommand}" Content="ClearLogs" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0" />
+
+                <!--#region Remote Servers & Detail's -->
                 <StackPanel Margin="5" Orientation="Vertical" HorizontalAlignment="Stretch" VerticalAlignment="Bottom" Grid.Column="2" Grid.Row="3" Grid.RowSpan="2" >
                     <Expander ExpandDirection="Up" Cursor="Hand">
                         <ListView HorizontalAlignment="Stretch" ItemsSource="{Binding CurrentServerSettingInfo.ServerInfo}" HorizontalContentAlignment="Stretch">
@@ -366,7 +421,7 @@
                 <StackPanel Grid.Row="5" Grid.ColumnSpan="3" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <!--#region Project Status -->
                     <StackPanel Orientation="Horizontal"  HorizontalAlignment="Center" Margin="10">
-                        <TextBlock Text="Last Update: "/>
+                        <TextBlock Text="Last Service Update: "/>
                         <TextBlock Foreground="Green" Text="{Binding ProjectInfo.LastUpdateDateTime}" />
                     </StackPanel>
                     <!--#endregion-->
@@ -376,8 +431,8 @@
                         <Button Padding="5" Command="{Binding BuildCommand}" Content="Build ♻"  Margin="10,0,0,0"/>
                         <Button Padding="5" Command="{Binding RunTestsCommand}" Content="Tests ☑" Margin="10,0,0,0"/>
                         <Button Padding="5" Command="{Binding PublishCommand}" Content="Publish ☢" Margin="10,0,0,0"/>
-                        <Button Padding="5" IsEnabled="{Binding CanRunCommands}" Command="{Binding RunCommand}" Content="Run Commands ▶" Margin="10,0,0,0"/>
-                        <Button Padding="5" Command="{Binding CancellationCommand}" Content="Cancel ✖" Margin="10,0,0,0"/>
+                        <Button Padding="5" Command="{Binding RunCommandsCommand}" Content="Run Commands ▶" Margin="10,0,0,0"/>
+                        <Button ToolTip="Cancel All Running and Queued Commands" Padding="5" Command="{Binding CancellationCommand}" Content="Cancel ✖" Margin="10,0,0,0"/>
                     </StackPanel>
                 </StackPanel>
                 <!--#endregion-->
@@ -414,30 +469,34 @@
 
                 <!--project guid key-->
                 <!--<StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Left">-->
-                <Label Margin="0,5" Grid.Row="0" Content="Guid:" VerticalAlignment="Center" HorizontalAlignment="Left"/>
-                <TextBox Text="{Binding ProjectInfo.ProjectKey}" Grid.Column="1" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Grid.ColumnSpan="2" Margin="10,5,125,5" />
+                <!--<StackPanel VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Grid.Row="0" Grid.Column="0" Orientation="Horizontal" Grid.RowSpan="1">-->
+                    <!--<TextBlock Margin="0" Text="Category:"/>-->
+                    <!--<TextBlock Margin="5" Text="{Binding ProjectInfo.Category.Name}"/>-->
+                    <!--<ComboBox IsEditable="True" IsTextSearchEnabled="True" Margin="5" x:Name="categoryCombo" ItemsSource="{Binding CurrentProjectSettingInfo.CategoryInfos}" DisplayMemberPath="Name" SelectedValuePath="Name" SelectedValue="{Binding ProjectInfo.Category.Name}" />-->
                 <!--</StackPanel>-->
-                <!--  -->
-                <!--<StackPanel  Orientation="Horizontal" Margin="0,0,0,20" HorizontalAlignment="Left">-->
+                <TextBlock Margin="0,5" Grid.Row="1" Text="Guid (Key):" VerticalAlignment="Center" HorizontalAlignment="Left"/>
+                <TextBox Text="{Binding ProjectInfo.ProjectKey}" Grid.Column="1" VerticalAlignment="Stretch" Grid.Row="1" HorizontalAlignment="Stretch" Grid.ColumnSpan="2" Margin="10,5,125,5" />
 
-                <TextBlock Margin="0,5" Text="Project Folder Path:" Grid.Row="1"/>
-                <TextBox Text="{Binding ProjectInfo.ProjectPath}" Grid.Column="1" HorizontalAlignment="Stretch" Grid.Row="1" VerticalAlignment="Stretch" TextWrapping="NoWrap" Margin="10,5,125,5" Grid.ColumnSpan="2"/>
+                <TextBlock Margin="0,5" Text="Project Folder Path:" Grid.Row="2"/>
+                <TextBox Text="{Binding ProjectInfo.ProjectPath}" Grid.Column="1" HorizontalAlignment="Stretch" Grid.Row="2" VerticalAlignment="Stretch" TextWrapping="NoWrap" Margin="10,5,125,5" Grid.ColumnSpan="2"/>
 
-                <TextBlock Margin="0,5" Text="Project Assemblies Path:" Grid.Row="2"/>
-                <TextBox Text="{Binding ProjectInfo.ProjectAssembliesPath}" Grid.Column="1" HorizontalAlignment="Stretch" Grid.Row="2" VerticalAlignment="Stretch" TextWrapping="WrapWithOverflow" ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Auto" Grid.ColumnSpan="2" Margin="10,5,125,5"/>
-                <Button Margin="0,5" Command="{Binding BrowseAssemblyPathCommand}" Content="..." Grid.Column="3" Width="80" Grid.Row="2" FontWeight="Normal" HorizontalAlignment="Right"/>
+                <TextBlock Margin="0,5" Text="Project Assemblies Path:" Grid.Row="3"/>
+                <TextBox Text="{Binding ProjectInfo.ProjectAssembliesPath}" Grid.Column="1" HorizontalAlignment="Stretch" Grid.Row="3" VerticalAlignment="Stretch" TextWrapping="WrapWithOverflow" ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Auto" Grid.ColumnSpan="2" Margin="10,5,125,5"/>
+                <Button Margin="0,5" Command="{Binding BrowseAssemblyPathCommand}" Content="..." Grid.Column="3" Width="80" Grid.Row="3" FontWeight="Normal" HorizontalAlignment="Right"/>
 
-                <Button Margin="0,5" Command="{Binding BrowseProjectPathCommand}" Content="..." Grid.Column="3" Width="80" Grid.Row="1" FontWeight="Normal" HorizontalAlignment="Right"/>
+                <Button Margin="0,5" Command="{Binding BrowseProjectPathCommand}" Content="..." Grid.Column="3" Width="80" Grid.Row="2" FontWeight="Normal" HorizontalAlignment="Right"/>
 
                 <!--#region FileOptions -->
                 <!--server-->
-                <DockPanel Grid.Row="3">
-                    <TextBlock Margin="0,5" Text="Don't Update this files in Server: " HorizontalAlignment="Stretch" VerticalAlignment="Top" DockPanel.Dock="Left"/>
+                <DockPanel Grid.Row="4">
+                    <TextBlock Margin="0,5" Text="Don't Update this files in Server: " HorizontalAlignment="Stretch" VerticalAlignment="Top" DockPanel.Dock="Left" ToolTip="Ignore Server Files"/>
                     <Button  Grid.Column="0" Content="+" HorizontalAlignment="Stretch"  DockPanel.Dock="Right" Command="{Binding AddIgnoreServerFileCommand}" VerticalAlignment="Stretch" MaxWidth="50" Height="25" Padding="5,5,5,5" />
                 </DockPanel>
-                <TextBox x:Name="txtIgnoreServerFileName" TextWrapping="Wrap" Grid.Row="4" Grid.Column="0" Text="{Binding IgnoreServerFileName}" ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Auto" HorizontalAlignment="Stretch" Margin="5" DockPanel.Dock="Left" KeyDown="txtIgnoreServerFileName_KeyDown"/>
-
-                <ListView x:Name="lst_ignoredFiles" ItemsSource="{Binding ProjectInfo.ServerIgnoredFiles}" MinWidth="200" MaxWidth="250" VerticalAlignment="Top" HorizontalAlignment="Stretch" Margin="5" VerticalContentAlignment="Stretch" ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Auto" MinHeight="25" Grid.Row="5" Grid.RowSpan="2">
+                <DockPanel Grid.Row="5">
+                    <TextBlock Text="Name:" HorizontalAlignment="Stretch" VerticalAlignment="Center"/>
+                    <TextBox x:Name="txtIgnoreServerFileName" TextWrapping="Wrap" Grid.Row="5" Grid.Column="0" Text="{Binding IgnoreServerFileName}" ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Auto" HorizontalAlignment="Stretch" Margin="5" />
+                </DockPanel>
+                <ListView x:Name="lst_ignoredFiles" ItemsSource="{Binding ProjectInfo.ServerIgnoredFiles}" MinWidth="200" MaxWidth="250" VerticalAlignment="Top" HorizontalAlignment="Stretch" Margin="5" VerticalContentAlignment="Stretch" ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Auto" MinHeight="25" Grid.Row="6" Grid.RowSpan="2">
                     <ListView.ItemTemplate>
                         <DataTemplate>
                             <Grid>
@@ -464,16 +523,16 @@
 
                 </ListView>
                 <!--client-->
-                <DockPanel Grid.Column="1" Grid.Row="3" HorizontalAlignment="Stretch" >
+                <DockPanel Grid.Column="1" Grid.Row="4" HorizontalAlignment="Stretch" >
                     <TextBlock DockPanel.Dock="Left" Margin="10,5" Grid.Column="1" Text="Don't upload this files in Client: " HorizontalAlignment="Stretch" VerticalAlignment="Top"/>
                     <Button DockPanel.Dock="Right" Command="{Binding AddIgnoreClientFileCommand}" Content="Browse" FontWeight="Normal" HorizontalAlignment="Stretch"   Grid.Column="1" VerticalAlignment="Top" Padding="5,5,5,5"/>
                 </DockPanel>
-                <DockPanel Grid.Row="4" Grid.Column="1" >
-                    <Label DockPanel.Dock="Left" Content="Regex: " HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="10,5,0,5" />
-                    <TextBox DockPanel.Dock="Right" TextWrapping="Wrap" Text="In next release" IsEnabled="False" ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Auto" HorizontalAlignment="Stretch" Margin="5" VerticalAlignment="Stretch"/>
+                <DockPanel Grid.Row="5" Grid.Column="1" >
+                    <TextBlock DockPanel.Dock="Left" Text="Regex: " HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="10,5,0,5" />
+                    <TextBox DockPanel.Dock="Right" TextWrapping="Wrap" Text="In Near Future ..." IsEnabled="False" ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Auto" HorizontalAlignment="Stretch" Margin="5" VerticalAlignment="Stretch"/>
                 </DockPanel>
 
-                <ListView Grid.Column="1" Grid.Row="5" Grid.RowSpan="2" x:Name="lst_ignoredClientsFiles" ItemsSource="{Binding ProjectInfo.IgnoredFiles}" MinWidth="200" MaxWidth="250" VerticalAlignment="Top" HorizontalAlignment="Stretch" Margin="10,5" VerticalContentAlignment="Stretch" ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Auto" MinHeight="25" >
+                <ListView Grid.Column="1" Grid.Row="6" Grid.RowSpan="2" x:Name="lst_ignoredClientsFiles" ItemsSource="{Binding ProjectInfo.IgnoredFiles}" MinWidth="200" MaxWidth="250" VerticalAlignment="Top" HorizontalAlignment="Stretch" Margin="10,5" VerticalContentAlignment="Stretch" ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Auto" MinHeight="25" >
                     <ListView.ItemTemplate>
                         <DataTemplate>
                             <Grid>
@@ -502,7 +561,7 @@
                 </ListView>
 
                 <StackPanel Grid.Column="3" Grid.Row="6" HorizontalAlignment="Right" VerticalAlignment="Bottom" Orientation="Horizontal">
-                    <Button Margin="5,5" Command="{Binding OpenProjectFolderCommand}" Content="🔍 Open Folder" Width="100" Padding="5" FontWeight="Normal"/>
+                    <Button Margin="5,5" Command="{Binding OpenProjectFolderCommand}" Content="🔍 Open Project Folder" Width="auto" Padding="5" FontWeight="Normal"/>
                     <Button Margin="5,5" Command="{Binding SaveChangeCommand}" Content="Save" Width="80" Padding="5" FontWeight="Normal"/>
                 </StackPanel>
                 <!--#endregion-->
@@ -510,11 +569,12 @@
             </Grid>
 
         </TabItem>
+
         <TabItem>
             <TabItem.Header>
                 <TextBlock>
                     <Run Text="📁"/>
-                    <Run Text="Server Manager"/>
+                    <Run Text="Server File Manager"/>
                 </TextBlock>
             </TabItem.Header>
             <Grid Margin="10">
@@ -527,9 +587,9 @@
                     <ColumnDefinition/>
                 </Grid.ColumnDefinitions>
                 <StackPanel HorizontalAlignment="Left" Orientation="Horizontal" >
-                    <Button Command="{Binding FetchFilesCommand}" Content=" Fetch" Width="50"/>
-                    <Button Command="{Binding GetServerScreenShotCommand}" Margin="5,0,0,0" Content="Get ScreenShot" Width="100"/>
-                    <ComboBox ItemsSource="{Binding Servers}" SelectedItem="{Binding SelectedServerInfo}" DisplayMemberPath="ServerName" Margin="5,0,0,0" Width="200" >
+                    <Button Command="{Binding FetchFilesCommand}" Content=" Fetch" Width="50" ToolTip="get list of service files on sesrver"/>
+                    <Button Command="{Binding GetServerScreenShotCommand}" Margin="5,0,0,0" Content="Get ScreenShot" Width="100" ToolTip="Get an screen shot image from service console on selected server"/>
+                    <ComboBox DisplayMemberPath="ServerName" Margin="5,0,0,0" Width="200" SelectedIndex="0" ItemsSource="{Binding Servers}" SelectedItem="{Binding SelectedServerInfo}" ToolTip="Remote Server's">
                         <tg:TriggerExtensions.Triggers>
                             <tg:TriggerCollections>
                                 <tg:EventTriggerInfo EventName="SelectionChanged" >
@@ -541,6 +601,7 @@
                         </tg:TriggerExtensions.Triggers>
                     </ComboBox>
                 </StackPanel>
+
                 <ListBox Margin="5" Grid.Row="1" BorderThickness="0" ItemsSource="{Binding ProjectInfo.ServerFiles}">
                     <ListBox.ItemTemplate>
                         <DataTemplate>
@@ -558,10 +619,10 @@
 
                 <Grid Grid.Column="1"  Grid.RowSpan="2">
                     <Grid.RowDefinitions>
-                        <RowDefinition/>
+                        <RowDefinition />
                         <RowDefinition Height="30"/>
                     </Grid.RowDefinitions>
-                    <Image x:Name="ServerProcessCaptureImage" Source="{Binding ServerScreenCapture}"  Visibility="{Binding IsFetch,Converter={StaticResource InverseBooleanToVisibilityConverter}}"/>
+                    <Image VerticalAlignment="Stretch" Stretch="UniformToFill" HorizontalAlignment="Stretch" x:Name="ServerProcessCaptureImage" Source="{Binding ServerScreenCapture}"  Visibility="{Binding IsFetch,Converter={StaticResource InverseBooleanToVisibilityConverter}}"/>
                     <TextBox FontSize="16" Margin="5" Text="{Binding FileContent}" AcceptsReturn="True" Height="auto" VerticalScrollBarVisibility="Auto" Visibility="{Binding IsFetch,Converter={StaticResource BooleanToVisibilityConverter}}"/>
                     <StackPanel  Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">
                         <!--<Button Padding="5" Content="Download" Command="{Binding DownloadFileCommmand}" />-->
@@ -571,57 +632,58 @@
             </Grid>
 
         </TabItem>
-        <!--<TabItem Header="File Options">
-            <Grid Margin="10">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="auto"/>
-                    <RowDefinition Height="auto"/>
-                    <RowDefinition />
-                </Grid.RowDefinitions>
+
+        <TabItem>
+            <TabItem.Header>
+                <TextBlock>
+                    <Run Text=""/>
+                    <Run Text="Server Managment / Logs"/>
+                </TextBlock>
+            </TabItem.Header>
+
+            <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="auto" />
-                    <ColumnDefinition  />
+                    <ColumnDefinition/>
+                    <ColumnDefinition/>
                 </Grid.ColumnDefinitions>
-
-            </Grid>
-        </TabItem>-->
-
-
-        <!--<TabItem Header="Window" Loaded="TabItem_Loaded" >-->
-        <!--<TabItem Header="Window" >
-            <Grid Margin="10">
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="auto"/>
-                    <RowDefinition Height="*"/>
+                    <RowDefinition/>
+                    <RowDefinition/>
                 </Grid.RowDefinitions>
-                -->
-        <!--<StackPanel Orientation="Horizontal">
-                    <Button Command="{Binding ClearLogCommand}" Content="Clear" Padding="10"/>
-                </StackPanel>-->
-        <!--
-                <ListView Grid.Row="1" ItemsSource="{Binding ProjectInfo.Logs}">
-                    <ListView.Resources>
-                        <Style TargetType="ListViewItem">
-                            <Setter Property="ContextMenu">
-                                <Setter.Value>
-                                    <ContextMenu>
-                                        <MenuItem Header="Copy" Command="{Binding CopyCommand,Source={StaticResource ProjectInfoViewModel}}" CommandParameter="{Binding}"/>
-                                    </ContextMenu>
-                                </Setter.Value>
-                            </Setter>
-                        </Style>
-                    </ListView.Resources>
-                    <ListView.ItemTemplate>
-                        <DataTemplate>
-                            <Grid>
-                                <TextBlock Text="{Binding Text}" TextWrapping="Wrap"/>
-                            </Grid>
-                        </DataTemplate>
-                    </ListView.ItemTemplate>
+
+                <StackPanel HorizontalAlignment="Stretch" VerticalAlignment="Top" Orientation="Horizontal" Grid.Column="0" Grid.Row="0">
+                    <Button Padding="5" Margin="5" Command="{Binding StartServiceCommand}" Content="StartService " />
+                    <Button Padding="5" Margin="5" Command="{Binding StopServiceCommand}" Content="StopService " />
+                    <Button Padding="5" Margin="5" Command="{Binding RestartServiceCommand}" Content="RestartService " />
+                </StackPanel>
+                <ListView Margin="0,20,0,0" Grid.Column="1" Grid.Row="0" Grid.RowSpan="2" ScrollViewer.VerticalScrollBarVisibility="Auto" x:Name="txt_serverManagmentLog" ScrollViewer.CanContentScroll="True" ItemsSource="{Binding ManagementLogs}" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
+                    <ListView.View>
+                        <GridView>
+                            <GridViewColumn Header="Type">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Path=LogType}" />
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <GridViewColumn Header="Time">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Path=LogDateTime}" />
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <GridViewColumn Header="Message">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Path=LogText}" Width="300" />
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                        </GridView>
+                    </ListView.View>
                 </ListView>
             </Grid>
-        </TabItem>-->
+        </TabItem>
     </TabControl>
 </Page>
