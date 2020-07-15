@@ -108,13 +108,13 @@ namespace SignalGo.Publisher.ViewModels
 
                 }
                 if (string.IsNullOrEmpty(ServerName))
-                    MessageBox.Show("Plase set name of server");
+                    MessageBox.Show("Please set name of server");
                 if (string.IsNullOrEmpty(ServerAddress))
-                    MessageBox.Show("Plase set Server Address");
+                    MessageBox.Show("Please set Server Address");
                 if (string.IsNullOrEmpty(ServerPort))
-                    MessageBox.Show("Plase set Server Port");
+                    MessageBox.Show("Please set Server Port");
                 if (string.IsNullOrEmpty(ServerEndPoint))
-                    MessageBox.Show("Plase set Server Port");
+                    MessageBox.Show("Please set Server Port");
                 else if (ServerSettingInfo.CurrentServer.ServerInfo.Any(x => x.ServerName == ServerName))
                     MessageBox.Show("Server name exist on list, please set a different name");
                 else

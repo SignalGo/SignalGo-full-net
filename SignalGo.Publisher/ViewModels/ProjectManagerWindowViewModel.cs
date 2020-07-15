@@ -1,13 +1,11 @@
 ﻿using MvvmGo.Commands;
 using MvvmGo.ViewModels;
 using SignalGo.Publisher.Models;
+using SignalGo.Publisher.Models.Extra;
 using SignalGo.Publisher.Views;
-using SignalGo.Shared.Log;
 using System;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -25,22 +23,27 @@ namespace SignalGo.Publisher.ViewModels
         public ProjectManagerWindowViewModel()
         {
             This = this;
+            ChangeAccessControlCommand = new Command<bool>(ChangeAccessControl);
+            CleanMemoryCommand = new TaskCommand(CleanAppMemory,
+                () => !CleanMemoryCommand.IsBusy);
+            RunSelfUpdateCommand = new TaskCommand(RunSelfUpdate,
+                () => !RunSelfUpdateCommand.IsBusy);
             ShowAppHelpPageCommand = new Command(ShowAppHelpPage);
             AddNewServerCommand = new Command(AddNewServer);
             ShowSettingsCommand = new Command(ShowSettingsPage);
+            AddNewCategoryCommand = new Command(AddNewCategory);
             AddNewProjectCommand = new Command(AddNewProject);
             ShowAppLogsCommand = new Command(ShowAppLogs);
-            ExitApplicationCommand = new Command(ExitApplication);
             ShowCompilerLogsCommand = new Command(ShowCompilerLogs);
+            ShowAppBackupsCommand = new Command(ShowAppBackups);
+            ExitApplicationCommand = new Command(ExitApplication);
             ShowServersCommand = new Command(ShowServers);
             ShowCommandManagerCommand = new Command(ShowCommandManagerPage);
-            LoadProjects();
-
             // get application resouce usage in background
-            _ = GetAppUsage();
+            GetAppUsage();
         }
 
-
+        public Command<bool> ChangeAccessControlCommand { get; set; }
         public Command ExitApplicationCommand { get; set; }
         public Command ShowAppHelpPageCommand { get; set; }
         public Command ShowCommandManagerCommand { get; set; }
@@ -49,7 +52,11 @@ namespace SignalGo.Publisher.ViewModels
         public Command ShowServersCommand { get; set; }
         public Command ShowSettingsCommand { get; set; }
         public Command ShowAppLogsCommand { get; set; }
+        public Command ShowAppBackupsCommand { get; set; }
         public Command ShowCompilerLogsCommand { get; set; }
+        public Command AddNewCategoryCommand { get; set; }
+        public TaskCommand CleanMemoryCommand { get; set; }
+        public TaskCommand RunSelfUpdateCommand { get; set; }
 
         public static Frame MainFrame { get; set; }
 
@@ -72,7 +79,7 @@ namespace SignalGo.Publisher.ViewModels
             }
         }
 
-        public SettingInfo CurrentSettingInfo
+        public SettingInfo CurrentProjectsSettingInfo
         {
             get
             {
@@ -80,7 +87,29 @@ namespace SignalGo.Publisher.ViewModels
             }
         }
 
+        public UserSettingInfo CurrentUserSettingInfo
+        {
+            get
+            {
+                return UserSettingInfo.Current;
+            }
+        }
 
+        private Task RunSelfUpdate()
+        {
+
+            var answer = System.Windows.Forms.MessageBox.Show("Soon... \n You Can Get New Version's From Publisher Telegram Channel For Now. https://t.me/PublisherGo", "Update Publisher", System.Windows.Forms.MessageBoxButtons.YesNo, System.Windows.Forms.MessageBoxIcon.Information);
+
+            if (answer == System.Windows.Forms.DialogResult.Yes)
+            {
+                Process.Start("explorer", "https://t.me/PublisherGo");
+            }
+            return Task.CompletedTask;
+        }
+        private void AddNewCategory()
+        {
+            MainFrame.Navigate(new AddNewCategoryPage());
+        }
         private void ShowSettingsPage()
         {
             MainFrame.Navigate(new PublisherSettingManagerPage());
@@ -97,12 +126,15 @@ namespace SignalGo.Publisher.ViewModels
         }
         private void ShowCompilerLogs()
         {
-            Process.Start("notepad", Path.Combine(Environment.CurrentDirectory, "CommandRunnerLogs.txt"));
+            Process.Start("notepad", UserSettingInfo.Current.UserSettings.CommandRunnerLogsPath);
+        }
+        private void ShowAppBackups()
+        {
+            Process.Start("explorer.exe", Path.Combine(Environment.CurrentDirectory, "AppBackups"));
         }
         private void ShowAppLogs()
         {
-            Process.Start("notepad", Path.Combine(Environment.CurrentDirectory, "AppLogs.log"));
-            //using (Process.Start("notepad", $"{Environment.CurrentDirectory}{ConfigurationManager.AppSettings["CommandRunnerLogFilePath"]}")) { }
+            Process.Start("notepad", UserSettingInfo.Current.UserSettings.LoggerPath);
         }
         private void ShowServers()
         {
@@ -131,69 +163,95 @@ namespace SignalGo.Publisher.ViewModels
         public void LoadProjects()
         {
 
-            try
-            {
-                foreach (ProjectInfo project in SettingInfo.Current.ProjectInfo)
-                {
-                }
-            }
-            catch (Exception ex)
-            {
-                AutoLogger.Default.LogError(ex, "LoadProjectInfo");
-            }
+            ////try
+            ////{
+            ////    foreach (ProjectInfo project in SettingInfo.Current.ProjectInfo)
+            ////    {
+            ////    }
+            ////}
+            ////catch (Exception ex)
+            ////{
+            ////    AutoLogger.Default.LogError(ex, "LoadProjectInfo");
+            ////}
         }
-        public async Task GetAppUsage()
+
+        /// <summary>
+        /// clean/free application memorry an resource is used
+        /// </summary>
+        /// <returns></returns>
+        private void ChangeAccessControl(bool state)
         {
-            try
-            {
-                _ = Task.Factory.StartNew(async () =>
-                {
-                    ApplicationRAMUsage = (Process.GetCurrentProcess().PrivateMemorySize64 / 1000000).ToString();
-                    await Task.Delay(20000);
-                    _ = GetAppUsage();
-                }, TaskCreationOptions.LongRunning);
-            }
-            catch (Exception ex) { }
+            IsAccessControlUnlocked = state;
         }
-        //private void worker_DoWork(object sender, DoWorkEventArgs e)
+        public async Task CleanAppMemory()
+        {
+            await LogModule.FullApplicationClean();
+        }
+        /// <summary>
+        /// get publisher resource usage in Background (default every 20 sec)
+        /// </summary>
+        /// <returns></returns>
+        public async void GetAppUsage()
+        {
+            await Task.Run(async () =>
+            {
+                while (true)
+                {
+                    ApplicationRAMUsage = (Process.GetCurrentProcess().PrivateMemorySize64 / 1000000);
+                    await Task.Delay(20000);
+                }
+            });
+
+        }
+
+        //public Color _UsageStatusIndicatorColor = new SolidColorBrush(Color.FromRgb(64, 201, 33)).Color;
+        //public Color UsageStatusIndicatorColor
         //{
-        //    ApplicationRAMUsage = GC.GetTotalMemory(true) / 10000;
+        //    get
+        //    {
+        //        return _UsageStatusIndicatorColor;
+        //    }
+        //    set
+        //    {
+        //        _UsageStatusIndicatorColor = value;
+        //        OnPropertyChanged(nameof(UsageStatusIndicatorColor));
+        //    }
         //}
 
-        //private void worker_RunWorkerCompleted(object sender,
-        //                                           RunWorkerCompletedEventArgs e)
-        //{
-        //    ApplicationRAMUsage = GC.GetTotalMemory(true) / 10000;
-        //}
-        //public static string RAMUsage { get; set; }
-
-        public string _ApplicationRAMUsage;
-        public string ApplicationRAMUsage
+        public long _ApplicationRAMUsage;
+        public long ApplicationRAMUsage
         {
             get
             {
-                return $"{ _ApplicationRAMUsage}";
+                return _ApplicationRAMUsage;
             }
             set
             {
                 _ApplicationRAMUsage = value;
+                //if (value > 70)
+                //{
+                //    UsageStatusIndicatorColor = new SolidColorBrush(Color.FromRgb(235, 235, 50)).Color;
+                //}
+                //else if (value > 400)
+                //{
+                //    UsageStatusIndicatorColor = new SolidColorBrush(Color.FromRgb(255, 40, 40)).Color;
+                //}
                 OnPropertyChanged(nameof(ApplicationRAMUsage));
             }
         }
-        //public string _ApplicationCPUUsage;
-        //public string ApplicationCPUUsage
-        //{
-        //    get
-        //    {
-        //        return $"< { _ApplicationCPUUsage}";
-        //    }
-        //    set
-        //    {
-        //        _ApplicationCPUUsage = value;
-        //        OnPropertyChanged(nameof(ApplicationCPUUsage));
-        //    }
-        //}
-
-
+        private bool _IsAccessControlUnlocked = false;
+        public bool IsAccessControlUnlocked
+        {
+            get
+            {
+                return
+                  _IsAccessControlUnlocked;
+            }
+            set
+            {
+                _IsAccessControlUnlocked = value;
+                OnPropertyChanged(nameof(IsAccessControlUnlocked));
+            }
+        }
     }
 }

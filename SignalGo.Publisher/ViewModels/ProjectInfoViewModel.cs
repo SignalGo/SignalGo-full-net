@@ -1,26 +1,26 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Text;
 using MvvmGo.Commands;
+using System.Threading;
 using MvvmGo.ViewModels;
+using System.Diagnostics;
+using SignalGo.Shared.Log;
 using System.Windows.Forms;
 using System.Threading.Tasks;
 using SignalGo.Publisher.Views;
 using SignalGo.Publisher.Models;
 using SignalGo.Publisher.Engines.Commands;
 using SignalGo.Publisher.Engines.Interfaces;
-using System.Text;
-using System.Threading;
-using System.Diagnostics;
 using System.Collections.ObjectModel;
-using SignalGo.Shared.Log;
 using SignalGo.Publisher.Shared.Models;
 using SignalGo.Publisher.Services;
 using ServerManagerService.StreamServices;
-using SignalGo.Publisher.Views.Extra;
-using SignalGo.Publisher.Engines.Models;
-using System.Security.Cryptography;
 using System.Windows.Media.Imaging;
+using SignalGo.Publisher.Models.Extra;
+using System.Collections.Generic;
+using SignalGo.Publisher.Extensions;
 
 namespace SignalGo.Publisher.ViewModels
 {
@@ -34,26 +34,20 @@ namespace SignalGo.Publisher.ViewModels
         /// </summary>
         public ProjectInfoViewModel()
         {
-            //ServerInfo.Servers.Clear();
+            //IsChangeBusyWhenCommandExecute = true;
             SaveIgnoreFileListCommand = new Command(SaveIgnoreFileList);
             SaveChangeCommand = new Command(SaveChanges);
-            ApplyMigrationsCommand = new Command(ApplyMigrations);
             BuildCommand = new Command(Build);
             BrowseProjectPathCommand = new Command(BrowseProjectPath);
             BrowseAssemblyPathCommand = new Command(BrowseAssemblyPath);
             ClearServerFileListCommand = new EventCommand(ClearFileList);
-            GetServerScreenShotCommand = new Command(() =>
-            {
-                IsFetch = false;
-                IsBusy = true;
-                GetServerScreenShotCommand.ValidateCanExecute();
-                _ = CaptureApplicationProcess();
-            }, () => !IsBusy);
-            CancellationCommand = new Command(CancelCommands);
+            GetServerScreenShotCommand = new TaskCommand(CaptureApplicationProcess, () => !GetServerScreenShotCommand.IsBusy);
+            CancellationCommand = new Command(CancelCommands, () => !IsBusy);
             DeleteCommand = new Command(DeleteProject);
             OpenProjectFolderCommand = new Command(OpenProjectFolder);
             RunTestsCommand = new Command(RunTests);
-            RunCommand = new Command(RunCMD);
+            RunCommandsCommand = new TaskCommand(RunCommands,
+                () => !RunCommandsCommand.IsBusy);
             RestorePackagesCommand = new Command(RestorePackages);
             RemoveIgnoredServerFileCommand = new Command<IgnoreFileInfo>(RemoveIgnoredServerFile);
             RemoveIgnoredFileCommand = new Command<IgnoreFileInfo>(RemoveIgnoredFile);
@@ -64,60 +58,27 @@ namespace SignalGo.Publisher.ViewModels
                 ProjectInfo.Commands.Remove(x);
             });
 
-            RetryCommand = new Command<ICommand>((x) =>
+            RetryCommand = new TaskCommand<ICommand>(async (x) =>
             {
-                Task.Run(async () =>
-                {
-                    await x.Run(CancellationToken);
-                    await ReadCommandLog();
-                });
-            });
+                await x.Run(CancellationToken, ProjectInfo.Name);
+            }, (x) => !RetryCommand.IsBusy);
+
             ToDownCommand = new Command<ICommand>(MoveCommandLower);
             ToUpCommand = new Command<ICommand>(MoveCommandUpper);
             GitPullCommand = new Command(GitPull);
+            ClearLogsCommand = new TaskCommand(ClearLogs, () => !ClearLogsCommand.IsBusy);
             PublishCommand = new Command(PublishToServers);
+            FetchFilesCommand = new TaskCommand(FetchFiles, () => !FetchFilesCommand.IsBusy);
 
-            FetchFilesCommand = new Command(() =>
-            {
-                IsFetch = true;
-                IsBusy = true;
-                FetchFilesCommand.ValidateCanExecute();
-                _ = FetchFiles();
-            }, () => !IsBusy);
+            LoadFileCommmand = new TaskCommand<string>(LoadFileDataFromServer);
 
-            LoadFileCommmand = new Command<string>((filePath) =>
-            {
-                IsBusy = true;
-                LoadFileCommmand.ValidateCanExecute(filePath);
-                _ = LoadFileDataFromServer(filePath);
-            }, (x) => !IsBusy);
-
-            UploadFileCommmand = new Command(() =>
-            {
-                IsBusy = true;
-                UploadFileCommmand.ValidateCanExecute();
-                _ = UploadFileDataFromServer();
-            }, () => !IsBusy);
+            UploadFileCommmand = new TaskCommand(UploadFileDataFromServer, () => !UploadFileCommmand.IsBusy);
+            RestartServiceCommand = new TaskCommand(RestartService, () => !RestartServiceCommand.IsBusy);
+            StopServiceCommand = new TaskCommand(StopService, () => !StopServiceCommand.IsBusy);
+            StartServiceCommand = new TaskCommand(StartService, () => !StartServiceCommand.IsBusy);
+            //InitializeCommands();
         }
 
-
-        /// <summary>
-        /// read log of excecuted commands
-        /// </summary>
-        /// <returns></returns>
-        public async Task ReadCommandLog()
-        {
-            string standardOutputResult;
-            StringBuilder sb = new StringBuilder();
-            var logFile = await File.ReadAllTextAsync(UserSettingInfo.Current.UserSettings.CommandRunnerLogsPath);
-            standardOutputResult = logFile;
-            CmdLogs += standardOutputResult;
-            foreach (var item in ServerInfo.ServerLogs)
-            {
-                sb.AppendLine(item);
-            }
-            ServerLogs = sb.ToString();
-        }
         /// <summary>
         /// browse directory for path
         /// </summary>
@@ -131,6 +92,7 @@ namespace SignalGo.Publisher.ViewModels
                 SettingInfo.SaveSettingInfo();
             }
         }
+
         private void BrowseProjectPath()
         {
             FolderBrowserDialog folderBrowserDialog = new FolderBrowserDialog();
@@ -143,15 +105,15 @@ namespace SignalGo.Publisher.ViewModels
         }
 
         /// <summary>
-        /// save changes in project info
+        /// save changes/edit's in project info
         /// </summary>
         private void SaveChanges()
         {
             var gu = Guid.Empty;
             if (Guid.TryParse(ProjectInfo.ProjectKey.ToString(), out gu))
                 ProjectInfo.ProjectKey = gu;
-            SaveIgnoreFileList();
             SettingInfo.SaveSettingInfo();
+            MessageBox.Show("Change's Saved Successfully!", "Edit Project", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         public static CancellationTokenSource CancellationTokenSource = new CancellationTokenSource();
@@ -179,9 +141,7 @@ namespace SignalGo.Publisher.ViewModels
                 ProjectInfo.Commands.Move(index - 1, index);
         }
 
-        /// <summary>
-        /// compile and check project assemblies for build
-        /// </summary>
+        #region |MVVM Commands Used In ProjectInfo Page|
         public Command SaveChangeCommand { get; set; }
         public Command BrowseProjectPathCommand { get; set; }
         public Command BrowseAssemblyPathCommand { get; set; }
@@ -194,12 +154,31 @@ namespace SignalGo.Publisher.ViewModels
         public Command<IgnoreFileInfo> RemoveIgnoredServerFileCommand { get; set; }
         public Command AddIgnoreClientFileCommand { get; set; }
         public Command AddIgnoreServerFileCommand { get; set; }
-        public Command<ICommand> RetryCommand { get; set; }
+        public TaskCommand<ICommand> RetryCommand { get; set; }
         public Command<ICommand> ToDownCommand { get; set; }
         public Command<ICommand> ToUpCommand { get; set; }
-        public Command<string> LoadFileCommmand { get; set; }
-        public Command UploadFileCommmand { get; set; }
-        public string SelectedServerFile { get; set; }
+        public TaskCommand<string> LoadFileCommmand { get; set; }
+        public TaskCommand UploadFileCommmand { get; set; }
+        public TaskCommand StartServiceCommand { get; set; }
+        public TaskCommand StopServiceCommand { get; set; }
+        public TaskCommand RestartServiceCommand { get; set; }
+
+        public EventCommand ClearServerFileListCommand { get; set; }
+        public TaskCommand FetchFilesCommand { get; set; }
+        public TaskCommand GetServerScreenShotCommand { get; set; }
+        /// <summary>
+        /// run a custome command/expression
+        /// </summary>
+        public TaskCommand RunCommandsCommand { get; set; }
+        public Command RunTestsCommand { get; set; }
+        //public string CmdLogs { get; set; }
+        /// <summary>
+        /// restore/update nuget packages
+        /// </summary>
+        public Command RestorePackagesCommand { get; set; }
+        public Command GitPullCommand { get; set; }
+        public Command PublishCommand { get; set; }
+        #endregion
 
         public ObservableCollection<ServerInfo> Servers
         {
@@ -222,6 +201,7 @@ namespace SignalGo.Publisher.ViewModels
             }
         }
         private string _fileContent;
+        public string SelectedServerFile { get; set; }
         public string FileContent
         {
             get
@@ -234,23 +214,26 @@ namespace SignalGo.Publisher.ViewModels
                 OnPropertyChanged(nameof(FileContent));
             }
         }
+        private ProjectInfo _ProjectInfo;
 
-        public EventCommand ClearServerFileListCommand { get; set; }
-        public Command FetchFilesCommand { get; set; }
-        public Command GetServerScreenShotCommand { get; set; }
         /// <summary>
-        /// run a custome command/expression
+        /// a property instance of ProjectInfo Model
         /// </summary>
-        public Command RunCommand { get; set; }
-        public Command RunTestsCommand { get; set; }
-        //public string CmdLogs { get; set; }
-        /// <summary>
-        /// restore/update nuget packages
-        /// </summary>
-        public Command RestorePackagesCommand { get; set; }
-
-        public Command GitPullCommand { get; set; }
-        public Command PublishCommand { get; set; }
+        public ProjectInfo ProjectInfo
+        {
+            get
+            {
+                return _ProjectInfo;
+            }
+            set
+            {
+                _ProjectInfo = value;
+                OnPropertyChanged(nameof(ProjectInfo));
+                OnPropertyChanged(nameof(ServerLogs));
+                OnPropertyChanged(nameof(ManagementLogs));
+                OnPropertyChanged(nameof(BuilderLogs));
+            }
+        }
 
         BitmapSource _ServerScreenCapture;
         public BitmapSource ServerScreenCapture
@@ -280,48 +263,46 @@ namespace SignalGo.Publisher.ViewModels
             }
         }
 
-        /// <summary>
-        /// Execute Test Cases of Project
-        /// </summary>
-
-        string _ServerLogs;
-
-        /// <summary>
-        /// instance of ProjectInfo Model
-        /// </summary>
-        public string ServerLogs
+        public ObservableCollection<LogInfo> ManagementLogs
         {
             get
             {
-                return _ServerLogs;
-            }
-            set
-            {
-                _ServerLogs = value;
-                OnPropertyChanged(nameof(ServerLogs));
+                if (!string.IsNullOrEmpty(ProjectInfo?.Name))
+                {
+                    LogModule.TryGetLogs(ProjectInfo.Name, SectorType.Management, out ObservableCollection<LogInfo> _ProjectInfoLogs);
+                    return _ProjectInfoLogs;
+                }
+                return null;
             }
         }
 
-        string _CmdLogs;
-
-        /// <summary>
-        /// instance of ProjectInfo Model
-        /// </summary>
-        public string CmdLogs
+        public ObservableCollection<LogInfo> BuilderLogs
         {
             get
             {
-                return _CmdLogs;
+                if (!string.IsNullOrEmpty(ProjectInfo?.Name))
+                {
+                    LogModule.TryGetLogs(ProjectInfo.Name, SectorType.Builder, out ObservableCollection<LogInfo> _ProjectInfoLogs);
+                    return _ProjectInfoLogs;
+                }
+                return null;
             }
-            set
+        }
+
+        public ObservableCollection<LogInfo> ServerLogs
+        {
+            get
             {
-                _CmdLogs = value;
-                OnPropertyChanged(nameof(CmdLogs));
+                if (!string.IsNullOrEmpty(ProjectInfo?.Name))
+                {
+                    LogModule.TryGetLogs(ProjectInfo.Name, SectorType.Server, out ObservableCollection<LogInfo> _ProjectInfoLogs);
+                    return _ProjectInfoLogs;
+                }
+                return null;
             }
         }
 
         private ProjectInfo _SelectedCommandInfo;
-
         public ProjectInfo SelectedCommandInfo
         {
             get
@@ -338,14 +319,8 @@ namespace SignalGo.Publisher.ViewModels
                 //MainFrame.Navigate(page);
             }
         }
-
-        /// <summary>
-        /// Check/Add New Migrations of project models
-        /// </summary>
-        public Command ApplyMigrationsCommand { get; set; }
-        public Command UpdateDatabaseCommand { get; set; }
         public Command DeleteCommand { get; set; }
-        public Command ClearLogCommand { get; set; }
+        public TaskCommand ClearLogsCommand { get; set; }
 
         /// <summary>
         /// Delete Project From publisher if user confirm it
@@ -358,16 +333,17 @@ namespace SignalGo.Publisher.ViewModels
             SettingInfo.SaveSettingInfo();
             ProjectManagerWindowViewModel.MainFrame.GoBack();
         }
-
         /// <summary>
         /// Get Compile and output for Publish
         /// push/update projects and related assemblies to Servers
         /// </summary>
         private void PublishToServers()
         {
-            // add compiler command to commands list
+
+            // add git command/commands to commands queue list
             if (!ProjectInfo.Commands.Any(x => x is GitCommandInfo))
                 ProjectInfo.AddCommand(new GitCommandInfo());
+            // add compiler command to commands list
             if (!ProjectInfo.Commands.Any(x => x is BuildCommandInfo))
                 ProjectInfo.AddCommand(new BuildCommandInfo());
             // add TestsRunner Command if not exist in commands list
@@ -384,6 +360,13 @@ namespace SignalGo.Publisher.ViewModels
             }
         }
 
+        private async Task ClearLogs()
+        {
+            await LogModule.ClearLogs(ProjectInfo.Name, SectorType.Builder, true);
+            await LogModule.ClearLogs(ProjectInfo.Name, SectorType.Server, true);
+
+        }
+
         /// <summary>
         /// Cancel/Break All Commands and Queued Commands
         /// </summary>
@@ -392,18 +375,21 @@ namespace SignalGo.Publisher.ViewModels
             if (!ProjectInfo.Commands.Any(x => x is GitCommandInfo))
                 ProjectInfo.AddCommand(new GitCommandInfo());
         }
+        /// <summary>
+        /// request cancellation for all queued and running command's
+        /// </summary>
         private void CancelCommands()
         {
+            IsBusy = true;
             try
             {
                 CancellationTokenSource.Cancel();
                 CancellationToken.ThrowIfCancellationRequested();
-                Debug.WriteLine("Task has been cancelled from Cancellation Command");
-                ServerInfo.ServerLogs.Add("Task has been cancelled from Cancellation Command");
             }
             catch (Exception ex)
             {
-                Debug.WriteLine(ex.Message);
+                LogModule.AddLog(ProjectInfo.Name, SectorType.Builder, "Task has been cancelled By Cancellation Command", LogTypeEnum.System);
+                AutoLogger.Default.LogError(ex, "Cancel Commands");
             }
             finally
             {
@@ -411,6 +397,7 @@ namespace SignalGo.Publisher.ViewModels
                 CancellationTokenSource = new CancellationTokenSource();
                 CancellationToken = new CancellationToken(false);
                 CancellationToken = CancellationTokenSource.Token;
+                IsBusy = false;
             }
         }
 
@@ -440,7 +427,7 @@ namespace SignalGo.Publisher.ViewModels
                 IgnoreServerFileName = string.Empty;
             }
             else
-                System.Windows.MessageBox.Show("Invalid Input Or exist", "validation error", System.Windows.MessageBoxButton.OK);
+                System.Windows.MessageBox.Show("Invalid Input Or Already Exist!", "Data Validation Error", System.Windows.MessageBoxButton.OK);
         }
         /// <summary>
         /// Save all ignore file settings to user settings
@@ -521,53 +508,40 @@ namespace SignalGo.Publisher.ViewModels
         /// <summary>
         /// Init Commands to Run in Queue
         /// </summary>
-        private async void RunCMD()
+        private async Task RunCommands()
         {
+            if (!ProjectInfo.Commands.HasValue())
+            {
+                MessageBox.Show("No Command Available To Run!");
+                return;
+            }
             try
             {
-                CanRunCommands = false;
                 ServerInfo.Servers.Clear();
-                bool hasPublishCommand = ProjectInfo.Commands.Any(x => x is PublishCommandInfo);
 
-                foreach (var item in CurrentServerSettingInfo.ServerInfo.Where(x => x.IsChecked))
-                {
-                    if (hasPublishCommand & item.ProtectionPassword != null)
-                    {
-                    GetThePass:
-                        InputDialogWindow inputDialog = new InputDialogWindow("Please enter your password:");
-                        if (inputDialog.ShowDialog() == true)
-                        {
-                            if (item.ProtectionPassword != PasswordEncoder.ComputeHash(inputDialog.Answer, new SHA256CryptoServiceProvider()))
-                            {
-                                MessageBox.Show("password does't match!");
-                                goto GetThePass;
-                            }
-                        }
-                        else continue;
-                    }
-                    ServerInfo.Servers.Add(item.Clone());
-                }
-                if (hasPublishCommand && ServerInfo.Servers.Count <= 0)
+                // remove old command runner logs (build's, test's, ...)
+                File.Delete(CurrentUserSettingInfo.UserSettings.CommandRunnerLogsPath);
+
+                bool hasPublishCommand = ProjectInfo.Commands.Any(x => x is PublishCommandInfo);
+                //List<ServerInfo> servers = CurrentServerSettingInfo.ServerInfo.Where(x => x.IsChecked).ToList();
+
+                if (hasPublishCommand && !CurrentServerSettingInfo.ServerInfo.Any(x => x.IsChecked))
                 {
                     System.Windows.MessageBox.Show("No Server Selected", "Specify Remote Target", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
                 }
                 else
                 {
                     await Task.Run(async () =>
-                   {
-                       await RunCustomCommand(ProjectInfo, CancellationToken);
-                       await ReadCommandLog();
-                   }, CancellationToken);
+                    {
+                        await RunCustomCommand(ProjectInfo, CancellationToken);
+                        //await ReadCommandLog();
+                    }, CancellationToken);
                 }
             }
             catch (Exception ex)
             {
-                AutoLogger.Default.LogError(ex, "Run CMD");
-            }
-            finally
-            {
-                CanRunCommands = true;
-                File.Delete(UserSettingInfo.Current.UserSettings.CommandRunnerLogsPath);
+                LogModule.AddLog(ProjectInfo.Name, SectorType.Builder, $"{ex.Message} - RunCommands ProjectInfo", LogTypeEnum.Error);
+                AutoLogger.Default.LogError(ex, "RunCommands ProjectInfo");
             }
         }
 
@@ -591,27 +565,17 @@ namespace SignalGo.Publisher.ViewModels
                 ProjectInfo.AddCommand(new TestsCommandInfo());
         }
 
-        /// <summary>
-        /// Check Project For Entities/Models Change And Prepair to add migrations
-        /// </summary>
-        private void ApplyMigrations()
-        {
-            if (!ProjectInfo.Commands.Any(x => x is RestoreCommandInfo))
-                ProjectInfo.AddCommand(new RestoreCommandInfo());
-        }
-
         public static async Task<bool> RunCustomCommand(ProjectInfo ProjectInfo, CancellationToken cancellationToken)
         {
             try
             {
                 if (CancellationToken.IsCancellationRequested)
                 {
-                    Debug.WriteLine("Cancellation Is Requested, breaking RunCustomCommand");
                     return false;
                 }
                 await ProjectInfo.RunCommands(CancellationToken);
             }
-            catch (ArgumentNullException ex)
+            catch
             {
 
             }
@@ -619,26 +583,348 @@ namespace SignalGo.Publisher.ViewModels
         }
 
         /// <summary>
-        /// field of ProjectInfo instance
+        /// stop a service process on server
         /// </summary>
-        ProjectInfo _ProjectInfo;
-
-        /// <summary>
-        /// a property instance of ProjectInfo Model
-        /// </summary>
-        public ProjectInfo ProjectInfo
+        public async Task StopService()
         {
-            get
+            try
             {
-                return _ProjectInfo;
+                ServerInfo.Servers.Clear();
+                List<ServerInfo> servers = CurrentServerSettingInfo.ServerInfo.Where(x => x.IsChecked).ToList();
+
+                if (servers.HasValue())
+                {
+                    for (int i = 0; i < servers.Count; i++)
+                    {
+                        try
+                        {
+                            var provider = await PublisherServiceProvider
+                                .Initialize(servers[i], ProjectInfo.Name);
+                            if (provider.HasValue())
+                            {
+                                if (await provider.ServerManagerService
+                                                                .StopServiceAsync(ProjectInfo.ProjectKey))
+                                {
+                                    LogModule.AddLog(ProjectInfo.Name, SectorType.Management, $"Service {ProjectInfo.Name} Stopped Successfully", DateTime.Now.ToLongTimeString(), LogTypeEnum.Info);
+                                }
+                                else
+                                {
+                                    LogModule.AddLog(ProjectInfo.Name, SectorType.Management, $"Couldn't Stop Service { ProjectInfo.Name}", DateTime.Now.ToLongTimeString(), LogTypeEnum.Warning);
+                                }
+                            }
+                            else { break; }
+                        }
+                        catch (Exception ex)
+                        {
+                            LogModule.AddLog(ProjectInfo.Name, SectorType.Management, $" Operation Time Out On Server { servers[i].ServerName}", DateTime.Now.ToLongTimeString(), LogTypeEnum.Error);
+                            AutoLogger.Default.LogError(ex, "ProjectInfo- StopService");
+                        }
+                    } // end for
+                } // end if
+                else
+                {
+
+                    System.Windows.MessageBox.Show("No Server Selected", "Specify Remote Target", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                }
             }
-            set
+            catch (Exception ex)
             {
-                _ProjectInfo = value;
-                OnPropertyChanged(nameof(ProjectInfo));
+                LogModule.AddLog(ProjectInfo.Name, SectorType.Management, $"Couldn't Get Service { ProjectInfo.Name}", DateTime.Now.ToLongTimeString(), LogTypeEnum.Error);
+                AutoLogger.Default.LogError(ex, "StopService, PublisherServiceProviderInitialize");
             }
         }
 
+        /// <summary>
+        /// start a service process on server
+        /// </summary>
+        public async Task StartService()
+        {
+            try
+            {
+                ServerInfo.Servers.Clear();
+                List<ServerInfo> servers = CurrentServerSettingInfo.ServerInfo.Where(x => x.IsChecked).ToList();
+
+                if (servers.HasValue())
+                {
+                    for (int i = 0; i < servers.Count; i++)
+                    {
+                        try
+                        {
+                            var provider = await PublisherServiceProvider
+                                .Initialize(servers[i], ProjectInfo.Name);
+                            if (provider.HasValue())
+                            {
+                                if (await provider.ServerManagerService
+                                                                .StartServiceAsync(ProjectInfo.ProjectKey))
+                                {
+                                    LogModule.AddLog(ProjectInfo.Name, SectorType.Management, $"Service { ProjectInfo.Name} Started Successfully", DateTime.Now.ToLongTimeString(), LogTypeEnum.Info);
+                                }
+                                else
+                                {
+                                    LogModule.AddLog(ProjectInfo.Name, SectorType.Management, $"Couldn't Start Service { ProjectInfo.Name}", DateTime.Now.ToLongTimeString(), LogTypeEnum.Warning);
+                                }
+                            }
+                            else { break; }
+                        }
+                        catch (Exception ex)
+                        {
+                            LogModule.AddLog(ProjectInfo.Name, SectorType.Management, $" Operation Time Out On Server { servers[i].ServerName}", DateTime.Now.ToLongTimeString(), LogTypeEnum.Error);
+                            AutoLogger.Default.LogError(ex, "ProjectInfo-RestartService");
+                        }
+                    } // end for
+                } // end if
+                else
+                {
+
+                    System.Windows.MessageBox.Show("No Server Selected", "Specify Remote Target", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                LogModule.AddLog(ProjectInfo.Name, SectorType.Management, $"Couldn't Get Service { ProjectInfo.Name}", DateTime.Now.ToLongTimeString(), LogTypeEnum.Error);
+                AutoLogger.Default.LogError(ex, "StartService, PublisherServiceProviderInitialize");
+            }
+        }
+
+        /// <summary>
+        /// restart a service on server
+        /// </summary>
+        public async Task RestartService()
+        {
+            try
+            {
+                ServerInfo.Servers.Clear();
+                List<ServerInfo> servers = CurrentServerSettingInfo.ServerInfo.Where(x => x.IsChecked).ToList();
+
+                if (servers.HasValue())
+                {
+                    for (int i = 0; i < servers.Count; i++)
+                    {
+                        try
+                        {
+                            var provider = await PublisherServiceProvider
+                                .Initialize(servers[i], ProjectInfo.Name);
+                            if (provider.HasValue())
+                            {
+                                if (await provider.ServerManagerService
+                                                                .RestartServiceAsync(ProjectInfo.ProjectKey, false))
+                                {
+                                    LogModule.AddLog(ProjectInfo.Name, SectorType.Management, $"Service { ProjectInfo.Name} Restarted Successfully", DateTime.Now.ToLongTimeString(), LogTypeEnum.Info);
+                                }
+                                else
+                                {
+                                    LogModule.AddLog(ProjectInfo.Name, SectorType.Management, $"Couldn't Restart Service { ProjectInfo.Name}", DateTime.Now.ToLongTimeString(), LogTypeEnum.Warning);
+                                }
+                            }
+                            else { break; }
+                        }
+                        catch (Exception ex)
+                        {
+                            LogModule.AddLog(ProjectInfo.Name, SectorType.Management, $" Operation Time Out On Server { servers[i].ServerName}", DateTime.Now.ToLongTimeString(), LogTypeEnum.Error);
+                            AutoLogger.Default.LogError(ex, "ProjectInfo-RestartService");
+                        }
+                    } // end for
+                } // end if
+                else
+                {
+
+                    System.Windows.MessageBox.Show("No Server Selected", "Specify Remote Target", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                LogModule.AddLog(ProjectInfo.Name, SectorType.Management, $"Couldn't Get Service { ProjectInfo.Name}", DateTime.Now.ToLongTimeString(), LogTypeEnum.Error);
+                AutoLogger.Default.LogError(ex, "RestartService, PublisherServiceProviderInitialize");
+            }
+        }
+
+        /// <summary>
+        /// Fetch service files list from server
+        /// </summary>
+        /// <returns></returns>
+        public async Task FetchFiles()
+        {
+            IsFetch = true;
+            ServerScreenCapture = null;
+            List<string> files = new List<string>();
+            try
+            {
+                var provider = await PublisherServiceProvider.Initialize(SelectedServerInfo, ProjectInfo.Name);
+                if (provider.HasValue())
+                {
+                    files = await provider.FileManagerService.GetTextFilesAsync(ProjectInfo.ProjectKey);
+                    RunOnUIAction(() =>
+                    {
+                        ProjectInfo.ServerFiles.Clear();
+                        for (int i = 0; i < files.Count; i++)
+                        {
+                            ProjectInfo.ServerFiles.Add(files[i]);
+                        }
+                    });
+                }
+                else
+                {
+                    System.Windows.MessageBox.Show("Could'nt Find Provider!");
+                    return;
+                }
+
+            }
+            catch (Exception ex)
+            {
+                LogModule.AddLog(ProjectInfo.Name, SectorType.Management, "Can't Fetch Files From server!", DateTime.Now.ToLongTimeString(), LogTypeEnum.Error);
+                System.Windows.MessageBox.Show("Can't Fetch Files From server!");
+                AutoLogger.Default.LogError(ex, "Fetch Files From server");
+            }
+        }
+        /// <summary>
+        /// Capture Service Process Screenshot from server manager (by service key)
+        /// </summary>
+        /// <returns></returns>
+        private async Task CaptureApplicationProcess()
+        {
+            IsFetch = false;
+            MemoryStream memoryStream = new MemoryStream();
+            try
+            {
+                var provider = await PublisherServiceProvider.Initialize(SelectedServerInfo, ProjectInfo.Name);
+                if (provider.HasValue())
+                {
+                    ServerManagerStreamService serverManagerStreamService = new ServerManagerStreamService(provider.CurrentClientProvider);
+                    // Call CaptureApplicationProcess Service from server manager and using porojectKey(serviceKey)
+                    using var stream = await serverManagerStreamService.CaptureApplicationProcessAsync(ProjectInfo.ProjectKey);
+                    var lengthWrite = 0;
+                    while (lengthWrite != stream.Length)
+                    {
+                        byte[] bufferBytes = new byte[1024];
+                        int readCount = await stream.Stream.ReadAsync(bufferBytes, bufferBytes.Length);
+                        if (readCount <= 0)
+                            break;
+                        await memoryStream.WriteAsync(bufferBytes, 0, readCount);
+                        lengthWrite += readCount;
+                    }
+
+                    RunOnUIAction(() =>
+                    {
+                        try
+                        {
+                            ProjectInfo.ServerFiles.Clear();
+                            PngBitmapDecoder decoder = new PngBitmapDecoder(memoryStream, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.Default);
+                            ServerScreenCapture = decoder.Frames[0];
+                        }
+                        catch (Exception ex)
+                        {
+                            AutoLogger.Default.LogError(ex, "CaptureApplicationProcess, RunOnUIAction");
+                        }
+                    });
+                }
+                else
+                {
+                    LogModule.AddLog(ProjectInfo.Name, SectorType.Management, "Sorry, Couldn't connect to server!", DateTime.Now.ToLongTimeString(), LogTypeEnum.Error);
+                    System.Windows.MessageBox.Show("Sorry, Couldn't connect to server and Get ScreenShot");
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                //IsBusy = false;
+                System.Windows.MessageBox.Show("Can't connect to server to Get ScreenShot");
+                LogModule.AddLog(ProjectInfo.Name, SectorType.Management, "Couldn't connect to server for Get ScreenShot", DateTime.Now.ToLongTimeString(), LogTypeEnum.Error);
+                AutoLogger.Default.LogError(ex, "CaptureApplicationProcess");
+            }
+            finally
+            {
+                await Task.Delay(100);
+                await memoryStream.DisposeAsync();
+            }
+        }
+
+        /// <summary>
+        /// Load Selected service file from server
+        /// </summary>
+        /// <param name="filePath"></param>
+        /// <returns></returns>
+        private async Task LoadFileDataFromServer(string filePath)
+        {
+            try
+            {
+                SelectedServerFile = filePath;
+                var provider = await PublisherServiceProvider.Initialize(SelectedServerInfo, ProjectInfo.Name);
+                if (provider == null)
+                {
+                    System.Windows.MessageBox.Show("can't load the file!");
+                    return;
+                }
+                ServerManagerStreamService serverManagerStreamService = new ServerManagerStreamService(provider.CurrentClientProvider);
+                var stream = await serverManagerStreamService.DownloadFileDataAsync(filePath, ProjectInfo.ProjectKey);
+                var lengthWrite = 0;
+                using var memoryStream = new MemoryStream();
+                while (lengthWrite != stream.Length)
+                {
+                    byte[] bufferBytes = new byte[1024];
+                    int readCount = await stream.Stream.ReadAsync(bufferBytes, bufferBytes.Length);
+                    if (readCount <= 0)
+                        break;
+                    await memoryStream.WriteAsync(bufferBytes, 0, readCount);
+                    lengthWrite += readCount;
+                }
+
+                FileContent = Encoding.UTF8.GetString(memoryStream.ToArray());
+            }
+            catch (Exception ex)
+            {
+                LogModule.AddLog(ProjectInfo.Name, SectorType.Management, "can't LoadFile Data FromServer!", DateTime.Now.ToLongTimeString(), LogTypeEnum.Error);
+                AutoLogger.Default.LogError(ex, "LoadFileDataFromServer");
+            }
+        }
+
+        /// <summary>
+        /// upload/save selected file to server
+        /// </summary>
+        /// <returns></returns>
+        private async Task UploadFileDataFromServer()
+        {
+            try
+            {
+                var provider = await PublisherServiceProvider.Initialize(SelectedServerInfo, ProjectInfo.Name);
+                if (provider == null)
+                {
+                    ServerManagerStreamService serverManagerStreamService = new ServerManagerStreamService(provider.CurrentClientProvider);
+                    using MemoryStream memoryStream = new MemoryStream();
+                    if (string.IsNullOrEmpty(FileContent))
+                        return;
+                    await memoryStream.WriteAsync(Encoding.UTF8.GetBytes(FileContent));
+                    memoryStream.Seek(0, SeekOrigin.Begin);
+                    bool result = await serverManagerStreamService.SaveFileDataAsync(new SignalGo.Shared.Models.StreamInfo<string>(memoryStream)
+                    {
+                        Length = memoryStream.Length,
+                        Data = SelectedServerFile
+                    }, ProjectInfo.ProjectKey);
+                }
+                else
+                {
+                    LogModule.AddLog(ProjectInfo.Name, SectorType.Management, "Couldn't connect to server for Upload the file", DateTime.Now.ToLongTimeString(), LogTypeEnum.Error);
+                    MessageBox.Show("Could'nt Upload!");
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                LogModule.AddLog(ProjectInfo.Name, SectorType.Management, "can't Upload File Data!", DateTime.Now.ToLongTimeString(), LogTypeEnum.Error);
+                AutoLogger.Default.LogError(ex, "UploadFileDataFromServer");
+            }
+        }
+
+
+        public UserSettingInfo CurrentUserSettingInfo
+        {
+            get
+            {
+                return UserSettingInfo.Current;
+            }
+        }
+        /// <summary>
+        /// setting's and all data defiend/stored in project db
+        /// </summary>
         public SettingInfo CurrentProjectSettingInfo
         {
             get
@@ -677,17 +963,6 @@ namespace SignalGo.Publisher.ViewModels
         }
 
         private string _IgnoreServerFileName;
-        private bool _CanRunCommands = true;
-
-        public bool CanRunCommands
-        {
-            get { return _CanRunCommands; }
-            set
-            {
-                _CanRunCommands = value;
-                OnPropertyChanged(nameof(CanRunCommands));
-            }
-        }
         public string IgnoreServerFileName
         {
             get { return _IgnoreServerFileName; }
@@ -697,181 +972,7 @@ namespace SignalGo.Publisher.ViewModels
                 OnPropertyChanged(nameof(IgnoreServerFileName));
             }
         }
-        /// <summary>
-        /// Fetch service files list from server
-        /// </summary>
-        /// <returns></returns>
-        public async Task FetchFiles()
-        {
-            try
-            {
-                //ClearServerFileListCommand.Execute();
-                var result = PublisherServiceProvider.Initialize(SelectedServerInfo);
-                var files = await result.FileManagerService.GetTextFilesAsync(ProjectInfo.ProjectKey);
 
-                RunOnUIAction(() =>
-                {
-                    ProjectInfo.ServerFiles.Clear();
-                    foreach (var item in files)
-                    {
-                        ProjectInfo.ServerFiles.Add(item);
-                    }
-                });
-            }
-            catch (Exception ex)
-            {
-                AutoLogger.Default.LogError(ex, "Fetch Files From server");
-            }
-            finally
-            {
-                IsBusy = false;
-                FetchFilesCommand.ValidateCanExecute();
-            }
-        }
 
-        /// <summary>
-        /// Capture Service Process Screenshot from server manager (by service key)
-        /// </summary>
-        /// <returns></returns>
-        private async Task CaptureApplicationProcess()
-        {
-            MemoryStream memoryStream = new MemoryStream();
-            //FileStream fileStream = new FileStream(Path.Combine(Path.GetTempPath(), "TempCaptureImage"), FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite);
-            try
-            {
-                var result = PublisherServiceProvider.Initialize(SelectedServerInfo);
-                ServerManagerStreamService serverManagerStreamService = new ServerManagerStreamService(result.CurrentClientProvider);
-                // Call CaptureApplicationProcess Service from server manager and using porojectKey(serviceKey)
-                using var stream = await serverManagerStreamService.CaptureApplicationProcessAsync(ProjectInfo.ProjectKey);
-                // for memory stream method:
-
-                var lengthWrite = 0;
-                while (lengthWrite != stream.Length)
-                {
-                    byte[] bufferBytes = new byte[1024];
-                    int readCount = await stream.Stream.ReadAsync(bufferBytes, bufferBytes.Length);
-                    if (readCount <= 0)
-                        break;
-                    await memoryStream.WriteAsync(bufferBytes, 0, readCount);
-                    lengthWrite += readCount;
-                }
-
-                // for file stream method:
-
-                //fileStream.SetLength(0);
-                //var lengthWrite = 0;
-                //while (lengthWrite < stream.Length)
-                //{
-                //    byte[] bufferBytes = new byte[1024 * 1024];
-                //    int readCount = await stream.Stream.ReadAsync(bufferBytes, bufferBytes.Length);
-                //    if (readCount <= 0)
-                //        break;
-                //    await fileStream.WriteAsync(bufferBytes, 0, readCount);
-                //    lengthWrite += readCount;
-                //}
-
-                RunOnUIAction(() =>
-                {
-                    try
-                    {
-                        PngBitmapDecoder decoder = new PngBitmapDecoder(memoryStream, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.Default);
-                        ServerScreenCapture = decoder.Frames[0];
-                    }
-                    catch (Exception ex)
-                    {
-                        AutoLogger.Default.LogError(ex, "CaptureApplicationProcess, RunOnUIAction");
-                    }
-                    finally
-                    {
-                        IsBusy = false;
-                        GetServerScreenShotCommand.ValidateCanExecute();
-                    }
-                });
-            }
-            catch (Exception ex)
-            {
-                IsBusy = false;
-                GetServerScreenShotCommand.ValidateCanExecute();
-                MessageBox.Show("can't connect to server");
-                AutoLogger.Default.LogError(ex, "CaptureApplicationProcess");
-            }
-            finally
-            {
-                await Task.Delay(100);
-                await memoryStream.DisposeAsync();
-                //await fileStream.DisposeAsync();
-                Debug.WriteLine("Capture Process stream disposed");
-            }
-        }
-
-        /// <summary>
-        /// Load Selected service file from server
-        /// </summary>
-        /// <param name="filePath"></param>
-        /// <returns></returns>
-        private async Task LoadFileDataFromServer(string filePath)
-        {
-            try
-            {
-                SelectedServerFile = filePath;
-                var result = PublisherServiceProvider.Initialize(SelectedServerInfo);
-                ServerManagerStreamService serverManagerStreamService = new ServerManagerStreamService(result.CurrentClientProvider);
-                var stream = await serverManagerStreamService.DownloadFileDataAsync(filePath, ProjectInfo.ProjectKey);
-                var lengthWrite = 0;
-                using var memoryStream = new MemoryStream();
-                while (lengthWrite != stream.Length)
-                {
-                    byte[] bufferBytes = new byte[1024];
-                    int readCount = await stream.Stream.ReadAsync(bufferBytes, bufferBytes.Length);
-                    if (readCount <= 0)
-                        break;
-                    await memoryStream.WriteAsync(bufferBytes, 0, readCount);
-                    lengthWrite += readCount;
-                }
-
-                FileContent = Encoding.UTF8.GetString(memoryStream.ToArray());
-            }
-            catch (Exception ex)
-            {
-                AutoLogger.Default.LogError(ex, "LoadFileDataFromServer");
-            }
-            finally
-            {
-                IsBusy = false;
-                LoadFileCommmand.ValidateCanExecute(filePath);
-            }
-        }
-
-        /// <summary>
-        /// upload/save selected file to server
-        /// </summary>
-        /// <returns></returns>
-        private async Task UploadFileDataFromServer()
-        {
-            try
-            {
-                var providerResult = PublisherServiceProvider.Initialize(SelectedServerInfo);
-                ServerManagerStreamService serverManagerStreamService = new ServerManagerStreamService(providerResult.CurrentClientProvider);
-                using MemoryStream memoryStream = new MemoryStream();
-                if (string.IsNullOrEmpty(FileContent))
-                    return;
-                await memoryStream.WriteAsync(Encoding.UTF8.GetBytes(FileContent));
-                memoryStream.Seek(0, SeekOrigin.Begin);
-                bool result = await serverManagerStreamService.SaveFileDataAsync(new SignalGo.Shared.Models.StreamInfo<string>(memoryStream)
-                {
-                    Length = memoryStream.Length,
-                    Data = SelectedServerFile
-                }, ProjectInfo.ProjectKey);
-            }
-            catch (Exception ex)
-            {
-                AutoLogger.Default.LogError(ex, "UploadFileDataFromServer");
-            }
-            finally
-            {
-                IsBusy = false;
-                UploadFileCommmand.ValidateCanExecute();
-            }
-        }
     }
 }

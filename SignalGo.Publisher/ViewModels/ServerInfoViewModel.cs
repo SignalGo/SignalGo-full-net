@@ -117,7 +117,12 @@ namespace SignalGo.Publisher.ViewModels
                     ServerInfo.ProtectionPassword = null;
                 }
                 else
+                {
                     ServerInfo.ProtectionPassword = PasswordEncoder.ComputeHash(inputDialog.Answer, new SHA256CryptoServiceProvider());
+                    SaveChangesCommand.ValidateCanExecute();
+                    SaveChanges();
+                    Back();
+                }
             }
         }
         private void SaveChanges()

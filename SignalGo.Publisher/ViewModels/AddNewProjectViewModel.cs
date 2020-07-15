@@ -28,7 +28,6 @@ namespace SignalGo.Publisher.ViewModels
         string _ProjectAssembliesPath;
         string _ProjectPath;
         Guid _ProjectKey = Guid.NewGuid();
-
         public string Name
         {
             get
@@ -41,6 +40,8 @@ namespace SignalGo.Publisher.ViewModels
                 OnPropertyChanged(nameof(Name));
             }
         }
+
+
         public string ProjectAssembliesPath
         {
             get
@@ -104,21 +105,33 @@ namespace SignalGo.Publisher.ViewModels
         private void Save()
         {
             if (string.IsNullOrEmpty(this.Name))
-                System.Windows.MessageBox.Show("Plase set name of project");
-            else if (!Directory.Exists(ProjectPath))
-                System.Windows.MessageBox.Show("files not exist on disk");
-            else if (!Directory.Exists(ProjectAssembliesPath))
-                System.Windows.MessageBox.Show("files not exist on disk");
-            else if (SettingInfo.Current.ProjectInfo.Any(x => x.Name == Name))
-                System.Windows.MessageBox.Show("Project name exist on list, please set a different name");
-            else
+            {
+                System.Windows.MessageBox.Show("Please set name of project");
+                return;
+            }
+            if (!Directory.Exists(ProjectPath))
+            {
+                System.Windows.MessageBox.Show("Path not found in disk");
+                return;
+            }
+            if (!Directory.Exists(ProjectAssembliesPath))
+            {
+                System.Windows.MessageBox.Show("files/path not exist in disk");
+                return;
+            }
+            if (SettingInfo.Current.ProjectInfo.Any(x => x.Name == Name))
+            {
+                System.Windows.MessageBox.Show("Project name is exist in the list, please set a different name");
+                return;
+            }
+            //else
             {
                 SettingInfo.Current.ProjectInfo.Add(new ProjectInfo()
                 {
                     ProjectKey = this.ProjectKey,
-                    Name = Name,
-                    ProjectPath = ProjectPath,
-                    ProjectAssembliesPath = ProjectAssembliesPath
+                    Name = this.Name,
+                    ProjectPath = this.ProjectPath,
+                    ProjectAssembliesPath = this.ProjectAssembliesPath
                 });
                 SettingInfo.SaveSettingInfo();
                 ProjectManagerWindowViewModel.MainFrame.GoBack();
