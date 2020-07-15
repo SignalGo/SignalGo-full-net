@@ -1,9 +1,7 @@
 ﻿using MvvmGo.ViewModels;
 using SignalGo.Publisher.Engines.Models;
-using SignalGo.Publisher.Extensions;
 using SignalGo.Publisher.Models;
 using SignalGo.Publisher.Views.Extra;
-using System.Collections.Generic;
 
 namespace SignalGo.Publisher.Helpers
 {
@@ -34,11 +32,11 @@ namespace SignalGo.Publisher.Helpers
                 retryAttemp = 0;
                 return false;
             }
-            InputDialogWindow inputDialog = new InputDialogWindow($"Please enter your secret for server {serverInfo.ServerName}:");
+            InputDialogWindow inputDialog = new InputDialogWindow($"Please enter your secret for Server","Access Control", serverInfo.ServerName);
             if (inputDialog.ShowDialog() == true)
             {
                 if (serverInfo.ProtectionPassword != PasswordEncoder.ComputeHash(inputDialog.Answer))
-                        {
+                {
                     if (System.Windows.Forms.MessageBox.Show("password does't match!", "Access Denied", System.Windows.Forms.MessageBoxButtons.RetryCancel, System.Windows.Forms.MessageBoxIcon.Error) == System.Windows.Forms.DialogResult.Retry)
                     {
                         retryAttemp++;
