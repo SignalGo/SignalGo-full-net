@@ -84,7 +84,7 @@ namespace SignalGo.Client.ClientManager
         public bool UseHttpStream { get; set; } = false;
 
         internal ISignalGoStream StreamHelper { get; set; } = null;
-        internal JsonSettingHelper JsonSettingHelper { get; set; } = new JsonSettingHelper();
+        public JsonSettingHelper JsonSettingHelper { get; set; } = new JsonSettingHelper();
         internal AutoLogger AutoLogger { get; set; } = new AutoLogger() { FileName = "ConnectorBase Logs.log" };
         //internal ConcurrentList<AutoResetEvent> HoldMethodsToReconnect = new ConcurrentList<AutoResetEvent>();
         internal ConcurrentList<Delegate> PriorityActionsAfterConnected = new ConcurrentList<Delegate>();
@@ -1204,9 +1204,18 @@ namespace SignalGo.Client.ClientManager
         /// <returns>return instance if type</returns>
         public T RegisterClientService<T>()
         {
+            return (T)RegisterClientService(typeof(T));
+        }
+
+        /// <summary>
+        /// register client service class, it's client methods that server call them
+        /// </summary>
+        /// <typeparam name="T">type of your class</typeparam>
+        /// <returns>return instance if type</returns>
+        public object RegisterClientService(Type type)
+        {
             if (IsDisposed)
                 throw new ObjectDisposedException("Connector");
-            Type type = typeof(T);
             string name = type.GetClientServiceName(true);
 
             object objectInstance = Activator.CreateInstance(type);
@@ -1215,8 +1224,9 @@ namespace SignalGo.Client.ClientManager
 
             Callbacks.TryAdd(name, new KeyValue<SynchronizationContext, object>(SynchronizationContext.Current, objectInstance));
             OperationContract.SetConnector(objectInstance, this);
-            return (T)objectInstance;
+            return objectInstance;
         }
+
 #if (NET40 || NET35)
         Func<CompressMode, string> ReadJsonFromStreamFunction { get; set; }
 #else
@@ -1588,6 +1598,8 @@ namespace SignalGo.Client.ClientManager
         {
             try
             {
+                if (_clientStream == null)
+                    throw new Exception($"Client is not connected on {ServerUrl}");
                 //                if (IsWebSocket)
                 //                {
                 //                    string json = ClientSerializationHelper.SerializeObject(callback) + "#end";
@@ -1690,7 +1702,19 @@ namespace SignalGo.Client.ClientManager
                 //                var method = service.GetType().GetMethod(callInfo.MethodName, RuntimeTypeHelper.GetMethodTypes(service.GetType(), callInfo).ToArray());
                 //#endif
                 if (method == null)
-                    throw new Exception($"Method {callInfo.MethodName} from service {callInfo.ServiceName} not found! serviceType: {service.GetType().FullName}");
+                {
+                    if (callInfo.MethodName.EndsWith("async", StringComparison.OrdinalIgnoreCase))
+                    {
+                        callInfo.MethodName = callInfo.MethodName.Substring(0, callInfo.MethodName.IndexOf("async"));
+                    }
+                    else
+                    {
+                        callInfo.MethodName += "Async";
+                    }
+                    method = service.GetType().FindMethod(callInfo.MethodName);
+                    if (method == null)
+                        throw new Exception($"Method {callInfo.MethodName} from service {callInfo.ServiceName} not found! serviceType: {service.GetType().FullName}");
+                }
                 List<object> parameters = new List<object>();
                 int index = 0;
                 foreach (System.Reflection.ParameterInfo item in method.GetParameters())

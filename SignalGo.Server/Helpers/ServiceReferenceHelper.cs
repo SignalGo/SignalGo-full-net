@@ -1,4 +1,5 @@
-﻿using SignalGo.Server.ServiceManager;
+﻿using SignalGo.Server.Models;
+using SignalGo.Server.ServiceManager;
 using SignalGo.Shared.DataTypes;
 using SignalGo.Shared.Helpers;
 using SignalGo.Shared.Models;
@@ -15,7 +16,7 @@ namespace SignalGo.Server.Helpers
     public class ServiceReferenceHelper
     {
         public bool IsRenameDuplicateMethodNames { get; set; }
-
+        public ClientServiceReferenceConfigInfo ClientServiceReferenceConfigInfo { get; set; }
         /// <summary>
         /// 
         /// </summary>
@@ -78,6 +79,12 @@ namespace SignalGo.Server.Helpers
 #else
             Assembly assm = type.Assembly;
 #endif
+            var fileName = System.IO.Path.GetFileName(assm.Location);
+            if (ClientServiceReferenceConfigInfo != null && ClientServiceReferenceConfigInfo.SkipAssemblies != null)
+            {
+                if (ClientServiceReferenceConfigInfo.SkipAssemblies.Any(x => x.ToLower() == fileName.ToLower()))
+                    return true;
+            }
             if (ModellingReferencesAssemblies.Contains(type.GetAssembly()) || assm.CodeBase.ToLower() == BaseAssemblyPath || assm.CodeBase.ToLower().StartsWith(BaseAssemblyPath))
                 return true;
             return false;
@@ -105,26 +112,31 @@ namespace SignalGo.Server.Helpers
                     attributes = serviceInfo.Value.GetServiceContractAttributes();
                 else
                     attributes = new ServiceContractAttribute[0];
+
                 if (!generatedServices.Contains(serviceInfo.Key) && attributes.Any(x => x.ServiceType == ServiceType.ServerService && x.GetServiceName(false) == serviceInfo.Key))
                 {
                     generatedServices.Add(serviceInfo.Key);
                     GenerateServiceClass(serviceInfo.Key, serviceInfo.Value, ClassReferenceType.ServiceLevel, ServiceType.ServerService);
                 }
-                if (!generatedServices.Contains(serviceInfo.Key) && attributes.Any(x => x.ServiceType == ServiceType.ClientService && x.GetServiceName(false) == serviceInfo.Key))
+
+                if (!generatedServices.Contains(serviceInfo.Key) && attributes.Any(x => x.ServiceType == ServiceType.ClientService && ServiceContractExtensions.GetServiceNameWithGeneric(serviceInfo.Value, x.GetServiceName(false)) == serviceInfo.Key))
                 {
                     generatedServices.Add(serviceInfo.Key);
                     GenerateServiceClass(serviceInfo.Key, serviceInfo.Value, ClassReferenceType.CallbackLevel, ServiceType.ClientService);
                 }
+
                 if (!generatedServices.Contains(serviceInfo.Key) && attributes.Any(x => x.ServiceType == ServiceType.StreamService && x.GetServiceName(false) == serviceInfo.Key))
                 {
                     generatedServices.Add(serviceInfo.Key);
                     GenerateServiceClass(serviceInfo.Key, serviceInfo.Value, ClassReferenceType.StreamLevel, ServiceType.StreamService);
                 }
+
                 if (!generatedServices.Contains(serviceInfo.Key) && attributes.Any(x => x.ServiceType == ServiceType.OneWayService && x.GetServiceName(false) == serviceInfo.Key))
                 {
                     generatedServices.Add(serviceInfo.Key);
                     GenerateServiceClass(serviceInfo.Key, serviceInfo.Value, ClassReferenceType.OneWayLevel, ServiceType.OneWayService);
                 }
+
                 if (!generatedServices.Contains(serviceInfo.Key) && (attributes.Any(x => x.ServiceType == ServiceType.HttpService && x.GetServiceName(false) == serviceInfo.Key) || attributes.Length == 0))
                 {
                     generatedServices.Add(serviceInfo.Key);
@@ -184,10 +196,15 @@ namespace SignalGo.Server.Helpers
 
         private void GenerateServiceClass(string serviceName, Type type, ClassReferenceType classReferenceType, ServiceType serviceTypeEnum)
         {
+            string typeName = type.Name.Split('`')[0];
+            if (classReferenceType == ClassReferenceType.CallbackLevel && type.GetIsGenericType())
+            {
+                typeName += string.Join("", type.GetListOfGenericArguments().Select(x => x.Name).ToArray());
+            }
             ClassReferenceInfo classReferenceInfo = new ClassReferenceInfo
             {
                 ServiceName = serviceName,
-                Name = type.Name,
+                Name = typeName,
                 Type = classReferenceType,
                 NameSpace = type.Namespace
             };
@@ -601,12 +618,19 @@ namespace SignalGo.Server.Helpers
                                 int index = 0;
                                 foreach (var ca in ng)
                                 {
-                                    foreach (var val in (IEnumerable<System.Reflection.CustomAttributeTypedArgument>)ca.Value)
+                                    try
                                     {
-                                        result.Append($"{GetFullNameOfType(tupleGenerics[index], true, null, property)} ");
-                                        result.Append($"{val.Value}");
-                                        result.Append(", ");
-                                        index++;
+                                        foreach (var val in (IEnumerable<System.Reflection.CustomAttributeTypedArgument>)ca.Value)
+                                        {
+                                            result.Append($"{GetFullNameOfType(tupleGenerics[index], true, null, property)} ");
+                                            result.Append($"{val.Value}");
+                                            result.Append(", ");
+                                            index++;
+                                        }
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        break;
                                     }
                                 }
                             }

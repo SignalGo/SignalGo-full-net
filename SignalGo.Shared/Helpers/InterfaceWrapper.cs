@@ -61,7 +61,7 @@ namespace SignalGo.Shared.Helpers
             //this method load GetCurrentMethod for xamarin linked assembly
             //System.Reflection.MethodBase fix = System.Reflection.MethodInfo.GetCurrentMethod();
 
-            System.Reflection.AssemblyName assemblyName = new System.Reflection.AssemblyName(string.Format("tmp_{0}", serviceInterfaceType.FullName));
+            System.Reflection.AssemblyName assemblyName = new System.Reflection.AssemblyName(string.Format("tmp_{0}", serviceInterfaceType.FullName.Replace("`","").Replace("[","").Replace("]","").Replace(",","").Replace("=", "")));
             string moduleName = string.Format("{0}.dll", assemblyName.Name);
             string ns = serviceInterfaceType.Namespace;
             if (!string.IsNullOrEmpty(ns))
@@ -163,6 +163,8 @@ namespace SignalGo.Shared.Helpers
                     string serviceName = attrib.Name;
                     if (attrib.ServiceType == ServiceType.ClientService)
                         serviceName = attrib.GetServiceName(false);
+                    serviceName = ServiceContractExtensions.GetServiceNameWithGeneric(serviceType, serviceName);
+
                     //add name of service
                     generator.Emit(OpCodes.Ldstr, serviceName);
                     System.Reflection.MethodInfo getCurgntMethod = typeof(System.Reflection.MethodBase).FindMethod("GetCurrentMethod");

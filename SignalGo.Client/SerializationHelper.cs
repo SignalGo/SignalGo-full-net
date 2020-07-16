@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using SignalGo.Shared.Converters;
 using SignalGo.Shared.DataTypes;
+using SignalGo.Shared.Helpers;
 using System;
 using System.Collections.Generic;
 
@@ -8,6 +9,7 @@ namespace SignalGo.Client
 {
     public static class ClientSerializationHelper
     {
+        public static JsonSettingHelper JsonSettingHelper { get; set; } = new JsonSettingHelper();
         /// <summary>
         /// enable refrence serializing when duplicate object detected
         /// </summary>
@@ -29,14 +31,11 @@ namespace SignalGo.Client
             {
                 ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
                 FloatParseHandling = FloatParseHandling.Decimal,
-                Converters = new List<JsonConverter>()
+                Converters = JsonSettingHelper.GetConverters(new DataExchangeConverter(LimitExchangeType.OutgoingCall, customDataExchanger)
                 {
-                    new DataExchangeConverter(LimitExchangeType.OutgoingCall, customDataExchanger)
-                    {
-                        IsEnabledReferenceResolver = IsEnabledReferenceResolver,
-                        IsEnabledReferenceResolverForArray = IsEnabledReferenceResolverForArray
-                    }
-                },
+                    IsEnabledReferenceResolver = IsEnabledReferenceResolver,
+                    IsEnabledReferenceResolverForArray = IsEnabledReferenceResolverForArray
+                }),
                 Formatting = Formatting.None,
                 NullValueHandling = nullValueHandling
             });
@@ -67,14 +66,11 @@ namespace SignalGo.Client
                 NullValueHandling = nullValueHandling,
                 ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
                 FloatParseHandling = FloatParseHandling.Decimal,
-                Converters = new List<JsonConverter>() 
+                Converters = JsonSettingHelper.GetConverters(new DataExchangeConverter(LimitExchangeType.IncomingCall, customDataExchanger)
                 {
-                    new DataExchangeConverter(LimitExchangeType.IncomingCall, customDataExchanger)
-                    {
-                        IsEnabledReferenceResolver = IsEnabledReferenceResolver,
-                        IsEnabledReferenceResolverForArray = IsEnabledReferenceResolverForArray
-                    }
-                }
+                    IsEnabledReferenceResolver = IsEnabledReferenceResolver,
+                    IsEnabledReferenceResolverForArray = IsEnabledReferenceResolverForArray
+                })
             });
         }
 

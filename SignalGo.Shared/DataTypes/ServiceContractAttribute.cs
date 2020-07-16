@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SignalGo.Shared.Helpers;
+using System;
 using System.Linq;
 
 namespace SignalGo.Shared.DataTypes
@@ -103,10 +104,10 @@ namespace SignalGo.Shared.DataTypes
         public static string GetServiceName(this ServiceContractAttribute serviceContract, bool isClient)
         {
             if (isClient)
-                return serviceContract.Name.ToLower();
+                return serviceContract.Name.ToLowerClear();
             if (serviceContract.ServiceType == ServiceType.HttpService)
-                return serviceContract.Name.ToLower();
-            return (serviceContract.Name + serviceContract.ServiceType.ToString()).ToLower();
+                return serviceContract.Name.ToLowerClear();
+            return (serviceContract.Name.ToLowerClear() + serviceContract.ServiceType.ToString()).ToLower();
         }
 
         /// <summary>
@@ -118,10 +119,10 @@ namespace SignalGo.Shared.DataTypes
         {
             ServiceContractAttribute serviceContract = type.GetServerServiceAttribute();
             if (isClient)
-                return serviceContract.Name.ToLower();
+                return serviceContract.Name.ToLowerClear();
             if (serviceContract.ServiceType == ServiceType.HttpService)
-                return serviceContract.Name.ToLower();
-            return (serviceContract.Name + serviceContract.ServiceType.ToString()).ToLower();
+                return serviceContract.Name.ToLowerClear();
+            return (serviceContract.Name.ToLowerClear() + serviceContract.ServiceType.ToString()).ToLower();
         }
 
         /// <summary>
@@ -133,10 +134,32 @@ namespace SignalGo.Shared.DataTypes
         {
             ServiceContractAttribute serviceContract = type.GetClientServiceAttribute();
             if (isClient)
-                return serviceContract.Name.ToLower();
+                return GetServiceNameWithGeneric(type, serviceContract.Name);
             if (serviceContract.ServiceType == ServiceType.HttpService)
-                return serviceContract.Name.ToLower();
-            return (serviceContract.Name + serviceContract.ServiceType.ToString()).ToLower();
+                return GetServiceNameWithGeneric(type, serviceContract.Name);
+            return (serviceContract.Name.ToLowerClear() + serviceContract.ServiceType.ToString()).ToLower();
+        }
+
+
+        public static string GetServiceNameWithGeneric(Type type, string name)
+        {
+            if (type.GetIsGenericType())
+            {
+                name += string.Join("", type.GetListOfGenericArguments().Select(x => x.Name).ToArray());
+                return name.ToLowerClear();
+            }
+            else
+                return name.ToLowerClear();
+        }
+
+        /// <summary>
+        /// clear geneeric and to lower case it
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        public static string ToLowerClear(this string name)
+        {
+            return name.ToLower().Split('`')[0];
         }
 
         /// <summary>

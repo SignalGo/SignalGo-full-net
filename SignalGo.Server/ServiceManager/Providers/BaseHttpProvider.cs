@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using SignalGo.Server.DataTypes;
 using SignalGo.Server.Helpers;
 using SignalGo.Server.IO;
@@ -774,7 +775,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 if (findFile)
                 {
                     StreamGo stream = new StreamGo(client.ClientStream);
-                    stream.SetOfStreamLength(len - content.Length - fileHeaderCount, boundary.Length + 12 - 6);// + 6 ; -6 ezafe shode
+                    stream.SetOfStreamLength(len - content.Length - fileHeaderCount, boundary.Length + 6);// + 6 ; -6 ezafe shode
                     fileInfo = new HttpPostedFileInfo()
                     {
                         Name = name,
@@ -908,8 +909,29 @@ namespace SignalGo.Server.ServiceManager.Providers
             try
             {
                 PipeNetworkStream stream = client.ClientStream;
+                ClientServiceReferenceConfigInfo clientServiceReferenceConfigInfo = null;
+                if (client.RequestHeaders.TryGetValue("content-length", out string[] values) && values != null && values.Length > 0)
+                {
+                    int length = int.Parse(values[0]);
+                    int readLength = 0;
+                    List<byte> readBytes = new List<byte>();
+                    while (readLength < length)
+                    {
+                        byte[] bytes = new byte[1024];
+                        var readCount = stream.Read(bytes, bytes.Length);
+                        readLength += readCount;
+                        readBytes.AddRange(bytes.ToList().GetRange(0, readCount));
+                    }
 
-                Shared.Models.ServiceReference.NamespaceReferenceInfo referenceData = new ServiceReferenceHelper() { IsRenameDuplicateMethodNames = client.RequestHeaders["selectedLanguage"].FirstOrDefault() == "1" }.GetServiceReferenceCSharpCode(client.GetRequestHeaderValue("servicenamespace"), serverBase);
+                    clientServiceReferenceConfigInfo = JsonConvert.DeserializeObject<ClientServiceReferenceConfigInfo>(Encoding.UTF8.GetString(readBytes.ToArray()));
+                }
+
+                Shared.Models.ServiceReference.NamespaceReferenceInfo referenceData = new ServiceReferenceHelper()
+                {
+                    IsRenameDuplicateMethodNames = client.RequestHeaders["selectedLanguage"].FirstOrDefault() == "1",
+                    ClientServiceReferenceConfigInfo = clientServiceReferenceConfigInfo
+                }.GetServiceReferenceCSharpCode(client.GetRequestHeaderValue("servicenamespace"), serverBase);
+
                 string result = ServerSerializationHelper.SerializeObject(referenceData, serverBase);
                 client.ResponseHeaders["Content-Type"] = "text/html; charset=utf-8".Split(',');
                 client.ResponseHeaders["Service-Type"] = "SignalGoServiceType".Split(',');
@@ -988,7 +1010,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 }
             }
             response = Encoding.UTF8.GetString(bytes.ToArray());
-            if (response.Contains("--") && string.IsNullOrEmpty(boundary))
+            if (response.Contains("--"))
             {
                 string[] split = response.Split(new string[] { TextHelper.NewLine }, StringSplitOptions.RemoveEmptyEntries);
                 foreach (string item in split)

@@ -155,6 +155,8 @@ namespace SignalGo.Shared.Helpers
         {
             if (value == null)
                 return null;
+            else if (value.GetType() == toType)
+                return value;
             SerializeObjectType targetPropertyType = GetTypeCodeOfObject(toType);
             if (targetPropertyType == SerializeObjectType.Boolean)
             {
