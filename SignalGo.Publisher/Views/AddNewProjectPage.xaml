@@ -8,7 +8,7 @@
       xmlns:vm="clr-namespace:SignalGo.Publisher.ViewModels"
       mc:Ignorable="d" Background="White"
       d:DesignHeight="450" d:DesignWidth="800"
-      Title="AddNewProjectPage" Initialized="Page_Initialized">
+      Title="Add Project Page" >
     <Page.DataContext>
         <vm:AddNewProjectViewModel/>
     </Page.DataContext>
@@ -45,18 +45,28 @@
                 <RowDefinition/>
                 <RowDefinition/>
             </Grid.RowDefinitions>
-            <WrapPanel Grid.Row="0" Grid.Column="0" Orientation="Vertical" Grid.RowSpan="2">
+            <StackPanel VerticalAlignment="Top" HorizontalAlignment="Stretch" Grid.Row="0" Grid.Column="0" Orientation="Horizontal" Grid.RowSpan="2">
+                <TextBlock Margin="5"  Text="Category:"/>
+                <ComboBox SelectedIndex="0" SelectedItem="{Binding SelectedCategoryInfo}" Margin="5" x:Name="categoryCombo" ItemsSource="{Binding CurrentCategorySettingInfo}" Grid.Row="4" Grid.Column="0" BorderThickness="0.5">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Name}"/>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+            </StackPanel>
+            <!--<WrapPanel Grid.Row="0" Grid.Column="1" Orientation="Vertical" Grid.RowSpan="2">
                 <CheckBox Content="Personal"/>
                 <CheckBox Content="Test"/>
                 <CheckBox Content="Core"/>
                 <CheckBox Content="MicroService" IsChecked="True"/>
-            </WrapPanel>
-            <WrapPanel Grid.Row="0" Grid.Column="1" Orientation="Vertical" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" UseLayoutRounding="False" Grid.RowSpan="2">
+            </WrapPanel>-->
+            <!--<WrapPanel Grid.Row="0" Grid.Column="2" Orientation="Vertical" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" UseLayoutRounding="False" Grid.RowSpan="2">
                 <CheckBox Content=".Net Framework"/>
                 <CheckBox Content=".Net Core" IsChecked="True"/>
                 <CheckBox Content=".Net Standard"/>
                 <CheckBox Content="No .Net"/>
-            </WrapPanel>
+            </WrapPanel>-->
         </Grid>
 
         <Grid Grid.Row="1" Grid.ColumnSpan="2" Margin="10,0,10,0" VerticalAlignment="Top" HorizontalAlignment="Stretch" Grid.RowSpan="2">
@@ -76,20 +86,18 @@
             <!--project guid key-->
             <!--<StackPanel Grid.Row="0" Orientation="Horizontal">-->
 
-            <Label Content="Guid:" Grid.Row="0" VerticalContentAlignment="Center"/>
+            <Label Content="Guid (Key):" Grid.Row="0" VerticalContentAlignment="Center" ToolTip="The Unique Key Of Project That Must Be Same With You'r Service's on server manager's. it's project secret at level 1"/>
             <TextBox Grid.Row="0" Text="{Binding ProjectKey}" Grid.Column="1" VerticalAlignment="Center" Height="27" />
             <!--</StackPanel>-->
 
             <!--<StackPanel Orientation="Horizontal" Grid.Row="1">-->
-            <TextBlock Text="Project Name:" Grid.Row="1" Margin="0,0,0,10"/>
+            <TextBlock Text="Project Name:" Grid.Row="1" ToolTip="The Name Of Project/Service. Can't Be Duplicate With Other's"/>
             <TextBox Text="{Binding Name}" Grid.Row="1" Grid.Column="1" Margin="10,10,0,10" VerticalAlignment="Stretch" HorizontalAlignment="Stretch"/>
             <!--</StackPanel>-->
-
-
-            <TextBlock Grid.Row="2" Text="Project Solution Path:"/>
+            <TextBlock Grid.Row="2" Text="Project Solution Path:" ToolTip="The Path Where Project File/Solution Can be found"/>
             <TextBox Grid.Row="2" Text="{Binding ProjectPath}" Grid.Column="1"/>
 
-            <TextBlock Grid.Row="3" Text="Project Assemblies Path:" Margin="0,0,0,10"/>
+            <TextBlock Grid.Row="3" Text="Project Assemblies Path:" Margin="0,0,0,10" ToolTip="Project Output Path Where binaries is there(in Debug/Release-Framework Ver)"/>
             <TextBox Text="{Binding ProjectAssembliesPath}" Grid.Row="3" Grid.Column="1" Margin="10,10,0,10" VerticalAlignment="Stretch" HorizontalAlignment="Stretch"/>
 
             <!--path warning text-->

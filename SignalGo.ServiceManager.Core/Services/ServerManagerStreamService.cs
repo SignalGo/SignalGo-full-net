@@ -10,6 +10,7 @@ using SignalGo.Shared.DataTypes;
 using SignalGo.Publisher.Shared.Models;
 using SignalGo.ServiceManager.Core.Models;
 using SignalGo.ServiceManager.Core.Engines.Models;
+using System.Text;
 
 namespace SignalGo.ServiceManager.Core.Services
 {
@@ -26,11 +27,14 @@ namespace SignalGo.ServiceManager.Core.Services
         /// <returns></returns>
         public async Task<string> UploadData(StreamInfo streamInfo, ServiceContract serviceContract)
         {
-            string outFileName = $"{serviceContract.Name}{DateTime.Now.ToString("yyyyMMdd_hhmmss")}.zip";
+            // formmat output file name with current datetime
+            string outFileName = $"{serviceContract.Name}{DateTime.Now:yyyyMMdd_hhmmss}.zip";
+            // set output file path for write later
             string outFilePath = Path.GetFullPath(outFileName, Environment.CurrentDirectory);
             try
             {
-                var serviceToUpdate = Models.SettingInfo.Current.ServerInfo.SingleOrDefault(s => s.ServerKey == serviceContract.ServiceKey);
+                var serviceToUpdate = SettingInfo.Current.ServerInfo
+                    .SingleOrDefault(s => s.ServerKey == serviceContract.ServiceKey);
                 if (serviceToUpdate == null)
                     return "failed";
                 double? progress = 0;
@@ -69,6 +73,7 @@ namespace SignalGo.ServiceManager.Core.Services
             }
             catch (Exception ex)
             {
+                AutoLogger.Default.LogError(ex, "UploadData");
                 return "failed";
             }
             return "success";
@@ -134,7 +139,14 @@ namespace SignalGo.ServiceManager.Core.Services
             {
                 ServerInfo find = SettingInfo.Current.ServerInfo.FirstOrDefault(x => x.ServerKey == serviceKey);
                 if (find == null)
-                    throw new Exception($"Service {serviceKey} not found!");
+                {
+                    string message = $"Service {serviceKey} not found!";
+                    AutoLogger.Default.LogText(message);
+                    await memoryStream
+                        .WriteAsync(Encoding.UTF8.GetBytes(message), 0, message.Length);
+                    return new StreamInfo(memoryStream) { Length = memoryStream.Length, };
+                    //throw new Exception($"Service {serviceKey} not found!");
+                }
                 using (Process proc = find.CurrentServerBase.BaseProcess)
                 {
                     await FocusTabFunc(find);

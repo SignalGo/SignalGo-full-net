@@ -28,6 +28,13 @@ namespace SignalGo.Publisher.ViewModels
         string _ProjectAssembliesPath;
         string _ProjectPath;
         Guid _ProjectKey = Guid.NewGuid();
+        //public ObservableCollection<CategoryInfo> CurrentCategorySettingInfo
+        //{
+        //    get
+        //    {
+        //        return SettingInfo.Current.CategoryInfos;
+        //    }
+        //}
         public string Name
         {
             get
@@ -41,6 +48,20 @@ namespace SignalGo.Publisher.ViewModels
             }
         }
 
+        //private CategoryInfo _SelectedCategoryInfo;
+
+        //public CategoryInfo SelectedCategoryInfo
+        //{
+        //    get
+        //    {
+        //        return _SelectedCategoryInfo;
+        //    }
+        //    set
+        //    {
+        //        _SelectedCategoryInfo = value;
+        //        OnPropertyChanged(nameof(SelectedCategoryInfo));
+        //    }
+        //}
 
         public string ProjectAssembliesPath
         {
@@ -128,6 +149,7 @@ namespace SignalGo.Publisher.ViewModels
             {
                 SettingInfo.Current.ProjectInfo.Add(new ProjectInfo()
                 {
+                    //Category = this.SelectedCategoryInfo,
                     ProjectKey = this.ProjectKey,
                     Name = this.Name,
                     ProjectPath = this.ProjectPath,

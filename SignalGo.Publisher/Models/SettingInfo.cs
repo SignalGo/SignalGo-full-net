@@ -30,6 +30,7 @@ namespace SignalGo.Publisher.Models
         }
 
         public ObservableCollection<ProjectInfo> ProjectInfo { get; set; } = new ObservableCollection<ProjectInfo>();
+        //public ObservableCollection<CategoryInfo> CategoryInfos { get; set; } = new ObservableCollection<CategoryInfo>();
 
         public static SettingInfo LoadSettingInfo()
         {
@@ -42,6 +43,7 @@ namespace SignalGo.Publisher.Models
                     return new SettingInfo()
                     {
                         ProjectInfo = new ObservableCollection<ProjectInfo>(),
+                        //CategoryInfos = new ObservableCollection<CategoryInfo>()
                     };
                 }
                 var result = SignalGo.Client.ClientSerializationHelper.DeserializeObject<SettingInfo>(File.ReadAllText(path, Encoding.UTF8));
@@ -50,8 +52,29 @@ namespace SignalGo.Publisher.Models
                     return new SettingInfo()
                     {
                         ProjectInfo = new ObservableCollection<ProjectInfo>(),
+                        //CategoryInfos = new ObservableCollection<CategoryInfo>()
                     };
                 }
+
+                //else if (!result.CategoryInfos.HasValue())
+                //{
+                //    return new SettingInfo()
+                //    {
+                //        ProjectInfo = result.ProjectInfo,
+                //        CategoryInfos = new ObservableCollection<CategoryInfo>()
+                //        {
+                //            new CategoryInfo{ID=1, Name="Utravs",
+                //                SubCategories = new Collection<CategoryInfo>
+                //                {
+                //                    new CategoryInfo{ID = 100,Name="Flights",ParentID=1},
+                //                    new CategoryInfo{ID = 200,Name="MicroServices",ParentID=1}
+                //                }
+                //            },
+                //            new CategoryInfo{ID=2,Name="Personal"},
+                //            new CategoryInfo{ID = 3, Name="Other"},
+                //        }
+                //    };
+                //}
                 return result;
             }
             catch (Exception ex)
@@ -59,10 +82,10 @@ namespace SignalGo.Publisher.Models
                 return new SettingInfo()
                 {
                     ProjectInfo = new ObservableCollection<ProjectInfo>(),
+                    //CategoryInfos = new ObservableCollection<CategoryInfo>()
                 };
             }
         }
-
         public static void SaveSettingInfo()
         {
             string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, PublisherDbName);
