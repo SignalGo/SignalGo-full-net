@@ -10,19 +10,20 @@ namespace SignalGo.Publisher.Models
         {
 
         }
-        private bool _IsDebug;
+        private bool _IsRestore=true;
+        private bool _IsDebug = true;
+        private bool _IsRebuild = true;
+        private bool _UseUiVirtualization = true;
+        private bool _RunAuthenticateAtFirst = true;
         private bool _IsRelease;
-        private bool _IsRebuild;
         private bool _IsBuild;
-        private bool _IsRestore;
-        private int _MaxThreads;
-        private bool _IsUiVirtualization;
         private string _MsbuildPath;
         private string _TestRunnerExecutableFile;
         private string _LoggerPath;
         private string _CommandRunnerLogsPath;
         private string _StartPriority;
         private string _ServiceUpdaterLogFilePath;
+        private int _MaxThreads;
 
         private TestRunnersEnum _DefaultTestRunner = TestRunnersEnum.NetCoreSDK;
         private LoggingVerbosityEnum _LoggingVerbosity = LoggingVerbosityEnum.Minimuum;
@@ -199,16 +200,33 @@ namespace SignalGo.Publisher.Models
         /// true will optimize memory usage (but decrease performancce) and trigger GC every items change
         /// false will cache objects to memory and increase memory usage but better performance and ui reactions
         /// </summary>
-        public bool IsUiVirtualization
+        public bool UseUiVirtualization
         {
             get
             {
-                return _IsUiVirtualization;
+                return _UseUiVirtualization;
             }
             set
             {
-                _IsUiVirtualization = value;
-                OnPropertyChanged(nameof(IsUiVirtualization));
+                _UseUiVirtualization = value;
+                OnPropertyChanged(nameof(UseUiVirtualization));
+
+            }
+        }
+        /// <summary>
+        /// run authentication at first of running commands, otherwise authentication will run when need.
+        ///  for example when connection to protected server's.
+        /// </summary>
+        public bool RunAuthenticateAtFirst
+        {
+            get
+            {
+                return _RunAuthenticateAtFirst;
+            }
+            set
+            {
+                _RunAuthenticateAtFirst = value;
+                OnPropertyChanged(nameof(RunAuthenticateAtFirst));
 
             }
         }
