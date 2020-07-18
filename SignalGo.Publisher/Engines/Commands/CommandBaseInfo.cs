@@ -87,7 +87,7 @@ namespace SignalGo.Publisher.Engines.Commands
         public string Arguments { get; set; }
         public bool IsEnabled { get; set; }
         /// <summary>
-        /// working directory path that process start on it
+        /// working/project directory path that process start on it
         /// </summary>
         public string WorkingPath { get; set; }
         /// <summary>
@@ -251,7 +251,6 @@ namespace SignalGo.Publisher.Engines.Commands
 
                     currentSrv.ServerStatus = ServerInfo.ServerInfoStatusEnum.Updating;
 
-                    ProjectManagerWindowViewModel.This.IsAccessControlUnlocked = false;
                     var provider = await PublisherServiceProvider.Initialize(currentSrv, serviceContract.Name);
                     if (!provider.HasValue()) 
                         return RunStatusType.Error;

@@ -6,9 +6,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using SignalGo.Publisher.Engines.Models;
-using SignalGo.Publisher.Models;
 using SignalGo.Publisher.Models.Extra;
-using System.IO;
 
 namespace SignalGo.Publisher.Engines.Commands
 {

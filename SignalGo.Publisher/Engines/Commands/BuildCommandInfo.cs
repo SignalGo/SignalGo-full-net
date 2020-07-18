@@ -12,25 +12,8 @@ namespace SignalGo.Publisher.Engines.Commands
 {
     public class BuildCommandInfo : CommandBaseInfo
     {
-        /// <summary>
-        /// dotnet core sdk
-        /// </summary>
-        //public BuildCommand()
-        //{
-        //    Name = "compile dotnet project";
-        //    ExecutableFile = "cmd.exe";
-        //    Command = "dotnet";
-        //    Arguments = "build";
-        //    IsEnabled = true;
-        //}
-        //private UserSetting CurrentSettings
-        //{
-        //    get
-        //    {
-        //        return UserSettingInfo.Current.UserSettings;
-        //    }
-        //}
-
+        private static string SolutionFile = string.Empty;
+        private static int ProjectCount = 0;
         private string buildType = "Rebuild";
         private string outputType = "Debug";
         private UserSetting Configuration = UserSettingInfo.Current.UserSettings;
@@ -50,20 +33,21 @@ namespace SignalGo.Publisher.Engines.Commands
             buildType = Configuration.IsBuild ? "Build" : "Rebuild";
             outputType = Configuration.IsRelease ? "Release" : "Debug";
 
-            Arguments = $"-t:{buildType} -r:{Configuration.IsRestore} -p:Configuration={outputType} -noWarn:MSB4011;CS1591 -nologo";
+            //Arguments = $"-t:{buildType} -r:{Configuration.IsRestore} -p:Configuration={outputType} -noWarn:MSB4011;CS1591 -nologo {SolutionFile}";
             IsEnabled = true;
         }
 
         public override async Task<RunStatusType> Run(CancellationToken cancellationToken, string caller)
         {
-            var result = await base.Run(cancellationToken,caller);
+            var result = await base.Run(cancellationToken, caller);
             return result;
         }
 
         public override async Task Initialize(ProcessStartInfo processStartInfo)
         {
-            var projectCount = await LoadSlnProjectsCount(WorkingPath);
-            Size = projectCount;
+            ProjectCount = await LoadSlnProjectsCount(WorkingPath);
+            Arguments = $"-t:{buildType} -r:{Configuration.IsRestore} -p:Configuration={outputType} -noWarn:MSB4011;CS1591 -nologo {SolutionFile}";
+            Size = ProjectCount;
             processStartInfo.RedirectStandardOutput = true;
             processStartInfo.FileName = $"{Command}";
             processStartInfo.CreateNoWindow = true;
@@ -74,17 +58,17 @@ namespace SignalGo.Publisher.Engines.Commands
         public static async Task<int> LoadSlnProjectsCount(string path)
         {
             int count = 0;
-            var slnFile = Directory.GetFiles(path, "*.*").FirstOrDefault(x => x.EndsWith(".sln", StringComparison.OrdinalIgnoreCase));
+            SolutionFile = Directory.GetFiles(path, "*.*").FirstOrDefault(x => x.EndsWith(".sln", StringComparison.OrdinalIgnoreCase));
             try
             {
-                foreach (var item in await File.ReadAllLinesAsync(slnFile))
+                foreach (var item in await File.ReadAllLinesAsync(SolutionFile))
                 {
                     if (item.Contains("Project("))
                     {
                         var pPath = item.Split(',')[1].Replace("\"", "").Trim();
                         if (pPath.EndsWith(".csproj", StringComparison.OrdinalIgnoreCase))
                         {
-                            var projectPath = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(slnFile), pPath));
+                            var projectPath = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(SolutionFile), pPath));
                             var findLine = File.ReadAllLines(projectPath).FirstOrDefault(x => !x.Contains("<!--") && x.Contains("<TargetFrameworks>"));
                             if (findLine != null)
                             {
@@ -99,6 +83,7 @@ namespace SignalGo.Publisher.Engines.Commands
             {
                 AutoLogger.Default.LogError(ex, "CommandRunner(LoadSlnProjectsCount)");
             }
+            ProjectCount = count;
             return count;
         }
 
@@ -108,7 +93,7 @@ namespace SignalGo.Publisher.Engines.Commands
             {
                 Position++;
             }
-            else if (line.StartsWith("Build FAILED."))
+            else if (line.StartsWith("Build FAILED.") || line.StartsWith("MSBUILD : error MSB1011"))
             {
                 Status = RunStatusType.Error;
                 return true;
