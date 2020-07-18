@@ -43,21 +43,13 @@ namespace SignalGo.Publisher.Services
             bool isAllowed = false;
             await AsyncActions.RunOnUIAsync(() =>
             {
-                //isAllowed = Helpers.CommandAuthenticator.Authorize(ref serverInfo);
                 isAllowed = serverInfo.HasAccess();
-                //if (!isAllowed)
-                //{
-                //    LogModule.AddLog(caller, SectorType.Management, "Access Denied! Secret does't match.", DateTime.Now.ToLongTimeString(), LogTypeEnum.Warning);
-                //    //isAllowed = true;
-                //}
             });
             if (!isAllowed)
             {
-                LogModule.AddLog(caller, SectorType.Management, "Access Denied! Secret does't match.", DateTime.Now.ToLongTimeString(), LogTypeEnum.Warning);
+                LogModule.AddLog(caller, SectorType.Management, $"Access Denied! Secret does't match for {serverInfo.ServerName}.", DateTime.Now.ToLongTimeString(), LogTypeEnum.Warning);
                 return null;
             }
-            //if (!isAllowed) 
-            //    return null;
             string serverAddress = string.Empty;
             PublisherServiceProvider publisherServiceProvider = null;
             LogModule.AddLog(caller, SectorType.Management, $"Initializing Server {serverInfo.ServerName}", DateTime.Now.ToLongTimeString(), LogTypeEnum.System);
@@ -123,6 +115,10 @@ namespace SignalGo.Publisher.Services
             {
                 AutoLogger.Default.LogError(ex, "initialize client provider error");
                 ServerInfo.ServerLogs.Add("error while contacting to server");
+            }
+            finally
+            {
+                ServerInfo.Servers.Remove(serverInfo);
             }
             return publisherServiceProvider;
         }

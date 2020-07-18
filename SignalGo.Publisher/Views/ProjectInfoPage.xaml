@@ -217,7 +217,7 @@
                         <TabItem.Header>
                             <TextBlock Text="Builder"/>
                         </TabItem.Header>
-                        <ListView VirtualizingPanel.IsVirtualizing="{Binding CurrentUserSettingInfo.UserSettings.IsUiVirtualization}" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.CanContentScroll="True" ItemsSource="{Binding BuilderLogs}" ClipToBounds="True" >
+                        <ListView VirtualizingPanel.IsVirtualizing="{Binding CurrentUserSettingInfo.UserSettings.UseUiVirtualization}" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.CanContentScroll="True" ItemsSource="{Binding BuilderLogs}" ClipToBounds="True" >
                             <ListView.View>
                                 <GridView>
                                     <GridViewColumn Header="Type" Width="60">

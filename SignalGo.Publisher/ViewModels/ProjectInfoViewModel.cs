@@ -364,6 +364,7 @@ namespace SignalGo.Publisher.ViewModels
         {
             await LogModule.ClearLogs(ProjectInfo.Name, SectorType.Builder, true);
             await LogModule.ClearLogs(ProjectInfo.Name, SectorType.Server, true);
+            await LogModule.ClearLogs(ProjectInfo.Name, SectorType.Management, true);
 
         }
 
@@ -515,15 +516,14 @@ namespace SignalGo.Publisher.ViewModels
                 MessageBox.Show("No Command Available To Run!");
                 return;
             }
+            bool locked = false;
+            ServerInfo.Servers.Clear();
             try
             {
-                ServerInfo.Servers.Clear();
-
                 // remove old command runner logs (build's, test's, ...)
                 File.Delete(CurrentUserSettingInfo.UserSettings.CommandRunnerLogsPath);
 
                 bool hasPublishCommand = ProjectInfo.Commands.Any(x => x is PublishCommandInfo);
-                //List<ServerInfo> servers = CurrentServerSettingInfo.ServerInfo.Where(x => x.IsChecked).ToList();
 
                 if (hasPublishCommand && !CurrentServerSettingInfo.ServerInfo.Any(x => x.IsChecked))
                 {
@@ -531,10 +531,21 @@ namespace SignalGo.Publisher.ViewModels
                 }
                 else
                 {
+                    if (ProjectManagerWindowViewModel.This.IsAccessControlUnlocked)
+                    {
+                        ProjectManagerWindowViewModel.This.IsAccessControlUnlocked = false;
+                        locked = true;
+                    }
+                    if (CurrentUserSettingInfo.UserSettings.RunAuthenticateAtFirst)
+                    {
+                        foreach (ServerInfo item in CurrentServerSettingInfo.ServerInfo.Where(s => s.IsChecked))
+                        {
+                            item.HasAccess();
+                        }
+                    }
                     await Task.Run(async () =>
                     {
                         await RunCustomCommand(ProjectInfo, CancellationToken);
-                        //await ReadCommandLog();
                     }, CancellationToken);
                 }
             }
@@ -542,6 +553,11 @@ namespace SignalGo.Publisher.ViewModels
             {
                 LogModule.AddLog(ProjectInfo.Name, SectorType.Builder, $"{ex.Message} - RunCommands ProjectInfo", LogTypeEnum.Error);
                 AutoLogger.Default.LogError(ex, "RunCommands ProjectInfo");
+            }
+            finally
+            {
+                if (locked)
+                    ProjectManagerWindowViewModel.This.IsAccessControlUnlocked = true;
             }
         }
 
@@ -886,7 +902,7 @@ namespace SignalGo.Publisher.ViewModels
             try
             {
                 var provider = await PublisherServiceProvider.Initialize(SelectedServerInfo, ProjectInfo.Name);
-                if (provider == null)
+                if (provider.HasValue())
                 {
                     ServerManagerStreamService serverManagerStreamService = new ServerManagerStreamService(provider.CurrentClientProvider);
                     using MemoryStream memoryStream = new MemoryStream();

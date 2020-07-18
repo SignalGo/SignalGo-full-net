@@ -10,10 +10,6 @@ namespace SignalGo.Publisher.Helpers
     /// </summary>
     public class CommandAuthenticator : BaseViewModel
     {
-        public CommandAuthenticator() : base()
-        {
-
-        }
         private static int retryAttemp { get; set; } = 0;
         /// <summary>
         /// Interactive Authorization on the specified server
@@ -22,17 +18,13 @@ namespace SignalGo.Publisher.Helpers
         /// <returns></returns>
         public static bool Authorize(ref ServerInfo serverInfo)
         {
-        //if (serverInfo.HasValue())
-        //{
-        //    if (serverInfo.ProtectionPassword != null)
-        //    {
         GetThePass:
             if (retryAttemp > 2)
             {
                 retryAttemp = 0;
                 return false;
             }
-            InputDialogWindow inputDialog = new InputDialogWindow($"Please enter your secret for Server","Access Control", serverInfo.ServerName);
+            InputDialogWindow inputDialog = new InputDialogWindow($"Please enter your secret for Server", "Access Control", serverInfo.ServerName);
             if (inputDialog.ShowDialog() == true)
             {
                 if (serverInfo.ProtectionPassword != PasswordEncoder.ComputeHash(inputDialog.Answer))
@@ -50,12 +42,8 @@ namespace SignalGo.Publisher.Helpers
                 }
             }
             else return false;
-            //    }
-            //}
-            //else
-            //{
-            //    return false;
-            //}
+            // add to authenticated server's list
+            ServerInfo.Servers.Add(serverInfo.Clone());
 
             return true;
         }

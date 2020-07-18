@@ -111,7 +111,8 @@
                     <TextBlock Margin="5"  Text="Log Verbosity:"/>
                     <ComboBox Margin="5" x:Name="logVerbosityCombo" SelectedItem="{Binding CurrentUserSettingInfo.UserSettings.LoggingVerbosity}" Grid.Row="4" Grid.Column="0" />
                     <!--<CheckBox Margin="5" Content="Full Logging" IsChecked="{Binding CurrentUserSettingInfo.UserSettings.IsFullLogging}" VerticalContentAlignment="Center" />-->
-                    <CheckBox Margin="5" Content="UI Virtualization" IsChecked="{Binding CurrentUserSettingInfo.UserSettings.IsUiVirtualization}" VerticalContentAlignment="Center" />
+                    <CheckBox Margin="5" Content="UI Virtualization" IsChecked="{Binding CurrentUserSettingInfo.UserSettings.UseUiVirtualization}" VerticalContentAlignment="Center" />
+                    <CheckBox Margin="5" Content="Authenticate At First" IsChecked="{Binding CurrentUserSettingInfo.UserSettings.RunAuthenticateAtFirst}" VerticalContentAlignment="Center" ToolTip="If Enabled, Queued Command's that need authentication will run auth at first, otherwise auth will run when reach to that command, to decrease human mistakes."/>
                     <CheckBox Margin="5" Content="Stop if Error" IsChecked="True" VerticalContentAlignment="Center" />
                     <CheckBox Margin="5" Content="SignalGo Duplex" IsChecked="True" IsEnabled="False" VerticalAlignment="Stretch" HorizontalAlignment="Stretch"/>
                     <CheckBox Margin="5" Content="Administrative" IsChecked="True" IsEnabled="False" VerticalContentAlignment="Center"/>
