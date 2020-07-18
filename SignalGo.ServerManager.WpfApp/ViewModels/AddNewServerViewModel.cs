@@ -9,6 +9,10 @@ namespace SignalGo.ServerManager.WpfApp.ViewModels
 {
     public class AddNewServerViewModel : AddNewServerBaseViewModel
     {
+        public AddNewServerViewModel() : base()
+        {
+
+        }
         protected override void BrowsePath()
         {
             OpenFileDialog fileDialog = new OpenFileDialog();

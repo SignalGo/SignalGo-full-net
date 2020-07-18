@@ -48,7 +48,9 @@
                 <StackPanel Margin="5" Grid.Row="2" Grid.Column="0" Orientation="Horizontal"
                             Grid.ColumnSpan="2" VerticalAlignment="Top"
                             HorizontalAlignment="Stretch">
-                    <TextBlock Text="Start Delay(sec):"/>
+                    <TextBlock Text="Auto Start:"/>
+                    <CheckBox VerticalAlignment="Center" IsChecked="{Binding ServerInfo.AutoStartEnabled}" />
+                    <TextBlock Margin="10,0" Text="Start Delay(sec):"/>
                     <TextBox Margin="0" MaxWidth="100" MinWidth="50" Text="{Binding ServerInfo.StartDelay}" />
                 </StackPanel>
 
@@ -62,10 +64,10 @@
                         <Button Command="{Binding StopCommand}" Content="Stop" Width="100" Height="30" Margin="10,0,0,0"/>
                     </StackPanel>
                 </StackPanel>
-                <StackPanel Orientation="Vertical" Grid.Row="2" Grid.Column="2" VerticalAlignment="Bottom" >
+                <StackPanel Orientation="Horizontal" Grid.Row="2" Grid.Column="2" VerticalAlignment="Bottom" >
 
-                    <Button Command="{Binding ChangeCommand}" VerticalAlignment="Bottom" Content="Save" Width="100" Height="30" Margin="0,5,0,5"/>
-                    <Button Command="{Binding DeleteCommand}" VerticalAlignment="Bottom" Content="Delete!" Width="100" Height="30" Margin="0,5,0,5"/>
+                    <Button Command="{Binding ChangeCommand}" VerticalAlignment="Bottom" Content="Save" Width="100" Height="30" Margin="5"/>
+                    <Button Command="{Binding DeleteCommand}" VerticalAlignment="Bottom" Content="Delete!" Width="100" Height="30" Margin="5"/>
                 </StackPanel>
                 <StatusBar Grid.Row="2" VerticalAlignment="Bottom" Grid.ColumnSpan="2" Background="Transparent">
                     <StatusBarItem>

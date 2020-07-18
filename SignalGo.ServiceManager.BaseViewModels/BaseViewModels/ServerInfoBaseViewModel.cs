@@ -6,7 +6,6 @@ using SignalGo.Shared.Log;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -22,10 +21,8 @@ namespace SignalGo.ServiceManager.Core.BaseViewModels
             StartCommand = new Command(Start);
             StopCommand = new Command(Stop);
             BrowsePathCommand = new Command(BrowsePath);
-            ChangeCommand = new Command(Change);
+            ChangeCommand = new Command(SaveChanges);
             DeleteCommand = new Command(Delete);
-            ClearLogCommand = new Command(ClearLog);
-            CopyCommand = new Command<TextLogInfo>(Copy);
             UploadFileCommand = new Command(() =>
             {
                 IsBusy = true;
@@ -53,11 +50,9 @@ namespace SignalGo.ServiceManager.Core.BaseViewModels
         public Command ChangeCommand { get; set; }
         public Command BrowsePathCommand { get; set; }
         public Command DeleteCommand { get; set; }
-        public Command ClearLogCommand { get; set; }
         public Command UploadFileCommand { get; set; }
         public Command FetchFilesCommand { get; set; }
         public Command<string> LoadFileCommmand { get; set; }
-        public Command<TextLogInfo> CopyCommand { get; set; }
 
         public string _ServiceMemoryUsage;
         public string ServiceMemoryUsage
@@ -97,15 +92,6 @@ namespace SignalGo.ServiceManager.Core.BaseViewModels
 
         private void Stop()
         {
-            try
-            {
-                //CancellationTokenSource.Cancel();
-                //CancellationToken.ThrowIfCancellationRequested();
-            }
-            catch
-            {
-                Debug.WriteLine($"Task in Server ({ServerInfo.Name}) has been cancelled With Cancellation Token.");
-            }
             StopServer(ServerInfo);
         }
 
@@ -113,7 +99,7 @@ namespace SignalGo.ServiceManager.Core.BaseViewModels
         {
             StartServer(ServerInfo);
         }
-        private void Change()
+        protected virtual void SaveChanges()
         {
             var gu = Guid.Empty;
             if (Guid.TryParse(ServerInfo.ServerKey.ToString(), out gu))
@@ -141,10 +127,7 @@ namespace SignalGo.ServiceManager.Core.BaseViewModels
                 SettingInfo.Current.ServerInfo.Remove(server);
                 SettingInfo.SaveSettingInfo();
             }
-            catch (Exception ex)
-            {
-
-            }
+            catch { }
         }
         public static void StartServer(ServerInfo serverInfo)
         {
@@ -154,15 +137,6 @@ namespace SignalGo.ServiceManager.Core.BaseViewModels
         {
             serverInfo.Stop();
         }
-
-        private void ClearLog()
-        {
-            //ServerInfo.Logs.Clear();
-        }
-        protected virtual void Copy(TextLogInfo textLogInfo)
-        {
-        }
-
 
         public ObservableCollection<string> ServerFiles { get; set; } = new ObservableCollection<string>();
         private string _fileContent;
@@ -275,15 +249,11 @@ namespace SignalGo.ServiceManager.Core.BaseViewModels
             try
             {
                 var files = await GetTextFiles(ServerInfo.ServerKey);
-
-                //RunOnUIAction(() =>
-                //{
                 ServerFiles.Clear();
                 foreach (var item in files)
                 {
                     ServerFiles.Add(item);
                 }
-                //});
             }
             catch (Exception ex)
             {

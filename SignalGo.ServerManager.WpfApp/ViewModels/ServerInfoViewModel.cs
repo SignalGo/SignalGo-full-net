@@ -5,6 +5,7 @@ using SignalGo.ServiceManager.Core.Models;
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Windows;
 
 namespace SignalGo.ServerManager.WpfApp.ViewModels
 {
@@ -18,6 +19,11 @@ namespace SignalGo.ServerManager.WpfApp.ViewModels
         {
             MainWindowViewModel.MainFrame.GoBack();
             base.Delete();
+        }
+        protected override void SaveChanges()
+        {
+            base.SaveChanges();
+            MessageBox.Show("Saved Successfully!", "Save Settings", MessageBoxButton.OK, MessageBoxImage.Information);
         }
         protected override void BrowsePath()
         {
