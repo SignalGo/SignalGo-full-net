@@ -9,37 +9,8 @@ using System.Linq;
 
 namespace SignalGo.ServiceManager.Core.Models
 {
-    
-    public enum ServerInfoStatus : byte
-    {
-        Started = 1,
-        Stopped = 2,
-        Updating = 3,
-        Restarting = 4,
-        Disabled = 5
-    }
-
-    public class TextLogInfo : BaseViewModel
-    {
-        private string _Text;
-        public string Text
-        {
-            get
-            {
-                return _Text;
-            }
-            set
-            {
-                _Text = value;
-                OnPropertyChanged(nameof(Text));
-            }
-        }
-        public bool IsDone { get; set; }
-    }
-
     public class ServerInfo : BaseViewModel
     {
-
         [JsonIgnore]
         public ServerProcessBaseInfo CurrentServerBase { get; set; }
         [JsonIgnore]
@@ -48,10 +19,11 @@ namespace SignalGo.ServiceManager.Core.Models
         public Action ProcessStarted { get; set; }
 
         private Guid _ServerKey;
-        private string _Name;
         private int _StartDelay = 0;
+        private string _Name;
         private string _AssemblyPath;
         private ServerInfoStatus _Status = ServerInfoStatus.Stopped;
+        private bool _AutoStartEnabled = true;
 
 
         public Guid ServerKey
@@ -96,6 +68,18 @@ namespace SignalGo.ServiceManager.Core.Models
                 OnPropertyChanged(nameof(AssemblyPath));
             }
         }
+        public bool AutoStartEnabled
+        {
+            get
+            {
+                return _AutoStartEnabled;
+            }
+            set
+            {
+                _AutoStartEnabled = value;
+                OnPropertyChanged(nameof(AutoStartEnabled));
+            }
+        }
 
         [JsonIgnore]
         public ServerInfoStatus Status
@@ -111,6 +95,9 @@ namespace SignalGo.ServiceManager.Core.Models
             }
         }
 
+        /// <summary>
+        /// stop the service and process
+        /// </summary>
         public void Stop()
         {
             if (Status == ServerInfoStatus.Started)
@@ -149,6 +136,9 @@ namespace SignalGo.ServiceManager.Core.Models
         }
 
         public static Action<Process> SendToMainHostForHidden { get; set; }
+        /// <summary>
+        /// delay starting the service
+        /// </summary>
         public int StartDelay
         {
             get { return _StartDelay; }
@@ -158,13 +148,26 @@ namespace SignalGo.ServiceManager.Core.Models
                 OnPropertyChanged(nameof(StartDelay));
             }
         }
+        /// <summary>
+        /// check service path
+        /// </summary>
+        /// <param name="filePath"></param>
+        /// <param name="serviceKey"></param>
+        /// <returns></returns>
         public static ServerInfo CheckServerPath(string filePath, Guid serviceKey)
         {
             var find = SettingInfo.Current.ServerInfo.FirstOrDefault(x => x.ServerKey == serviceKey);
-            if (find == null)
-                throw new Exception($"Service {serviceKey} not found!");
-            else if (Path.GetDirectoryName(find.AssemblyPath) != Path.GetDirectoryName(filePath))
-                throw new Exception($"Access to the path denied!");
+            try
+            {
+                if (find == null)
+                    throw new Exception($"Service {serviceKey} not found!");
+                else if (Path.GetDirectoryName(find.AssemblyPath) != Path.GetDirectoryName(filePath))
+                    throw new Exception($"Access to the path denied!");
+            }
+            catch
+            {
+
+            }
             return find;
         }
         public void Start()
@@ -230,5 +233,13 @@ namespace SignalGo.ServiceManager.Core.Models
         [JsonIgnore]
         public override Action<string> PropertyChangedAction { get => base.PropertyChangedAction; set => base.PropertyChangedAction = value; }
         #endregion
+    }
+    public enum ServerInfoStatus
+    {
+        Started = 1,
+        Stopped = 2,
+        Updating = 3,
+        Restarting = 4,
+        Disabled = 5
     }
 }
