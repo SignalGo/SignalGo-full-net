@@ -39,7 +39,6 @@ namespace SignalGo.Shared
         /// </summary>
         public static void InitializeUIThread()
         {
-            var thread = Thread.CurrentThread;
             if (SynchronizationContext.Current == null)
                 SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());
             UIThread = SynchronizationContext.Current;
