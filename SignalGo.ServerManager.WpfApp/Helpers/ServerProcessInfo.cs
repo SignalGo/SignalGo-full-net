@@ -30,7 +30,7 @@ namespace SignalGo.ServerManager.WpfApp.Helpers
         /// </summary>
         /// <param name="paramUID">Unique ID of the named pipe</param>
         /// <returns></returns>
-        public override void Start(string paramUID, string fileName,string shell ="cmd")
+        public override void Start(string paramUID, string fileName, string shell = "cmd")
         {
             if (!File.Exists(fileName))
                 throw new FileNotFoundException("we can't find service executable file. please verify the service path");
@@ -70,7 +70,7 @@ namespace SignalGo.ServerManager.WpfApp.Helpers
         /// Start the IPC server listener and wait for
         /// incomming messages from the appropriate child process
         /// </summary>
-        void StartIPCServer()
+        async void StartIPCServer()
         {
             if (m_PipeServerStream == null)
             {
@@ -88,7 +88,7 @@ namespace SignalGo.ServerManager.WpfApp.Helpers
             try
             {
                 //Wait for connection from the child process
-                m_PipeServerStream.WaitForConnection();
+                await m_PipeServerStream.WaitForConnectionAsync();
             }
             catch (ObjectDisposedException exDisposed)
             {
@@ -148,12 +148,20 @@ namespace SignalGo.ServerManager.WpfApp.Helpers
                 {
                     //I will fails if the process doesn't exist
                     if (BaseProcess != null)
-                        BaseProcess.Kill();
+                    {
+                        BaseProcess.CloseMainWindow();
+                        BaseProcess.Kill(); //force kill if alive
+                    }
                 }
                 catch
-                { }
+                {
+                    //AutoLogger.Default.LogError(ex, "DisposeClientProcess-Kill");
+                }
                 if (m_PipeServerStream != null)
+                {
+                    m_PipeServerStream.Close();
                     m_PipeServerStream.Dispose();//This will stop any pipe activity
+                }
 
                 AutoLogger.Default.LogText(string.Format("Process {0} is Closed", m_PipeID));
             }
