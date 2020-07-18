@@ -7,6 +7,7 @@ using SignalGo.Shared;
 using SignalGo.Shared.Log;
 using System;
 using System.Diagnostics;
+using System.Linq;
 
 namespace SignalGo.ServiceManager.BaseViewModels.Core
 {
@@ -33,8 +34,8 @@ namespace SignalGo.ServiceManager.BaseViewModels.Core
                 // start server and listener's
                 serverProvider.Start($"http://{UserSettingInfo.Current.UserSettings.ListeningAddress}:{UserSettingInfo.Current.UserSettings.ListeningPort}/ServerManager/SignalGo");
                 // inform server start
-                Console.ForegroundColor = ConsoleColor.Cyan;
-                Console.WriteLine("server is started");
+                ;
+                Console.WriteLine("server is started", Console.ForegroundColor = ConsoleColor.Cyan);
                 Console.ResetColor();
             }
             catch (Exception ex)
@@ -72,11 +73,9 @@ namespace SignalGo.ServiceManager.BaseViewModels.Core
         {
             try
             {
-                for (int i = 0; i < SettingInfo.Current.ServerInfo.Count; i++)
+                foreach (var server in SettingInfo.Current.ServerInfo.Where(x => x.AutoStartEnabled))
                 {
-                    ServerInfo server = SettingInfo.Current.ServerInfo[i];
-                    Console.ForegroundColor = ConsoleColor.Yellow;
-                    Console.WriteLine($"Your {server.Name} service key is : {server.ServerKey}");
+                    Console.WriteLine($"Your {server.Name} service key is : {server.ServerKey}", Console.ForegroundColor = ConsoleColor.Yellow);
                     Console.ResetColor();
                     ServerInfoBaseViewModel.StartServer(server);
                 }
