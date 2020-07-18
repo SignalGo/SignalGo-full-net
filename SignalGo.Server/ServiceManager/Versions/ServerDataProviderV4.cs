@@ -12,6 +12,9 @@ using System.Threading.Tasks;
 
 namespace SignalGo.Server.ServiceManager.Versions
 {
+    /// <summary>
+    /// initializing server service's and their tcp socket's for connection's
+    /// </summary>
     public class ServerDataProviderV4 : IServerDataProvider
     {
         internal TcpListener _server;
@@ -24,10 +27,15 @@ namespace SignalGo.Server.ServiceManager.Versions
 #if (NET35 || NET40)
         public void Start(ServerBase serverBase, int port)
 #else
-        public void Start(ServerBase serverBase, int port)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="serverBase">service informatiob</param>
+        /// <param name="port">service port</param>
+        public async void Start(ServerBase serverBase, int port)
 #endif
         {
-            Thread thread = new Thread(() =>
+            Thread thread = new Thread(async () =>
             {
                 _serverBase = serverBase;
                 try
@@ -54,8 +62,8 @@ namespace SignalGo.Server.ServiceManager.Versions
 #if (NETSTANDARD1_6)
                             TcpClient client = _server.AcceptTcpClientAsync().GetAwaiter().GetResult();
 #else
-                            TcpClient client = _server.AcceptTcpClient();
-
+                            TcpClient client = await _server.AcceptTcpClientAsync();
+                            
 #endif
                             _ConnectedCount++;
                             //IsWaitForClient = false;
@@ -219,7 +227,10 @@ namespace SignalGo.Server.ServiceManager.Versions
                 _WaitingToReadFirstLineCount--;
             }
         }
-
+        /// <summary>
+        /// collect and report service socket activities
+        /// </summary>
+        /// <returns></returns>
         public string GetInformation()
         {
             StringBuilder stringBuilder = new StringBuilder();
@@ -263,8 +274,6 @@ namespace SignalGo.Server.ServiceManager.Versions
                 stringBuilder.AppendLine($"SignalGoStream {maximumConnectionOfIp.Key} Connected Count: " + maximumConnectionOfIp.Count(x => x.ProtocolType == ClientProtocolType.SignalGoStream));
                 stringBuilder.AppendLine($"WebSocket {maximumConnectionOfIp.Key} Connected Count: " + maximumConnectionOfIp.Count(x => x.ProtocolType == ClientProtocolType.WebSocket));
                 stringBuilder.AppendLine($"None {maximumConnectionOfIp.Key} Connected Count: " + maximumConnectionOfIp.Count(x => x.ProtocolType == ClientProtocolType.None));
-
-
             }
             return stringBuilder.ToString();
         }
