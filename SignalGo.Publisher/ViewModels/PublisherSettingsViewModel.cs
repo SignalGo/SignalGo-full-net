@@ -4,6 +4,9 @@ using MvvmGo.ViewModels;
 using System.Diagnostics;
 using SignalGo.Publisher.Models;
 using System.Windows.Forms;
+using SignalGo.Publisher.Views.Extra;
+using SignalGo.Publisher.Extensions;
+using SignalGo.Publisher.Engines.Models;
 
 namespace SignalGo.Publisher.ViewModels
 {
@@ -12,6 +15,7 @@ namespace SignalGo.Publisher.ViewModels
         public PublisherSettingsViewModel()
         {
             SaveCommand = new Command(Save);
+            SetMasterPasswordCommand = new Command(SetMasterPassword);
             BackCommand = new Command(Back);
             BrowseMsbuildPathCommand = new Command(BrowseMsbuildPath);
             BrowseLoggerPathCommand = new Command(BrowseLoggerPath);
@@ -24,6 +28,7 @@ namespace SignalGo.Publisher.ViewModels
         public Command BrowseCommandRunnerLogPathCommand { get; set; }
         public Command BrowseTestRunnerCommand { get; set; }
         public Command RestoreDefaults { get; set; }
+        public Command SetMasterPasswordCommand { get; set; }
         public Command SaveCommand { get; set; }
         public Command BackCommand { get; set; }
 
@@ -50,21 +55,20 @@ namespace SignalGo.Publisher.ViewModels
             }
         }
 
-        //UserSetting _UserSetting;
-        //public UserSetting UserSetting
-        //{
-        //    get
-        //    {
-        //        return _UserSetting;
-        //    }
+        public void SetMasterPassword()
+        {
 
-        //    set
-        //    {
-        //        _UserSetting = value;
-        //        OnPropertyChanged(nameof(UserSetting));
-        //    }
-        //}
-
+            InputDialogWindow inputDialog = new InputDialogWindow($"Please enter your ", "Access Control", "MasterPassword");
+            if (inputDialog.ShowDialog() == true && inputDialog.Answer.HasValue())
+            {
+                CurrentUserSettingInfo.UserSettings.ApplicationMasterPassword = PasswordEncoder.ComputeHash(inputDialog.Answer);
+                SaveCommand.Execute();
+            }
+            else
+            {
+                MessageBox.Show("Couldn't Set Master Password.");
+            }
+        }
         public void BrowseCommandRunnerLogPath()
         {
             using FolderBrowserDialog BrowseLoggerPathDialog = new FolderBrowserDialog();

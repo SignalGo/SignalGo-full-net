@@ -1,5 +1,6 @@
 ﻿using MvvmGo.Commands;
 using MvvmGo.ViewModels;
+using SignalGo.Publisher.Engines.Security;
 using SignalGo.Publisher.Models;
 using SignalGo.Publisher.Models.Extra;
 using SignalGo.Publisher.Views;
@@ -228,24 +229,35 @@ namespace SignalGo.Publisher.ViewModels
             set
             {
                 _ApplicationRAMUsage = value;
-                //if (value > 70)
-                //{
-                //    UsageStatusIndicatorColor = new SolidColorBrush(Color.FromRgb(235, 235, 50)).Color;
-                //}
-                //else if (value > 400)
-                //{
-                //    UsageStatusIndicatorColor = new SolidColorBrush(Color.FromRgb(255, 40, 40)).Color;
-                //}
                 OnPropertyChanged(nameof(ApplicationRAMUsage));
             }
         }
+
+        private bool _LockState = false;
+        /// <summary>
+        /// lock/unlock state for AccessControl ToggleButton.
+        /// </summary>
+        public bool LockState
+        {
+            get { return _LockState; }
+            set
+            {
+                if (value)
+                    _LockState = AccessControl.UnlockAccessControl();
+                else
+                {
+                    AccessControl.LockAccessControl();
+                    _LockState = value;
+                }
+            }
+        }
+
         private bool _IsAccessControlUnlocked = false;
         public bool IsAccessControlUnlocked
         {
             get
             {
-                return
-                  _IsAccessControlUnlocked;
+                return _IsAccessControlUnlocked;
             }
             set
             {

@@ -15,7 +15,11 @@ namespace SignalGo.Publisher.Engines.Models
 
             return BitConverter.ToString(hashedBytes);
         }
-
+        /// <summary>
+        /// compute input hash using SHA256 Algoritm
+        /// </summary>
+        /// <param name="input">string to hash</param>
+        /// <returns>Hashed string</returns>
         public static string ComputeHash(string input)
         {
             byte[] inputBytes = Encoding.UTF8.GetBytes(input);
@@ -38,10 +42,6 @@ namespace SignalGo.Publisher.Engines.Models
             return BitConverter.ToString(hashedBytes);
         }
         string mEncryptedPassword;
-        // Change the two values below to be something other than the example.
-        // Once changed and in use, do not change the value below again or you
-        // won't be able to decrypt previously stored passwords.
-        string mByteArray = "%$#>#%232s+as#l)URa0$!@";
         byte[] mInitializationVector = { 0x01, 0x34, 0x56, 0x78, 0x90, 0xAB, 0xf7, 0xEF };
 
         public PasswordEncoder()
@@ -50,12 +50,12 @@ namespace SignalGo.Publisher.Engines.Models
 
         public PasswordEncoder(string inPassword)
         {
-            mEncryptedPassword = EncryptWithByteArray(inPassword, mByteArray);
+            mEncryptedPassword = EncryptWithByteArray(inPassword, ByteArray);
         }
 
         public string EncryptWithByteArray(string inPassword)
         {
-            mEncryptedPassword = EncryptWithByteArray(inPassword, mByteArray);
+            mEncryptedPassword = EncryptWithByteArray(inPassword, ByteArray);
             return mEncryptedPassword;
         }
 
@@ -81,11 +81,11 @@ namespace SignalGo.Publisher.Engines.Models
 
         public string DecryptWithByteArray()
         {
-            return DecryptWithByteArray(mEncryptedPassword, mByteArray);
+            return DecryptWithByteArray(mEncryptedPassword, ByteArray);
         }
         public string DecryptWithByteArray(string password)
         {
-            return DecryptWithByteArray(password, mByteArray);
+            return DecryptWithByteArray(password, ByteArray);
         }
         private string DecryptWithByteArray(string strText, string strEncrypt)
         {
@@ -114,10 +114,6 @@ namespace SignalGo.Publisher.Engines.Models
             set { mEncryptedPassword = value; }
         }
 
-        public string ByteArray
-        {
-            get { return mByteArray; }
-            set { mByteArray = value; }
-        }
+        public string ByteArray { get; set; } = "%$#>#%232s+as#l)URa0$!@";
     }
 }

@@ -21,6 +21,7 @@ using System.Windows.Media.Imaging;
 using SignalGo.Publisher.Models.Extra;
 using System.Collections.Generic;
 using SignalGo.Publisher.Extensions;
+using SignalGo.Publisher.Engines.Security;
 
 namespace SignalGo.Publisher.ViewModels
 {
@@ -200,6 +201,7 @@ namespace SignalGo.Publisher.ViewModels
                 OnPropertyChanged(nameof(SelectedServerInfo));
             }
         }
+
         private string _fileContent;
         public string SelectedServerFile { get; set; }
         public string FileContent
@@ -540,7 +542,8 @@ namespace SignalGo.Publisher.ViewModels
                     {
                         foreach (ServerInfo item in CurrentServerSettingInfo.ServerInfo.Where(s => s.IsChecked))
                         {
-                            item.HasAccess();
+                            AccessControl.AuthorizeServer(item);
+                            //item.HasAccess();
                         }
                     }
                     await Task.Run(async () =>

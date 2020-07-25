@@ -56,8 +56,11 @@
                 <Button Command="{Binding BrowseTestRunnerCommand}" VerticalAlignment="Stretch" Content="Browse..." Width="100" Height="30" Margin="10,0,0,0" HorizontalAlignment="Stretch" Grid.Column="3" Grid.Row="3"/>
 
 
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom" HorizontalAlignment="Right" Grid.Row="5" Grid.Column="2" Grid.ColumnSpan="2" >
 
-                <Button Command="{Binding SaveCommand}" Grid.Row="5" Grid.Column="4" VerticalAlignment="Bottom" Content="Save" Width="100" Height="30" Margin="10,0,0,0" HorizontalAlignment="Right"/>
+                    <Button Command="{Binding SetMasterPasswordCommand}" Padding="5" VerticalAlignment="Bottom" Content="Set Master Password" Width="auto" Height="30" Margin="10,0,0,0" HorizontalAlignment="Right"/>
+                    <Button Command="{Binding SaveCommand}" Grid.Row="5" Grid.Column="4" VerticalAlignment="Bottom" Content="Save" Width="100" Height="30" Margin="10,0,0,0" HorizontalAlignment="Right"/>
+                </StackPanel>
                 <Button Command="{Binding BackCommand}" Grid.Row="5" Grid.Column="0" VerticalAlignment="Bottom" Content="Back" Width="100" Height="30" Margin="10,0,0,0" HorizontalAlignment="Left"/>
             </Grid>
         </TabItem>

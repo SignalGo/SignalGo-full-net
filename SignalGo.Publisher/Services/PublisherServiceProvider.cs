@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using SignalGo.Publisher.Extensions;
 using SignalGo.Publisher.Models.Extra;
 using ServerManagerService.Interfaces;
+using SignalGo.Publisher.Engines.Security;
 
 namespace SignalGo.Publisher.Services
 {
@@ -43,7 +44,8 @@ namespace SignalGo.Publisher.Services
             bool isAllowed = false;
             await AsyncActions.RunOnUIAsync(() =>
             {
-                isAllowed = serverInfo.HasAccess();
+                //isAllowed = serverInfo.HasAccess();
+                isAllowed = AccessControl.AuthorizeServer(serverInfo);
             });
             if (!isAllowed)
             {

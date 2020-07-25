@@ -194,7 +194,7 @@ namespace SignalGo.Publisher.Models
                 if (cancellationToken.IsCancellationRequested)
                     return;
                 QueueCommandInfo queueCommandInfo = new QueueCommandInfo(Commands.ToList());
-                await queueCommandInfo.Run(cancellationToken, caller:Name);
+                await queueCommandInfo.Run(cancellationToken, caller: Name);
             }
             catch (Exception ex)
             {

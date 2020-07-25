@@ -45,7 +45,7 @@
                 <RowDefinition/>
                 <RowDefinition/>
             </Grid.RowDefinitions>
-            <StackPanel VerticalAlignment="Top" HorizontalAlignment="Stretch" Grid.Row="0" Grid.Column="0" Orientation="Horizontal" Grid.RowSpan="2">
+            <!--<StackPanel VerticalAlignment="Top" HorizontalAlignment="Stretch" Grid.Row="0" Grid.Column="0" Orientation="Horizontal" Grid.RowSpan="2">
                 <TextBlock Margin="5"  Text="Category:"/>
                 <ComboBox SelectedIndex="0" SelectedItem="{Binding SelectedCategoryInfo}" Margin="5" x:Name="categoryCombo" ItemsSource="{Binding CurrentCategorySettingInfo}" Grid.Row="4" Grid.Column="0" BorderThickness="0.5">
                     <ComboBox.ItemTemplate>
@@ -54,7 +54,7 @@
                         </DataTemplate>
                     </ComboBox.ItemTemplate>
                 </ComboBox>
-            </StackPanel>
+            </StackPanel>-->
             <!--<WrapPanel Grid.Row="0" Grid.Column="1" Orientation="Vertical" Grid.RowSpan="2">
                 <CheckBox Content="Personal"/>
                 <CheckBox Content="Test"/>

@@ -10,7 +10,8 @@ namespace SignalGo.Publisher.Models
         {
 
         }
-        private bool _IsRestore=true;
+        private string _ApplicationMasterPassword;
+        private bool _IsRestore = true;
         private bool _IsDebug = true;
         private bool _IsRebuild = true;
         private bool _UseUiVirtualization = true;
@@ -41,6 +42,14 @@ namespace SignalGo.Publisher.Models
             Full = 1,
             Minimuum = 2,
             Quiet = 3
+        }
+        public string ApplicationMasterPassword
+        {
+            get { return _ApplicationMasterPassword; }
+            set
+            {
+                _ApplicationMasterPassword = value;
+            }
         }
 
         public TestRunnersEnum DefaultTestRunner

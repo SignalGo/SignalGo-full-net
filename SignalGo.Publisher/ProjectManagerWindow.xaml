@@ -78,12 +78,6 @@
                 </MenuItem>
             </Menu>
         </DockPanel>
-        <!--<StackPanel Orientation="Horizontal">
-            <Button Command="{Binding AddNewProjectCommand}" Content="Add new project" Padding="10" Margin="0,0,0,10"/>
-            <Button Command="{Binding ShowServersCommand}" Content="Servers" Padding="10" Margin="0,0,0,10"/>
-            <Button Command="{Binding ShowLogsCommand}" Content="Logs" Padding="10" Margin="0,0,0,10"/>
-        </StackPanel>-->
-
         <ListView x:Name="ProjectsListView" Grid.Row="1" MinWidth="150" Width="200" MaxWidth="300" ItemsSource="{Binding CurrentProjectsSettingInfo.ProjectInfo}" SelectedItem="{Binding SelectedProjectInfo}" HorizontalContentAlignment="Stretch">
             <ListView.ItemTemplate>
                 <DataTemplate>
@@ -165,7 +159,7 @@
             <StatusBarItem HorizontalAlignment="Right">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock VerticalAlignment="Center" Text="AccessControl: "/>
-                    <ToggleButton IsChecked="{Binding IsAccessControlUnlocked}" Margin="0" Width="60" Height="30" Content="AccessControl" Command="{Binding ChangeAccessControlCommand}" CommandParameter="{Binding IsChecked,RelativeSource={RelativeSource Self}}" Style="{StaticResource SwitchTypeToggleButton}" ToolTip="If Enabled, No Authorization Need For Executing Command's On Protected Server's And Password Will Not Be Asked. Except For Publishing." />
+                    <ToggleButton IsChecked="{Binding LockState}" Margin="0" Width="60" Height="30" Content="AccessControl" Command="{Binding ChangeAccessControlCommand}" CommandParameter="{Binding IsChecked,RelativeSource={RelativeSource Self}}" Style="{StaticResource SwitchTypeToggleButton}" ToolTip="If Enabled, No Authorization Need For Executing Command's On Protected Server's And Password Will Not Be Asked. Except For Publishing." />
                 </StackPanel>
             </StatusBarItem>
         </StatusBar>
