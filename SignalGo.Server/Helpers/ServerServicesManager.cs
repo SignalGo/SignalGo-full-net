@@ -5,15 +5,40 @@ using SignalGo.Shared.Converters;
 using SignalGo.Shared.DataTypes;
 using SignalGo.Shared.Helpers;
 using SignalGo.Shared.Models;
+using SignalGo.Shared.Models.ServiceReference;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace SignalGo.Server.Helpers
 {
     public class ServerServicesManager
     {
+        static Dictionary<Type, string> LoadedExamples { get; set; } = new Dictionary<Type, string>();
+
+        static void LoadExamples(ServerBase serverBase)
+        {
+            if (LoadedExamples.Count != 0)
+                return;
+            foreach (var assembly in serverBase.TestExampleAssemblies)
+            {
+                foreach (var type in assembly.GetTypes())
+                {
+                    var attribute = type.GetCustomAttributes<TestExampleAttribute>().FirstOrDefault();
+                    if (attribute != null)
+                    {
+                        foreach (var typeMethod in type.GetListOfMethods())
+                        {
+                            if (!LoadedExamples.ContainsKey(typeMethod.ReturnType))
+                                LoadedExamples.Add(typeMethod.ReturnType, JsonConvert.SerializeObject(typeMethod.Invoke(null, null), Formatting.Indented));
+                        }
+                    }
+                }
+            }
+        }
         /// <summary>
         /// send detail of service
         /// </summary>
@@ -22,6 +47,7 @@ namespace SignalGo.Server.Helpers
         private List<Type> skippedTypes = new List<Type>();
         internal ProviderDetailsInfo SendServiceDetail(string hostUrl, ServerBase serverBase)
         {
+            LoadExamples(serverBase);
             //try
             //{
             if (!hostUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase))
@@ -94,7 +120,7 @@ namespace SignalGo.Server.Helpers
                                             string baseNameOfEnum = ex.RefrenceType.Substring(0, ex.RefrenceType.LastIndexOf('.'));
                                             Type type = GetEnumType(baseNameOfEnum);
 #if (NETSTANDARD1_6 || NETCOREAPP1_1)
-                                                                if (type != null && type.GetTypeInfo().IsEnum)
+                                            if (type != null && type.GetTypeInfo().IsEnum)
 #else
                                             if (type != null && type.IsEnum)
 #endif
@@ -127,6 +153,7 @@ namespace SignalGo.Server.Helpers
                                 ExceptionsComment = exceptions,
                                 Id = id
                             };
+                            GenerateRequestAndResponseOfMethodTestExamples(info, method);
                             RuntimeTypeHelper.GetListOfUsedTypes(method.ReturnType, ref modelTypes);
                             foreach (System.Reflection.ParameterInfo paramInfo in method.GetParameters())
                             {
@@ -147,6 +174,12 @@ namespace SignalGo.Server.Helpers
                                     Comment = parameterComment,
                                     Id = id
                                 };
+                                info.Parameters.Add(new ParameterReferenceInfo()
+                                {
+                                    Name = paramInfo.Name,
+                                    Comment = parameterComment,
+                                    TypeName = paramInfo.ParameterType.GetFriendlyName(),
+                                });
 #if (!NET35)
                                 info.Requests.First().Parameters.Add(p);
 #endif
@@ -210,7 +243,7 @@ namespace SignalGo.Server.Helpers
                                         string baseNameOfEnum = ex.RefrenceType.Substring(0, ex.RefrenceType.LastIndexOf('.'));
                                         Type type = GetEnumType(baseNameOfEnum);
 #if (NETSTANDARD1_6 || NETCOREAPP1_1)
-                                                            if (type != null && type.GetTypeInfo().IsEnum)
+                                        if (type != null && type.GetTypeInfo().IsEnum)
 #else
                                         if (type != null && type.IsEnum)
 #endif
@@ -243,6 +276,7 @@ namespace SignalGo.Server.Helpers
                             ExceptionsComment = exceptions,
                             Id = id
                         };
+                        GenerateRequestAndResponseOfMethodTestExamples(info, method);
                         RuntimeTypeHelper.GetListOfUsedTypes(method.ReturnType, ref modelTypes);
                         foreach (System.Reflection.ParameterInfo paramInfo in method.GetParameters())
                         {
@@ -311,7 +345,7 @@ namespace SignalGo.Server.Helpers
                                         string baseNameOfEnum = ex.RefrenceType.Substring(0, ex.RefrenceType.LastIndexOf('.'));
                                         Type type = GetEnumType(baseNameOfEnum);
 #if (NETSTANDARD1_6 || NETCOREAPP1_1)
-                                                            if (type != null && type.GetTypeInfo().IsEnum)
+                                        if (type != null && type.GetTypeInfo().IsEnum)
 #else
                                         if (type != null && type.IsEnum)
 #endif
@@ -345,7 +379,7 @@ namespace SignalGo.Server.Helpers
                             ExceptionsComment = exceptions,
                             TestExample = hostUrl + "/" + controller.Url + "/" + method.Name
                         };
-
+                        GenerateRequestAndResponseOfMethodTestExamples(info, method);
                         RuntimeTypeHelper.GetListOfUsedTypes(method.ReturnType, ref modelTypes);
                         string testExampleParams = "";
                         foreach (System.Reflection.ParameterInfo paramInfo in method.GetParameters())
@@ -487,25 +521,41 @@ namespace SignalGo.Server.Helpers
             {
                 if (result.ProjectDomainDetailsInfo.Models.Any(x => x.FullNameSpace == type.FullName) || skippedTypes.Contains(type))
                     return;
+#if (!NETSTANDARD1_6)
+                if (type.Module.ScopeName == "System.Private.CoreLib.dll" || type.Module.ScopeName == "CommonLanguageRuntimeLibrary")
+                    return;
+#endif
                 id++;
                 result.ProjectDomainDetailsInfo.Id = id;
                 id++;
                 if (objType == SerializeObjectType.Enum)
                 {
                     List<string> items = new List<string>();
+                    List<ParameterReferenceInfo> properties = new List<ParameterReferenceInfo>();
                     foreach (Enum obj in Enum.GetValues(type))
                     {
                         int x = Convert.ToInt32(obj); // x is the integer value of enum
                         items.Add(obj.ToString() + " = " + x);
+                        var valueComment = xmlCommentLoader.GetComment(type, obj.ToString());
+                        properties.Add(new ParameterReferenceInfo()
+                        {
+                            Name = obj.ToString(),
+                            TypeName = x.ToString(),
+                            Comment = valueComment?.Summery
+                        });
                     }
-
+                    CommentOfClassInfo comment = xmlCommentLoader.GetComment(type);
                     result.ProjectDomainDetailsInfo.Models.Add(new ModelDetailsInfo()
                     {
                         Id = id,
                         Name = type.Name,
                         FullNameSpace = type.FullName,
                         ObjectType = objType,
-                        JsonTemplate = JsonConvert.SerializeObject(items, Formatting.Indented, new JsonSerializerSettings() { NullValueHandling = NullValueHandling.Include })
+                        JsonTemplate = JsonConvert.SerializeObject(items, Formatting.Indented, new JsonSerializerSettings() { NullValueHandling = NullValueHandling.Include }),
+                        IsEnum = true,
+                        Properties = properties,
+                        Comment = comment?.Summery,
+                        JsonExample = GenerateTestExamples(type)
                     });
                 }
                 else
@@ -523,14 +573,26 @@ namespace SignalGo.Server.Helpers
                             return;
                         }
 
+                        List<ParameterReferenceInfo> properties = new List<ParameterReferenceInfo>();
+
                         object instance = Activator.CreateInstance(type);
                         string jsonResult = JsonConvert.SerializeObject(instance, Formatting.Indented, new JsonSerializerSettings() { NullValueHandling = NullValueHandling.Include });
                         JObject refactorResult = (JObject)JsonConvert.DeserializeObject(jsonResult);
                         foreach (JProperty item in refactorResult.Properties())
                         {
                             PropertyInfo find = type.GetProperties().FirstOrDefault(x => x.Name == item.Name);
-                            refactorResult[item.Name] = find.PropertyType.GetFriendlyName();
+                            if (find != null)
+                                refactorResult[item.Name] = find.PropertyType.GetFriendlyName();
+                            var proeprtyComment = xmlCommentLoader.GetComment(find);
+
+                            properties.Add(new ParameterReferenceInfo()
+                            {
+                                Name = find.Name,
+                                TypeName = find.PropertyType.GetFriendlyName(),
+                                Comment = proeprtyComment?.Summery
+                            });
                         }
+
                         jsonResult = JsonConvert.SerializeObject(refactorResult, Formatting.Indented, new JsonSerializerSettings() { NullValueHandling = NullValueHandling.Include });
 
                         if (jsonResult == "{}" || jsonResult == "[]")
@@ -549,7 +611,8 @@ namespace SignalGo.Server.Helpers
                             Name = type.Name,
                             FullNameSpace = type.FullName,
                             ObjectType = objType,
-                            JsonTemplate = jsonResult
+                            JsonTemplate = jsonResult,
+                            Properties = properties
                         });
                     }
                     catch
@@ -590,6 +653,56 @@ namespace SignalGo.Server.Helpers
             }
         }
 
+        void GenerateRequestAndResponseOfMethodTestExamples(ServiceDetailsMethod serviceDetailsMethod, MethodInfo method)
+        {
+            Type returnType = method.ReturnType;
+            if (returnType.GetBaseType() == typeof(Task))
+            {
+                returnType = method.ReturnType.GetListOfGenericArguments().FirstOrDefault();
+            }
+
+            if (LoadedExamples.TryGetValue(returnType, out string responseJson))
+            {
+                serviceDetailsMethod.ResponseJsonExample = responseJson;
+            }
+
+            StringBuilder requestJson = new StringBuilder();
+            requestJson.AppendLine("{");
+            bool isFirst = true;
+            foreach (var parameter in method.GetParameters())
+            {
+                if (!isFirst)
+                    requestJson.AppendLine("    ,");
+                if (LoadedExamples.TryGetValue(parameter.ParameterType, out string parameterJson))
+                {
+                    requestJson.AppendLine($"   \"{parameter.Name}\": {parameterJson}");
+                }
+                else
+                {
+                    requestJson.AppendLine($"   \"{parameter.Name}\":");
+                    requestJson.AppendLine("    {");
+                    requestJson.AppendLine("    }");
+                }
+                isFirst = false;
+            }
+            requestJson.AppendLine("}");
+            serviceDetailsMethod.RequestJsonExample = requestJson.ToString();
+        }
+
+        string GenerateTestExamples(Type type)
+        {
+            Type returnType = type;
+            if (returnType.GetBaseType() == typeof(Task))
+            {
+                returnType = type.GetListOfGenericArguments().FirstOrDefault();
+            }
+
+            if (LoadedExamples.TryGetValue(returnType, out string responseJson))
+            {
+                return responseJson;
+            }
+            return null;
+        }
 
         internal string SendMethodParameterDetail(Type serviceType, MethodParameterDetails detail, ServerBase serverBase)
         {
