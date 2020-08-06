@@ -8,13 +8,14 @@ namespace SignalGo.Publisher.Views.Extra
     /// </summary>
     public partial class InputDialogWindow : Window
     {
-        public InputDialogWindow(string question, string title = "", string importantText = "", string defaultAnswer = "")
+        public InputDialogWindow(string question, string title = "", string importantText = "", string hintText = "", string defaultAnswer = "")
         {
             InitializeComponent();
             Title = title;
             lblQuestion.Text = question;
             lblImportantText.Text = importantText;
             txtAnswer.Password = defaultAnswer;
+            txtHintText.Text = hintText;
         }
         private void btnDialogOk_Click(object sender, RoutedEventArgs e)
         {

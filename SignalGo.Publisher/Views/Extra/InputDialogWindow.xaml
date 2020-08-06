@@ -28,6 +28,7 @@
         </WrapPanel>
         <PasswordBox Name="txtAnswer" Grid.Column="1" Grid.Row="1" MinWidth="250"/>
 
+        <TextBlock Margin="5" Name="txtHintText" Foreground="Blue" Grid.Row="2" Grid.Column="1" FontWeight="Normal" VerticalAlignment="Bottom" HorizontalAlignment="Left"  />
         <WrapPanel Grid.Row="2" Grid.ColumnSpan="2" HorizontalAlignment="Right" Margin="0,15,0,0">
             <Button IsDefault="True" Name="btnDialogOk" Click="btnDialogOk_Click" MinWidth="60" Margin="0,0,10,0">_Ok</Button>
             <Button Padding="2" IsCancel="True" MinWidth="60">_Cancel</Button>
