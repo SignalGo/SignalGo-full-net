@@ -5,11 +5,10 @@ using System.Diagnostics;
 using SignalGo.Shared.Log;
 using System.Threading.Tasks;
 using SignalGo.Publisher.Models;
-using System.Collections.Generic;
-using SignalGo.Publisher.Extensions;
 using SignalGo.Publisher.Models.Extra;
 using ServerManagerService.Interfaces;
 using SignalGo.Publisher.Engines.Security;
+using System.Linq;
 
 namespace SignalGo.Publisher.Services
 {
@@ -120,7 +119,10 @@ namespace SignalGo.Publisher.Services
             }
             finally
             {
-                ServerInfo.Servers.Remove(serverInfo);
+                if (ServerInfo.Servers.Any())
+                {
+                    ServerInfo.Servers.Remove(ServerInfo.Servers.FirstOrDefault(server => server.ServerKey == serverInfo.ServerKey));
+                }
             }
             return publisherServiceProvider;
         }
