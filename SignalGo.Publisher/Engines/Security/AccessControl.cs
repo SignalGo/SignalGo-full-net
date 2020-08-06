@@ -1,4 +1,5 @@
-﻿using SignalGo.Publisher.Models;
+﻿using SignalGo.Publisher.Extensions;
+using SignalGo.Publisher.Models;
 using SignalGo.Publisher.ViewModels;
 using SignalGo.Publisher.Views.Extra;
 using System.Diagnostics;
@@ -28,6 +29,17 @@ namespace SignalGo.Publisher.Engines.Security
         public static void LockAccessControl()
         {
             ProjectManagerWindowViewModel.This.IsAccessControlUnlocked = false;
+        }
+
+        private static bool CheckAccess()
+        {
+            InputDialogWindow inputDialog = new InputDialogWindow(question: $"Please enter your old", title: "Access Control", importantText: "MasterPassword");
+            if (inputDialog.ShowDialog() == true && inputDialog.Answer.HasValue())
+            {
+                AccessControl.CheckMasterPassword(inputDialog.Answer);
+            }
+
+            return true;
         }
         public static bool UnlockAccessControl()
         {
@@ -62,7 +74,8 @@ namespace SignalGo.Publisher.Engines.Security
             var key = serverInfo.ServerKey;
             if (ServerInfo.Servers.Any(x => x.ServerKey == key))
                 return true;
-
+            if (!serverInfo.ProtectionPassword.HasValue())
+                return true;
             ValidateAccessControlState();
             try
             {
