@@ -4,11 +4,7 @@ using SignalGo.Publisher.Engines.Models;
 using SignalGo.Publisher.Models;
 using SignalGo.Publisher.Views;
 using SignalGo.Publisher.Views.Extra;
-using SignalGo.Shared.Log;
-using System;
-using System.Collections.Generic;
 using System.Security.Cryptography;
-using System.Text;
 using System.Windows;
 
 namespace SignalGo.Publisher.ViewModels
@@ -109,7 +105,7 @@ namespace SignalGo.Publisher.ViewModels
         }
         private void ProtectServer()
         {
-            InputDialogWindow inputDialog = new InputDialogWindow("Please enter your password:");
+            InputDialogWindow inputDialog = new InputDialogWindow(question: "Please enter your password:", title: "Set Access Control", hintText: "Empty to remove.");
             if (inputDialog.ShowDialog() == true)
             {
                 if (string.IsNullOrEmpty(inputDialog.Answer))

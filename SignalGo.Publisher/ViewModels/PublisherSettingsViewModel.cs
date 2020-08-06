@@ -7,6 +7,7 @@ using System.Windows.Forms;
 using SignalGo.Publisher.Views.Extra;
 using SignalGo.Publisher.Extensions;
 using SignalGo.Publisher.Engines.Models;
+using SignalGo.Publisher.Engines.Security;
 
 namespace SignalGo.Publisher.ViewModels
 {
@@ -54,20 +55,39 @@ namespace SignalGo.Publisher.ViewModels
                 return UserSettingInfo.Current;
             }
         }
-
+        private bool CheckAccess()
+        {
+            if (CurrentUserSettingInfo.UserSettings.ApplicationMasterPassword.HasValue())
+            {
+                InputDialogWindow input = new InputDialogWindow(question: $"Please enter your old", title: "Access Control", importantText: "MasterPassword");
+                if (input.ShowDialog() == true && input.Answer.HasValue())
+                {
+                    return AccessControl.CheckMasterPassword(input.Answer);
+                }
+            }
+            return false;
+        }
         public void SetMasterPassword()
         {
-
-            InputDialogWindow inputDialog = new InputDialogWindow($"Please enter your ", "Access Control", "MasterPassword");
-            if (inputDialog.ShowDialog() == true && inputDialog.Answer.HasValue())
+            //if (!CheckAccess())
+            //{
+            //    if (MessageBox.Show("You'r secret does not match. Forgot Password?", "Access Control", MessageBoxButtons.YesNo) == DialogResult.Yes)
+            //    {
+            //        MessageBox.Show("I sent you an email, please verify it.");
+            //    }
+            //    return;
+            //}
+            var inputDialog = new InputDialogWindow(question: $"Please enter your ", title: "Access Control", importantText: "MasterPassword", hintText: "Empty to remove.");
+            if (inputDialog.ShowDialog() == true)
             {
+                //if (inputDialog.Answer.HasValue())
                 CurrentUserSettingInfo.UserSettings.ApplicationMasterPassword = PasswordEncoder.ComputeHash(inputDialog.Answer);
+                //else
+                //CurrentUserSettingInfo.UserSettings.ApplicationMasterPassword = null;
                 SaveCommand.Execute();
             }
             else
-            {
                 MessageBox.Show("Couldn't Set Master Password.");
-            }
         }
         public void BrowseCommandRunnerLogPath()
         {
