@@ -44,10 +44,6 @@ namespace SignalGo.Publisher.Models
                             TestRunnerExecutableFile = "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Enterprise\\Common7\\IDE\\CommonExtensions\\Microsoft\\TestWindow\\vstest.console.exe",
                             StartPriority = "Normal",
                             MaxThreads = 1,
-                            //IsDebug = true,
-                            //IsRebuild = true,
-                            //IsRestore = true,
-                            //IsUiVirtualization = true
                         }
                     };
                 }
