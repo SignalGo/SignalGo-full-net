@@ -8,8 +8,4 @@
     <PackageReference Include="System.ComponentModel.Annotations" Version="4.7.0" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\SignalGo.Publisher.Shared\SignalGo.Publisher.Shared.csproj" />
-  </ItemGroup>
-
 </Project>

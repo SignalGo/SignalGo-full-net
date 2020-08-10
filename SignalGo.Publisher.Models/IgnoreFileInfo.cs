@@ -10,7 +10,6 @@ namespace SignalGo.Publisher.Models
 
         }
 
-        [Key]
         public int ID { get; set; }
         public string FileName { get; set; }
         public bool IsEnabled { get; set; }
