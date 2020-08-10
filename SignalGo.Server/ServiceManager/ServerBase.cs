@@ -136,6 +136,10 @@ namespace SignalGo.Server.ServiceManager
         /// </summary>
         internal List<Assembly> ModellingReferencesAssemblies { get; set; } = new List<Assembly>();
         /// <summary>
+        /// assemblies of test examples to manage examples of test cases and documantation
+        /// </summary>
+        internal List<Assembly> TestExampleAssemblies { get; set; } = new List<Assembly>();
+        /// <summary>
         /// task ids of client calling methods etc
         /// key is task id and value is client id
         /// </summary>
@@ -247,6 +251,19 @@ namespace SignalGo.Server.ServiceManager
         public void AddAssemblyToSkipServiceReferences(Assembly assembly)
         {
             ModellingReferencesAssemblies.Add(assembly);
+        }
+
+        /// <summary>
+        /// add test example assmblies by type
+        /// </summary>
+        /// <param name="types"></param>
+        public void AddTestExamplesAssemblies(params Type[] types)
+        {
+#if (NETSTANDARD1_6)
+            throw new NotSupportedException();
+#else
+            TestExampleAssemblies.AddRange(types.Select(x => x.Assembly));
+#endif
         }
 
         internal void DisposeClient(ClientInfo client, TcpClient tcpClient, string reason)

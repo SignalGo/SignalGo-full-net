@@ -29,6 +29,17 @@ namespace SignalGo.Shared.Helpers
     }
 
     /// <summary>
+    /// commment of class type
+    /// </summary>
+    public class CommentOfPropertyInfo
+    {
+        /// <summary>
+        /// summery of comment
+        /// </summary>
+        public string Summery { get; set; }
+    }
+
+    /// <summary>
     /// comment of method
     /// </summary>
     public class CommentOfMethodInfo
@@ -61,7 +72,7 @@ namespace SignalGo.Shared.Helpers
     public class CommentOfParameterInfo
     {
         /// <summary>
-        /// name of parameter
+        /// name
         /// </summary>
         public string Name { get; set; }
         /// <summary>
@@ -133,6 +144,21 @@ namespace SignalGo.Shared.Helpers
         }
 
         /// <summary>
+        /// get comment of property
+        /// </summary>
+        /// <returns>comment of method</returns>
+        public CommentOfPropertyInfo GetComment(PropertyInfo propertyInfo)
+        {
+            XmlElement documentation = GetElementFromParameter(propertyInfo);
+            if (documentation == null)
+                return null;
+            return new CommentOfPropertyInfo()
+            {
+                Summery = documentation["summary"]?.InnerText?.Trim(),
+            };
+        }
+
+        /// <summary>
         /// get comment of class type
         /// </summary>
         /// <param name="classInfo">your type</param>
@@ -140,6 +166,33 @@ namespace SignalGo.Shared.Helpers
         public CommentOfClassInfo GetComment(Type classInfo)
         {
             XmlElement documentation = GetElementFromType(classInfo);
+            //if (documentation == null)
+            //    return null;
+            List<CommentOfMethodInfo> methods = new List<CommentOfMethodInfo>();
+            foreach (MethodInfo item in classInfo.GetListOfMethods())
+            {
+                CommentOfMethodInfo comment = GetCommment(item);
+                if (comment == null)
+                    continue;
+                methods.Add(comment);
+            }
+            return new CommentOfClassInfo()
+            {
+                Name = classInfo.Name,
+                Summery = documentation == null ? null : documentation["summary"]?.InnerText?.Trim(),
+                Methods = methods
+            };
+        }
+
+        /// <summary>
+        /// get comment of Enum parameter
+        /// </summary>
+        /// <param name="classInfo">your type</param>
+        /// <param name="enumName"></param>
+        /// <returns>comment of class</returns>
+        public CommentOfClassInfo GetComment(Type classInfo, string enumName)
+        {
+            XmlElement documentation = GetElementFromName(classInfo, 'F', enumName);
             //if (documentation == null)
             //    return null;
             List<CommentOfMethodInfo> methods = new List<CommentOfMethodInfo>();
@@ -204,6 +257,11 @@ namespace SignalGo.Shared.Helpers
             }
 
             return GetElementFromName(methodInfo.DeclaringType, 'M', string.IsNullOrEmpty(parameters) ? methodInfo.Name : methodInfo.Name + "(" + parameters + ")");
+        }
+
+        private XmlElement GetElementFromParameter(PropertyInfo propertyInfo)
+        {
+            return GetElementFromName(propertyInfo.DeclaringType, 'P', propertyInfo.Name);
         }
 
         private string GetParameterFullName(Type type)
