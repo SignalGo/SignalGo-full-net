@@ -1,4 +1,4 @@
-﻿using SignalGo.Publisher.Shared.Models;
+﻿using SignalGo.Publisher.Models;
 using SignalGo.Server.ServiceManager;
 using SignalGo.ServiceManager.Core.BaseViewModels;
 using SignalGo.ServiceManager.Core.Models;
