@@ -9,7 +9,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Converters\" />
+    <ProjectReference Include="..\SignalGo.Publisher.Models\SignalGo.Publisher.Models.csproj" />
   </ItemGroup>
 
 </Project>
