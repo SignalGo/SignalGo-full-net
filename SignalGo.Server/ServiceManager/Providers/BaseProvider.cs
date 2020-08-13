@@ -177,6 +177,19 @@ namespace SignalGo.Server.ServiceManager.Providers
                     if (parameters == null)
                         parameters = new Shared.Models.ParameterInfo[0];
                     List<object> parametersValues = FixParametersCount(taskId, service, method, parameters.ToList(), serverBase, client, allMethods, customDataExchanger, jsonParameters, out List<BaseValidationRuleInfoAttribute> validationErrors, ref keyParameterValue);
+                    
+                    if (parametersValues.Count == 1 && parametersValues[0] == null)
+                    {
+                        var methodParameters = method.GetParameters();
+                        if (methodParameters.Length == 1 && methodParameters[0].ParameterType == typeof(Shared.Models.ParameterInfo[]))
+                        {
+                            parametersValues[0] = parameters.ToArray();
+                        }
+                        else if (methodParameters.Length == 1 && methodParameters[0].ParameterType == typeof(List<Shared.Models.ParameterInfo>))
+                        {
+                            parametersValues[0] = parameters.ToList();
+                        }
+                    }
 
                     if (validationErrors != null && validationErrors.Count > 0)
                     {
