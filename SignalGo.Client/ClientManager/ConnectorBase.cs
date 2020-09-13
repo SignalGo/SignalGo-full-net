@@ -1225,6 +1225,28 @@ namespace SignalGo.Client.ClientManager
             return objectInstance;
         }
 
+        /// <summary>
+        /// register client service class, it's client methods that server call them
+        /// use this method when you have a class without inheritance client interface for Generic stuff and remove dupplicate works
+        /// </summary>
+        /// <param name="type">type of your class</param>
+        /// <param name="interfaceType">type of generated interface</param>
+        /// <returns>return instance if type</returns>
+        public object RegisterClientService(Type type, Type interfaceType)
+        {
+            if (IsDisposed)
+                throw new ObjectDisposedException("Connector");
+            string name = interfaceType.GetClientServiceName(true);
+
+            object objectInstance = Activator.CreateInstance(type);
+            //var duplex = objectInstance as ClientDuplex;
+            //duplex.Connector = this;
+
+            Callbacks.TryAdd(name, new KeyValue<SynchronizationContext, object>(SynchronizationContext.Current, objectInstance));
+            OperationContract.SetConnector(objectInstance, this);
+            return objectInstance;
+        }
+
 #if (NET40 || NET35)
         Func<CompressMode, string> ReadJsonFromStreamFunction { get; set; }
 #else
