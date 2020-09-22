@@ -625,6 +625,7 @@ namespace SignalGo.Shared.Converters
         /// <returns></returns>
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
+            reader.FloatParseHandling = FloatParseHandling.Double;
             if (CanIgnoreCustomDataExchanger(objectType, existingValue))
             {
                 while (reader.Read())
@@ -1021,7 +1022,6 @@ namespace SignalGo.Shared.Converters
             //value of property
             string propertyName = (string)reader.Value;
             bool canIgnore = isIgnore ? true : CanIgnoreCustomDataExchanger(objectType, instance);
-
             if (reader.Read())
             {
                 if (propertyName == idProperty)
