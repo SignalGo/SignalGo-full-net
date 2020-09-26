@@ -119,7 +119,9 @@ namespace SignalGo.Server.ServiceManager.Providers
                     List<ClientLimitationAttribute> clientLimitationAttribute = new List<ClientLimitationAttribute>();
                     List<ConcurrentLockAttribute> concurrentLockAttributes = new List<ConcurrentLockAttribute>();
                     List<CustomOutputSerializerAttribute> customOutputSerializerAttributes = new List<CustomOutputSerializerAttribute>();
-
+#if (!NETSTANDARD1_6)
+                    securityAttributes.AddRange(serviceType.GetCustomAttributes(typeof(ISecurityContract), true).Cast<ISecurityContract>());
+#endif
                     IEnumerable<MethodInfo> allMethods = GetMethods(client, methodName, parameters, serviceType, customDataExchanger, customOutputSerializerAttributes, securityAttributes, clientLimitationAttribute, concurrentLockAttributes, canTakeMethod);
                     method = allMethods.FirstOrDefault();
                     //if (method == null && !string.IsNullOrEmpty(jsonParameters))
