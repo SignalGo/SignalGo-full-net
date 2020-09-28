@@ -476,6 +476,20 @@ namespace SignalGo.Server.ServiceManager.Providers
                                 {
 
                                 }
+
+                                if (client.CustomAsyncDisposableItems.Count > 0 && client.CustomAsyncDisposableItems.TryGetValue(taskId, out List<ICustomAsyncDisposable> customAsyncDisposableItems))
+                                {
+                                    foreach (var item in customAsyncDisposableItems)
+                                    {
+                                        if (!item.IsDisposed)
+                                        {
+                                            if (item.IsThrowWhenNotDisposed)
+                                                throw new Exception($"You forgot to dispose object of type {item.GetType().FullName} int method {methodName} int service {serviceName}");
+                                            await item.CustomDisposeAsync();
+                                        }
+                                    }
+                                }
+
                                 if (result is FileActionResult fResult)
                                     fileActionResult = fResult;
                                 else

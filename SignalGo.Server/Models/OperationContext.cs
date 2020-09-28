@@ -13,6 +13,7 @@ namespace SignalGo.Server.Models
 {
     public class OperationContext
     {
+        public long TaskId { get; set; }
         internal static ConcurrentDictionary<int, ServerBase> CurrentTaskServerTasks = new ConcurrentDictionary<int, ServerBase>();
         internal static ServerBase CurrentTaskServer
         {
@@ -37,10 +38,11 @@ namespace SignalGo.Server.Models
             get
             {
                 ServerBase currentServer = CurrentTaskServer;
-                if (Task.CurrentId != null && currentServer != null && currentServer.TaskOfClientInfoes.TryGetValue(Task.CurrentId.GetValueOrDefault(), out string clientId))
+                var taskId = Task.CurrentId;
+                if (taskId != null && currentServer != null && currentServer.TaskOfClientInfoes.TryGetValue(taskId.GetValueOrDefault(), out string clientId))
                 {
                     if (currentServer.Clients.TryGetValue(clientId, out ClientInfo clientInfo))
-                        return new OperationContext() { Client = clientInfo, ClientId = clientId, ServerBase = currentServer };
+                        return new OperationContext() { Client = clientInfo, ClientId = clientId, ServerBase = currentServer, TaskId = taskId.GetValueOrDefault() };
                 }
                 return null;
             }

@@ -1,9 +1,11 @@
-﻿using SignalGo.Server.ServiceManager;
+﻿using SignalGo.Server.Helpers;
+using SignalGo.Server.ServiceManager;
 using SignalGo.Shared.DataTypes;
 using SignalGo.Shared.Http;
 using SignalGo.Shared.IO;
 using SignalGo.Shared.Models;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Net.Sockets;
 using System.Threading;
@@ -58,6 +60,18 @@ namespace SignalGo.Server.Models
         {
             CurrentClientServer = serverBase;
         }
+
+        private ConcurrentDictionary<long, List<ICustomAsyncDisposable>> _CustomAsyncDisposableItems;
+        public ConcurrentDictionary<long, List<ICustomAsyncDisposable>> CustomAsyncDisposableItems
+        {
+            get
+            {
+                if (_CustomAsyncDisposableItems == null)
+                    _CustomAsyncDisposableItems = new ConcurrentDictionary<long, List<ICustomAsyncDisposable>>();
+                return _CustomAsyncDisposableItems;
+            }
+        }
+
         /// <summary>
         /// current client server
         /// </summary>
@@ -149,7 +163,6 @@ namespace SignalGo.Server.Models
         /// lock for this client
         /// </summary>
         public SemaphoreSlim LockWaitToRead { get; set; } = new SemaphoreSlim(1, 1);
-
     }
 
     /// <summary>
