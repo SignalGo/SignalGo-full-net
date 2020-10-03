@@ -297,7 +297,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 }
             }
 
-
+            string realmethodName = methodName;
             methodName = methodName.ToLower();
 
             lines.RemoveAt(lines.Count - 1);
@@ -377,7 +377,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     }
                 }
 
-                CallMethodResultInfo<OperationContext> result = await CallHttpMethod(client, address, methodName, values, jsonParameters, serverBase, method, data, newLine, null, null);
+                CallMethodResultInfo<OperationContext> result = await CallHttpMethod(client, address, realmethodName, methodName, values, jsonParameters, serverBase, method, data, newLine, null, null);
                 serviceType = result.ServiceType;
 
                 //}
@@ -433,7 +433,7 @@ namespace SignalGo.Server.ServiceManager.Providers
 
             try
             {
-                CallMethodResultInfo<OperationContext> result = await CallHttpMethod(client, "", "-noName-", null, null, serverBase, method, null, newLine, null, x => x.GetCustomAttributes<HomePageAttribute>().Count() > 0);
+                CallMethodResultInfo<OperationContext> result = await CallHttpMethod(client, "", "-noName-", "-noName-", null, null, serverBase, method, null, newLine, null, x => x.GetCustomAttributes<HomePageAttribute>().Count() > 0);
                 serviceType = result.ServiceType;
             }
             catch (Exception ex)
@@ -459,7 +459,7 @@ namespace SignalGo.Server.ServiceManager.Providers
             }
 
         }
-        internal static async Task<CallMethodResultInfo<OperationContext>> CallHttpMethod(HttpClientInfo client, string address, string methodName, IEnumerable<Shared.Models.ParameterInfo> values, string jsonParameters, ServerBase serverBase, MethodInfo method
+        internal static async Task<CallMethodResultInfo<OperationContext>> CallHttpMethod(HttpClientInfo client, string address, string realMethodName, string methodName, IEnumerable<Shared.Models.ParameterInfo> values, string jsonParameters, ServerBase serverBase, MethodInfo method
             , string data, string newLine, HttpPostedFileInfo fileInfo, Func<MethodInfo, bool> canTakeMethod)
         {
             if (values != null)
@@ -469,7 +469,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     item.Value = null;
                 }
             }
-            CallMethodResultInfo<OperationContext> result = await CallMethod(address, _guid, methodName, values?.ToArray(), jsonParameters, client, "", serverBase, fileInfo, canTakeMethod);
+            CallMethodResultInfo<OperationContext> result = await CallMethod(address, _guid, realMethodName, methodName, values?.ToArray(), jsonParameters, client, "", serverBase, fileInfo, canTakeMethod);
 
             method = result.Method;
 
@@ -796,7 +796,7 @@ namespace SignalGo.Server.ServiceManager.Providers
 
 
 
-
+            var realMethodName = methodName;
             methodName = methodName.ToLower();
             lines.RemoveAt(lines.Count - 1);
             address = "";
@@ -859,7 +859,7 @@ namespace SignalGo.Server.ServiceManager.Providers
 
 
 
-                CallMethodResultInfo<OperationContext> result = await CallHttpMethod(client, address, methodName, values, jsonParameters, serverBase, method, data, newLine, fileInfo, null);
+                CallMethodResultInfo<OperationContext> result = await CallHttpMethod(client, address, realMethodName, methodName, values, jsonParameters, serverBase, method, data, newLine, fileInfo, null);
 
                 serviceType = result.ServiceType;
                 serviceInstance = result.ServiceInstance;

@@ -27,7 +27,7 @@ namespace SignalGo.Server.ServiceManager.Providers
         {
             try
             {
-                CallMethodResultInfo<OperationContext> result = await CallMethod(callInfo.ServiceName, callInfo.Guid, callInfo.MethodName, callInfo.Parameters.ToArray(), null, client, json, serverBase, null, null);
+                CallMethodResultInfo<OperationContext> result = await CallMethod(callInfo.ServiceName, callInfo.Guid, callInfo.MethodName, callInfo.MethodName, callInfo.Parameters.ToArray(), null, client, json, serverBase, null, null);
                 return result.CallbackInfo;
             }
             finally
@@ -43,7 +43,7 @@ namespace SignalGo.Server.ServiceManager.Providers
             return serverBase.RegisteredServiceTypes.ContainsKey(serviceName);
         }
 
-        public static Task<CallMethodResultInfo<OperationContext>> CallMethod(string serviceName, string guid, string methodName, SignalGo.Shared.Models.ParameterInfo[] parameters, string jsonParameters, ClientInfo client, string json, ServerBase serverBase, HttpPostedFileInfo fileInfo, Func<MethodInfo, bool> canTakeMethod)
+        public static Task<CallMethodResultInfo<OperationContext>> CallMethod(string serviceName, string guid,string realMethodName, string methodName, SignalGo.Shared.Models.ParameterInfo[] parameters, string jsonParameters, ClientInfo client, string json, ServerBase serverBase, HttpPostedFileInfo fileInfo, Func<MethodInfo, bool> canTakeMethod)
         {
             return Task.Run(async () =>
             {
@@ -142,7 +142,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                                 return x.GetCustomAttribute<HomePageAttribute>() != null;
                             }).FirstOrDefault();
                             if (parameters == null || parameters.Length == 0)
-                                parameters = new Shared.Models.ParameterInfo[] { new Shared.Models.ParameterInfo() { Value = methodName } };
+                                parameters = new Shared.Models.ParameterInfo[] { new Shared.Models.ParameterInfo() { Value = realMethodName } };
                         }
                     }
 
