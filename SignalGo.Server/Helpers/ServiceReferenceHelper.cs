@@ -95,8 +95,9 @@ namespace SignalGo.Server.Helpers
         /// <param name="nameSpace"></param>
         /// <param name="serverBase"></param>
         /// <returns></returns>
-        public NamespaceReferenceInfo GetServiceReferenceCSharpCode(string nameSpace, ServerBase serverBase)
+        public NamespaceReferenceInfo GetServiceReferenceCSharpCode(string nameSpace, ServerBase serverBase, string serviceMethodName)
         {
+            serviceMethodName = serviceMethodName.ToLower().Trim();
             NamespaceReferenceInfo.Name = nameSpace;
             ModellingReferencesAssemblies = serverBase.ModellingReferencesAssemblies;
             AddUsingIfNotExist(typeof(ServiceContractAttribute));
@@ -116,31 +117,31 @@ namespace SignalGo.Server.Helpers
                 if (!generatedServices.Contains(serviceInfo.Key) && attributes.Any(x => x.ServiceType == ServiceType.ServerService && x.GetServiceName(false) == serviceInfo.Key))
                 {
                     generatedServices.Add(serviceInfo.Key);
-                    GenerateServiceClass(serviceInfo.Key, serviceInfo.Value, ClassReferenceType.ServiceLevel, ServiceType.ServerService);
+                    GenerateServiceClass(serviceInfo.Key, serviceInfo.Value, ClassReferenceType.ServiceLevel, ServiceType.ServerService, serviceMethodName);
                 }
 
                 if (!generatedServices.Contains(serviceInfo.Key) && attributes.Any(x => x.ServiceType == ServiceType.ClientService && ServiceContractExtensions.GetServiceNameWithGeneric(serviceInfo.Value, x.GetServiceName(false)) == serviceInfo.Key))
                 {
                     generatedServices.Add(serviceInfo.Key);
-                    GenerateServiceClass(serviceInfo.Key, serviceInfo.Value, ClassReferenceType.CallbackLevel, ServiceType.ClientService);
+                    GenerateServiceClass(serviceInfo.Key, serviceInfo.Value, ClassReferenceType.CallbackLevel, ServiceType.ClientService, serviceMethodName);
                 }
 
                 if (!generatedServices.Contains(serviceInfo.Key) && attributes.Any(x => x.ServiceType == ServiceType.StreamService && x.GetServiceName(false) == serviceInfo.Key))
                 {
                     generatedServices.Add(serviceInfo.Key);
-                    GenerateServiceClass(serviceInfo.Key, serviceInfo.Value, ClassReferenceType.StreamLevel, ServiceType.StreamService);
+                    GenerateServiceClass(serviceInfo.Key, serviceInfo.Value, ClassReferenceType.StreamLevel, ServiceType.StreamService, serviceMethodName);
                 }
 
                 if (!generatedServices.Contains(serviceInfo.Key) && attributes.Any(x => x.ServiceType == ServiceType.OneWayService && x.GetServiceName(false) == serviceInfo.Key))
                 {
                     generatedServices.Add(serviceInfo.Key);
-                    GenerateServiceClass(serviceInfo.Key, serviceInfo.Value, ClassReferenceType.OneWayLevel, ServiceType.OneWayService);
+                    GenerateServiceClass(serviceInfo.Key, serviceInfo.Value, ClassReferenceType.OneWayLevel, ServiceType.OneWayService, serviceMethodName);
                 }
 
                 if (!generatedServices.Contains(serviceInfo.Key) && (attributes.Any(x => x.ServiceType == ServiceType.HttpService && x.GetServiceName(false) == serviceInfo.Key) || attributes.Length == 0))
                 {
                     generatedServices.Add(serviceInfo.Key);
-                    GenerateServiceClass(serviceInfo.Key, serviceInfo.Value, ClassReferenceType.HttpServiceLevel, ServiceType.HttpService);
+                    GenerateServiceClass(serviceInfo.Key, serviceInfo.Value, ClassReferenceType.HttpServiceLevel, ServiceType.HttpService, serviceMethodName);
                 }
             }
             //foreach (var serviceInfo in serverBase.RegisteredServiceTypes)
@@ -194,7 +195,7 @@ namespace SignalGo.Server.Helpers
         private List<Type> typeGenerated = new List<Type>();
         private List<MethodInfo> methodGenerated = new List<MethodInfo>();
 
-        private void GenerateServiceClass(string serviceName, Type type, ClassReferenceType classReferenceType, ServiceType serviceTypeEnum)
+        private void GenerateServiceClass(string serviceName, Type type, ClassReferenceType classReferenceType, ServiceType serviceTypeEnum, string serviceMethodName)
         {
             string typeName = type.Name.Split('`')[0];
             if (classReferenceType == ClassReferenceType.CallbackLevel && type.GetIsGenericType())

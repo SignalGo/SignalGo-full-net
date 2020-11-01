@@ -37,7 +37,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 {
                     if (client.RequestHeaders.ContainsKey("content-type") && client.GetRequestHeaderValue("content-type") == "SignalGo Service Reference")
                     {
-                        await SendSignalGoServiceReference(client, serverBase);
+                        await SendSignalGoServiceReference(client, serverBase, methodName);
                     }
                     else
                     {
@@ -65,7 +65,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     }
                     else if (client.RequestHeaders["content-type"] != null && client.GetRequestHeaderValue("content-type") == "SignalGo Service Reference")
                     {
-                        await SendSignalGoServiceReference(client, serverBase);
+                        await SendSignalGoServiceReference(client, serverBase, methodName);
                     }
                     else
                     {
@@ -904,7 +904,7 @@ namespace SignalGo.Server.ServiceManager.Providers
         /// send service reference data to client
         /// </summary>
         /// <param name="client"></param>
-        internal static async Task SendSignalGoServiceReference(HttpClientInfo client, ServerBase serverBase)
+        internal static async Task SendSignalGoServiceReference(HttpClientInfo client, ServerBase serverBase, string methodName)
         {
             try
             {
@@ -930,7 +930,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 {
                     IsRenameDuplicateMethodNames = client.RequestHeaders["selectedLanguage"].FirstOrDefault() == "1",
                     ClientServiceReferenceConfigInfo = clientServiceReferenceConfigInfo
-                }.GetServiceReferenceCSharpCode(client.GetRequestHeaderValue("servicenamespace"), serverBase);
+                }.GetServiceReferenceCSharpCode(client.GetRequestHeaderValue("servicenamespace"), serverBase, methodName);
 
                 string result = ServerSerializationHelper.SerializeObject(referenceData, serverBase);
                 client.ResponseHeaders["Content-Type"] = "text/html; charset=utf-8".Split(',');
