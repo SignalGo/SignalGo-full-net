@@ -43,7 +43,7 @@ namespace SignalGo.Server.ServiceManager.Providers
             return serverBase.RegisteredServiceTypes.ContainsKey(serviceName);
         }
 
-        public static Task<CallMethodResultInfo<OperationContext>> CallMethod(string serviceName, string guid,string realMethodName, string methodName, SignalGo.Shared.Models.ParameterInfo[] parameters, string jsonParameters, ClientInfo client, string json, ServerBase serverBase, HttpPostedFileInfo fileInfo, Func<MethodInfo, bool> canTakeMethod)
+        public static Task<CallMethodResultInfo<OperationContext>> CallMethod(string serviceName, string guid, string realMethodName, string methodName, SignalGo.Shared.Models.ParameterInfo[] parameters, string jsonParameters, ClientInfo client, string json, ServerBase serverBase, HttpPostedFileInfo fileInfo, Func<MethodInfo, bool> canTakeMethod)
         {
             return Task.Run(async () =>
             {
@@ -179,7 +179,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     if (parameters == null)
                         parameters = new Shared.Models.ParameterInfo[0];
                     List<object> parametersValues = FixParametersCount(taskId, service, method, parameters.ToList(), serverBase, client, allMethods, customDataExchanger, jsonParameters, out List<BaseValidationRuleInfoAttribute> validationErrors, ref keyParameterValue);
-                    
+
                     if (parametersValues.Count == 1 && parametersValues[0] == null)
                     {
                         var methodParameters = method.GetParameters();
@@ -612,7 +612,6 @@ namespace SignalGo.Server.ServiceManager.Providers
         /// <returns></returns>
         private static List<object> FixParametersCount(int taskId, object service, MethodInfo method, List<SignalGo.Shared.Models.ParameterInfo> parameters, ServerBase serverBase, ClientInfo client, IEnumerable<MethodInfo> allMethods, List<CustomDataExchangerAttribute> customDataExchanger, string jsonParameters, out List<BaseValidationRuleInfoAttribute> validationErrors, ref string keyParameterValue)
         {
-
             List<object> parametersValues = new List<object>();
             System.Reflection.ParameterInfo[] methodParameters = method.GetParameters();
             Dictionary<string, object> parametersKeyValues = new Dictionary<string, object>();
@@ -633,11 +632,16 @@ namespace SignalGo.Server.ServiceManager.Providers
                 return FixParametersCount(taskId, service, method, parameters, serverBase, client, allMethods, customDataExchanger, null, out validationErrors, ref keyParameterValue);
             }
 
-            //validation of methods
-            foreach (BaseValidationRuleInfoAttribute item in method.GetCustomAttributes<BaseValidationRuleInfoAttribute>(true))
+            bool hasIgnoreValidation = method.GetCustomAttributes<IgnoreValidationsAttribute>(true).Length > 0;
+
+            if (!hasIgnoreValidation)
             {
-                item.Initialize(service, method, parametersKeyValues, null, null, null, null);
-                serverBase.ValidationRuleInfoManager.AddRule(taskId, item);
+                //validation of methods
+                foreach (BaseValidationRuleInfoAttribute item in method.GetCustomAttributes<BaseValidationRuleInfoAttribute>(true))
+                {
+                    item.Initialize(service, method, parametersKeyValues, null, null, null, null);
+                    serverBase.ValidationRuleInfoManager.AddRule(taskId, item);
+                }
             }
 
             //for stop finding noname to make faster
@@ -690,32 +694,42 @@ namespace SignalGo.Server.ServiceManager.Providers
                     value = GetDefaultValueOfParameter(methodParameter);
                     parametersValues.Add(value);
                 }
-                //validation of parameters
-                foreach (BaseValidationRuleInfoAttribute item in methodParameter.GetCustomAttributes<BaseValidationRuleInfoAttribute>(true))
+                if (!hasIgnoreValidation)
                 {
-                    item.Initialize(service, method, parametersKeyValues, null, methodParameter, null, value);
-                    serverBase.ValidationRuleInfoManager.AddRule(taskId, item);
+                    //validation of parameters
+                    foreach (BaseValidationRuleInfoAttribute item in methodParameter.GetCustomAttributes<BaseValidationRuleInfoAttribute>(true))
+                    {
+                        item.Initialize(service, method, parametersKeyValues, null, methodParameter, null, value);
+                        serverBase.ValidationRuleInfoManager.AddRule(taskId, item);
+                    }
+                    if (SerializeHelper.GetTypeCodeOfObject(methodParameter.ParameterType) == SerializeObjectType.Object)
+                        serverBase.ValidationRuleInfoManager.AddObjectPropertyAsChecked(taskId, methodParameter.ParameterType, value, null, null, null);
                 }
-                if (SerializeHelper.GetTypeCodeOfObject(methodParameter.ParameterType) == SerializeObjectType.Object)
-                    serverBase.ValidationRuleInfoManager.AddObjectPropertyAsChecked(taskId, methodParameter.ParameterType, value, null, null, null);
             }
-            //get list of validation errors of calls
-            validationErrors = serverBase.ValidationRuleInfoManager.CalculateValidationsOfTask((parameterName, newValue) =>
+            if (!hasIgnoreValidation)
             {
-                parameterName = parameterName.ToLower();
-                //change property value, get value from validation and change it to property
-                if (parametersKeyValues.ContainsKey(parameterName))
+                //get list of validation errors of calls
+                validationErrors = serverBase.ValidationRuleInfoManager.CalculateValidationsOfTask((parameterName, newValue) =>
                 {
-                    parametersKeyValues[parameterName] = newValue;
-                    var parameterIndex = methodParameters.IndexOf(methodParameters.FirstOrDefault(x => x.Name.ToLower() == parameterName));
-                    if (parameterIndex >= 0)
-                        parametersValues[parameterIndex] = newValue;
-                }
-            }, (validation) =>
+                    parameterName = parameterName.ToLower();
+                    //change property value, get value from validation and change it to property
+                    if (parametersKeyValues.ContainsKey(parameterName))
+                    {
+                        parametersKeyValues[parameterName] = newValue;
+                        var parameterIndex = methodParameters.IndexOf(methodParameters.FirstOrDefault(x => x.Name.ToLower() == parameterName));
+                        if (parameterIndex >= 0)
+                            parametersValues[parameterIndex] = newValue;
+                    }
+                }, (validation) =>
+                {
+                    //initialize validations service method and parameters
+                    validation.Initialize(service, method, parametersKeyValues, null, null, null, null);
+                }).ToList();
+            }
+            else
             {
-                //initialize validations service method and parameters
-                validation.Initialize(service, method, parametersKeyValues, null, null, null, null);
-            }).ToList();
+                validationErrors = null;
+            }
             return parametersValues;
         }
 
