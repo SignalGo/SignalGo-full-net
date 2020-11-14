@@ -399,8 +399,8 @@ namespace SignalGo.Server.Helpers
                 return;
             if (IsRenameDuplicateMethodNames)
             {
-                if (!ServiceMethods.ContainsKey(classReferenceInfo.Name))
-                    ServiceMethods[classReferenceInfo.Name] = new List<string>();
+                if (!ServiceMethods.ContainsKey(classReferenceInfo.ServiceName))
+                    ServiceMethods[classReferenceInfo.ServiceName] = new List<string>();
             }
             MethodReferenceInfo methodReferenceInfo = new MethodReferenceInfo();
 
@@ -413,7 +413,7 @@ namespace SignalGo.Server.Helpers
             if (IsRenameDuplicateMethodNames)
             {
                 int i = 1;
-                while (ServiceMethods[classReferenceInfo.Name].Contains(methodName))
+                while (ServiceMethods[classReferenceInfo.ServiceName].Contains(methodName))
                 {
                     methodName = methodInfo.Name + i;
                     i++;
@@ -426,7 +426,7 @@ namespace SignalGo.Server.Helpers
             methodReferenceInfo.Name = methodInfo.Name;
             methodReferenceInfo.DuplicateName = methodName;
             if (IsRenameDuplicateMethodNames)
-                ServiceMethods[classReferenceInfo.Name].Add(methodName);
+                ServiceMethods[classReferenceInfo.ServiceName].Add(methodName);
             GenerateMethodParameters(methodInfo, methodReferenceInfo);
             classReferenceInfo.Methods.Add(methodReferenceInfo);
         }
