@@ -220,11 +220,11 @@ namespace SignalGo.Server.Helpers
             foreach (Type serviceType in services)
             {
                 typeGenerated.Add(serviceType);
-                List<MethodInfo> methods = null; ;
+                List<MethodInfo> methods = null;
                 if (justDeclared)
-                    methods = serviceType.GetListOfDeclaredMethods().ToList();
+                    methods = serviceType.GetListOfDeclaredMethods().Distinct().ToList();
                 else
-                    methods = serviceType.GetListOfMethodsWithAllOfBases().Where(x => x.IsPublic && !x.IsStatic).ToList();
+                    methods = serviceType.GetListOfMethodsWithAllOfBases().Distinct().Where(x => x.IsPublic && !x.IsStatic).ToList();
                 foreach (MethodInfo methodInfo in methods.Where(x => !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_"))) && !x.IsStatic))
                 {
                     GenerateMethod(methodInfo, classReferenceInfo);
@@ -251,7 +251,7 @@ namespace SignalGo.Server.Helpers
             foreach (Type serviceType in services)
             {
                 typeGenerated.Add(serviceType);
-                foreach (MethodInfo methodInfo in serviceType.GetListOfDeclaredMethods().Where(x => !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_"))) && !x.IsStatic))
+                foreach (MethodInfo methodInfo in serviceType.GetListOfDeclaredMethods().Distinct().Where(x => !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_"))) && !x.IsStatic))
                 {
                     GenerateMethod(methodInfo, classReferenceInfo);
                     methodGenerated.Add(methodInfo);

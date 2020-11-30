@@ -455,6 +455,16 @@ namespace SignalGo.Shared.Helpers
         }
 
         /// <summary>
+        /// check the method IsOverride
+        /// </summary>
+        /// <param name="method"></param>
+        /// <returns></returns>
+        public static bool IsOverride(this MethodInfo method)
+        {
+            return method.GetBaseDefinition().DeclaringType != method.DeclaringType;
+        }
+
+        /// <summary>
         /// get generic Arguments
         /// </summary>
         /// <param name="type"></param>

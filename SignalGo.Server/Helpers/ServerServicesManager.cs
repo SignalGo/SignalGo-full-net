@@ -86,7 +86,9 @@ namespace SignalGo.Server.Helpers
                     {
                         if (serviceType == typeof(object))
                             continue;
-                        List<MethodInfo> methods = serviceType.GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance).Where(x => !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_"))) && x.DeclaringType != typeof(object)).ToList();
+                        //(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance)
+                        //because of base classes of services
+                        List<MethodInfo> methods = serviceType.GetListOfMethodsWithAllOfBases().Where(x => !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_"))) && x.DeclaringType != typeof(object)).Where(x => !x.IsOverride()).ToList();
                         if (methods.Count == 0)
                             continue;
                         CommentOfClassInfo comment = xmlCommentLoader.GetComment(serviceType);
@@ -217,8 +219,9 @@ namespace SignalGo.Server.Helpers
                             types.AddRange(CSCodeInjection.GetListOfTypes(service.Value).Where(x => !types.Contains(x)));
                         }
                     }
-
-                    List<MethodInfo> methods = service.Value.GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance).Where(x => !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_"))) && x.DeclaringType != typeof(object)).ToList();
+                    //(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance)
+                    //because of base classes of services
+                    List<MethodInfo> methods = service.Value.GetListOfMethodsWithAllOfBases().Where(x => !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_"))) && x.DeclaringType != typeof(object)).Where(x => !x.IsOverride()).ToList();
                     if (methods.Count == 0)
                         continue;
                     CommentOfClassInfo comment = xmlCommentLoader.GetComment(service.Value);
@@ -320,7 +323,9 @@ namespace SignalGo.Server.Helpers
                     id++;
                     result.WebApiDetailsInfo.Id = id;
                     result.WebApiDetailsInfo.HttpControllers.Add(controller);
-                    List<MethodInfo> methods = httpServiceType.Value.GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance).Where(x => !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_"))) && x.DeclaringType != typeof(object)).ToList();
+                    //(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance)
+                    //because of base classes of services
+                    List<MethodInfo> methods = httpServiceType.Value.GetListOfMethodsWithAllOfBases().Where(x => !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_"))) && x.DeclaringType != typeof(object)).Where(x => !x.IsOverride()).ToList();
                     if (methods.Count == 0)
                         continue;
                     CommentOfClassInfo comment = xmlCommentLoader.GetComment(httpServiceType.Value);
@@ -707,7 +712,7 @@ namespace SignalGo.Server.Helpers
         internal string SendMethodParameterDetail(Type serviceType, MethodParameterDetails detail, ServerBase serverBase)
         {
             string json = null;
-            foreach (MethodInfo method in serviceType.GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance))
+            foreach (MethodInfo method in serviceType.GetListOfMethodsWithAllOfBases())
             {
                 if (method.IsSpecialName && (method.Name.StartsWith("set_") || method.Name.StartsWith("get_")))
                     continue;
@@ -848,7 +853,10 @@ namespace SignalGo.Server.Helpers
             }
             catch
             {
-
+                if (type == typeof(string))
+                    instance = "";
+                else
+                    instance = DataExchangeConverter.GetDefault(type);
             }
             if (instance == null)
                 return "cannot create instance of this type!";
