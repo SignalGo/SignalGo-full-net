@@ -234,7 +234,7 @@ namespace SignalGo.Server.TelegramBot
 
         private async Task<Shared.Models.CallMethodResultInfo<OperationContext>> CallMethod(TelegramClientInfo clientInfo)
         {
-            Shared.Models.CallMethodResultInfo<OperationContext> result = await BaseProvider.CallMethod(clientInfo.CurrentServiceName, Guid.NewGuid().ToString(), clientInfo.CurrentMethodName, clientInfo.ParameterInfoes.ToArray()
+            Shared.Models.CallMethodResultInfo<OperationContext> result = await BaseProvider.CallMethod(clientInfo.CurrentServiceName, Guid.NewGuid().ToString(), clientInfo.CurrentMethodName, clientInfo.CurrentMethodName, clientInfo.ParameterInfoes.ToArray()
                                , null, clientInfo, null, _serverBase, null, x => true);
             return result;
         }

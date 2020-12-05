@@ -7,9 +7,9 @@ namespace SignalGo.Shared.DataTypes
 {
     /// <summary>
     /// generate server service by custom url with custom services and methods
-    /// just use this over your services
+    /// just use this over your services or methods
     /// </summary>
-    public class GenerationServiceAttribute
+    public class GenerationServiceAttribute : Attribute
     {
         /// <summary>
         /// 

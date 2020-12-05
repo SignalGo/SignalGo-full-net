@@ -13,6 +13,9 @@ using System.Threading.Tasks;
 
 namespace SignalGo.Server.Helpers
 {
+    /// <summary>
+    /// when client side want ot add service reference of signalgo
+    /// </summary>
     public class ServiceReferenceHelper
     {
         public bool IsRenameDuplicateMethodNames { get; set; }
@@ -95,7 +98,7 @@ namespace SignalGo.Server.Helpers
         /// <param name="nameSpace"></param>
         /// <param name="serverBase"></param>
         /// <returns></returns>
-        public NamespaceReferenceInfo GetServiceReferenceCSharpCode(string nameSpace, ServerBase serverBase, string serviceMethodName)
+        public NamespaceReferenceInfo GetServiceReferenceCSharpCode(string nameSpace, ServerBase serverBase, string httpServiceName, string serviceMethodName)
         {
             serviceMethodName = serviceMethodName.ToLower().Trim();
             NamespaceReferenceInfo.Name = nameSpace;
@@ -108,6 +111,16 @@ namespace SignalGo.Server.Helpers
             List<string> generatedServices = new List<string>();
             foreach (KeyValuePair<string, Type> serviceInfo in serverBase.RegisteredServiceTypes)
             {
+                //generate a service if that has service generation attribute
+                //if serviceMethodName != any urls of GenerationServiceAttribute that service will ignore to generate in service generation
+                var serviceServiceGenerationAttributes = serviceInfo.Value.GetCustomAttributes<GenerationServiceAttribute>(true).ToList();
+
+                var hasMethodServiceGenerationAttribute = serviceInfo.Value.GetListOfMethods().Any(m => m.GetCustomAttributes<GenerationServiceAttribute>(true).Length == 0 || m.GetCustomAttributes<GenerationServiceAttribute>(true).Any(x => x.Urls.Any(url => url.Equals(httpServiceName, StringComparison.OrdinalIgnoreCase))));
+                
+                if (serviceServiceGenerationAttributes.Count > 0 && !serviceServiceGenerationAttributes.Any(x => x.Urls.Any(url => url.Equals(httpServiceName, StringComparison.OrdinalIgnoreCase))) || !hasMethodServiceGenerationAttribute)
+                {
+                    continue;
+                }
                 ServiceContractAttribute[] attributes = null;
                 if (serviceInfo.Value.HasServiceAttribute())
                     attributes = serviceInfo.Value.GetServiceContractAttributes();
@@ -117,31 +130,31 @@ namespace SignalGo.Server.Helpers
                 if (!generatedServices.Contains(serviceInfo.Key) && attributes.Any(x => x.ServiceType == ServiceType.ServerService && x.GetServiceName(false) == serviceInfo.Key))
                 {
                     generatedServices.Add(serviceInfo.Key);
-                    GenerateServiceClass(serviceInfo.Key, serviceInfo.Value, ClassReferenceType.ServiceLevel, ServiceType.ServerService, serviceMethodName);
+                    GenerateServiceClass(serviceInfo.Key, serviceInfo.Value, ClassReferenceType.ServiceLevel, ServiceType.ServerService, httpServiceName, serviceMethodName);
                 }
 
                 if (!generatedServices.Contains(serviceInfo.Key) && attributes.Any(x => x.ServiceType == ServiceType.ClientService && ServiceContractExtensions.GetServiceNameWithGeneric(serviceInfo.Value, x.GetServiceName(false)) == serviceInfo.Key))
                 {
                     generatedServices.Add(serviceInfo.Key);
-                    GenerateServiceClass(serviceInfo.Key, serviceInfo.Value, ClassReferenceType.CallbackLevel, ServiceType.ClientService, serviceMethodName);
+                    GenerateServiceClass(serviceInfo.Key, serviceInfo.Value, ClassReferenceType.CallbackLevel, ServiceType.ClientService, httpServiceName, serviceMethodName);
                 }
 
                 if (!generatedServices.Contains(serviceInfo.Key) && attributes.Any(x => x.ServiceType == ServiceType.StreamService && x.GetServiceName(false) == serviceInfo.Key))
                 {
                     generatedServices.Add(serviceInfo.Key);
-                    GenerateServiceClass(serviceInfo.Key, serviceInfo.Value, ClassReferenceType.StreamLevel, ServiceType.StreamService, serviceMethodName);
+                    GenerateServiceClass(serviceInfo.Key, serviceInfo.Value, ClassReferenceType.StreamLevel, ServiceType.StreamService, httpServiceName, serviceMethodName);
                 }
 
                 if (!generatedServices.Contains(serviceInfo.Key) && attributes.Any(x => x.ServiceType == ServiceType.OneWayService && x.GetServiceName(false) == serviceInfo.Key))
                 {
                     generatedServices.Add(serviceInfo.Key);
-                    GenerateServiceClass(serviceInfo.Key, serviceInfo.Value, ClassReferenceType.OneWayLevel, ServiceType.OneWayService, serviceMethodName);
+                    GenerateServiceClass(serviceInfo.Key, serviceInfo.Value, ClassReferenceType.OneWayLevel, ServiceType.OneWayService, httpServiceName, serviceMethodName);
                 }
 
                 if (!generatedServices.Contains(serviceInfo.Key) && (attributes.Any(x => x.ServiceType == ServiceType.HttpService && x.GetServiceName(false) == serviceInfo.Key) || attributes.Length == 0))
                 {
                     generatedServices.Add(serviceInfo.Key);
-                    GenerateServiceClass(serviceInfo.Key, serviceInfo.Value, ClassReferenceType.HttpServiceLevel, ServiceType.HttpService, serviceMethodName);
+                    GenerateServiceClass(serviceInfo.Key, serviceInfo.Value, ClassReferenceType.HttpServiceLevel, ServiceType.HttpService, httpServiceName, serviceMethodName);
                 }
             }
             //foreach (var serviceInfo in serverBase.RegisteredServiceTypes)
@@ -195,7 +208,7 @@ namespace SignalGo.Server.Helpers
         private List<Type> typeGenerated = new List<Type>();
         private List<MethodInfo> methodGenerated = new List<MethodInfo>();
 
-        private void GenerateServiceClass(string serviceName, Type type, ClassReferenceType classReferenceType, ServiceType serviceTypeEnum, string serviceMethodName)
+        private void GenerateServiceClass(string serviceName, Type type, ClassReferenceType classReferenceType, ServiceType serviceTypeEnum, string httpServiceName, string serviceMethodName)
         {
             string typeName = type.Name.Split('`')[0];
             if (classReferenceType == ClassReferenceType.CallbackLevel && type.GetIsGenericType())
@@ -227,6 +240,13 @@ namespace SignalGo.Server.Helpers
                     methods = serviceType.GetListOfMethodsWithAllOfBases().Distinct().Where(x => x.IsPublic && !x.IsStatic).ToList();
                 foreach (MethodInfo methodInfo in methods.Where(x => !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_"))) && !x.IsStatic))
                 {
+                    //generate a method if that has service generation attribute
+                    //if serviceMethodName != any urls of GenerationServiceAttribute that method will ignore to generate in service generation
+                    var methodServiceGenerationAttributeshas = methodInfo.GetCustomAttributes<GenerationServiceAttribute>(true).ToList();
+                    if (methodServiceGenerationAttributeshas.Count > 0 && !methodServiceGenerationAttributeshas.Any(x => x.Urls.Any(url => url.Equals(httpServiceName, StringComparison.OrdinalIgnoreCase))))
+                    {
+                        continue;
+                    }
                     GenerateMethod(methodInfo, classReferenceInfo);
                     methodGenerated.Add(methodInfo);
                 }
