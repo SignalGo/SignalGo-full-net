@@ -39,6 +39,10 @@ namespace SignalGo.Server.ServiceManager
     /// </summary>
     public abstract class ServerBase : IDisposable, IValidationRuleInfo
     {
+        /// <summary>
+        /// password of code generation to get full generate of services and methods
+        /// </summary>
+        public string CodeGeneratorPassword { get; set; }
         static ServerBase()
         {
             WebcoketDatagramBase.Current = new WebcoketDatagram();

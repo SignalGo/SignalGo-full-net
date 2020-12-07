@@ -88,7 +88,7 @@ namespace SignalGo.Server.Helpers
                             continue;
                         //(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance)
                         //because of base classes of services
-                        List<MethodInfo> methods = serviceType.GetListOfMethodsWithAllOfBases().Where(x => !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_"))) && x.DeclaringType != typeof(object)).Where(x => !x.IsOverride()).ToList();
+                        List<MethodInfo> methods = serviceType.GetListOfMethodsWithAllOfBases().Where(x => !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_"))) && x.DeclaringType != typeof(object)).Where(x => !x.IsOverride()).Where(x => x.IsPublic).ToList();
                         if (methods.Count == 0)
                             continue;
                         CommentOfClassInfo comment = xmlCommentLoader.GetComment(serviceType);
@@ -221,7 +221,7 @@ namespace SignalGo.Server.Helpers
                     }
                     //(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance)
                     //because of base classes of services
-                    List<MethodInfo> methods = service.Value.GetListOfMethodsWithAllOfBases().Where(x => !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_"))) && x.DeclaringType != typeof(object)).Where(x => !x.IsOverride()).ToList();
+                    List<MethodInfo> methods = service.Value.GetListOfMethodsWithAllOfBases().Where(x => !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_"))) && x.DeclaringType != typeof(object)).Where(x => !x.IsOverride()).Where(x => x.IsPublic).ToList();
                     if (methods.Count == 0)
                         continue;
                     CommentOfClassInfo comment = xmlCommentLoader.GetComment(service.Value);
@@ -325,7 +325,7 @@ namespace SignalGo.Server.Helpers
                     result.WebApiDetailsInfo.HttpControllers.Add(controller);
                     //(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance)
                     //because of base classes of services
-                    List<MethodInfo> methods = httpServiceType.Value.GetListOfMethodsWithAllOfBases().Where(x => !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_"))) && x.DeclaringType != typeof(object)).Where(x => !x.IsOverride()).ToList();
+                    List<MethodInfo> methods = httpServiceType.Value.GetListOfMethodsWithAllOfBases().Where(x => !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_"))) && x.DeclaringType != typeof(object)).Where(x => !x.IsOverride()).Where(x => x.IsPublic).ToList();
                     if (methods.Count == 0)
                         continue;
                     CommentOfClassInfo comment = xmlCommentLoader.GetComment(httpServiceType.Value);
@@ -712,7 +712,7 @@ namespace SignalGo.Server.Helpers
         internal string SendMethodParameterDetail(Type serviceType, MethodParameterDetails detail, ServerBase serverBase)
         {
             string json = null;
-            foreach (MethodInfo method in serviceType.GetListOfMethodsWithAllOfBases())
+            foreach (MethodInfo method in serviceType.GetListOfMethodsWithAllOfBases().Where(x => x.IsPublic))
             {
                 if (method.IsSpecialName && (method.Name.StartsWith("set_") || method.Name.StartsWith("get_")))
                     continue;
