@@ -49,7 +49,7 @@ namespace SignalGo.Shared.DataTypes
         /// <summary>
         /// add perfix to last of header value
         /// </summary>
-        public string Perfix { get; set; } = "; path=/ ;SameSite=None";
+        public string Perfix { get; set; } = "; path=/ ;SameSite=Lax;";
         /// <summary>
         /// type of your key
         /// </summary>
