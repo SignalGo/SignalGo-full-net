@@ -63,10 +63,10 @@ namespace SignalGo.Shared.IO
                     lockWaitToRead.Release();
                 }
                 byte[] buffer = new byte[BufferToRead];
-                System.Diagnostics.Debug.WriteLine($"try to ReadAsync {buffer.Length}");
+                //System.Diagnostics.Debug.WriteLine($"try to ReadAsync {buffer.Length}");
                 int readCount = await Stream.ReadAsync(buffer, 0, buffer.Length);
 
-                System.Diagnostics.Debug.WriteLine($"done ReadAsync {buffer.Length}");
+                //System.Diagnostics.Debug.WriteLine($"done ReadAsync {buffer.Length}");
                 if (readCount <= 0)
                 {
                     IsClosed = true;
@@ -111,9 +111,9 @@ namespace SignalGo.Shared.IO
                     lockWaitToRead.Release();
                 }
                 byte[] buffer = new byte[BufferToRead];
-                System.Diagnostics.Debug.WriteLine($"try to ReadAsync {buffer.Length}");
+                //System.Diagnostics.Debug.WriteLine($"try to ReadAsync {buffer.Length}");
                 int readCount = Stream.Read(buffer, 0, buffer.Length);
-                System.Diagnostics.Debug.WriteLine($"done ReadAsync {buffer.Length}");
+                //System.Diagnostics.Debug.WriteLine($"done ReadAsync {buffer.Length}");
                 if (readCount <= 0)
                 {
                     IsClosed = true;

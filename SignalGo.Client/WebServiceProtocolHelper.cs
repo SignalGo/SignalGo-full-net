@@ -131,13 +131,13 @@ namespace SignalGo.Client
                 {
                     var value = logger.Settings.RequestHeaders[item];
                     client.Headers.Add(item, value);
-                    System.Diagnostics.Debug.WriteLine(value, $"Header: {item}");
+                    //System.Diagnostics.Debug.WriteLine(value, $"Header: {item}");
                 }
                 logger?.BeforeCallAction?.Invoke(url, actionUrl, methodName, args, defaultData);
-                System.Diagnostics.Debug.WriteLine(defaultData, $"Request: {actionUrl}");
+                //System.Diagnostics.Debug.WriteLine(defaultData, $"Request: {actionUrl}");
                 string data = await client.UploadStringTaskAsync(url, defaultData);
                 logger.Settings.ResponseHeaders = client.ResponseHeaders;
-                System.Diagnostics.Debug.WriteLine(data, $"Response: {url} ac:{actionUrl}");
+                //System.Diagnostics.Debug.WriteLine(data, $"Response: {url} ac:{actionUrl}");
                 if (typeof(T) == typeof(object))
                     return default(T);
                 logger?.AfterCallAction?.Invoke(url, actionUrl, methodName, args, data);

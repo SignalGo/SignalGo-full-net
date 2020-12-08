@@ -1,4 +1,5 @@
-﻿using SignalGo.Shared.Helpers;
+﻿using SignalGo.Shared.DataTypes;
+using SignalGo.Shared.Helpers;
 using SignalGo.Shared.IO;
 using SignalGo.Shared.Models;
 using System;
@@ -80,6 +81,7 @@ namespace SignalGo.Client
     /// </summary>
     public class HttpClient : IHttpClient
     {
+        public static CustomOutputSerializerAttribute CurrentCustomOutputSerializer;
         public HttpClient()
         {
             JsonSettingHelper.Initialize();
@@ -275,8 +277,12 @@ namespace SignalGo.Client
         }
         public T Deserialize<T>(string json)
         {
-            return SignalGo.Client.ClientSerializationHelper.DeserializeObject<T>(json);
+            if (CurrentCustomOutputSerializer == null)
+                return SignalGo.Client.ClientSerializationHelper.DeserializeObject<T>(json);
+            else
+                return (T)CurrentCustomOutputSerializer.Deserialize(typeof(T), json, null, null);
         }
+
 #if (!NET35 && !NET40 && !NETSTANDARD1_6)
         public async Task<HttpClientResponseBase> PostHeadAsync(string url, ParameterInfo[] parameterInfoes, BaseStreamInfo streamInfo = null)
         {
