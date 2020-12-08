@@ -139,7 +139,7 @@ namespace SignalGo.Server.Models
         internal static ConcurrentDictionary<ClientInfo, HashSet<object>> SavedSettings { get; set; } = new ConcurrentDictionary<ClientInfo, HashSet<object>>();
         internal static ConcurrentDictionary<string, string> SavedKeyParametersNameSettings { get; set; } = new ConcurrentDictionary<string, string>();
         internal static ConcurrentDictionary<string, HashSet<object>> CustomClientSavedSettings { get; set; } = new ConcurrentDictionary<string, HashSet<object>>();
-        internal static object GetCurrentSetting(Type type, OperationContext context)
+        public static object GetCurrentSetting(Type type, OperationContext context)
         {
             if (context == null)
                 throw new Exception("Context is null or empty! Do not call this property inside of another thread or after await or another task");
