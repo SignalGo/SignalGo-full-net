@@ -144,7 +144,7 @@ namespace SignalGo.Server.Models
             if (context == null)
                 throw new Exception("Context is null or empty! Do not call this property inside of another thread or after await or another task");
 
-            if (context.Client is HttpClientInfo)
+            if (context.Client is HttpClientInfo httpClient)
             {
                 bool isFindSessionProperty = false;
                 List<string> keys = new List<string>();
@@ -161,13 +161,19 @@ namespace SignalGo.Server.Models
                             foreach (HttpKeyAttribute httpKey in group.ToList())
                             {
                                 isFindSessionProperty = true;
-                                HttpClientInfo httpClient = context.Client as HttpClientInfo;
-                                object setting = GetSetting(context.Client, type);
-                                if (setting == null && (httpClient.RequestHeaders == null || string.IsNullOrEmpty(httpClient.GetRequestHeaderValue(httpKey.RequestHeaderName))))
+                                if (httpClient.RequestHeaders == null)
                                     continue;
+                                var session = httpClient.GetRequestHeaderValue(httpKey.RequestHeaderName);
+                                if (session == null)
+                                    continue;
+                                var key = ExtractValue(session, httpKey.KeyName, httpKey.HeaderValueSeparate, httpKey.HeaderKeyValueSeparate);
 
+                                object setting = null;
+                                if (!string.IsNullOrEmpty(key))
+                                    setting = GetSetting(key, type);
+                                
                                 if (setting == null)
-                                    keys.Add(ExtractValue(httpClient.GetRequestHeaderValue(httpKey.RequestHeaderName), httpKey.KeyName, httpKey.HeaderValueSeparate, httpKey.HeaderKeyValueSeparate));
+                                    keys.Add(key);
                                 else
                                     keys.Add(GetKeyFromSetting(type, setting));
                             }
@@ -179,7 +185,6 @@ namespace SignalGo.Server.Models
                             foreach (HttpKeyAttribute httpKey in group.ToList())
                             {
                                 isFindSessionProperty = true;
-                                HttpClientInfo httpClient = context.Client as HttpClientInfo;
                                 if (httpClient.HttpKeyParameterValue != null)
                                 {
                                     keys.Add(httpClient.HttpKeyParameterValue);
@@ -335,6 +340,19 @@ namespace SignalGo.Server.Models
             }
         }
 
+        public static object GetSetting(OperationContext context, Type type)
+        {
+            if (SavedSettings.TryGetValue(context.Client, out HashSet<object> result))
+            {
+                return result.FirstOrDefault(x => x.GetType() == type);
+            }
+            else if (context.Client is HttpClientInfo httpClient)
+            {
+                return GetCurrentSetting(type, context);
+            }
+            return null;
+        }
+
         public static object GetSetting(ClientInfo client, Type type)
         {
             if (SavedSettings.TryGetValue(client, out HashSet<object> result))
@@ -342,6 +360,25 @@ namespace SignalGo.Server.Models
                 return result.FirstOrDefault(x => x.GetType() == type);
             }
             return null;
+        }
+
+        public static T GetSetting<T>(string key)
+        {
+            Type type = typeof(T);
+            if (CustomClientSavedSettings.TryGetValue(key, out HashSet<object> result))
+            {
+                return (T)result.FirstOrDefault(x => x.GetType() == type);
+            }
+            return default;
+        }
+
+        public static object GetSetting(string key, Type type)
+        {
+            if (CustomClientSavedSettings.TryGetValue(key, out HashSet<object> result))
+            {
+                return result.FirstOrDefault(x => x.GetType() == type);
+            }
+            return default;
         }
 
         public static T GetSetting<T>(ClientInfo client)
@@ -471,6 +508,10 @@ namespace SignalGo.Server.Models
                 return result.Where(x => x.GetType() == typeof(T)).Select(x => (T)x);
             }
             return null;
+        }
+        public static T GetSetting(OperationContext context)
+        {
+            return (T)GetSetting(context, typeof(T));
         }
 
         public static T GetSetting(ClientInfo client)
