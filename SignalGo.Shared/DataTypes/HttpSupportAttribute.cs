@@ -29,35 +29,36 @@ namespace SignalGo.Shared.DataTypes
         /// <summary>
         /// name of header when client request
         /// </summary>
-        public string RequestHeaderName { get; set; } = "Cookie";
+        public virtual string RequestHeaderName { get; set; } = "Cookie";
         /// <summary>
         /// name of header when client getting response
         /// </summary>
-        public string ResponseHeaderName { get; set; } = "Set-Cookie";
+        public virtual string ResponseHeaderName { get; set; } = "Set-Cookie";
         /// <summary>
         /// separate char for value of header for example for Set-Cookie header is ';'
         /// </summary>
-        public string HeaderValueSeparate { get; set; } = ";";
+        public virtual string HeaderValueSeparate { get; set; } = ";";
         /// <summary>
         /// separate char between key and value of header for example for Set-Cookie header is '='
         /// </summary>
-        public string HeaderKeyValueSeparate { get; set; } = "=";
+        public virtual string HeaderKeyValueSeparate { get; set; } = "=";
         /// <summary>
         /// name of key that you saves your session id
         /// </summary>
-        public string KeyName { get; set; } = "_session";
+        public virtual string KeyName { get; set; } = "_session";
         /// <summary>
         /// add perfix to last of header value
+        /// https://web.dev/samesite-cookies-explained/
         /// </summary>
-        public string Perfix { get; set; } = "; path=/ ;SameSite=Lax;";
+        public virtual string Perfix { get; set; } = "; path=/ ;SameSite=Lax;";
         /// <summary>
         /// type of your key
         /// </summary>
-        public HttpKeyType KeyType { get; set; } = HttpKeyType.Cookie;
+        public virtual HttpKeyType KeyType { get; set; } = HttpKeyType.Cookie;
         /// <summary>
         /// name of key parameter when your keytype is ParameterName
         /// </summary>
-        public string KeyParameterName { get; set; }
+        public virtual string KeyParameterName { get; set; }
 
         public HttpKeyAttribute()
         {
@@ -69,6 +70,20 @@ namespace SignalGo.Shared.DataTypes
             if (value is DateTime && (DateTime)value > DateTime.Now)
                 return false;
             return true;
+        }
+    }
+
+    public class HttpsKeyAttribute : HttpKeyAttribute
+    {
+        /// <summary>
+        /// add perfix to last of header value
+        /// https://web.dev/samesite-cookies-explained/
+        /// </summary>
+        public string Perfix { get; set; } = "; path=/ ;SameSite=None;Secure";
+
+        public HttpsKeyAttribute()
+        {
+
         }
     }
 }
