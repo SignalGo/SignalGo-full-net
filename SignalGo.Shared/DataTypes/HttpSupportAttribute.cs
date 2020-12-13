@@ -73,13 +73,16 @@ namespace SignalGo.Shared.DataTypes
         }
     }
 
+    /// <summary>
+    /// https support for http key of cookie
+    /// </summary>
     public class HttpsKeyAttribute : HttpKeyAttribute
     {
         /// <summary>
         /// add perfix to last of header value
         /// https://web.dev/samesite-cookies-explained/
         /// </summary>
-        public string Perfix { get; set; } = "; path=/ ;SameSite=None;Secure";
+        public override string Perfix { get; set; } = "; path=/ ;SameSite=None;Secure";
 
         public HttpsKeyAttribute()
         {
