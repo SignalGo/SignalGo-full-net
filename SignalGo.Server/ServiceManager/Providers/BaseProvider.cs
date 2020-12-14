@@ -306,6 +306,21 @@ namespace SignalGo.Server.ServiceManager.Providers
                                 stream.Stream = client.ClientStream;
                             }
                         }
+                        if (fileInfo != null)
+                        {
+                            var stream = method.GetParameters().FirstOrDefault(x => x.ParameterType == typeof(StreamInfo));
+                            if (stream != null)
+                            {
+                                var index = method.GetParameters().IndexOf(stream);
+                                parametersValues[index] = new StreamInfo()
+                                {
+                                    ContentType = fileInfo.ContentType,
+                                    FileName = fileInfo.FileName,
+                                    Length = fileInfo.ContentLength,
+                                    Stream = fileInfo.InputStream
+                                };
+                            }
+                        }
                         //var data = (IStreamInfo)parametersValues.FirstOrDefault(x => x.GetType() == typeof(StreamInfo) || (x.GetType().GetIsGenericType() && x.GetType().GetGenericTypeDefinition() == typeof(StreamInfo<>)));
                         //var upStream = new UploadStreamGo(stream);
                         if (canCall)
