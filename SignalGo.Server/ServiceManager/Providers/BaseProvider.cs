@@ -312,13 +312,16 @@ namespace SignalGo.Server.ServiceManager.Providers
                             if (stream != null)
                             {
                                 var index = method.GetParameters().IndexOf(stream);
-                                parametersValues[index] = new StreamInfo()
+                                if (parametersValues[index] == null)
                                 {
-                                    ContentType = fileInfo.ContentType,
-                                    FileName = fileInfo.FileName,
-                                    Length = fileInfo.ContentLength,
-                                    Stream = fileInfo.InputStream
-                                };
+                                    parametersValues[index] = new StreamInfo()
+                                    {
+                                        ContentType = fileInfo.ContentType,
+                                        FileName = fileInfo.FileName,
+                                        Length = fileInfo.ContentLength,
+                                        Stream = fileInfo.InputStream
+                                    };
+                                }
                             }
                         }
                         //var data = (IStreamInfo)parametersValues.FirstOrDefault(x => x.GetType() == typeof(StreamInfo) || (x.GetType().GetIsGenericType() && x.GetType().GetGenericTypeDefinition() == typeof(StreamInfo<>)));
