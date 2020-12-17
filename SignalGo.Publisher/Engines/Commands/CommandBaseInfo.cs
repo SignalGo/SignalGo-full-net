@@ -17,10 +17,11 @@ using SignalGo.Publisher.Models.Extra;
 using System.Collections.Generic;
 using SignalGo.Publisher.ViewModels;
 using SignalGo.Publisher.Extensions;
+using SignalGo.Publisher.Models.DataTransferObjects;
 
 namespace SignalGo.Publisher.Engines.Commands
 {
-    public abstract class CommandBaseInfo : BaseViewModel, ICommand, IPublish 
+    public abstract class CommandBaseInfo : BaseViewModel, ICommand, IPublish
     {
         private RunStatusType _Status;
         public RunStatusType Status
@@ -101,7 +102,7 @@ namespace SignalGo.Publisher.Engines.Commands
         /// Base Run Module for commands
         /// </summary>
         /// <returns></returns>
-        public virtual async Task<RunStatusType> Run(CancellationToken cancellationToken,string caller)
+        public virtual async Task<RunStatusType> Run(CancellationToken cancellationToken, string caller)
         {
             try
             {
@@ -238,7 +239,14 @@ namespace SignalGo.Publisher.Engines.Commands
                 {
                     Name = ServiceName,
                     ServiceKey = ServiceKey,
-                    IgnoreFiles = SettingInfo.Current.ProjectInfo.FirstOrDefault(p => p.ProjectKey == ServiceKey).ServerIgnoredFiles.Where(e => e.IsEnabled).ToList()
+                    IgnoreFiles = SettingInfo.Current.ProjectInfo.FirstOrDefault(p => p.ProjectKey == ServiceKey).ServerIgnoredFiles.Where(e => e.IsEnabled).Select(x => new IgnoreFileDto()
+                    {
+                        FileName = x.FileName,
+                        ID = x.ID,
+                        IgnoreFileType = x.IgnoreFileType,
+                        IsEnabled = x.IsEnabled,
+                        ProjectId = x.ProjectId
+                    }).ToList()
                 };
                 List<ServerInfo> selectedServers = ServerSettingInfo.CurrentServer.ServerInfo.Where(x => x.IsChecked).ToList();
 
@@ -252,7 +260,7 @@ namespace SignalGo.Publisher.Engines.Commands
                     currentSrv.ServerStatus = ServerInfo.ServerInfoStatusEnum.Updating;
 
                     var provider = await PublisherServiceProvider.Initialize(currentSrv, serviceContract.Name);
-                    if (!provider.HasValue()) 
+                    if (!provider.HasValue())
                         return RunStatusType.Error;
                     var uploadResult = await StreamManagerService.UploadAsync(uploadInfo, cancellationToken, serviceContract, provider.CurrentClientProvider);
 
@@ -278,8 +286,8 @@ namespace SignalGo.Publisher.Engines.Commands
                     {
                         server.IsUpdated = ServerInfo.ServerInfoStatusEnum.UpdateError;
                         server.ServerStatus = ServerInfo.ServerInfoStatusEnum.UpdateError;
-                        ServerInfo.Servers.FirstOrDefault(s => s.ServerKey == server.ServerKey).ServerStatus = ServerInfo.ServerInfoStatusEnum.UpdateError;
-                        ServerInfo.Servers.FirstOrDefault(s => s.ServerKey == server.ServerKey).IsUpdated = ServerInfo.ServerInfoStatusEnum.UpdateError;
+                        selectedServers.FirstOrDefault(s => s.ServerKey == server.ServerKey).ServerStatus = ServerInfo.ServerInfoStatusEnum.UpdateError;
+                        selectedServers.FirstOrDefault(s => s.ServerKey == server.ServerKey).IsUpdated = ServerInfo.ServerInfoStatusEnum.UpdateError;
                         currentSrv.ServerStatus = ServerInfo.ServerInfoStatusEnum.UpdateError;
                         currentSrv.IsUpdated = ServerInfo.ServerInfoStatusEnum.UpdateError;
                         currentSrv.ServerLastUpdate = "Couldn't Update";
