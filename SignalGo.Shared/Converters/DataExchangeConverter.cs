@@ -1777,8 +1777,10 @@ namespace SignalGo.Shared.Converters
                                                 writer.WriteStartObject();
                                                 WriteReferenceProperty(writer, value.GetType(), value, refProperty);
                                                 writer.WriteEndObject();
+                                                return;
                                             }
-                                            return;
+                                            //do not return here because its will have serialize problem in skip duplicate objects
+                                            //return;
                                         }
                                         else
                                             SerializedObjects.Add(value);
@@ -1805,8 +1807,10 @@ namespace SignalGo.Shared.Converters
                                                 writer.WriteStartObject();
                                                 WriteReferenceProperty(writer, value.GetType(), value, refProperty);
                                                 writer.WriteEndObject();
+                                                return;
                                             }
-                                            return;
+                                            //do not return here because its will have serialize problem in skip duplicate objects
+                                            //return;
                                         }
                                         else
                                             SerializedObjects.Add(value);
