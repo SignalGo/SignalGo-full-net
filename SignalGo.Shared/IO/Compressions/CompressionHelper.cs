@@ -13,7 +13,7 @@ namespace SignalGo.Shared.IO.Compressions
                 return new NoCompression();
             if (getCustomCompression != null)
                 return getCustomCompression();
-            throw new NotSupportedException();
+            throw new NotSupportedException($"Compression mode of {compressMode} not supported!");
         }
     }
 }
