@@ -330,7 +330,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                         {
                             try
                             {
-                                Task taskResult = null;
+                                //Task taskResult = null;
                                 if (concurrentLockAttribute != null)
                                 {
                                     switch (concurrentLockAttribute.Type)
@@ -340,13 +340,11 @@ namespace SignalGo.Server.ServiceManager.Providers
                                                 try
                                                 {
                                                     await serverBase.LockWaitToRead.WaitAsync();
-                                                    if (IsTask(method))
+                                                    await Task.Run(async () =>
                                                     {
-                                                        taskResult = (Task)method.Invoke(service, parametersValues.ToArray());
-                                                        await taskResult;
-                                                    }
-                                                    else
-                                                        result = method.Invoke(service, parametersValues.ToArray());
+                                                        OperationContext.CurrentTaskServer = serverBase;
+                                                        result = await InvokerMethod(client, serverBase, method, service, parametersValues);
+                                                    });
                                                 }
                                                 finally
                                                 {
@@ -359,13 +357,11 @@ namespace SignalGo.Server.ServiceManager.Providers
                                                 try
                                                 {
                                                     await client.LockWaitToRead.WaitAsync();
-                                                    if (IsTask(method))
+                                                    await Task.Run(async () =>
                                                     {
-                                                        taskResult = (Task)method.Invoke(service, parametersValues.ToArray());
-                                                        await taskResult;
-                                                    }
-                                                    else
-                                                        result = method.Invoke(service, parametersValues.ToArray());
+                                                        OperationContext.CurrentTaskServer = serverBase;
+                                                        result = await InvokerMethod(client, serverBase, method, service, parametersValues);
+                                                    });
                                                 }
                                                 finally
                                                 {
@@ -379,13 +375,11 @@ namespace SignalGo.Server.ServiceManager.Providers
                                                 try
                                                 {
                                                     await slim.WaitAsync();
-                                                    if (IsTask(method))
+                                                    await Task.Run(async () =>
                                                     {
-                                                        taskResult = (Task)method.Invoke(service, parametersValues.ToArray());
-                                                        await taskResult;
-                                                    }
-                                                    else
-                                                        result = method.Invoke(service, parametersValues.ToArray());
+                                                        OperationContext.CurrentTaskServer = serverBase;
+                                                        result = await InvokerMethod(client, serverBase, method, service, parametersValues);
+                                                    });
                                                 }
                                                 finally
                                                 {
@@ -399,13 +393,11 @@ namespace SignalGo.Server.ServiceManager.Providers
                                                 try
                                                 {
                                                     await slim.WaitAsync();
-                                                    if (IsTask(method))
+                                                    await Task.Run(async () =>
                                                     {
-                                                        taskResult = (Task)method.Invoke(service, parametersValues.ToArray());
-                                                        await taskResult;
-                                                    }
-                                                    else
-                                                        result = method.Invoke(service, parametersValues.ToArray());
+                                                        OperationContext.CurrentTaskServer = serverBase;
+                                                        result = await InvokerMethod(client, serverBase, method, service, parametersValues);
+                                                    });
                                                 }
                                                 finally
                                                 {
@@ -421,13 +413,11 @@ namespace SignalGo.Server.ServiceManager.Providers
                                                 try
                                                 {
                                                     await slim.WaitAsync();
-                                                    if (IsTask(method))
+                                                    await Task.Run(async () =>
                                                     {
-                                                        taskResult = (Task)method.Invoke(service, parametersValues.ToArray());
-                                                        await taskResult;
-                                                    }
-                                                    else
-                                                        result = method.Invoke(service, parametersValues.ToArray());
+                                                        OperationContext.CurrentTaskServer = serverBase;
+                                                        result = await InvokerMethod(client, serverBase, method, service, parametersValues);
+                                                    });
                                                 }
                                                 finally
                                                 {
@@ -441,13 +431,11 @@ namespace SignalGo.Server.ServiceManager.Providers
                                                 try
                                                 {
                                                     await slim.WaitAsync();
-                                                    if (IsTask(method))
+                                                    await Task.Run(async () =>
                                                     {
-                                                        taskResult = (Task)method.Invoke(service, parametersValues.ToArray());
-                                                        await taskResult;
-                                                    }
-                                                    else
-                                                        result = method.Invoke(service, parametersValues.ToArray());
+                                                        OperationContext.CurrentTaskServer = serverBase;
+                                                        result = await InvokerMethod(client, serverBase, method, service, parametersValues);
+                                                    });
                                                 }
                                                 finally
                                                 {
@@ -459,33 +447,27 @@ namespace SignalGo.Server.ServiceManager.Providers
                                 }
                                 else
                                 {
-                                    if (IsTask(method))
-                                    {
-                                        taskResult = (Task)method.Invoke(service, parametersValues.ToArray());
-                                        await taskResult;
-                                    }
-                                    else
-                                        result = method.Invoke(service, parametersValues.ToArray());
-
-                                }
-                                if (taskResult != null)
-                                {
-                                    if (taskResult.GetType() != typeof(Task))
-                                        result = taskResult.GetType().GetProperty("Result").GetValue(taskResult);
+                                    result = await InvokerMethod(client, serverBase, method, service, parametersValues);
                                 }
 
-                                if (result != null && result.GetType() == typeof(Task))
-                                {
-                                    await (Task)result;
-                                    result = null;
-                                }
-                                //this is async function
-                                else if (result != null && result.GetType().GetBaseType() == typeof(Task))
-                                {
-                                    Task task = ((Task)result);
-                                    await task;
-                                    result = task.GetType().GetProperty("Result").GetValue(task, null);
-                                }
+                                //if (taskResult != null)
+                                //{
+                                //    if (taskResult.GetType() != typeof(Task))
+                                //        result = taskResult.GetType().GetProperty("Result").GetValue(taskResult);
+                                //}
+
+                                //if (result != null && result.GetType() == typeof(Task))
+                                //{
+                                //    await (Task)result;
+                                //    result = null;
+                                //}
+                                ////this is async function
+                                //else if (result != null && result.GetType().GetBaseType() == typeof(Task))
+                                //{
+                                //    Task task = ((Task)result);
+                                //    await task;
+                                //    result = task.GetType().GetProperty("Result").GetValue(task, null);
+                                //}
                                 try
                                 {
                                     serverBase.OnAfterCallMethodAction?.Invoke(serviceName, guid, methodName, parameters, jsonParameters, client, json, serverBase, fileInfo, canTakeMethod, result);
@@ -573,6 +555,27 @@ namespace SignalGo.Server.ServiceManager.Providers
                 DataExchanger.Clear();
                 return new CallMethodResultInfo<OperationContext>(callback, streamInfo, httpKeyAttributes, serviceType, method, service, fileActionResult, context, result);
             });
+        }
+
+        static async Task<object> InvokerMethod(ClientInfo client, ServerBase serverBase, MethodInfo method, object service, List<object> parametersValues)
+        {
+            OperationContext.CurrentTaskServer = serverBase;
+            int taskId = Task.CurrentId.GetValueOrDefault();
+            serverBase.AddTask(taskId, client.ClientId);
+            Task taskResult;
+            if (IsTask(method))
+            {
+                taskResult = (Task)method.Invoke(service, parametersValues.ToArray());
+                await taskResult;
+            }
+            else
+                return method.Invoke(service, parametersValues.ToArray());
+            if (taskResult != null)
+            {
+                if (taskResult.GetType() != typeof(Task))
+                    return taskResult.GetType().GetProperty("Result").GetValue(taskResult);
+            }
+            return null;
         }
 
         /// <summary>
