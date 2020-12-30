@@ -138,7 +138,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     }
                     json = Encoding.UTF8.GetString(resultBytes.ToArray(), 0, resultBytes.Count);
                 }
-                MethodParameterDetails detail = ServerSerializationHelper.Deserialize<MethodParameterDetails>(json, serverBase);
+                MethodParameterDetails detail = JsonConvert.DeserializeObject<MethodParameterDetails>(json);
 
                 if (!serverBase.RegisteredServiceTypes.TryGetValue(detail.ServiceName, out Type serviceType))
                     throw new Exception($"{client.IPAddress} {client.ClientId} Service {detail.ServiceName} not found");
@@ -150,7 +150,7 @@ namespace SignalGo.Server.ServiceManager.Providers
             else
             {
                 ProviderDetailsInfo detail = serverServicesManager.SendServiceDetail(host, serverBase);
-                json = ServerSerializationHelper.SerializeObject(detail, serverBase);
+                json = JsonConvert.SerializeObject(detail);
             }
 
             client.ResponseHeaders["Content-Type"] = "application/json; charset=utf-8".Split(',');
@@ -598,7 +598,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                         if (actionResult.Data is System.IO.Stream)
                             data = "";
                         else
-                            data = actionResult.Data is string ? actionResult.Data.ToString() : ServerSerializationHelper.SerializeObject(actionResult.Data, serverBase);
+                            data = actionResult.Data is string ? actionResult.Data.ToString() : JsonConvert.SerializeObject(actionResult.Data);
                         //if (!controller.ResponseHeaders.ContainsKey("content-length"))
                         //    controller.ResponseHeaders.Add("Content-Length", (System.Text.Encoding.UTF8.GetByteCount(data)).ToString().Split(','));
 
@@ -615,7 +615,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                         if (result is System.IO.Stream)
                             data = "";
                         else
-                            data = result is string ? (string)result : ServerSerializationHelper.SerializeObject(result, serverBase);
+                            data = result is string ? (string)result : JsonConvert.SerializeObject(result);
                         //if (!controller.ResponseHeaders.ContainsKey("content-length"))
                         //    controller.ResponseHeaders.Add("Content-Length", (System.Text.Encoding.UTF8.GetByteCount(data)).ToString().Split(','));
 
@@ -932,7 +932,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     ClientServiceReferenceConfigInfo = clientServiceReferenceConfigInfo
                 }.GetServiceReferenceCSharpCode(client.GetRequestHeaderValue("servicenamespace"), serverBase, serviceName, methodName);
 
-                string result = ServerSerializationHelper.SerializeObject(referenceData, serverBase);
+                string result = JsonConvert.SerializeObject(referenceData);
                 client.ResponseHeaders["Content-Type"] = "text/html; charset=utf-8".Split(',');
                 client.ResponseHeaders["Service-Type"] = "SignalGoServiceType".Split(',');
                 byte[] dataBytes = Encoding.UTF8.GetBytes(result);
