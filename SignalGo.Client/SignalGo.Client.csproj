@@ -11,10 +11,10 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>SignalGo.Client</RootNamespace>
     <AssemblyName>SignalGo.Client</AssemblyName>
-    <AssemblyVersion>5.5.2</AssemblyVersion>
-    <FileVersion>5.5.2</FileVersion>
+    <AssemblyVersion>5.6.1.1</AssemblyVersion>
+    <FileVersion>5.6.1.1</FileVersion>
     <!--<VersionPrefix>4.1</VersionPrefix>-->
-    <Version>5.5.2</Version>
+    <Version>5.6.1.1</Version>
     <DebugType>full</DebugType>
     <Copyright>Copyright © ali.visual.studio@gmail.com 2016</Copyright>
     <Description>
@@ -46,7 +46,7 @@
     </Description>
     <PackageLicenseUrl>https://github.com/SignalGo/SignalGo-full-net/blob/master/LICENSE</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/SignalGo/SignalGo-full-net</PackageProjectUrl>
-    <PackageIconUrl>http://cdn.persiangig.com/preview/v14ukL88fq/SignalGo.png</PackageIconUrl>
+    <PackageIconUrl></PackageIconUrl>
     <PackageTags>SignalGo SignalR WCF Server Client Signal Sig RealTime Real-Time</PackageTags>
     <PackageReleaseNotes>
       1.fix bugs and more improvement
@@ -68,6 +68,9 @@
   </PropertyGroup>
   <PropertyGroup>
     <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\SignalGo.Client.xml</DocumentationFile>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageId>SignalGo.Net.Client</PackageId>
+    <PackageIcon>icon.png</PackageIcon>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -162,6 +165,12 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SignalGo.Shared\SignalGo.Shared.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="C:\Users\ASUS\Desktop\icon.png">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
   </ItemGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

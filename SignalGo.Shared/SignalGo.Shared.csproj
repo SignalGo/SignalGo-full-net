@@ -12,10 +12,10 @@
     <MinimumVisualStudioVersion>10.0</MinimumVisualStudioVersion>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <AssemblyVersion>5.5.2</AssemblyVersion>
-    <FileVersion>5.5.2</FileVersion>
+    <AssemblyVersion>5.6.1</AssemblyVersion>
+    <FileVersion>5.6.1</FileVersion>
     <!--<VersionPrefix>4.0</VersionPrefix>-->
-    <Version>5.5.2</Version>
+    <Version>5.6.1</Version>
     <!--<VersionSuffix>beta1</VersionSuffix>-->
     <Authors>Ali Yousefi</Authors>
     <Company></Company>
@@ -63,9 +63,9 @@
 
     </PackageReleaseNotes>
     <NeutralLanguage>en-US</NeutralLanguage>
-    <PackageId>SignalGo.Shared</PackageId>
+    <PackageId>SignalGo.Net.Shared</PackageId>
     <PackageTags>SignalGo SignalR WCF Server Client Signal Sig RealTime Real-Time</PackageTags>
-    <PackageIconUrl>http://cdn.persiangig.com/preview/v14ukL88fq/SignalGo.png</PackageIconUrl>
+    <PackageIconUrl></PackageIconUrl>
     <PackageProjectUrl>https://github.com/SignalGo/SignalGo-full-net</PackageProjectUrl>
     <PackageLicenseUrl>https://github.com/SignalGo/SignalGo-full-net/blob/master/LICENSE</PackageLicenseUrl>
     <RepositoryUrl>https://github.com/SignalGo/SignalGo-full-net</RepositoryUrl>
@@ -75,6 +75,8 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <!--<NetStandardImplicitPackageVersion>1.6.1</NetStandardImplicitPackageVersion>-->
     <MinClientVersion>2.12</MinClientVersion>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageIcon>icon.png</PackageIcon>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -185,6 +187,12 @@
   <ItemGroup>
     <Compile Remove="Log\MethodCallsLogger.cs" />
     <Compile Remove="Log\MethodCallsLogLoader.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="C:\Users\ASUS\Desktop\icon.png">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
   </ItemGroup>
   <!--<Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />-->
 </Project>

@@ -12,10 +12,10 @@
     <MinimumVisualStudioVersion>10.0</MinimumVisualStudioVersion>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <AssemblyVersion>5.5.2</AssemblyVersion>
-    <FileVersion>5.5.2</FileVersion>
+    <AssemblyVersion>5.6.1.1</AssemblyVersion>
+    <FileVersion>5.6.1.1</FileVersion>
     <!--<VersionPrefix>4.1</VersionPrefix>-->
-    <Version>5.5.2</Version>
+    <Version>5.6.1.1</Version>
     <!--<VersionSuffix>beta1</VersionSuffix>-->
     <Authors>Ali Yousefi</Authors>
     <Company></Company>
@@ -57,9 +57,9 @@
 
       16.Support Owin to host on IIS
     </Description>
-    <PackageLicenseUrl>https://github.com/SignalGo/SignalGo-full-net/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageLicenseUrl></PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/SignalGo/SignalGo-full-net</PackageProjectUrl>
-    <PackageIconUrl>http://cdn.persiangig.com/preview/v14ukL88fq/SignalGo.png</PackageIconUrl>
+    <PackageIconUrl></PackageIconUrl>
     <PackageTags>SignalGo SignalR WCF Server Client Signal Sig RealTime Real-Time</PackageTags>
     <AssemblyName>SignalGo.Server</AssemblyName>
     <PackageReleaseNotes>
@@ -80,6 +80,9 @@
 
   <PropertyGroup>
     <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\SignalGo.Server.xml</DocumentationFile>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageId>SignalGo.Net.Server</PackageId>
+    <PackageIcon>icon.png</PackageIcon>
   </PropertyGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net35'">
     <Reference Include="System" />
@@ -158,6 +161,10 @@
     <Compile Remove="%24tf\**" />
     <EmbeddedResource Remove="%24tf\**" />
     <None Remove="%24tf\**" />
+    <None Include="C:\Users\ASUS\Desktop\icon.png">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SignalGo.Shared\SignalGo.Shared.csproj" />

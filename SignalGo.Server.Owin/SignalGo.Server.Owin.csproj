@@ -3,16 +3,68 @@
   <PropertyGroup>
     <TargetFrameworks>net451;netstandard2.0;</TargetFrameworks>
     <!--<TargetFramework>netstandard2.0</TargetFramework>-->
-    <AssemblyVersion>5.5.2</AssemblyVersion>
-    <FileVersion>5.5.2</FileVersion>
-    <Version>5.5.2</Version>
+    <AssemblyVersion>5.6.1</AssemblyVersion>
+    <FileVersion>5.6.1</FileVersion>
+    <Version>5.6.1</Version>
     <Authors>Ali Yousefi</Authors>
     <Company></Company>
     <DebugType>full</DebugType>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Copyright>Copyright © ali.visual.studio@gmail.com 2016</Copyright>
+    <Description>
+      SignalGo is a library for Cross-Platform developers that makes it incredibly simple to add real-time web functionality to your applications. What is "real-time web" functionality? It's the ability to have your server-side code push content to the connected clients as it happens, in real-time. like WCF and SignalR
+      Features:
+
+      1.Send and receive any data like class,object,struct and complex object
+
+      2.Send(upload) and receive(download) stream like file stream
+
+      3.Send and receive data with UDP connection for sound and video streamming
+
+      4.Return data from a method (client and server)
+
+      5.Linq query to Clients for send or receive data
+
+      6.Setting for maximum and minimum and timeout data transport
+
+      7.Using best security algoritm for send or receive data
+
+      8.Call methods from http GET and POST protocol (like call from browser) or upload and download files and manage Controllers like asp.net MVC
+
+      9. full support async await methods
+
+      10.Full logging systeam
+
+      11.Manage data exchanger to customize model properties in send and receive data without create new class
+
+      12.Ip limitation for call methods
+
+      13.Easy to manage permissions with attribute you can customize your permissions before client call methods
+
+      14.Automatic handle object references and pointers in serialize and deserialize system
+
+      15.Add service reference with visual studio for client side NuGet
+
+      16.Support Owin to host on IIS
+</Description>
+    <PackageProjectUrl>https://github.com/SignalGo/SignalGo-full-net</PackageProjectUrl>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageTags>SignalGo SignalR WCF Server Client Signal Sig RealTime Real-Time</PackageTags>
+    <PackageReleaseNotes>
+      1.fix bugs and more improvement
+      2.added HttpKeyAttribute for method parameters
+      3.support for SOAP protocol
+      4.support for http calls on add signalgoservice references (easy to call http services)
+      read document examples here:
+      https://github.com/SignalGo/SignalGo-full-net
+</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
-    
+    <None Include="C:\Users\ASUS\Desktop\icon.png">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
   </ItemGroup>
 
   <ItemGroup>
