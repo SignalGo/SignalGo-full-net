@@ -161,7 +161,7 @@
     <Compile Remove="%24tf\**" />
     <EmbeddedResource Remove="%24tf\**" />
     <None Remove="%24tf\**" />
-    <None Include="C:\Users\ASUS\Desktop\icon.png">
+    <None Include="..\icon.png">
       <Pack>True</Pack>
       <PackagePath></PackagePath>
     </None>

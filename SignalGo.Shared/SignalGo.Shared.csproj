@@ -189,7 +189,7 @@
     <Compile Remove="Log\MethodCallsLogLoader.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="C:\Users\ASUS\Desktop\icon.png">
+    <None Include="..\icon.png">
       <Pack>True</Pack>
       <PackagePath></PackagePath>
     </None>
