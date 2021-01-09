@@ -304,6 +304,15 @@ namespace SignalGo.Publisher.Engines.Commands
             return status;
         }
 
+        public string GetSolutionFileName(string path, string serverDefaultSolutionShortName)
+        {
+            var solutionFiles = Directory.GetFiles(path, "*.*").Where(x => x.EndsWith(".sln", StringComparison.OrdinalIgnoreCase));
+            if (!string.IsNullOrEmpty(serverDefaultSolutionShortName))
+                return solutionFiles.FirstOrDefault(x => x.Contains(serverDefaultSolutionShortName));
+            else
+                return solutionFiles.FirstOrDefault();
+        }
+
         public virtual Task Initialize(ProcessStartInfo processStartInfo)
         {
             return Task.CompletedTask;

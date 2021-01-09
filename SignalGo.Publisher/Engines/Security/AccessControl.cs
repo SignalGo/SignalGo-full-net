@@ -99,6 +99,7 @@ namespace SignalGo.Publisher.Engines.Security
                         {
                             serverInfo.IsChecked = false;
                             serverInfo.ServerLastUpdate = "Access Denied!";
+                            return false;
                         }
                     }
                 }

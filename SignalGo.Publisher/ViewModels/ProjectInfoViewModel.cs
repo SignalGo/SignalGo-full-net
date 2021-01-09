@@ -335,6 +335,12 @@ namespace SignalGo.Publisher.ViewModels
             SettingInfo.SaveSettingInfo();
             ProjectManagerWindowViewModel.MainFrame.GoBack();
         }
+
+        string GetServerDefaultSolutionShortName()
+        {
+            return Servers.Where(x => x.IsChecked && !string.IsNullOrEmpty(x.ServerDefaultSolutionShortName)).FirstOrDefault()?.ServerDefaultSolutionShortName;
+        }
+
         /// <summary>
         /// Get Compile and output for Publish
         /// push/update projects and related assemblies to Servers
@@ -347,7 +353,7 @@ namespace SignalGo.Publisher.ViewModels
                 ProjectInfo.AddCommand(new GitCommandInfo());
             // add compiler command to commands list
             if (!ProjectInfo.Commands.Any(x => x is BuildCommandInfo))
-                ProjectInfo.AddCommand(new BuildCommandInfo());
+                ProjectInfo.AddCommand(new BuildCommandInfo(GetServerDefaultSolutionShortName()));
             // add TestsRunner Command if not exist in commands list
             if (!ProjectInfo.Commands.Any(x => x is TestsCommandInfo))
                 ProjectInfo.AddCommand(new TestsCommandInfo());
@@ -358,7 +364,7 @@ namespace SignalGo.Publisher.ViewModels
                 {
                     Name = ProjectInfo.Name,
                     ServiceKey = ProjectInfo.ProjectKey
-                }));
+                }, GetServerDefaultSolutionShortName()));
             }
         }
 
@@ -506,7 +512,7 @@ namespace SignalGo.Publisher.ViewModels
         private void Build()
         {
             if (!ProjectInfo.Commands.Any(x => x is BuildCommandInfo))
-                ProjectInfo.AddCommand(new BuildCommandInfo());
+                ProjectInfo.AddCommand(new BuildCommandInfo(GetServerDefaultSolutionShortName()));
         }
         /// <summary>
         /// Init Commands to Run in Queue
@@ -542,7 +548,8 @@ namespace SignalGo.Publisher.ViewModels
                     {
                         foreach (ServerInfo item in CurrentServerSettingInfo.ServerInfo.Where(s => s.IsChecked))
                         {
-                            AccessControl.AuthorizeServer(item);
+                            if (!AccessControl.AuthorizeServer(item))
+                                return;
                             //item.HasAccess();
                         }
                     }
@@ -579,7 +586,7 @@ namespace SignalGo.Publisher.ViewModels
         private void RunTests()
         {
             if (!ProjectInfo.Commands.Any(x => x is BuildCommandInfo))
-                ProjectInfo.AddCommand(new BuildCommandInfo());
+                ProjectInfo.AddCommand(new BuildCommandInfo(GetServerDefaultSolutionShortName()));
             if (!ProjectInfo.Commands.Any(x => x is TestsCommandInfo))
                 ProjectInfo.AddCommand(new TestsCommandInfo());
         }

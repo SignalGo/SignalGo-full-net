@@ -18,6 +18,7 @@ namespace SignalGo.Publisher.Models
         private string _ServerEndPoint;
         private string _ServerAddress;
         private string _ServerPort;
+        private string _ServerDefaultSolutionShortName;
         private string _ServerLastUpdate;
         private bool _IsChecked;
 
@@ -157,6 +158,24 @@ namespace SignalGo.Publisher.Models
                 OnPropertyChanged(nameof(ServerPort));
             }
         }
+
+        /// <summary>
+        /// short name of default solution in multiple solution projects
+        /// the short name that exist in solution name
+        /// </summary>
+        public string ServerDefaultSolutionShortName
+        {
+            get
+            {
+                return _ServerDefaultSolutionShortName;
+            }
+            set
+            {
+                _ServerDefaultSolutionShortName = value;
+                OnPropertyChanged(nameof(ServerDefaultSolutionShortName));
+            }
+        }
+
         /// <summary>
         /// server endpoint example:(.../ServerManager/SignalGo)
         /// </summary>

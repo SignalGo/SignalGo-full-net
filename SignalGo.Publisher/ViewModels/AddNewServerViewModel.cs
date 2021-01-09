@@ -25,6 +25,7 @@ namespace SignalGo.Publisher.ViewModels
         private string _ServerName;
         private string _ServerAddress;
         private string _ServerPort;
+        private string _ServerDefaultSolutionShortName;
         /// <summary>
         /// default endpoint like /ServerManager/SignalGo
         /// </summary>
@@ -80,6 +81,18 @@ namespace SignalGo.Publisher.ViewModels
                 OnPropertyChanged(nameof(ServerPort));
             }
         }
+        public string ServerDefaultSolutionShortName
+        {
+            get
+            {
+                return _ServerDefaultSolutionShortName;
+            }
+            set
+            {
+                _ServerDefaultSolutionShortName = value;
+                OnPropertyChanged(nameof(ServerDefaultSolutionShortName));
+            }
+        }
 
         public string ServerEndPoint
         {
@@ -125,6 +138,7 @@ namespace SignalGo.Publisher.ViewModels
                         ServerName = ServerName,
                         ServerAddress = ServerAddress,
                         ServerPort = ServerPort,
+                        ServerDefaultSolutionShortName = ServerDefaultSolutionShortName,
                         ServerEndPoint = ServerEndPoint
                     });
                     ServerSettingInfo.SaveServersSettingInfo();

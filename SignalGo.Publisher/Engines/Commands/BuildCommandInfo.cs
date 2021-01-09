@@ -17,12 +17,13 @@ namespace SignalGo.Publisher.Engines.Commands
         private string buildType = "Rebuild";
         private string outputType = "Debug";
         private UserSetting Configuration = UserSettingInfo.Current.UserSettings;
-
+        public string ServerDefaultSolutionShortName { get; set; }
         /// <summary>
         /// MsBuild
         /// </summary>
-        public BuildCommandInfo()
+        public BuildCommandInfo(string serverDefaultSolutionShortName)
         {
+            ServerDefaultSolutionShortName = serverDefaultSolutionShortName;
             Name = "compile dotnet project";
             ExecutableFile = "cmd.exe";
             Command = $"{UserSettingInfo.Current.UserSettings.MsbuildPath} ";
@@ -46,7 +47,7 @@ namespace SignalGo.Publisher.Engines.Commands
         public override async Task Initialize(ProcessStartInfo processStartInfo)
         {
             ProjectCount = await LoadSlnProjectsCount(WorkingPath);
-            Arguments = $"-t:{buildType} -r:{Configuration.IsRestore} -p:Configuration={outputType} -noWarn:MSB4011;CS1591 -nologo {SolutionFile}";
+            Arguments = $"{SolutionFile} -t:{buildType} -r:{Configuration.IsRestore} -p:Configuration={outputType} -noWarn:MSB4011;CS1591 -nologo";
             Size = ProjectCount;
             processStartInfo.RedirectStandardOutput = true;
             processStartInfo.FileName = $"{Command}";
@@ -55,10 +56,10 @@ namespace SignalGo.Publisher.Engines.Commands
             processStartInfo.WorkingDirectory = WorkingPath;
         }
 
-        public static async Task<int> LoadSlnProjectsCount(string path)
+        public async Task<int> LoadSlnProjectsCount(string path)
         {
             int count = 0;
-            SolutionFile = Directory.GetFiles(path, "*.*").FirstOrDefault(x => x.EndsWith(".sln", StringComparison.OrdinalIgnoreCase));
+            SolutionFile = GetSolutionFileName(path, ServerDefaultSolutionShortName);
             try
             {
                 foreach (var item in await File.ReadAllLinesAsync(SolutionFile))

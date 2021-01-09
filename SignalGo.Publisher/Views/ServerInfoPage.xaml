@@ -69,6 +69,7 @@
                 <RowDefinition Height="auto"/>
                 <RowDefinition Height="auto"/>
                 <RowDefinition Height="auto"/>
+                <RowDefinition Height="auto"/>
             </Grid.RowDefinitions>
             <Label Margin="10" Grid.Row="0" Content="Guid:" VerticalContentAlignment="Center" HorizontalAlignment="Left"/>
             <TextBox Margin="10" Grid.Row="0" Text="{Binding ServerInfo.ServerKey}" Grid.Column="1" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Grid.ColumnSpan="2" />
@@ -85,7 +86,10 @@
             <Label Margin="10" Grid.Row="5" Content="ServerEndPoint:" VerticalContentAlignment="Center" HorizontalAlignment="Left"/>
             <TextBox Margin="10" Grid.Row="5" Text="{Binding ServerInfo.ServerEndPoint}" Grid.Column="1" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" />
 
-            <StackPanel Grid.Row="6" Orientation="Horizontal" Grid.ColumnSpan="3" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <Label Margin="10" Grid.Row="6" Content="Default Solution Short Name:" VerticalContentAlignment="Center" HorizontalAlignment="Left"/>
+            <TextBox Margin="10" Grid.Row="6" Text="{Binding ServerInfo.ServerDefaultSolutionShortName}" Grid.Column="1" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" />
+
+            <StackPanel Grid.Row="7" Orientation="Horizontal" Grid.ColumnSpan="3" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <StackPanel Orientation="Horizontal"  HorizontalAlignment="Center">
                     <TextBlock Text="Server Status: " Margin="10"/>
                     <ComboBox x:Name="serverStatusCombo" VerticalAlignment="Center" SelectedItem="{Binding ServerInfo.ServerStatus}" >
@@ -100,11 +104,11 @@
                 <Button Command="{Binding StopCommand}" Content="Stop" Width="100" Height="30" Margin="10,0,0,0"/>
             </StackPanel>-->
             </StackPanel>
-            <StackPanel Orientation="Horizontal" Grid.Row="7" HorizontalAlignment="Center" VerticalAlignment="Bottom" Grid.ColumnSpan="3">
-                <Button Margin="10" Command="{Binding SaveChangesCommand}" Grid.Row="6" Grid.Column="3" Content="💾  Save" Width="100" Height="30" />
-                <Button Margin="10" Command="{Binding ProtectServerCommand}" Grid.Row="6" Grid.Column="3" Content="🔐 Protect Server" Width="100" Height="30" />
-                <Button Margin="10" Command="{Binding RemoveServerCommand}" Grid.Row="6" Grid.Column="3" Content="✘ Delete" Width="100" Height="30" />
-                <Button Margin="10" Command="{Binding BackCommand}" Grid.Row="6" Grid.Column="3" Content="❮  Back" Width="100" Height="30" />
+            <StackPanel Orientation="Horizontal" Grid.Row="8" HorizontalAlignment="Center" VerticalAlignment="Bottom" Grid.ColumnSpan="3">
+                <Button Margin="10" Command="{Binding SaveChangesCommand}" Grid.Column="3" Content="💾  Save" Width="100" Height="30" />
+                <Button Margin="10" Command="{Binding ProtectServerCommand}" Grid.Column="3" Content="🔐 Protect Server" Width="100" Height="30" />
+                <Button Margin="10" Command="{Binding RemoveServerCommand}" Grid.Column="3" Content="✘ Delete" Width="100" Height="30" />
+                <Button Margin="10" Command="{Binding BackCommand}" Grid.Column="3" Content="❮  Back" Width="100" Height="30" />
             </StackPanel>
         </Grid>
 

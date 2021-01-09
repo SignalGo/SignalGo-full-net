@@ -18,21 +18,20 @@ namespace SignalGo.Publisher.Engines.Commands
         //    Arguments = $"publish -nologo";
         //    IsEnabled = true;
         //}
-
+        public string ServerDefaultSolutionShortName { get; set; }
         /// <summary>
         /// this command will run dotnet sdk publish command, before it, rebuild must be called
         /// </summary>
         /// <param name="serviceContract"></param>
-        public PublishCommandInfo(ServiceContract serviceContract) : base()
+        public PublishCommandInfo(ServiceContract serviceContract, string serverDefaultSolutionShortName) : base()
         {
+            ServerDefaultSolutionShortName = serverDefaultSolutionShortName;
             // title of command in Queue list
             Name = "upload to servers";
             // executable shell binary 
             ExecutableFile = "cmd.exe";
             // command which run in shell
             Command = "dotnet ";
-            // args to send to command
-            Arguments = $"publish --no-build -nologo";
             // command are avail/not available
             IsEnabled = true;
             // name of project service (in server)
@@ -46,9 +45,9 @@ namespace SignalGo.Publisher.Engines.Commands
         /// </summary>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public override async Task<RunStatusType> Run(CancellationToken cancellationToken,string caller)
+        public override async Task<RunStatusType> Run(CancellationToken cancellationToken, string caller)
         {
-            await base.Run(cancellationToken,caller);
+            await base.Run(cancellationToken, caller);
             var compressedData = await Compress();
             var result = await Upload(compressedData, cancellationToken, true);
             return Status = result;
@@ -73,6 +72,9 @@ namespace SignalGo.Publisher.Engines.Commands
             processStartInfo.CreateNoWindow = true;
             processStartInfo.Arguments = $" {Arguments}";
             processStartInfo.WorkingDirectory = WorkingPath;
+            var solutionFile = GetSolutionFileName(WorkingPath, ServerDefaultSolutionShortName);
+            // args to send to command
+            Arguments = $"publish {solutionFile} --no-build -nologo";
         }
         public override bool CalculateStatus(string line)
         {
