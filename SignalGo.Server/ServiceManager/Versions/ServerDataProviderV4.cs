@@ -210,7 +210,7 @@ namespace SignalGo.Server.ServiceManager.Versions
                     _serverBase.DisposeClient(client, tcpClient, "AddClient header not support");
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 _serverBase.DisposeClient(client, tcpClient, "exception");
             }
