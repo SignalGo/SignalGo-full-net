@@ -111,7 +111,7 @@ namespace SignalGo.Server.ServiceManager
             //{
             //    return SendDataWithCallClientServiceMethodGeneric<int>(serverBase, client, returnType, serviceName, methodName, args);
             //};
-            if (methodName.LastIndexOf("Async", StringComparison.OrdinalIgnoreCase) == methodName.Length - 5)
+            if (methodName.EndsWith("Async"))
                 methodName = methodName.Substring(0, methodName.Length - 5);
 #if (NET35 || NET40)
             return null;// Task<object>.Factory.StartNew(run);
@@ -150,7 +150,7 @@ namespace SignalGo.Server.ServiceManager
                 returnType = returnType.GetGenericArguments()[0];
             }
 
-            if (methodName.LastIndexOf("Async", StringComparison.OrdinalIgnoreCase) == methodName.Length - 5)
+            if (methodName.EndsWith("Async", StringComparison.OrdinalIgnoreCase))
                 methodName = methodName.Substring(0, methodName.Length - 5);
 #if (NET35 || NET40)
             return null;// Task<object>.Factory.StartNew(run);
