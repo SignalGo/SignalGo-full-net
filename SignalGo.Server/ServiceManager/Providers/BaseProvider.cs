@@ -484,7 +484,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                                         if (!item.IsDisposed)
                                         {
                                             if (item.IsThrowWhenNotDisposed)
-                                                throw new Exception($"You forgot to dispose object of type {item.GetType().FullName} int method {methodName} int service {serviceName}");
+                                                throw new Exception($"You forgot to dispose object of type {item.GetType().FullName} in method {methodName} in service {serviceName}");
                                             await item.CustomDisposeAsync();
                                         }
                                     }
