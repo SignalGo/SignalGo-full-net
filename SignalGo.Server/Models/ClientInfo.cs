@@ -7,6 +7,7 @@ using SignalGo.Shared.Models;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Sockets;
 using System.Threading;
 
@@ -210,7 +211,25 @@ namespace SignalGo.Server.Models
         public virtual string GetRequestHeaderValue(string header)
         {
             if (!RequestHeaders.ContainsKey(header))
+            {
                 return null;
+            }
+            return ((WebHeaderCollection)RequestHeaders)[header];
+        }
+
+        public virtual string GetRequestCookieHeaderValue(string header)
+        {
+            if (!RequestHeaders.ContainsKey(header))
+            {
+                //check the responses header when you are getting by context in the first time before sending one time of Cookie header to client
+                if (ResponseHeaders.TryGetValue("set-cookie", out string[] headers))
+                {
+                    if (headers == null)
+                        return null;
+                    return headers.FirstOrDefault();
+                }
+                return null;
+            }
             return ((WebHeaderCollection)RequestHeaders)[header];
         }
 

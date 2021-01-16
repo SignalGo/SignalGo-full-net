@@ -163,7 +163,7 @@ namespace SignalGo.Server.Models
                                 isFindSessionProperty = true;
                                 if (httpClient.RequestHeaders == null)
                                     continue;
-                                var session = httpClient.GetRequestHeaderValue(httpKey.RequestHeaderName);
+                                var session = httpClient.GetRequestCookieHeaderValue(httpKey.RequestHeaderName);
                                 if (session == null)
                                     continue;
                                 var key = ExtractValue(session, httpKey.KeyName, httpKey.HeaderValueSeparate, httpKey.HeaderKeyValueSeparate);
