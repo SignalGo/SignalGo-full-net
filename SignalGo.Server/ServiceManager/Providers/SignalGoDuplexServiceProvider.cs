@@ -77,6 +77,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                         }
                         if (serverBase.ClientServiceCallMethodsResult.TryGetValue(callback.Guid, out KeyValue<Type, object> resultTask))
                         {
+                            serverBase.ClientServiceCallMethodsResult.TryRemove(callback.Guid, out resultTask);
                             if (callback.IsException)
                                 resultTask.Value.GetType().FindMethod("SetException").Invoke(resultTask.Value, new object[] { new Exception(callback.Data) });
                             else

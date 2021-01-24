@@ -19,6 +19,7 @@ using SignalGo.Shared.Security;
 using System.Net.Security;
 using SignalGo.Client.IO;
 using SignalGo.Shared.IO.Compressions;
+using System.Diagnostics;
 
 namespace SignalGo.Client.ClientManager
 {
@@ -1449,6 +1450,7 @@ namespace SignalGo.Client.ClientManager
 #endif
 
                                 MethodCallbackInfo callback = ClientSerializationHelper.DeserializeObject<MethodCallbackInfo>(json);
+                                //Debug.WriteLine($"Get callback {callback.Guid}");
 
                                 bool geted = WaitedMethodsForResponse.TryGetValue(callback.Guid, out TaskCompletionSource<MethodCallbackInfo> keyValue);
                                 if (geted)
@@ -1649,6 +1651,7 @@ namespace SignalGo.Client.ClientManager
             {
                 try
                 {
+                    //Debug.WriteLine($"Get exception for task of {callback.Guid}");
                     if (WaitedMethodsForResponse.TryGetValue(callback.Guid, out TaskCompletionSource<MethodCallbackInfo> keyValue))
                     {
                         keyValue.SetException(ex);
@@ -1656,8 +1659,6 @@ namespace SignalGo.Client.ClientManager
                 }
                 catch
                 {
-
-
                 }
             }
         }

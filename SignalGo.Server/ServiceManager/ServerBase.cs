@@ -153,6 +153,10 @@ namespace SignalGo.Server.ServiceManager
         /// </summary>
         internal ConcurrentDictionary<string, KeyValue<Type, object>> ClientServiceCallMethodsResult { get; set; } = new ConcurrentDictionary<string, KeyValue<Type, object>>();
         /// <summary>
+        /// all of callbacks added for a client that will be remove after the client works done or client disposed
+        /// </summary>
+        internal ConcurrentDictionary<ClientInfo, List<Guid>> ClientServiceCallMethods { get; set; } = new ConcurrentDictionary<ClientInfo, List<Guid>>();
+        /// <summary>
         /// before method calls
         /// </summary>
         public OnCallMethod OnBeforeCallMethodAction { get; set; }
@@ -315,6 +319,27 @@ namespace SignalGo.Server.ServiceManager
                 OperationContextBase.SavedSettings.Remove(client);
 
                 client.OnDisconnected?.Invoke();
+                try
+                {
+                    if (ClientServiceCallMethods.TryGetValue(client, out List<Guid> callbacks))
+                    {
+                        ClientServiceCallMethods.TryRemove(client, out callbacks);
+                        foreach (var guid in callbacks)
+                        {
+                            if (ClientServiceCallMethodsResult.TryGetValue(guid.ToString(), out KeyValue<Type, object> callback))
+                            {
+                                ClientServiceCallMethodsResult.Remove(guid.ToString());
+                                callback.Value.GetType().GetMethods(BindingFlags.Public | BindingFlags.Instance)
+                                    .FirstOrDefault(x=>x.Name == "SetException" && x.GetParameters()[0].Name == "exception").Invoke(callback.Value, new object[] { new Exception("Client Disposed!") });
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+
+
+                }
             }
             catch (Exception ex)
             {

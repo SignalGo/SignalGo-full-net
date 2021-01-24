@@ -122,9 +122,13 @@ namespace SignalGo.Server.ServiceManager
             callInfo.ServiceName = serviceName;
             callInfo.MethodName = methodName;
             callInfo.Parameters = args;
-            string guid = Guid.NewGuid().ToString();
-            callInfo.Guid = guid;
-            serverBase.ClientServiceCallMethodsResult.TryAdd(guid, new KeyValue<Type, object>(returnType, taskCompletionSource));
+            var guid = Guid.NewGuid();
+            callInfo.Guid = guid.ToString();
+            serverBase.ClientServiceCallMethodsResult.TryAdd(callInfo.Guid, new KeyValue<Type, object>(returnType, taskCompletionSource));
+            if (serverBase.ClientServiceCallMethods.TryGetValue(client, out List<Guid> callbacks))
+                callbacks.Add(guid);
+            else
+                serverBase.ClientServiceCallMethods[client] = new List<Guid>() {guid };
             List<byte> bytes = new List<byte>
                 {
                      (byte)DataType.CallMethod,
@@ -161,10 +165,13 @@ namespace SignalGo.Server.ServiceManager
             callInfo.ServiceName = serviceName;
             callInfo.MethodName = methodName;
             callInfo.Parameters = args;
-            string guid = Guid.NewGuid().ToString();
-            callInfo.Guid = guid;
-            serverBase.ClientServiceCallMethodsResult.TryAdd(guid, new KeyValue<Type, object>(returnType, taskCompletionSource));
-
+            var guid = Guid.NewGuid();
+            callInfo.Guid = guid.ToString();
+            serverBase.ClientServiceCallMethodsResult.TryAdd(callInfo.Guid, new KeyValue<Type, object>(returnType, taskCompletionSource));
+            if (serverBase.ClientServiceCallMethods.TryGetValue(client, out List<Guid> callbacks))
+                callbacks.Add(guid);
+            else
+                serverBase.ClientServiceCallMethods[client] = new List<Guid>() { guid };
             string json = ServerSerializationHelper.SerializeObject(callInfo, serverBase);
             ///when length is large we need to send data by parts
             if (json.Length > 30000)

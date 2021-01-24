@@ -4,6 +4,7 @@ using SignalGo.Shared.Helpers;
 using SignalGo.Shared.Models;
 using System;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
@@ -229,7 +230,7 @@ namespace SignalGo.Client.ClientManager
                 //#endif
                 //
                 isIgnorePriority = method?.GetCustomAttributes<PriorityCallAttribute>().Count() > 0;
-
+                Debug.WriteLine($"Wait for task of {callInfo.Guid}");
                 connector.SendData(callInfo);
 
 
