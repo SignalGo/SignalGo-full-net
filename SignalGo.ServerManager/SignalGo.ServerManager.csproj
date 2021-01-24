@@ -16,8 +16,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\MvvmGo\MvvmGo.WindowsWPF\MvvmGo.WindowsWPF.csproj" />
-    <ProjectReference Include="..\..\MvvmGo\MvvmGo\MvvmGo.csproj" />
+    <PackageReference Include="MvvmGo" Version="1.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\SignalGo.Server\SignalGo.Server.csproj" />
     <ProjectReference Include="..\SignalGo.Shared\SignalGo.Shared.csproj" />
   </ItemGroup>
