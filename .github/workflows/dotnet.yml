@@ -12,7 +12,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-latest ,macos-latest, ubuntu-latest,ubuntu-16.04,macos-10.15,ubuntu-20.04]
+        os: [windows-latest]
     steps:
     - uses: actions/checkout@v2
       env:
@@ -21,6 +21,10 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 5.0.x
+    - name: Setup .NET 461
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 4.6.x
     - name: Setup .NET 2.1.x
       uses: actions/setup-dotnet@v1
       with:
