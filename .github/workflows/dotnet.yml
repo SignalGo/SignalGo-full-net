@@ -12,7 +12,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-latest ,macos-latest, ubuntu-latest,ubuntu-16.04,macos-10.15,ubuntu-20.04]
+        os: [windows-2019]
     steps:
     - uses: actions/checkout@v2
       env:
@@ -36,6 +36,8 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore
     - name: Build
-      run: dotnet build --no-restore
+      run: |
+           cd "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\MSBuild\Current\Bin\"
+           .\MSBuild.exe $Env:GITHUB_WORKSPACE\SignalGo.sln
     - name: Test
       run: dotnet test --no-build --verbosity normal
