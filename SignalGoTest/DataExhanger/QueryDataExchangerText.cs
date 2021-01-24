@@ -1,8 +1,8 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using SignalGo.DataExchanger.Compilers;
+﻿using SignalGo.DataExchanger.Compilers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Xunit;
 
 namespace SignalGoTest.DataExhanger
 {
@@ -16,7 +16,7 @@ namespace SignalGoTest.DataExhanger
         {
             if (obj is UserEx user)
             {
-                return Name == user.Name && Family == user.Family && (Posts ==null ? Posts == user.Posts :Posts.SequenceEqual(user.Posts)) && (Files == null ? Files == user.Files : Files.SequenceEqual(user.Files));
+                return Name == user.Name && Family == user.Family && (Posts == null ? Posts == user.Posts : Posts.SequenceEqual(user.Posts)) && (Files == null ? Files == user.Files : Files.SequenceEqual(user.Files));
             }
             return false;
         }
@@ -84,10 +84,9 @@ namespace SignalGoTest.DataExhanger
     /// <summary>
     /// Summary description for QueryDataExchangerText
     /// </summary>
-    [TestClass]
     public class QueryDataExchangerText
     {
-        [TestMethod]
+        [Fact]
         public void TestMethod1()
         {
             return;

@@ -1,15 +1,14 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using SignalGo.DataExchanger.Compilers;
+﻿using SignalGo.DataExchanger.Compilers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Xunit;
 
 namespace SignalGoTest.DataExhanger
 {
-    [TestClass]
     public class QueryDataExchangerAllTests
     {
-        [TestMethod]
+        [Fact]
         public void Example1()
         {
             string query = @"select{name family posts{title articles{author}date news{newsName}}files{id name}}var user{where user.name=""ali""}";
@@ -25,10 +24,10 @@ namespace SignalGoTest.DataExhanger
 
             List<UserEx> linqList = toComiple.Where(x => x.Name == "ali").ToList();
             bool equal = resultData.SequenceEqual(linqList);
-            Assert.IsTrue(equal);
+            Assert.True(equal);
         }
 
-        [TestMethod]
+        [Fact]
         public void Example2()
         {
             string query = @"select{name family posts{title articles{author}date news{newsName}}files{id name}}var user{where user.name=""ali"" and user.family = ""yousefi""}";
@@ -44,10 +43,10 @@ namespace SignalGoTest.DataExhanger
 
             List<UserEx> linqList = toComiple.Where(x => x.Name == "ali" && x.Family == "yousefi").ToList();
             bool equal = resultData.SequenceEqual(linqList);
-            Assert.IsTrue(equal);
+            Assert.True(equal);
         }
 
-        [TestMethod]
+        [Fact]
         public void Example3()
         {
             string query = @"select{name family posts{title articles{author}date news{newsName}}files{id name}}var user{where user.name=""ali"" and user.family = ""yousefi"" or (user.name == ""reza"" or user.family == ""jamal"")}";
@@ -63,10 +62,10 @@ namespace SignalGoTest.DataExhanger
 
             List<UserEx> linqList = toComiple.Where(x => x.Name == "ali" && x.Family == "yousefi" || (x.Name == "reza" || x.Family == "jamal")).ToList();
             bool equal = resultData.SequenceEqual(linqList);
-            Assert.IsTrue(equal);
+            Assert.True(equal);
         }
 
-        [TestMethod]
+        [Fact]
         public void Example4()
         {
             string query = @"select{name family posts{title articles{author}date news{newsName}}files{id name}}var user{where user.name=""ali"" and user.family = ""yousefi"" or (user.name == ""reza"" or user.family == ""jamal"" or (user.family == ""jamal""))}";
@@ -82,10 +81,10 @@ namespace SignalGoTest.DataExhanger
 
             List<UserEx> linqList = toComiple.Where(x => x.Name == "ali" && x.Family == "yousefi" || (x.Name == "reza" && x.Family == "jamal" || (x.Family == "jamal"))).ToList();
             bool equal = resultData.SequenceEqual(linqList);
-            Assert.IsTrue(equal);
+            Assert.True(equal);
         }
 
-        [TestMethod]
+        [Fact]
         public void Example5()
         {
             string query = @"select{name family posts{title articles{author}date news{newsName}}files{id name}}var user{where user.name=""ali"" or user.name = ""ali"" and (user.family == ""jamal"")}";
@@ -101,10 +100,10 @@ namespace SignalGoTest.DataExhanger
 
             List<UserEx> linqList = toComiple.Where(x => x.Name == "ali" || x.Name == "ali" && (x.Family == "jamal")).ToList();
             bool equal = resultData.SequenceEqual(linqList);
-            Assert.IsTrue(equal);
+            Assert.True(equal);
         }
 
-        [TestMethod]
+        [Fact]
         public void Example6()
         {
             string query = @"select{name family posts{title articles{author}date news{newsName}}files{id name}}var user{where user.name=""ali"" or user.name = ""ali"" and (user.family == ""jamal"") or user.family == ""jamal""}";
@@ -119,10 +118,10 @@ namespace SignalGoTest.DataExhanger
             List<UserEx> resultData = resultWheres.ToList();
             List<UserEx> linqList = toComiple.Where(x => x.Name == "ali" || x.Name == "ali" && (x.Family == "jamal") || x.Family == "jamal").ToList();
             bool equal = resultData.SequenceEqual(linqList);
-            Assert.IsTrue(equal);
+            Assert.True(equal);
         }
 
-        [TestMethod]
+        [Fact]
         public void Example7()
         {
             string query = @"select{name family posts{title articles{author}date news{newsName}}files{id name}}var user{where user.family=""yousefi"" or count(user.posts) = 1}";
@@ -137,10 +136,10 @@ namespace SignalGoTest.DataExhanger
             List<UserEx> resultData = resultWheres.ToList();
             List<UserEx> linqList = toComiple.Where(x => x.Family == "yousefi" || x.Posts.Count() == 1).ToList();
             bool equal = resultData.SequenceEqual(linqList);
-            Assert.IsTrue(equal);
+            Assert.True(equal);
         }
 
-        [TestMethod]
+        [Fact]
         public void Example8()
         {
             string query = @"select{name family posts{title articles{author}date news{newsName}}files{id name}}var user{where user.family=""yousefi"" or count ( user.posts ) = 1 or count(user.posts)=0}";
@@ -155,10 +154,10 @@ namespace SignalGoTest.DataExhanger
             List<UserEx> resultData = resultWheres.ToList();
             List<UserEx> linqList = toComiple.Where(x => x.Family == "yousefi" || x.Posts.Count() == 1 || x.Posts.Count() == 0).ToList();
             bool equal = resultData.SequenceEqual(linqList);
-            Assert.IsTrue(equal);
+            Assert.True(equal);
         }
 
-        [TestMethod]
+        [Fact]
         public void Example9()
         {
             string query = @"select{name family posts{title articles{author}date news{newsName}}files{id name}}var user{where user.family=""yousefi"" or count ( user.posts ) != count(user.posts)}";
@@ -173,10 +172,10 @@ namespace SignalGoTest.DataExhanger
             List<UserEx> resultData = resultWheres.ToList();
             List<UserEx> linqList = toComiple.Where(x => x.Family == "yousefi" || x.Posts.Count() != x.Posts.Count()).ToList();
             bool equal = resultData.SequenceEqual(linqList);
-            Assert.IsTrue(equal);
+            Assert.True(equal);
         }
 
-        [TestMethod]
+        [Fact]
         public void Example10()
         {
             string query = @"select{name family posts{title articles{author}date news{newsName}}files{id name}}var user{where user.family=""yousefi"" or(user.name == ""ali"" and count ( user.posts ) >0)}";
@@ -191,11 +190,11 @@ namespace SignalGoTest.DataExhanger
             List<UserEx> resultData = resultWheres.ToList();
             List<UserEx> linqList = toComiple.Where(x => x.Family == "yousefi" || (x.Name == "ali" && x.Posts.Count() > 0)).ToList();
             bool equal = resultData.SequenceEqual(linqList);
-            Assert.IsTrue(equal);
+            Assert.True(equal);
 
         }
 
-        [TestMethod]
+        [Fact]
         public void Example11()
         {
             string query = @"select{name family posts{title articles{author}date news{newsName}}files{id name}}var user{where user.family=""yousefi"" and sum ( 5 , 1 , 4 ) == 10)}";
@@ -210,11 +209,11 @@ namespace SignalGoTest.DataExhanger
             List<UserEx> resultData = resultWheres.ToList();
             List<UserEx> linqList = toComiple.Where(x => x.Family == "yousefi" && 5 + 1 + 4 == 10).ToList();
             bool equal = resultData.SequenceEqual(linqList);
-            Assert.IsTrue(equal);
+            Assert.True(equal);
 
         }
 
-        [TestMethod]
+        [Fact]
         public void Example12()
         {
             string query = @"select{name family posts{title articles{author}date news{newsName}}files{id name}}var user{where user.family=""yousefi"" and sum(5,1,4)==10)}";
@@ -229,11 +228,11 @@ namespace SignalGoTest.DataExhanger
             List<UserEx> resultData = resultWheres.ToList();
             List<UserEx> linqList = toComiple.Where(x => x.Family == "yousefi" && 5 + 1 + 4 == 10).ToList();
             bool equal = resultData.SequenceEqual(linqList);
-            Assert.IsTrue(equal);
+            Assert.True(equal);
 
         }
 
-        [TestMethod]
+        [Fact]
         public void Example13()
         {
             string query = @"select{name family posts{title articles{author}date news{newsName}}files{id name}}var user{where sum(count(user.posts),count(user.posts),count(user.posts))==6)}";
@@ -248,10 +247,10 @@ namespace SignalGoTest.DataExhanger
             List<UserEx> resultData = resultWheres.ToList();
             List<UserEx> linqList = toComiple.Where(x => (x.Posts.Count() + x.Posts.Count() + x.Posts.Count()) == 6).ToList();
             bool equal = resultData.SequenceEqual(linqList);
-            Assert.IsTrue(equal);
+            Assert.True(equal);
         }
 
-        [TestMethod]
+        [Fact]
         public void Example14()
         {
             string query = @"select{name family posts{title articles{author}date news{newsName}}files{id name}}var user{where sum(sum(count(user.posts),count(user.posts)),count(user.posts))==6)}";
@@ -266,10 +265,10 @@ namespace SignalGoTest.DataExhanger
             List<UserEx> resultData = resultWheres.ToList();
             List<UserEx> linqList = toComiple.Where(x => ((x.Posts.Count() + x.Posts.Count()) + x.Posts.Count()) == 6).ToList();
             bool equal = resultData.SequenceEqual(linqList);
-            Assert.IsTrue(equal);
+            Assert.True(equal);
         }
 
-        [TestMethod]
+        [Fact]
         public void Example15()
         {
             string query = @"select{name family posts{title articles{author}date news{newsName}}files{id name}}
@@ -324,10 +323,10 @@ namespace SignalGoTest.DataExhanger
                 }
             }
             bool equal = resultData.SequenceEqual(linqList);
-            Assert.IsTrue(equal);
+            Assert.True(equal);
         }
 
-        [TestMethod]
+        [Fact]
         public void Example16()
         {
             string query = @"select{name family posts{title articles{author}date news{newsName}}files{id name}}
@@ -387,7 +386,7 @@ namespace SignalGoTest.DataExhanger
                 }
             }
             bool equal = resultData.SequenceEqual(linqList);
-            Assert.IsTrue(equal);
+            Assert.True(equal);
         }
     }
 }

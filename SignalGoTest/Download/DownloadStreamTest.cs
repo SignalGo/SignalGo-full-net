@@ -1,18 +1,16 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using SignalGoTest2.Models;
+﻿using SignalGoTest2.Models;
 using SignalGoTest2Services.Interfaces;
 using System.IO;
 using System.Threading.Tasks;
+using Xunit;
 
 namespace SignalGoTest.Download
 {
-    [TestClass]
     public class DownloadStreamTest
     {
-        [TestMethod]
+        [Fact]
         public void TestDownload()
         {
-            GlobalInitalization.Initialize();
             SignalGo.Client.ClientProvider client = GlobalInitalization.InitializeAndConnecteClient();
             ITestServerStreamModel service = client.RegisterStreamServiceInterfaceWrapper<ITestServerStreamModel>();
             SignalGo.Shared.Models.StreamInfo<string> result = service.DownloadImage("hello world", new TestStreamModel() { Name = "test name", Values = new System.Collections.Generic.List<string>() { "value test 1", "value test 2" } });
@@ -21,10 +19,9 @@ namespace SignalGoTest.Download
             System.Diagnostics.Trace.Assert(result.Data == "hello return" && readLen == 4 && bytes[0] == 2 && bytes[1] == 5 && bytes[2] == 8 && bytes[3] == 9);
         }
 
-        [TestMethod]
+        [Fact]
         public async Task TestDownloadAsync()
         {
-            GlobalInitalization.Initialize();
             SignalGo.Client.ClientProvider client = GlobalInitalization.InitializeAndConnecteClient();
             ITestServerStreamModel service = client.RegisterStreamServiceInterfaceWrapper<ITestServerStreamModel>();
             SignalGo.Shared.Models.StreamInfo<string> result = await service.DownloadImageAsync("hello world", new TestStreamModel() { Name = "test name", Values = new System.Collections.Generic.List<string>() { "value test 1", "value test 2" } });
@@ -33,10 +30,9 @@ namespace SignalGoTest.Download
             System.Diagnostics.Trace.Assert(result.Data == "hello return" && readLen == 4 && bytes[0] == 2 && bytes[1] == 5 && bytes[2] == 8 && bytes[3] == 9);
         }
 
-        [TestMethod]
+        [Fact]
         public void TestUpload()
         {
-            GlobalInitalization.Initialize();
             SignalGo.Client.ClientProvider client = GlobalInitalization.InitializeAndConnecteClient();
             using (MemoryStream memoryStream = new MemoryStream())
             {
@@ -53,14 +49,13 @@ namespace SignalGoTest.Download
                     Length = memoryStream.Length,
                     Stream = memoryStream
                 }, new TestStreamModel() { Name = "test name", Values = new System.Collections.Generic.List<string>() { "value test 1", "value test 2" } });
-                Assert.IsTrue(result == "success");
+                Assert.True(result == "success", result);
             }
         }
 
-        [TestMethod]
+        [Fact]
         public async Task TestUploadAsync()
         {
-            GlobalInitalization.Initialize();
             using (MemoryStream memoryStream = new MemoryStream())
             {
                 byte[] bytes = new byte[1024 * 512];
@@ -76,17 +71,16 @@ namespace SignalGoTest.Download
                     Length = memoryStream.Length,
                     Stream = memoryStream
                 }, new TestStreamModel() { Name = "test name", Values = new System.Collections.Generic.List<string>() { "value test 1", "value test 2" } });
-                Assert.IsTrue(result == "success");
+                Assert.True(result == "success");
             }
         }
 
 
 
 
-        [TestMethod]
+        [Fact]
         public void TestDownloadCross()
         {
-            GlobalInitalization.Initialize();
             ITestServerStreamModel service = new SignalGoTest2Services.StreamServices.TestServerStreamModel("localhost", 1132);
             SignalGo.Shared.Models.StreamInfo<string> result = service.DownloadImage("hello world", new TestStreamModel() { Name = "test name", Values = new System.Collections.Generic.List<string>() { "value test 1", "value test 2" } });
             byte[] bytes = new byte[1024];
@@ -95,10 +89,9 @@ namespace SignalGoTest.Download
 
         }
 
-        [TestMethod]
+        [Fact]
         public async Task TestDownloadCrossAsync()
         {
-            GlobalInitalization.Initialize();
             ITestServerStreamModel service = new SignalGoTest2Services.StreamServices.TestServerStreamModel("localhost", 1132);
             SignalGo.Shared.Models.StreamInfo<string> result = await service.DownloadImageAsync("hello world", new TestStreamModel() { Name = "test name", Values = new System.Collections.Generic.List<string>() { "value test 1", "value test 2" } });
             byte[] bytes = new byte[1024];
@@ -106,10 +99,9 @@ namespace SignalGoTest.Download
             System.Diagnostics.Trace.Assert(result.Data == "hello return" && readLen == 4 && bytes[0] == 2 && bytes[1] == 5 && bytes[2] == 8 && bytes[3] == 9);
         }
 
-        [TestMethod]
+        [Fact]
         public void TestUploadCross()
         {
-            GlobalInitalization.Initialize();
             ITestServerStreamModel service = new SignalGoTest2Services.StreamServices.TestServerStreamModel("localhost", 1132);
             using (MemoryStream memoryStream = new MemoryStream())
             {
@@ -125,14 +117,13 @@ namespace SignalGoTest.Download
                     Length = memoryStream.Length,
                     Stream = memoryStream
                 }, new TestStreamModel() { Name = "test name", Values = new System.Collections.Generic.List<string>() { "value test 1", "value test 2" } });
-                Assert.IsTrue(result == "success");
+                Assert.True(result == "success");
             }
         }
 
-        [TestMethod]
+        [Fact]
         public async Task TestUploadCrossAsync()
         {
-            GlobalInitalization.Initialize();
             ITestServerStreamModel service = new SignalGoTest2Services.StreamServices.TestServerStreamModel("localhost", 1132);
             using (MemoryStream memoryStream = new MemoryStream())
             {
@@ -148,7 +139,7 @@ namespace SignalGoTest.Download
                     Length = memoryStream.Length,
                     Stream = memoryStream
                 }, new TestStreamModel() { Name = "test name", Values = new System.Collections.Generic.List<string>() { "value test 1", "value test 2" } });
-                Assert.IsTrue(result == "success");
+                Assert.True(result == "success");
             }
         }
     }

@@ -90,13 +90,20 @@ namespace SignalGoTest.Models
         {
             foreach (ITestClientServiceModel item in OperationContext.Current.GetAllClientServices<ITestClientServiceModel>())
             {
-                string result = item.HelloWorld("hello world");
-                if (result != "Hello")
-                    return new MessageContract() { IsSuccess = false };
+                try
+                {
+                    string result = item.HelloWorld("hello world");
+                    if (result != "Hello")
+                        return new MessageContract() { IsSuccess = false };
 
-                result = item.TestMethod("ali", "yousefi");
-                if (result != "ali yousefi")
-                    return new MessageContract() { IsSuccess = false };
+                    result = item.TestMethod("ali", "yousefi");
+                    if (result != "ali yousefi")
+                        return new MessageContract() { IsSuccess = false };
+                }
+                catch (Exception ex)
+                {
+
+                }
             }
             return new MessageContract() { IsSuccess = true };
         }
@@ -105,13 +112,20 @@ namespace SignalGoTest.Models
         {
             foreach (ITestClientServiceModel item in OperationContext.Current.GetAllClientServices<ITestClientServiceModel>())
             {
-                string result = await item.HelloWorld2("hello world");
-                if (result != "Hello")
-                    return new MessageContract() { IsSuccess = false };
+                try
+                {
+                    string result = await item.HelloWorld2("hello world");
+                    if (result != "Hello")
+                        return new MessageContract() { IsSuccess = false };
 
-                result = await item.TestMethod2("ali", "yousefi");
-                if (result != "ali yousefi")
-                    return new MessageContract() { IsSuccess = false };
+                    result = await item.TestMethod2("ali", "yousefi");
+                    if (result != "ali yousefi")
+                        return new MessageContract() { IsSuccess = false };
+                }
+                catch (Exception ex)
+                {
+
+                }
             }
             return new MessageContract() { IsSuccess = true };
         }

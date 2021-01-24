@@ -1,26 +1,23 @@
-﻿using System;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using SignalGo.Accessibilities;
-using System.Threading;
-using System.Diagnostics;
+﻿using SignalGo.Accessibilities;
+using System;
+using Xunit;
 
 namespace SignalGoTest.Utilities
 {
-    [TestClass]
     public class FactoryTest
     {
-        [TestMethod]
+        [Fact]
         public void TestDataFactorySingleToneByThread()
         {
             var data = new Random();
             if (!DataFactory.SetSingleToneByThread(data))
-                Assert.Fail("set singletone not work");
+                Assert.True(false, "set singletone not work");
             var otherdata = new Random();
             var takeData = DataFactory.GetSingleToneByThread<Random>();
-            Assert.IsTrue(takeData == data && takeData != otherdata);
+            Assert.True(takeData == data && takeData != otherdata);
         }
 
-        [TestMethod]
+        [Fact]
         public void TestDataFactorySingleToneByThreadMultiThreading()
         {
             int finished = 0;
@@ -48,19 +45,19 @@ namespace SignalGoTest.Utilities
 
             //}
 
-            Assert.IsTrue(isOk);
+            Assert.True(isOk);
         }
 
-        [TestMethod]
+        [Fact]
         public void TestConstructorFactorySingleToneByThread()
         {
             if (!ConstructorFactory.SetSingleToneByThread<Tuple<string>>(new object[] { "hello factory" }))
-                Assert.Fail("set singletone constructor not work");
+                Assert.True(false, "set singletone constructor not work");
 
             if (!DataFactory.SetSingleToneByThread<Tuple<string>>())
-                Assert.Fail("set singletone not work");
+                Assert.True(false, "set singletone not work");
             var takeData = DataFactory.GetSingleToneByThread<Tuple<string>>();
-            Assert.IsTrue(takeData.Item1 == "hello factory");
+            Assert.True(takeData.Item1 == "hello factory");
         }
     }
 }

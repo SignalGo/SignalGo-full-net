@@ -1,24 +1,21 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using SignalGoTest2.Models;
+﻿using SignalGoTest2.Models;
 using SignalGoTest2Services.Interfaces;
-using SignalGoTest2Services.ServerServices;
+using Xunit;
 
 namespace SignalGoTest.Validations
 {
-    [TestClass]
     public class ValidationTest
     {
-        [TestMethod]
+        [Fact]
         public void TestValidationsRule()
         {
-            GlobalInitalization.Initialize();
             SignalGo.Client.ClientProvider client = GlobalInitalization.InitializeAndConnecteClient();
             ITestServerModel service = client.RegisterServerServiceInterfaceWrapper<ITestServerModel>();
             ArticleInfo result = service.AddArticle(new ArticleInfo() { Name = "ali", Detail = "rezxa" });
-            Assert.IsTrue(result.CreatedDateTime.HasValue);
+            Assert.True(result.CreatedDateTime.HasValue);
             MessageContract<ArticleInfo> resultMessage = service.AddArticleMessage(new ArticleInfo());
-            Assert.IsTrue(resultMessage.Errors.Count == 2);
-            Assert.IsFalse(resultMessage.IsSuccess);
+            Assert.True(resultMessage.Errors.Count == 2);
+            Assert.False(resultMessage.IsSuccess);
         }
     }
 }

@@ -1,6 +1,6 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using SignalGoTest2Services.ServerServices;
+﻿using SignalGoTest2Services.ServerServices;
 using System.Threading.Tasks;
+using Xunit;
 
 namespace SignalGoTest.Callbacks
 {
@@ -29,44 +29,40 @@ namespace SignalGoTest.Callbacks
     /// <summary>
     /// Summary description for CallbackMethodsTest
     /// </summary>
-    [TestClass]
     public class CallbackMethodsTest
     {
 
-        [TestMethod]
+        [Fact]
         public async Task TestCallbacksAsyncs()
         {
-            GlobalInitalization.Initialize();
             SignalGo.Client.ClientProvider client = GlobalInitalization.InitializeAndConnecteClient();
             AuthenticationService service = client.RegisterServerService<AuthenticationService>(client);
             SignalGoTest2.Models.MessageContract result = await service.TestCallbacksAsyncAsync();
-            Assert.IsTrue(result.IsSuccess);
+            Assert.True(result.IsSuccess);
             SignalGoTest2.Models.MessageContract result2 = await service.TestCallbacksSyncAsync();
-            Assert.IsTrue(result2.IsSuccess);
+            Assert.True(result2.IsSuccess);
         }
 
-        [TestMethod]
+        [Fact]
         public void TestCallbacks()
         {
-            GlobalInitalization.Initialize();
             SignalGo.Client.ClientProvider client = GlobalInitalization.InitializeAndConnecteClient();
             AuthenticationService service = client.RegisterServerService<AuthenticationService>(client);
             SignalGoTest2.Models.MessageContract result = service.TestCallbacksAsync();
-            Assert.IsTrue(result.IsSuccess);
+            Assert.True(result.IsSuccess);
             SignalGoTest2.Models.MessageContract result2 = service.TestCallbacksSync();
-            Assert.IsTrue(result2.IsSuccess);
+            Assert.True(result2.IsSuccess);
         }
 
-        [TestMethod]
+        [Fact]
         public void TestWebSocketCallbacks()
         {
-            GlobalInitalization.Initialize();
             SignalGo.Client.ClientProvider client = GlobalInitalization.InitializeAndConnecteClient(true);
             AuthenticationService service = client.RegisterServerService<AuthenticationService>(client);
             SignalGoTest2.Models.MessageContract result = service.TestCallbacksAsync();
-            Assert.IsTrue(result.IsSuccess);
+            Assert.True(result.IsSuccess);
             SignalGoTest2.Models.MessageContract result2 = service.TestCallbacksSync();
-            Assert.IsTrue(result2.IsSuccess);
+            Assert.True(result2.IsSuccess);
         }
     }
 }

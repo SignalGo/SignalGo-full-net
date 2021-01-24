@@ -1,27 +1,25 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using SignalGoTest2Services.Interfaces;
+﻿using SignalGoTest2Services.Interfaces;
 using System.Threading.Tasks;
+using Xunit;
 
 namespace SignalGoTest.AsyncAwaitCalls
 {
-    [TestClass]
     public class AsyncAwaitTest
     {
-        [TestMethod]
+        [Fact]
         public async Task TestAsyncs()
         {
-            GlobalInitalization.Initialize();
             SignalGo.Client.ClientProvider client = GlobalInitalization.InitializeAndConnecteClient();
             ITestServerModel service = client.RegisterServerServiceInterfaceWrapper<ITestServerModel>();
             string result = service.ServerAsyncMethod("hello");
-            Assert.IsTrue(result == "hello guys");
+            Assert.True(result == "hello guys");
             string result2 = service.ServerAsyncMethod("hello2");
-            Assert.IsTrue(result2 == "not found");
+            Assert.True(result2 == "not found");
 
             result = await service.ServerAsyncMethodAsync("hello");
-            Assert.IsTrue(result == "hello guys");
+            Assert.True(result == "hello guys");
             result2 = await service.ServerAsyncMethodAsync("hello2");
-            Assert.IsTrue(result2 == "not found");
+            Assert.True(result2 == "not found");
         }
 
     }

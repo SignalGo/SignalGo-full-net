@@ -1,22 +1,17 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using SignalGo.Client;
+﻿using SignalGo.Client;
 using SignalGo.Shared.IO.Compressions;
 using SignalGoTest2.Models;
 using SignalGoTest2Services.Interfaces;
-using System;
-using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
+using Xunit;
 
 namespace SignalGoTest.Compressions
 {
-    [TestClass]
     public class CompressionTest
     {
-        [TestMethod]
+        [Fact]
         public async Task TestCompressionAsync()
         {
             var server = new SignalGo.Server.ServiceManager.ServerProvider();
@@ -52,7 +47,7 @@ namespace SignalGoTest.Compressions
                     Length = memoryStream.Length,
                     Stream = memoryStream
                 }, new TestStreamModel() { Name = "test name", Values = new System.Collections.Generic.List<string>() { "value test 1", "value test 2" } });
-                Assert.IsTrue(result == "success");
+                Assert.True(result == "success");
             }
         }
     }

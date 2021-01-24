@@ -1,16 +1,10 @@
-﻿using System;
-using System.Text;
-using System.Collections.Generic;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.Net;
-using System.IO;
+﻿using Xunit;
 
 namespace SignalGoTest2.Download
 {
     /// <summary>
     /// Summary description for WebServiceTest
     /// </summary>
-    [TestClass]
     public class WebServiceTest
     {
         public WebServiceTest()
@@ -18,24 +12,6 @@ namespace SignalGoTest2.Download
             //
             // TODO: Add constructor logic here
             //
-        }
-
-        private TestContext testContextInstance;
-
-        /// <summary>
-        ///Gets or sets the test context which provides
-        ///information about and functionality for the current test run.
-        ///</summary>
-        public TestContext TestContext
-        {
-            get
-            {
-                return testContextInstance;
-            }
-            set
-            {
-                testContextInstance = value;
-            }
         }
 
         #region Additional test attributes
@@ -60,7 +36,7 @@ namespace SignalGoTest2.Download
         //
         #endregion
 
-        [TestMethod]
+        [Fact]
         public void TestMethod1()
         {
             //HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create("https://www.zarinpal.com/pg/services/WebGate/wsdl");
