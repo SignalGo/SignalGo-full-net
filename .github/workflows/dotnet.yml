@@ -12,7 +12,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-latest]
+        os: [windows-2019]
     steps:
     - uses: actions/checkout@v2
       env:
@@ -21,10 +21,6 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 5.0.x
-    - name: Setup .NET 461
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: 4.6.x
     - name: Setup .NET 2.1.x
       uses: actions/setup-dotnet@v1
       with:
@@ -40,6 +36,8 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore
     - name: Build
-      run: dotnet build --no-restore
+      run: |
+           cd "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\MSBuild\Current\Bin\"
+           .\MSBuild.exe $Env:GITHUB_WORKSPACE\SignalGo.sln
     - name: Test
       run: dotnet test --no-build --verbosity normal
