@@ -56,6 +56,7 @@ namespace SignalGo.Client
         public void Connect(string address, int port)
         {
 #if (NETSTANDARD1_6)
+            Debug.WriteLine("DeadLock Warning TcpClientWorker Connect!");
             _tcpClient.ConnectAsync(address, port).GetAwaiter().GetResult();
 #else
             _tcpClient.Connect(address, port);
@@ -121,6 +122,7 @@ namespace SignalGo.Client
             //string headData = $"GET {uri.AbsolutePath} HTTP/1.1{newLine}Host: {uri.Host + port}{newLine}Connection: keep-alive{newLine}Sec-WebSocket-Key: x3JJHMbDL1EzLkh9GBhXDw=={newLine}Sec-WebSocket-Protocol: chat, superchat{newLine}Sec-WebSocket-Version: 13{newLine + newLine}";
             byte[] firstBytes = GetFirstLineBytes(uri.Host, port);
 #if (NETSTANDARD1_6)
+            Debug.WriteLine("DeadLock Warning WebSocketClientWorker Connect!");
             _tcpClient.ConnectAsync(uri.Host, port).GetAwaiter().GetResult();
 #else
             _tcpClient.Connect(uri.Host, port);

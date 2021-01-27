@@ -40,7 +40,7 @@ namespace SignalGo.Client.ClientManager
         }
 
 
-       
+
         /// <summary>
         /// send data to client
         /// </summary>
@@ -66,9 +66,9 @@ namespace SignalGo.Client.ClientManager
         /// <param name="methodName"></param>
         /// <param name="args"></param>
         /// <returns></returns>
-        public static async Task<T> SendDataAsync<T>(this ConnectorBase connector, string serviceName,string methodName, params Shared.Models.ParameterInfo[] args)
+        public static async Task<T> SendDataAsync<T>(this ConnectorBase connector, string serviceName, string methodName, params Shared.Models.ParameterInfo[] args)
         {
-            string data = await SendDataAsync(connector,serviceName, methodName, args);
+            string data = await SendDataAsync(connector, serviceName, methodName, args);
             if (string.IsNullOrEmpty(data))
                 return default(T);
             return ClientSerializationHelper.DeserializeObject<T>(data.ToString());
@@ -163,7 +163,7 @@ namespace SignalGo.Client.ClientManager
         /// </summary>
         /// <returns></returns>
 #if (!NET40 && !NET35)
-        public static Task<string> SendDataAsync(ConnectorBase connector, string serviceName, string methodName, params Shared.Models.ParameterInfo[] args)
+        public static async Task<string> SendDataAsync(ConnectorBase connector, string serviceName, string methodName, params Shared.Models.ParameterInfo[] args)
         {
             MethodCallInfo callInfo = new MethodCallInfo();
             callInfo.ServiceName = serviceName;
@@ -176,7 +176,7 @@ namespace SignalGo.Client.ClientManager
             //}
             string guid = Guid.NewGuid().ToString();
             callInfo.Guid = guid;
-            return SendDataAsync(connector, callInfo);
+            return await SendDataAsync(connector, callInfo);
         }
 #endif
 
@@ -195,8 +195,11 @@ namespace SignalGo.Client.ClientManager
             callInfo.Guid = guid;
             return SendData(connector, callInfo);
         }
-
+#if (!NET40 && !NET35)
+        internal static async Task<T> SendDataTaskAsync<T>(ConnectorBase connector, string serviceName, string methodName, MethodInfo method, params object[] args)
+#else
         internal static Task<T> SendDataTaskAsync<T>(ConnectorBase connector, string serviceName, string methodName, MethodInfo method, params object[] args)
+#endif
         {
             MethodCallInfo callInfo = new MethodCallInfo();
             callInfo.ServiceName = serviceName;
@@ -207,7 +210,11 @@ namespace SignalGo.Client.ClientManager
             //}
             string guid = Guid.NewGuid().ToString();
             callInfo.Guid = guid;
+#if (!NET40 && !NET35)
+            return await SendDataAsync<T>(connector, method, callInfo, args);
+#else
             return SendDataAsync<T>(connector, method, callInfo, args);
+#endif
         }
 
 #if (!NET40 && !NET35)
@@ -217,7 +224,7 @@ namespace SignalGo.Client.ClientManager
             bool isIgnorePriority = false;
             try
             {
-                TaskCompletionSource<MethodCallbackInfo> valueData = new TaskCompletionSource<MethodCallbackInfo>();
+                TaskCompletionManagerAsync<MethodCallbackInfo> valueData = new TaskCompletionManagerAsync<MethodCallbackInfo>();
                 CancellationTokenSource ct = new CancellationTokenSource((int)connector.ProviderSetting.ReceiveDataTimeout.TotalMilliseconds);
                 ct.Token.Register(() => valueData.TrySetException(new TimeoutException()), useSynchronizationContext: false);
 
@@ -230,11 +237,11 @@ namespace SignalGo.Client.ClientManager
                 //#endif
                 //
                 isIgnorePriority = method?.GetCustomAttributes<PriorityCallAttribute>().Count() > 0;
-                Debug.WriteLine($"Wait for task of {callInfo.Guid}");
+                Debug.WriteLine($"Wait for task of {callInfo.Guid} of {connector.ServerUrl} async");
                 connector.SendData(callInfo);
 
-
-                var result = await valueData.Task;
+                var result = await valueData.GetValue();
+                Debug.WriteLine($"Wait for task of {callInfo.Guid} of {connector.ServerUrl} done! {result == null} async");
 
                 if (result == null)
                 {
@@ -254,6 +261,7 @@ namespace SignalGo.Client.ClientManager
             }
             catch (Exception ex)
             {
+                Debug.WriteLine($"Wait for task of {callInfo.Guid} of {connector.ServerUrl} has exception! {ex}");
                 if (connector.IsConnected && !await connector.SendPingAndWaitToReceiveAsync())
                 {
                     connector.Disconnect();
@@ -273,7 +281,7 @@ namespace SignalGo.Client.ClientManager
             bool isIgnorePriority = false;
             try
             {
-                TaskCompletionSource<MethodCallbackInfo> valueData = new TaskCompletionSource<MethodCallbackInfo>();
+                TaskCompletionManager<MethodCallbackInfo> valueData = new TaskCompletionManager<MethodCallbackInfo>();
                 CancellationTokenSource ct = new CancellationTokenSource();
                 ct.Token.Register(() => valueData.TrySetCanceled(), useSynchronizationContext: false);
 
@@ -286,11 +294,12 @@ namespace SignalGo.Client.ClientManager
                 //#endif
                 //
                 isIgnorePriority = method?.GetCustomAttributes<PriorityCallAttribute>().Count() > 0;
-
+                Debug.WriteLine($"Wait for task of {callInfo.Guid} of {connector.ServerUrl} sync");
                 connector.SendData(callInfo);
 
+                MethodCallbackInfo result = valueData.GetValue();
 
-                MethodCallbackInfo result = valueData.Task.Result;
+                Debug.WriteLine($"Wait for task of {callInfo.Guid} of {connector.ServerUrl} done! {result == null} sync");
 
                 if (result == null)
                 {
@@ -310,6 +319,7 @@ namespace SignalGo.Client.ClientManager
             }
             catch (Exception ex)
             {
+                Debug.WriteLine($"Wait for task of {callInfo.Guid} of {connector.ServerUrl} has exception! {ex}");
                 if (connector.IsConnected && !connector.SendPingAndWaitToReceive())
                 {
                     connector.Disconnect();

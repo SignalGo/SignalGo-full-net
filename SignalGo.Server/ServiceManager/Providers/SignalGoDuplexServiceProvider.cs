@@ -7,6 +7,7 @@ using SignalGo.Shared.Managers;
 using SignalGo.Shared.Models;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -25,9 +26,13 @@ namespace SignalGo.Server.ServiceManager.Providers
                 PipeNetworkStream stream = client.ClientStream;
                 while (true)
                 {
+                    Debug.WriteLine($"Wait for get data from client: {client.IPAddress}");
+                    Console.WriteLine($"Wait for get data from client: {client.IPAddress}");
                     byte oneByteOfDataType = await client.StreamHelper.ReadOneByteAsync(stream);
                     //type of data
                     DataType dataType = (DataType)oneByteOfDataType;
+                    Debug.WriteLine($"Call DataType received: {dataType.ToString()}");
+                    Console.WriteLine($"Call DataType received: {dataType.ToString()}");
                     if (dataType == DataType.PingPong)
                     {
                         await client.StreamHelper.WriteToStreamAsync(client.ClientStream, new byte[] { 5 });
@@ -38,11 +43,15 @@ namespace SignalGo.Server.ServiceManager.Providers
                     //a server service method called from client
                     if (dataType == DataType.CallMethod)
                     {
+                        Debug.WriteLine($"Call Method Reciving data!");
+                        Console.WriteLine($"Call Method Reciving data!");
                         byte[] bytes = await client.StreamHelper.ReadBlockToEndAsync(stream, CompressionHelper.GetCompression(compressMode, serverBase.GetCustomCompression), serverBase.ProviderSetting.MaximumReceiveDataBlock);
                         //if (ClientsSettings.ContainsKey(client))
                         //    bytes = DecryptBytes(bytes, client);
                         string json = Encoding.UTF8.GetString(bytes);
                         MethodCallInfo callInfo = ServerSerializationHelper.Deserialize<MethodCallInfo>(json, serverBase);
+                        Debug.WriteLine($"Call method received: {callInfo.Guid}");
+                        Console.WriteLine($"Call method received: {callInfo.Guid}");
                         if (callInfo.PartNumber != 0)
                         {
                             SegmentManager segmentManager = new SegmentManager();
@@ -163,6 +172,7 @@ namespace SignalGo.Server.ServiceManager.Providers
             }
             catch (Exception ex)
             {
+                Debug.WriteLine($"Client Disconnected exception: {ex.ToString()}");
                 serverBase.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase SignalGoDuplexServiceProvider StartToReadingClientData");
                 serverBase.DisposeClient(client, null, "SignalGoDuplexServiceProvider StartToReadingClientData exception");
             }

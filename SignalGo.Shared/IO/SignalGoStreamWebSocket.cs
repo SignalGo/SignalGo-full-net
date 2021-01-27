@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -101,6 +102,7 @@ namespace SignalGo.Shared.IO
 #if (!NET35 && !NET40)
         public byte[] ReadBlockSize(int count)
         {
+            Debug.WriteLine("DeadLock Warning ReadBlockSize!");
             return ReadBlockSizeAsync(count).GetAwaiter().GetResult();
         }
 #endif

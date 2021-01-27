@@ -3,6 +3,7 @@ using SignalGo.Server.ServiceManager.Providers;
 using SignalGo.Shared.Converters;
 using SignalGo.Shared.IO;
 using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -52,6 +53,7 @@ namespace SignalGo.Server.ServiceManager.Versions
                         {
                             //IsWaitForClient = true;
 #if (NETSTANDARD1_6)
+                            Debug.WriteLine("DeadLock Warning Start Server!");
                             TcpClient client = _server.AcceptTcpClientAsync().GetAwaiter().GetResult();
 #else
                             TcpClient client = _server.AcceptTcpClient();

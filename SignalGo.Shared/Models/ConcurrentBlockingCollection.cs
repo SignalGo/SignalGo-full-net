@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -197,6 +198,7 @@ namespace SignalGo.Shared.Models
 
             try
             {
+                Debug.WriteLine("DeadLock Warning ConcurrentBlockingCollection Take!");
                 _takeLock.Wait();
                 Task<T> result = _taskCompletionSource.Task;
                 _isTakeTaskResult = true;

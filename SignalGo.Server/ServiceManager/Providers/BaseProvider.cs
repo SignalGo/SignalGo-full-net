@@ -1011,6 +1011,7 @@ namespace SignalGo.Server.ServiceManager.Providers
             try
             {
 #if (NET35 || NET40)
+                Debug.WriteLine("DeadLock Warning SendCallbackDataAsync!");
                 MethodCallbackInfo result = callback.Result;
 #else
                 MethodCallbackInfo result = await callback;
@@ -1039,6 +1040,7 @@ namespace SignalGo.Server.ServiceManager.Providers
         /// <param name="serverBase"></param>
         internal static async Task SendCallbackData(MethodCallbackInfo callback, ClientInfo client, ServerBase serverBase)
         {
+            Console.WriteLine($"SendCallbackData: {callback.Guid}");
             string json = ServerSerializationHelper.SerializeObject(callback, serverBase);
             byte[] bytes = Encoding.UTF8.GetBytes(json);
             //if (ClientsSettings.ContainsKey(client))
@@ -1056,6 +1058,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 throw new Exception($"{client.IPAddress} {client.ClientId} SendCallbackData data length exceeds MaximumSendDataBlock");
 
             await client.StreamHelper.WriteToStreamAsync(client.ClientStream, data.ToArray());
+            Console.WriteLine($"SendCallbackData done: {callback.Guid}");
         }
     }
 }

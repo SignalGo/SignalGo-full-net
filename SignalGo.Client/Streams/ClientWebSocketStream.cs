@@ -2,6 +2,7 @@
 using SignalGo.Shared.IO;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.WebSockets;
@@ -77,6 +78,7 @@ namespace SignalGo.Client.Streams
         {
             lock (_clientWebSocket)
             {
+                Debug.WriteLine("DeadLock Warning ClientWebSocketStream Read!");
                 WebSocketReceiveResult result = _clientWebSocket.ReceiveAsync(new ArraySegment<byte>(buffer), new System.Threading.CancellationToken()).GetAwaiter().GetResult();
                 return result.Count;
             }
@@ -102,6 +104,7 @@ namespace SignalGo.Client.Streams
         {
             lock (_clientWebSocket)
             {
+                Debug.WriteLine("DeadLock Warning ClientWebSocketStream Write!");
                  _clientWebSocket.SendAsync(new ArraySegment<byte>(buffer.Take(1).ToArray()), WebSocketMessageType.Binary, true, new CancellationToken()).GetAwaiter().GetResult();
                  _clientWebSocket.SendAsync(new ArraySegment<byte>(buffer.Skip(1).Take(1).ToArray()), WebSocketMessageType.Binary, true, new CancellationToken()).GetAwaiter().GetResult();
                 if (buffer.Length > 2)

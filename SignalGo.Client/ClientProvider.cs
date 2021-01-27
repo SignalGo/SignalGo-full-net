@@ -5,6 +5,7 @@ using SignalGo.Shared.Helpers;
 using SignalGo.Shared.Models;
 using SignalGo.Shared.Security;
 using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -45,6 +46,7 @@ namespace SignalGo.Client
 #if (NET40 || NET35)
             SendFirstLineData();
 #else
+            Debug.WriteLine("DeadLock Warning Connect!");
             SendFirstLineData().GetAwaiter().GetResult();
 #endif
             GetClientIdIfNeed();

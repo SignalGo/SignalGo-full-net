@@ -71,6 +71,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                         }
 
 #if (NET35 || NET40)
+                        Debug.WriteLine("DeadLock Warning StartToReadingClientData!");
                         MethodCallbackInfo callbackResult = CallMethod(callInfo, client, json, serverBase).Result;
                         SendCallbackData(callbackResult, client, serverBase);
 #else
@@ -227,6 +228,7 @@ namespace SignalGo.Server.ServiceManager.Providers
             try
             {
 #if (NET35 || NET40)
+                Debug.WriteLine("DeadLock Warning SendCallbackData!");
                 MethodCallbackInfo callbackResult = callback.Result;
 #else
                 MethodCallbackInfo callbackResult = await callback;

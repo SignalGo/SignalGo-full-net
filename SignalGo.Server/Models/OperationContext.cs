@@ -5,6 +5,7 @@ using SignalGo.Shared.Helpers;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -654,6 +655,7 @@ namespace SignalGo.Server.Models
                             .MakeGenericMethod(returnType);
                         task = (Task)sendDataMethod.Invoke(null, new object[] { serverBase, client, returnType, serviceName, method.Name, method.MethodToParameters(x => ServerSerializationHelper.SerializeObject(x, serverBase), args).ToArray() });
                     }
+                    Debug.WriteLine("DeadLock Warning GenerateClientServiceInstance!");
                     task.GetAwaiter().GetResult();
                     object result1 = task.GetType().GetProperty("Result").GetValue(task);
                     if (result1 is Task task2)
