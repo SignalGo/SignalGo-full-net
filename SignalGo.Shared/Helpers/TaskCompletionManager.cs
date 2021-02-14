@@ -20,24 +20,24 @@ namespace SignalGo.Shared.Helpers
         bool IsCompleted { get; set; }
         T Value { get; set; }
         Exception Exception { get; set; }
+        ManualResetEvent ManualResetEvent { get; set; } = new ManualResetEvent(false);
         public void SetException(Exception exception)
         {
             Exception = exception;
             IsCompleted = true;
+            ManualResetEvent.Set();
         }
 
         public void SetResult(T result)
         {
             Value = result;
             IsCompleted = true;
+            ManualResetEvent.Set();
         }
 
         public T GetValue()
         {
-            while (!IsCompleted)
-            {
-                Thread.Sleep(10);
-            }
+            ManualResetEvent.WaitOne();
             if (Exception != null)
                 throw Exception;
             return Value;
@@ -47,6 +47,7 @@ namespace SignalGo.Shared.Helpers
         {
             Exception = new OperationCanceledException();
             IsCompleted = true;
+            ManualResetEvent.Set();
             return true;
         }
 

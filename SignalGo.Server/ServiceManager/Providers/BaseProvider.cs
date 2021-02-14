@@ -11,6 +11,7 @@ using SignalGo.Shared.Models;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -1003,23 +1004,19 @@ namespace SignalGo.Server.ServiceManager.Providers
         /// <param name="client"></param>
         /// <param name="serverBase"></param>
 #if (NET35 || NET40)
-        internal static void SendCallbackDataAsync(Task<MethodCallbackInfo> callback, ClientInfo client, ServerBase serverBase)
+        internal static void SendCallbackDataAsync(MethodCallbackInfo methodCallback, ClientInfo client, ServerBase serverBase)
 #else
-        internal static async void SendCallbackDataAsync(Task<MethodCallbackInfo> callback, ClientInfo client, ServerBase serverBase)
+        internal static async Task SendCallbackDataAsync(MethodCallbackInfo methodCallback, ClientInfo client, ServerBase serverBase)
 #endif
         {
             try
             {
-#if (NET35 || NET40)
-                Debug.WriteLine("DeadLock Warning SendCallbackDataAsync!");
-                MethodCallbackInfo result = callback.Result;
-#else
-                MethodCallbackInfo result = await callback;
-#endif
-                await SendCallbackData(result, client, serverBase);
+                await SendCallbackData(methodCallback, client, serverBase);
+                Console.WriteLine($"Calling SendCallbackDataAsync done: {methodCallback.Guid}");
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"Calling SendCallbackDataAsync: exc {ex}");
                 serverBase.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase SendCallbackData");
                 //if (!client.TcpClient.Connected)
                 //    serverBase.DisposeClient(client, "SendCallbackData exception");

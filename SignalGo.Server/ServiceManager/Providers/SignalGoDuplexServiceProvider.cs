@@ -61,8 +61,13 @@ namespace SignalGo.Server.ServiceManager.Providers
                             else
                                 continue;
                         }
-                        Task<MethodCallbackInfo> callbackResult = CallMethod(callInfo, client, json, serverBase);
-                        SendCallbackDataAsync(callbackResult, client, serverBase);
+
+                        _ = Task.Run(new Func<Task>(async () =>
+                        {
+                            Debug.WriteLine($"Calling CallMethod: {callInfo.Guid}");
+                            MethodCallbackInfo callbackResult = await CallMethod(callInfo, client, json, serverBase);
+                            await SendCallbackDataAsync(callbackResult, client, serverBase);
+                        }));
                     }
 
                     //reponse of client method that server called to client
