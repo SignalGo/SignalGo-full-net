@@ -8,10 +8,18 @@ namespace SignalGo.Client.IO
 {
     public class TimeoutWebClient : WebClient
     {
+        TimeSpan _timeout;
+        public TimeoutWebClient(TimeSpan? timeOut)
+        {
+            if (timeOut.HasValue)
+                timeOut = TimeSpan.FromMinutes(1);
+            _timeout = timeOut.Value;
+        }
+
         protected override WebRequest GetWebRequest(Uri uri)
         {
             WebRequest w = base.GetWebRequest(uri);
-            w.Timeout = 40 * 1000;
+            w.Timeout = (int)_timeout.TotalMilliseconds;
             return w;
         }
     }

@@ -31,6 +31,7 @@ namespace SignalGo.Client
 
     public class WebServiceProtocolSettings
     {
+        public TimeSpan? Timeout { get; set; }
         public string EncodingName { get; set; } = "utf-8";
         public Encoding Encoding { get; set; } = Encoding.UTF8;
         public WebHeaderCollection ResponseHeaders { get; set; }
@@ -53,7 +54,7 @@ namespace SignalGo.Client
 
         WebServiceProtocolSettings Settings { get; set; }
     }
-    public delegate void LoggerAction(string url, string actionUrl, string methodName, ParameterInfo[] args, string data);
+    public delegate void LoggerAction(string url, string actionUrl, string methodName, ParameterInfo[] args, object data);
     public static class WebServiceProtocolHelper
     {
         public static T CallWebServiceMethod<T>(IWebServiceProtocolLogger logger, string headerTemplate, string url, string actionUrl, string targetNamespace, string methodName, ParameterInfo[] args)
@@ -74,7 +75,7 @@ namespace SignalGo.Client
 	<soap:Body>{stringBuilder.ToString().Trim()}</soap:Body>
 </soap:Envelope>";
 #if (!NETSTANDARD1_6)
-            using (IO.TimeoutWebClient client = new IO.TimeoutWebClient())
+            using (IO.TimeoutWebClient client = new IO.TimeoutWebClient(logger.Settings.Timeout))
             {
                 if (!string.IsNullOrEmpty(actionUrl))
                     client.Headers["SOAPAction"] = actionUrl;
@@ -122,7 +123,7 @@ namespace SignalGo.Client
 	</soap:Header>
 	<soap:Body>{stringBuilder.ToString().Trim()}</soap:Body>
 </soap:Envelope>";
-            using (IO.TimeoutWebClient client = new IO.TimeoutWebClient())
+            using (IO.TimeoutWebClient client = new IO.TimeoutWebClient(logger.Settings.Timeout))
             {
                 if (!string.IsNullOrEmpty(actionUrl))
                     client.Headers["SOAPAction"] = actionUrl;
