@@ -132,7 +132,7 @@ namespace SignalGo.Shared.Log
                 return;
             }
             StringBuilder str = new StringBuilder();
-            str.AppendLine("<Text Log Start>");
+            str.AppendLine($"<Text Log Start> {DateTime.Now}");
             str.AppendLine(text);
             if (stacktrace)
             {
