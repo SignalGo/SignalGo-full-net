@@ -373,6 +373,11 @@ namespace SignalGo.Server.Models
             return default;
         }
 
+        public static void RemoveSetting(string key)
+        {
+            CustomClientSavedSettings.TryRemove(key, out _);
+        }
+
         public static object GetSetting(string key, Type type)
         {
             if (CustomClientSavedSettings.TryGetValue(key, out HashSet<object> result))
