@@ -138,7 +138,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     }
                     json = Encoding.UTF8.GetString(resultBytes.ToArray(), 0, resultBytes.Count);
                 }
-                MethodParameterDetails detail = JsonConvert.DeserializeObject<MethodParameterDetails>(json);
+                MethodParameterDetails detail = JsonConvert.DeserializeObject<MethodParameterDetails>(json, JsonSettingHelper.GlobalJsonSetting);
 
                 if (!serverBase.RegisteredServiceTypes.TryGetValue(detail.ServiceName, out Type serviceType))
                     throw new Exception($"{client.IPAddress} {client.ClientId} Service {detail.ServiceName} not found");
@@ -150,7 +150,7 @@ namespace SignalGo.Server.ServiceManager.Providers
             else
             {
                 ProviderDetailsInfo detail = serverServicesManager.SendServiceDetail(host, serverBase);
-                json = JsonConvert.SerializeObject(detail);
+                json = JsonConvert.SerializeObject(detail, JsonSettingHelper.GlobalJsonSetting);
             }
 
             client.ResponseHeaders["Content-Type"] = "application/json; charset=utf-8".Split(',');
@@ -598,7 +598,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                         if (actionResult.Data is System.IO.Stream)
                             data = "";
                         else
-                            data = actionResult.Data is string ? actionResult.Data.ToString() : JsonConvert.SerializeObject(actionResult.Data);
+                            data = actionResult.Data is string ? actionResult.Data.ToString() : JsonConvert.SerializeObject(actionResult.Data, JsonSettingHelper.GlobalJsonSetting);
                         //if (!controller.ResponseHeaders.ContainsKey("content-length"))
                         //    controller.ResponseHeaders.Add("Content-Length", (System.Text.Encoding.UTF8.GetByteCount(data)).ToString().Split(','));
 
@@ -615,7 +615,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                         if (result is System.IO.Stream)
                             data = "";
                         else
-                            data = result is string ? (string)result : JsonConvert.SerializeObject(result);
+                            data = result is string ? (string)result : JsonConvert.SerializeObject(result, JsonSettingHelper.GlobalJsonSetting);
                         //if (!controller.ResponseHeaders.ContainsKey("content-length"))
                         //    controller.ResponseHeaders.Add("Content-Length", (System.Text.Encoding.UTF8.GetByteCount(data)).ToString().Split(','));
 
@@ -923,7 +923,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                         readBytes.AddRange(bytes.ToList().GetRange(0, readCount));
                     }
 
-                    clientServiceReferenceConfigInfo = JsonConvert.DeserializeObject<ClientServiceReferenceConfigInfo>(Encoding.UTF8.GetString(readBytes.ToArray()));
+                    clientServiceReferenceConfigInfo = JsonConvert.DeserializeObject<ClientServiceReferenceConfigInfo>(Encoding.UTF8.GetString(readBytes.ToArray()), JsonSettingHelper.GlobalJsonSetting);
                 }
 
                 Shared.Models.ServiceReference.NamespaceReferenceInfo referenceData = new ServiceReferenceHelper()
@@ -932,7 +932,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     ClientServiceReferenceConfigInfo = clientServiceReferenceConfigInfo
                 }.GetServiceReferenceCSharpCode(client.GetRequestHeaderValue("servicenamespace"), serverBase, serviceName, methodName);
 
-                string result = JsonConvert.SerializeObject(referenceData);
+                string result = JsonConvert.SerializeObject(referenceData, JsonSettingHelper.GlobalJsonSetting);
                 client.ResponseHeaders["Content-Type"] = "text/html; charset=utf-8".Split(',');
                 client.ResponseHeaders["Service-Type"] = "SignalGoServiceType".Split(',');
                 byte[] dataBytes = Encoding.UTF8.GetBytes(result);
