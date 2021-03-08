@@ -11,7 +11,6 @@ using SignalGo.Shared.Models;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -529,7 +528,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 catch (Exception ex)
                 {
                     exception = ex;
-                    serverBase.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase CallMethod 2: {methodName} serviceName: {serviceName}");
+                    serverBase.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase CallMethod 2: {methodName} serviceName: {serviceName} jsonParameters : {jsonParameters} {ServerSerializationHelper.SerializeObject(parameters)} json: {json}");
                     if (serverBase.ErrorHandlingFunction != null)
                     {
                         callback.Data = ServerSerializationHelper.SerializeObject(serverBase.ErrorHandlingFunction(ex, serviceType, method, client));
@@ -688,13 +687,23 @@ namespace SignalGo.Server.ServiceManager.Providers
                     Shared.Models.ParameterInfo findNoNameParameter = parameters.FirstOrDefault(x => string.IsNullOrEmpty(x.Name));
                     if (findNoNameParameter != null)
                     {
-                        parameters.Remove(findNoNameParameter);
-                        value = DeserializeParameterValue(methodParameter, findNoNameParameter, i, customDataExchanger, allMethods, serverBase, client);
-                        if (value == null)
-                            parametersValues.Add(findNoNameParameter.Value.Trim('"'));
-                        else
+                        try
+                        {
+                            parameters.Remove(findNoNameParameter);
+                            value = DeserializeParameterValue(methodParameter, findNoNameParameter, i, customDataExchanger, allMethods, serverBase, client);
+                            if (value == null)
+                                parametersValues.Add(findNoNameParameter.Value.Trim('"'));
+                            else
+                                parametersValues.Add(value);
+                            parametersKeyValues[methodParameterName] = value;
+                        }
+                        catch (Exception ex)
+                        {
+                            serverBase.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase CallMethod FixParametersCount: {method.Name}");
+                            hasNoName = false;
+                            value = GetDefaultValueOfParameter(methodParameter);
                             parametersValues.Add(value);
-                        parametersKeyValues[methodParameterName] = value;
+                        }
                     }
                     else if (!string.IsNullOrEmpty(jsonParameters))
                     {
