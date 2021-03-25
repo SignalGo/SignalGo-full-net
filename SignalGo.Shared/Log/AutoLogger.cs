@@ -139,7 +139,7 @@ namespace SignalGo.Shared.Log
                 str.AppendLine("<StackTrace>");
                 StringBuilder builder = new StringBuilder();
 #if (NETSTANDARD || NETCOREAPP)
-                    GetOneStackTraceText(new StackTrace(new Exception(text), true), builder);
+                GetOneStackTraceText(new StackTrace(new Exception(text), true), builder);
 #else
                 GetOneStackTraceText(new StackTrace(true), builder);
 #endif
@@ -164,9 +164,9 @@ namespace SignalGo.Shared.Log
                     stream.Write(bytes, 0, bytes.Length);
                 }
             }
-            catch
+            catch (Exception ex)
             {
-
+                Console.WriteLine(ex);
             }
             finally
             {
@@ -212,18 +212,18 @@ namespace SignalGo.Shared.Log
                         stream.Write(bytes, 0, bytes.Length);
                     }
                 }
-                catch
+                catch (Exception ex)
                 {
-
+                    Console.WriteLine(ex);
                 }
                 finally
                 {
                     lockWaitToRead.Release();
                 }
             }
-            catch
+            catch (Exception ex)
             {
-
+                Console.WriteLine(ex);
             }
         }
     }
