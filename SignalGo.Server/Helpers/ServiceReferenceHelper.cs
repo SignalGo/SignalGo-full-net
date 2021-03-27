@@ -249,7 +249,7 @@ namespace SignalGo.Server.Helpers
                 ServiceName = serviceName,
                 Name = typeName,
                 Type = classReferenceType,
-                NameSpace = type.Namespace
+                NameSpace = type.GetNamesapce()
             };
             List<Type> services = type.GetTypesByAttribute<ServiceContractAttribute>(x => x.ServiceType == serviceTypeEnum).ToList();
             bool justDeclared = false;
@@ -295,7 +295,7 @@ namespace SignalGo.Server.Helpers
                 ServiceName = serviceName,
                 Name = type.Name,
                 Type = ClassReferenceType.HttpServiceLevel,
-                NameSpace = type.Namespace
+                NameSpace = type.GetNamesapce()
             };
             List<Type> services = type.GetTypesByAttribute<ServiceContractAttribute>(x => x.ServiceType == ServiceType.HttpService).ToList();
             if (services.Count == 0)
@@ -322,10 +322,10 @@ namespace SignalGo.Server.Helpers
             EnumReferenceInfo enumReferenceInfo = new EnumReferenceInfo
             {
                 Name = type.Name,
-                NameSpace = type.Namespace
+                NameSpace = type.GetNamesapce()
             };
             Type baseEumType = Enum.GetUnderlyingType(type);
-            enumReferenceInfo.TypeName = GetFullNameOfType(baseEumType, true, null, null);
+            enumReferenceInfo.TypeName = GetFullNameOfType(baseEumType, true, null, null, out _);
             foreach (object name in Enum.GetValues(type))
             {
                 object res = Convert.ChangeType(name, baseEumType);
@@ -368,18 +368,20 @@ namespace SignalGo.Server.Helpers
             ClassReferenceInfo classReferenceInfo = new ClassReferenceInfo
             {
                 Type = ClassReferenceType.ModelLevel,
-                NameSpace = type.Namespace
+                NameSpace = type.GetNamesapce()
             };
 
             Type baseType = type.GetBaseType();
+            string genericParameterConstraints = null;
             if (baseType != typeof(object) && baseType != null)
             {
-                classReferenceInfo.BaseClassName = GetFullNameOfType(baseType, true, null, null);
+                classReferenceInfo.BaseClassName = GetFullNameOfType(baseType, true, null, null, out _);
             }
             else
-                classReferenceInfo.BaseClassName = GetFullNameOfType(typeof(NotifyPropertyChangedBase), true, null, null);
+                classReferenceInfo.BaseClassName = GetFullNameOfType(typeof(NotifyPropertyChangedBase), true, null, null, out _);
 
-            classReferenceInfo.Name = GetFullNameOfType(type, false, null, null);
+            classReferenceInfo.Name = GetFullNameOfType(type, false, null, null, out genericParameterConstraints);
+            classReferenceInfo.BaseClassName += Environment.NewLine + genericParameterConstraints;
 
             ModelsCodeGenerated.Add(type);
 
@@ -421,18 +423,18 @@ namespace SignalGo.Server.Helpers
             ClassReferenceInfo classReferenceInfo = new ClassReferenceInfo
             {
                 Type = ClassReferenceType.InterfaceLevel,
-                NameSpace = type.Namespace
+                NameSpace = type.GetNamesapce()
             };
 
             Type baseType = type.GetBaseType();
             if (baseType != typeof(object) && baseType != null)
             {
-                classReferenceInfo.BaseClassName = GetFullNameOfType(baseType, true, null, null);
+                classReferenceInfo.BaseClassName = GetFullNameOfType(baseType, true, null, null, out _);
             }
             else
-                classReferenceInfo.BaseClassName = GetFullNameOfType(typeof(NotifyPropertyChangedBase), true, null, null);
+                classReferenceInfo.BaseClassName = GetFullNameOfType(typeof(NotifyPropertyChangedBase), true, null, null, out _);
 
-            classReferenceInfo.Name = GetFullNameOfType(type, false, null, null);
+            classReferenceInfo.Name = GetFullNameOfType(type, false, null, null, out _);
 
             ModelsCodeGenerated.Add(type);
 
@@ -460,7 +462,7 @@ namespace SignalGo.Server.Helpers
             AddToGenerate(methodInfo.ReturnType);
             string returnType = "void";
             if (methodInfo.ReturnType != typeof(void))
-                returnType = GetFullNameOfType(methodInfo.ReturnType, true, methodInfo, null);
+                returnType = GetFullNameOfType(methodInfo.ReturnType, true, methodInfo, null, out _);
             string methodName = methodInfo.Name;
 
             if (IsRenameDuplicateMethodNames)
@@ -492,7 +494,7 @@ namespace SignalGo.Server.Helpers
             PropertyReferenceInfo propertyReferenceInfo = new PropertyReferenceInfo
             {
                 Name = propertyInfo.Name,
-                ReturnTypeName = GetFullNameOfType(propertyInfo.PropertyType, true, null, propertyInfo)
+                ReturnTypeName = GetFullNameOfType(propertyInfo.PropertyType, true, null, propertyInfo, out _)
             };
 
             classReferenceInfo.Properties.Add(propertyReferenceInfo);
@@ -505,19 +507,20 @@ namespace SignalGo.Server.Helpers
                 ParameterReferenceInfo parameterReferenceInfo = new ParameterReferenceInfo();
                 AddToGenerate(item.ParameterType);
                 parameterReferenceInfo.Name = item.Name;
-                parameterReferenceInfo.TypeName = GetFullNameOfType(item.ParameterType, true, methodInfo, null);
+                parameterReferenceInfo.TypeName = GetFullNameOfType(item.ParameterType, true, methodInfo, null, out _);
                 methodReferenceInfo.Parameters.Add(parameterReferenceInfo);
             }
         }
 
         private void AddUsingIfNotExist(Type type)
         {
-            if (!NamespaceReferenceInfo.Usings.Contains(type.Namespace))
-                NamespaceReferenceInfo.Usings.Add(type.Namespace);
+            if (!NamespaceReferenceInfo.Usings.Contains(type.GetNamesapce()))
+                NamespaceReferenceInfo.Usings.Add(type.GetNamesapce());
         }
 
-        private string GetFullNameOfType(Type type, bool withNameSpace, MethodInfo method, PropertyInfo property)
+        private string GetFullNameOfType(Type type, bool withNameSpace, MethodInfo method, PropertyInfo property, out string genericParameterConstraints)
         {
+            genericParameterConstraints = null;
             if (method != null)
             {
                 var result = GetTupleParameterNames(type, method);
@@ -564,11 +567,11 @@ namespace SignalGo.Server.Helpers
             }
             else if (type.GetBaseType() == typeof(Task))
             {
-                return GetFullNameOfType(type.GetGenericArguments()[0], withNameSpace, method, property);
+                return GetFullNameOfType(type.GetGenericArguments()[0], withNameSpace, method, property, out _);
             }
             if (type.GetBaseType() == typeof(Array))
             {
-                return GetFullNameOfType(type.GetElementType(), withNameSpace, method, property) + "[]";
+                return GetFullNameOfType(type.GetElementType(), withNameSpace, method, property, out _) + "[]";
             }
             if (CannotGenerateAssemblyTypes(type))
                 AddUsingIfNotExist(type);
@@ -576,6 +579,22 @@ namespace SignalGo.Server.Helpers
             {
 
                 string generics = "";
+                StringBuilder genericParameterConstraintsBuilder = new StringBuilder();
+#if (NETSTANDARD2_0 || NET45)
+                Type[] defparams = type.GetGenericTypeDefinition().GetGenericArguments();
+                foreach (Type tp in defparams)
+                {
+                    Type[] tpConstraints = tp.GetGenericParameterConstraints();
+                    foreach (Type tpc in tpConstraints)
+                    {
+                        if (tpc == typeof(ValueType))
+                        {
+                            genericParameterConstraintsBuilder.AppendLine($"where {tp.Name} : struct");
+                        }
+                    }
+                }
+#endif
+
                 foreach (Type item in type.GetListOfGenericArguments())
                 {
                     AddToGenerate(item);
@@ -585,7 +604,7 @@ namespace SignalGo.Server.Helpers
                     {
                         generics += ", ";
                     }
-                    generics += GetFullNameOfType(item, true, method, property);
+                    generics += GetFullNameOfType(item, true, method, property, out _);
                 }
                 string name = "";
                 if (type.Name.IndexOf("`") != -1)
@@ -598,10 +617,11 @@ namespace SignalGo.Server.Helpers
                     {
                         name = type.Name.Substring(0, type.Name.IndexOf("`"));
                         if (withNameSpace)
-                            name = type.Namespace + "." + name;
+                            name = type.GetNamesapce() + "." + name;
                     }
                 }
-                //add type.Namespace to name spaces
+                genericParameterConstraints = genericParameterConstraintsBuilder.ToString();
+                //add type.GetNamesapce() to name spaces
                 return $"{name}<{generics}>";
             }
             else if (type.IsGenericParameter)
@@ -609,7 +629,7 @@ namespace SignalGo.Server.Helpers
             else
             {
                 if (withNameSpace)
-                    return type.Namespace + "." + type.Name;
+                    return type.GetNamesapce() + "." + type.Name;
                 else
                     return type.Name;
             }
@@ -636,7 +656,7 @@ namespace SignalGo.Server.Helpers
                                 int index = 0;
                                 foreach (var ca in ng)
                                 {
-                                    result.Append($"{GetFullNameOfType(tupleGenerics[index], true, method, null)} ");
+                                    result.Append($"{GetFullNameOfType(tupleGenerics[index], true, method, null, out _)} ");
                                     result.Append($"{ca}");
                                     result.Append(", ");
                                     index++;
@@ -676,7 +696,7 @@ namespace SignalGo.Server.Helpers
                                     {
                                         foreach (var val in (IEnumerable<System.Reflection.CustomAttributeTypedArgument>)ca.Value)
                                         {
-                                            result.Append($"{GetFullNameOfType(tupleGenerics[index], true, null, property)} ");
+                                            result.Append($"{GetFullNameOfType(tupleGenerics[index], true, null, property, out _)} ");
                                             result.Append($"{val.Value}");
                                             result.Append(", ");
                                             index++;
