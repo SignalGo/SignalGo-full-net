@@ -381,7 +381,7 @@ namespace SignalGo.Server.Helpers
                 classReferenceInfo.BaseClassName = GetFullNameOfType(typeof(NotifyPropertyChangedBase), true, null, null, out _);
 
             classReferenceInfo.Name = GetFullNameOfType(type, false, null, null, out genericParameterConstraints);
-            classReferenceInfo.BaseClassName += Environment.NewLine + genericParameterConstraints;
+            classReferenceInfo.GenericParameterConstraints = genericParameterConstraints;
 
             ModelsCodeGenerated.Add(type);
 
