@@ -158,7 +158,7 @@ namespace SignalGo.Client
                     //firstElement = doc.Elements().First();//
                     //findElement = FindElement(doc.Elements(), typeof(T).Name);
                     string json = Newtonsoft.Json.JsonConvert.SerializeXmlNode(node);
-                    return Newtonsoft.Json.JsonConvert.DeserializeObject<T>(json);
+                    return Newtonsoft.Json.JsonConvert.DeserializeObject<T>(json, JsonSettingHelper.GlobalJsonSetting);
                     //if (typeof(T).GetListOfProperties().Count() == 2)
                     //{
                     //    var property = typeof(T).GetListOfProperties().First();

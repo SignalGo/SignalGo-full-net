@@ -19,6 +19,10 @@ namespace SignalGo.Shared.Models.ServiceReference
         public string Name { get; set; }
         public string ServiceName { get; set; }
         public string BaseClassName { get; set; }
+        /// <summary>
+        /// example : Where T : struct
+        /// </summary>
+        public string GenericParameterConstraints { get; set; }
         public List<MethodReferenceInfo> Methods { get; set; } = new List<MethodReferenceInfo>();
         public List<PropertyReferenceInfo> Properties { get; set; } = new List<PropertyReferenceInfo>();
     }

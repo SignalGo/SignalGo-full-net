@@ -154,6 +154,7 @@ namespace SignalGo.Shared.Helpers
     /// </summary>
     public class JsonSettingHelper
     {
+        public static JsonSerializerSettings GlobalJsonSetting { get; set; }
         public JsonSettingHelper()
         {
             CurrentDateTimeSetting = new ToRealDateTimeConvertor() { AutoLogger = AutoLogger };
@@ -165,19 +166,15 @@ namespace SignalGo.Shared.Helpers
         public AutoLogger AutoLogger { get; set; } = new AutoLogger() { FileName = "JsonSettingHelper Logs.log" };
         public void Initialize()
         {
-            JsonConvert.DefaultSettings = () =>
+            GlobalJsonSetting = new JsonSerializerSettings
             {
-                JsonSerializerSettings setting = new JsonSerializerSettings
-                {
-                    MissingMemberHandling = MissingMemberHandling.Ignore,
-                    Error = new EventHandler<ErrorEventArgs>(HandleDeserializationError),
-                    NullValueHandling = NullValueHandling.Ignore,
-                    ReferenceLoopHandling = ReferenceLoopHandling.Ignore
-                };
-
-                setting.Converters.Add(CurrentDateTimeSetting);
-                return setting;
+                MissingMemberHandling = MissingMemberHandling.Ignore,
+                Error = new EventHandler<ErrorEventArgs>(HandleDeserializationError),
+                NullValueHandling = NullValueHandling.Ignore,
+                ReferenceLoopHandling = ReferenceLoopHandling.Ignore
             };
+
+            GlobalJsonSetting.Converters.Add(CurrentDateTimeSetting);
         }
 
         public IList<JsonConverter> GetConverters(params JsonConverter[] yourConverters)

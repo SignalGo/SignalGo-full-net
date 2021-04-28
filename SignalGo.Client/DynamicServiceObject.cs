@@ -42,7 +42,7 @@ namespace SignalGo.Client
             else
             {
                 string data = this.SendDataNoParam(binder.Name, ServiceName, binder.MethodToParameters(x => ClientSerializationHelper.SerializeObject(x), args).ToArray()).ToString();
-                result = Newtonsoft.Json.JsonConvert.DeserializeObject(data, type);
+                result = Newtonsoft.Json.JsonConvert.DeserializeObject(data, type, JsonSettingHelper.GlobalJsonSetting);
             }
             return true;
         }

@@ -24,7 +24,7 @@ namespace SignalGo.Client
                 return "";
             if (!IsEnabledReferenceResolver && !IsEnabledReferenceResolverForArray)
             {
-                return JsonConvert.SerializeObject(obj);
+                return JsonConvert.SerializeObject(obj, JsonSettingHelper.GlobalJsonSetting);
             }
             //if (serverBase != null && serverBase.InternalSetting.IsEnabledDataExchanger)
             return JsonConvert.SerializeObject(obj, Formatting.None, new JsonSerializerSettings()
@@ -58,7 +58,7 @@ namespace SignalGo.Client
                 return null;
             if (!IsEnabledReferenceResolver && !IsEnabledReferenceResolverForArray)
             {
-                return JsonConvert.DeserializeObject(json, type);
+                return JsonConvert.DeserializeObject(json, type, JsonSettingHelper.GlobalJsonSetting);
             }
             return JsonConvert.DeserializeObject(json, type, new JsonSerializerSettings()
             {

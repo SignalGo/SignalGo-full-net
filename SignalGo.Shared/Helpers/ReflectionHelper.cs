@@ -544,5 +544,15 @@ namespace SignalGo.Shared.Helpers
             return type.GetAllInheritances().Where(x => x.GetCustomAttributes<ServiceContractAttribute>().Length > 0).SelectMany(x => x.GetListOfDeclaredMethods()).Distinct()
                   .Where(x => !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_"))));
         }
+
+        /// <summary>
+        /// get namespace of type when its null this will return "NoNamesapce"
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public static string GetNamesapce(this Type type)
+        {
+            return string.IsNullOrEmpty(type.Namespace) ? "NoNamesapce" : type.Namespace;
+        }
     }
 }
