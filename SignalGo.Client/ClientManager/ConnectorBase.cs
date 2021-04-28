@@ -901,14 +901,14 @@ namespace SignalGo.Client.ClientManager
 #if (NET40 || NET35)
                             int readCount = iStream.Stream.Read(bytes, blockOfRead);
 #else
-                                int readCount = await iStream.Stream.ReadAsync(bytes, blockOfRead);
+                            int readCount = await iStream.Stream.ReadAsync(bytes, blockOfRead);
 #endif
                             position += readCount;
                             byte[] data = bytes.Take(readCount).ToArray();
 #if (NET40 || NET35)
                             stream.Write(data, 0, data.Length);
 #else
-                                await stream.WriteAsync(data, 0, data.Length);
+                            await stream.WriteAsync(data, 0, data.Length);
 #endif
                         }
                     }
