@@ -185,7 +185,8 @@ namespace SignalGo.Server.ServiceManager.Providers
                 client.ResponseHeaders.Add("Access-Control-Allow-Headers", client.RequestHeaders["Access-Control-Request-Headers"]);
             else
                 client.ResponseHeaders.Add("Access-Control-Allow-Headers", "*");
-            client.ResponseHeaders.Add("Access-Control-Allow-Methods", "*");
+            if (!client.ResponseHeaders.ContainsKey("Access-Control-Allow-Methods"))
+                client.ResponseHeaders.Add("Access-Control-Allow-Methods", "*");
         }
 
         /// <summary>
