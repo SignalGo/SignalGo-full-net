@@ -28,28 +28,30 @@ namespace SignalGo.Shared.Log
         /// file name to save
         /// </summary>
         public string FileName { get; set; }
-
+        string _SavePath;
         private string SavePath
         {
             get
             {
-                string dir = "";
+                if (!string.IsNullOrEmpty(_SavePath))
+                    return _SavePath;
                 if (string.IsNullOrEmpty(DirectoryName))
-                    dir = DirectoryLocation;
+                    _SavePath = DirectoryLocation;
                 else
-                    dir = Path.Combine(DirectoryLocation, DirectoryName);
+                    _SavePath = Path.Combine(DirectoryLocation, DirectoryName);
                 try
                 {
 #if (!PORTABLE)
-                    if (!Directory.Exists(dir))
-                        Directory.CreateDirectory(dir);
+                    if (!Directory.Exists(_SavePath))
+                        Directory.CreateDirectory(_SavePath);
 #endif
                 }
                 catch
                 {
 
                 }
-                return Path.Combine(dir, FileName);
+                _SavePath = Path.Combine(_SavePath, FileName);
+                return _SavePath;
             }
         }
         /// <summary>
