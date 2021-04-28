@@ -17,7 +17,7 @@ namespace SignalGo.Server.ServiceManager.Providers
         {
             try
             {
-                Console.WriteLine($"WebSocket Client Connected: {client.IPAddress}");
+                //Console.WriteLine($"WebSocket Client Connected: {client.IPAddress}");
                 Shared.IO.PipeNetworkStream stream = client.ClientStream;
                 while (true)
                 {

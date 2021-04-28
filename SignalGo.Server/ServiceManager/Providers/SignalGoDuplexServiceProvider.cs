@@ -22,17 +22,17 @@ namespace SignalGo.Server.ServiceManager.Providers
         {
             try
             {
-                Console.WriteLine($"Duplex Client Connected: {client.IPAddress}");
+                //Console.WriteLine($"Duplex Client Connected: {client.IPAddress}");
                 PipeNetworkStream stream = client.ClientStream;
                 while (true)
                 {
                     Debug.WriteLine($"Wait for get data from client: {client.IPAddress}");
-                    Console.WriteLine($"Wait for get data from client: {client.IPAddress}");
+                    ///Console.WriteLine($"Wait for get data from client: {client.IPAddress}");
                     byte oneByteOfDataType = await client.StreamHelper.ReadOneByteAsync(stream);
                     //type of data
                     DataType dataType = (DataType)oneByteOfDataType;
                     Debug.WriteLine($"Call DataType received: {dataType.ToString()}");
-                    Console.WriteLine($"Call DataType received: {dataType.ToString()}");
+                    //Console.WriteLine($"Call DataType received: {dataType.ToString()}");
                     if (dataType == DataType.PingPong)
                     {
                         await client.StreamHelper.WriteToStreamAsync(client.ClientStream, new byte[] { 5 });
@@ -44,14 +44,14 @@ namespace SignalGo.Server.ServiceManager.Providers
                     if (dataType == DataType.CallMethod)
                     {
                         Debug.WriteLine($"Call Method Reciving data!");
-                        Console.WriteLine($"Call Method Reciving data!");
+                        //Console.WriteLine($"Call Method Reciving data!");
                         byte[] bytes = await client.StreamHelper.ReadBlockToEndAsync(stream, CompressionHelper.GetCompression(compressMode, serverBase.GetCustomCompression), serverBase.ProviderSetting.MaximumReceiveDataBlock);
                         //if (ClientsSettings.ContainsKey(client))
                         //    bytes = DecryptBytes(bytes, client);
                         string json = Encoding.UTF8.GetString(bytes);
                         MethodCallInfo callInfo = ServerSerializationHelper.Deserialize<MethodCallInfo>(json, serverBase);
                         Debug.WriteLine($"Call method received: {callInfo.Guid}");
-                        Console.WriteLine($"Call method received: {callInfo.Guid}");
+                        //Console.WriteLine($"Call method received: {callInfo.Guid}");
                         if (callInfo.PartNumber != 0)
                         {
                             SegmentManager segmentManager = new SegmentManager();

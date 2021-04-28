@@ -17,7 +17,7 @@ namespace SignalGo.Server.ServiceManager.Providers
         {
             try
             {
-                Console.WriteLine($"Stream Client Connected: {client.IPAddress}");
+                //Console.WriteLine($"Stream Client Connected: {client.IPAddress}");
                 PipeNetworkStream stream = client.ClientStream;
                 byte firstByte = await client.StreamHelper.ReadOneByteAsync(stream);
                 if (firstByte == 0)
@@ -111,7 +111,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     writeLen += readCount;
                 }
                 userStream.Dispose();
-                Console.WriteLine("user stream finished");
+                //Console.WriteLine("user stream finished");
             }
             catch (Exception ex)
             {
@@ -120,7 +120,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 if (userStream != null)
                 {
                     userStream.Dispose();
-                    Console.WriteLine("user stream disposed");
+                    //Console.WriteLine("user stream disposed");
                 }
                 if (!isCallbackSended && !client.ClientStream.IsClosed)
                 {
