@@ -56,6 +56,7 @@ namespace SignalGoTest.Download
         [Fact]
         public async Task TestUploadAsync()
         {
+            TestUpload();
             using (MemoryStream memoryStream = new MemoryStream())
             {
                 byte[] bytes = new byte[1024 * 512];
@@ -81,6 +82,7 @@ namespace SignalGoTest.Download
         [Fact]
         public void TestDownloadCross()
         {
+            TestUpload();
             ITestServerStreamModel service = new SignalGoTest2Services.StreamServices.TestServerStreamModel("localhost", 1132);
             SignalGo.Shared.Models.StreamInfo<string> result = service.DownloadImage("hello world", new TestStreamModel() { Name = "test name", Values = new System.Collections.Generic.List<string>() { "value test 1", "value test 2" } });
             byte[] bytes = new byte[1024];
@@ -92,6 +94,7 @@ namespace SignalGoTest.Download
         [Fact]
         public async Task TestDownloadCrossAsync()
         {
+            TestUpload();
             ITestServerStreamModel service = new SignalGoTest2Services.StreamServices.TestServerStreamModel("localhost", 1132);
             SignalGo.Shared.Models.StreamInfo<string> result = await service.DownloadImageAsync("hello world", new TestStreamModel() { Name = "test name", Values = new System.Collections.Generic.List<string>() { "value test 1", "value test 2" } });
             byte[] bytes = new byte[1024];
@@ -102,6 +105,7 @@ namespace SignalGoTest.Download
         [Fact]
         public void TestUploadCross()
         {
+            TestUpload();
             ITestServerStreamModel service = new SignalGoTest2Services.StreamServices.TestServerStreamModel("localhost", 1132);
             using (MemoryStream memoryStream = new MemoryStream())
             {
@@ -124,6 +128,7 @@ namespace SignalGoTest.Download
         [Fact]
         public async Task TestUploadCrossAsync()
         {
+            TestUpload();
             ITestServerStreamModel service = new SignalGoTest2Services.StreamServices.TestServerStreamModel("localhost", 1132);
             using (MemoryStream memoryStream = new MemoryStream())
             {

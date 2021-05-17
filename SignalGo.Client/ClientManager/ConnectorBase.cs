@@ -698,7 +698,7 @@ namespace SignalGo.Client.ClientManager
 #if (NET40 || NET35)
                 result.Wait();
 #else
-                Debug.WriteLine("DeadLock Warning RegisterStreamServiceInterfaceWrapper 2!");
+                //Debug.WriteLine("DeadLock Warning RegisterStreamServiceInterfaceWrapper 2!");
                 result.GetAwaiter().GetResult();
 #endif
                 if (method.ReturnType == typeof(void))
@@ -812,6 +812,7 @@ namespace SignalGo.Client.ClientManager
             }
             MethodCallInfo callInfo = new MethodCallInfo();
             callInfo.ServiceName = serviceName;
+            callInfo.Guid = Guid.NewGuid().ToString();
             //IStreamInfo iStream = null;
             //foreach (object item in args)
             //{
@@ -883,7 +884,7 @@ namespace SignalGo.Client.ClientManager
 #if (NET40 || NET35)
                         iStream.WriteManuallyAsync(stream).Wait();
 #else
-                            await iStream.WriteManuallyAsync(stream);
+                        await iStream.WriteManuallyAsync(stream);
 #endif
                     }
                     else
@@ -1016,11 +1017,11 @@ namespace SignalGo.Client.ClientManager
         }
         public static T SendOneWayMethod<T>(string serverAddress, int port, string serviceName, string methodName, params Shared.Models.ParameterInfo[] parameters)
         {
-            Debug.WriteLine("DeadLock Warning SendOneWayMethod!");
+            //Debug.WriteLine("DeadLock Warning SendOneWayMethod!");
 #if (NET40 || NET35)
             return SendOneWayMethodAsync<T>(serverAddress, port, serviceName, methodName, parameters).Result;
 #else
-            Debug.WriteLine("DeadLock Warning SendOneWayMethod!");
+            //Debug.WriteLine("DeadLock Warning SendOneWayMethod!");
             return SendOneWayMethodAsync<T>(serverAddress, port, serviceName, methodName, parameters).GetAwaiter().GetResult();
 #endif
         }
@@ -1058,7 +1059,7 @@ namespace SignalGo.Client.ClientManager
                 MethodName = methodName
             };
             callInfo.Parameters = parameters;
-
+            callInfo.Guid = Guid.NewGuid().ToString();
             if (methodName.EndsWith("Async"))
                 methodName = methodName.Substring(0, methodName.Length - 5);
 

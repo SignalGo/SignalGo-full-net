@@ -294,12 +294,12 @@ namespace SignalGo.Client.ClientManager
                 //#endif
                 //
                 isIgnorePriority = method?.GetCustomAttributes<PriorityCallAttribute>().Count() > 0;
-                Debug.WriteLine($"Wait for task of {callInfo.Guid} of {connector.ServerUrl} sync");
+                //Debug.WriteLine($"Wait for task of {callInfo.Guid} of {connector.ServerUrl} sync");
                 connector.SendData(callInfo);
 
                 MethodCallbackInfo result = valueData.GetValue();
 
-                Debug.WriteLine($"Wait for task of {callInfo.Guid} of {connector.ServerUrl} done! {result == null} sync");
+                //Debug.WriteLine($"Wait for task of {callInfo.Guid} of {connector.ServerUrl} done! {result == null} sync");
 
                 if (result == null)
                 {

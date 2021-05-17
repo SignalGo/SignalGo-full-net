@@ -46,13 +46,13 @@ namespace SignalGo.Server.ServiceManager.Providers
         private static async Task DownloadStreamFromClient(ClientInfo client, ServerBase serverBase)
         {
             MethodCallbackInfo callback = null;
-            string guid = Guid.NewGuid().ToString();
+            string guid = null;
             try
             {
                 byte[] bytes = await client.StreamHelper.ReadBlockToEndAsync(client.ClientStream, CompressionHelper.GetCompression(CompressMode.None, serverBase.GetCustomCompression), serverBase.ProviderSetting.MaximumReceiveStreamHeaderBlock) ;
                 string json = Encoding.UTF8.GetString(bytes);
                 MethodCallInfo callInfo = ServerSerializationHelper.Deserialize<MethodCallInfo>(json, serverBase);
-
+                guid = callInfo.Guid;
                 CallMethodResultInfo<OperationContext> result = await CallMethod(callInfo.ServiceName, callInfo.Guid, callInfo.MethodName, callInfo.MethodName,
                     callInfo.Parameters, null, client, null, serverBase, null, null);
                 callback = result.CallbackInfo;
@@ -72,6 +72,7 @@ namespace SignalGo.Server.ServiceManager.Providers
             }
             finally
             {
+                callback.Guid = guid;
             }
             await SendCallbackData(callback, client, serverBase);
         }

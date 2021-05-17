@@ -43,6 +43,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 //MethodsCallHandler.BeginStreamCallAction?.Invoke(client, guid, serviceName, methodName, values);
                 CallMethodResultInfo<OperationContext> result = await CallMethod(callInfo.ServiceName, callInfo.Guid, callInfo.MethodName, callInfo.MethodName, callInfo.Parameters, null, client, null, serverBase, null, null);
                 callback = result.CallbackInfo;
+                callback.Guid = callInfo.Guid;
             }
             catch (Exception ex)
             {
