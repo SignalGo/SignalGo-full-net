@@ -17,34 +17,34 @@ namespace SignalGo.Server.Owin
     {
         private ServerBase CurrentServerBase { get; set; }
         private readonly RequestDelegate _next;
+        private readonly Func<Task> _next2;
 
         public SignalGoNetCoreMiddleware(ServerBase serverBase, RequestDelegate next)
         {
             CurrentServerBase = serverBase;
             _next = next;
         }
+
+        public SignalGoNetCoreMiddleware(ServerBase serverBase, Func<Task> next)
+        {
+            CurrentServerBase = serverBase;
+            _next2 = next;
+        }
+
         public static Func<HttpContext, object> BeginInvokeConext { get; set; }
         public static Func<object, HttpContext, Task> EndInvokeConext { get; set; }
 
         public async Task Invoke(HttpContext context)
         {
-            //context.Response.Headers.Add("Access-Control-Allow-Origin", "*");
-            //context.Response.Headers.Add("Access-Control-Allow-Credentials", "true");
-            //// Added "Accept-Encoding" to this list
-            //context.Response.Headers.Add("Access-Control-Allow-Headers", "Content-Type, X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Accept-Encoding, Content-Length, Content-MD5, Date, X-Api-Version, X-File-Name");
-            //context.Response.Headers.Add("Access-Control-Allow-Methods", "POST,GET,PUT,PATCH,DELETE,OPTIONS");
-            //// New Code Starts here
-            //if (context.Request.Method == "OPTIONS")
-            //{
-            //    context.Response.StatusCode = (int)HttpStatusCode.OK;
-            //    return _next.Invoke(context);
-            //}
             string uri = context.Request.Path.Value + context.Request.QueryString.ToString();
             string serviceName = uri.Contains('/') ? uri.Substring(0, uri.LastIndexOf('/')).Trim('/') : "";
             bool isWebSocketd = context.Request.Headers.ContainsKey("Sec-WebSocket-Key");
             if (!BaseProvider.ExistService(serviceName, CurrentServerBase) && !isWebSocketd && !context.Request.Headers.ContainsKey("signalgo") && !context.Request.Headers.ContainsKey("signalgo-servicedetail") && context.Request.Headers["content-type"] != "SignalGo Service Reference")
             {
-                await _next.Invoke(context);
+                if (_next != null)
+                    await _next.Invoke(context);
+                else if (_next2 != null)
+                    await _next2.Invoke();
                 return;
             }
             context.Response.Headers.Add("IsSignalGoOverIIS", "true");
