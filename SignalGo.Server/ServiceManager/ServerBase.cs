@@ -359,19 +359,19 @@ namespace SignalGo.Server.ServiceManager
             }
         }
 
-        public void RemoveTask(int TaskId)
+        public void RemoveTask(int taskId)
         {
-            DataExchanger.Clear(TaskId);
-            TaskOfClientInfoes.Remove(TaskId);
-            OperationContext.CurrentTaskServerTasks.Remove(TaskId);
-            ValidationRuleInfoManager.RemoveTask(TaskId);
+            DataExchanger.Clear(taskId);
+            TaskOfClientInfoes.Remove(taskId);
+            OperationContext.CurrentTaskServerTasks.Remove(taskId);
+            ValidationRuleInfoManager.RemoveTask(taskId);
         }
 
-        public void AddTask(int TaskId, string clientId)
+        public void AddTask(int taskId, string clientId)
         {
-            DataExchanger.Clear(TaskId);
-            TaskOfClientInfoes.TryAdd(TaskId, clientId);
-            OperationContext.CurrentTaskServerTasks.TryAdd(TaskId, this);
+            DataExchanger.Clear(taskId);
+            TaskOfClientInfoes.TryAdd(taskId, clientId);
+            OperationContext.CurrentTaskServerTasks.TryAdd(taskId, this);
         }
 
         /// <summary>

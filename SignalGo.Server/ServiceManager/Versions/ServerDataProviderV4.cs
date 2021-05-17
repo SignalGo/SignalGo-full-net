@@ -22,6 +22,10 @@ namespace SignalGo.Server.ServiceManager.Versions
         private readonly object _lockobject = new object();
         private volatile int _ConnectedCount;
         private volatile int _WaitingToReadFirstLineCount;
+        /// <summary>
+        /// if you set this to false server will reject and discounnect the new client until to set it true
+        /// </summary>
+        public bool CanAcceptClient { get; set; } = true;
 #if (NET35 || NET40)
         public void Start(ServerBase serverBase, int port)
 #else
@@ -59,6 +63,19 @@ namespace SignalGo.Server.ServiceManager.Versions
                             TcpClient client = _server.AcceptTcpClient();
 
 #endif
+
+                            if (!CanAcceptClient)
+                            {
+#if (NETSTANDARD1_6)
+                                client.Dispose();
+#elif (NETSTANDARD2_0)
+                                client.Close();
+                                client.Dispose();
+#else
+                                client.Close();
+#endif
+                                continue;
+                            }
                             _ConnectedCount++;
                             //IsWaitForClient = false;
                             InitializeClient(client);
