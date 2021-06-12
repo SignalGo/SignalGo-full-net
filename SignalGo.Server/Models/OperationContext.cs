@@ -172,7 +172,7 @@ namespace SignalGo.Server.Models
                                 object setting = null;
                                 if (!string.IsNullOrEmpty(key))
                                     setting = GetSetting(key, type);
-                                
+
                                 if (setting == null)
                                     keys.Add(key);
                                 else
@@ -569,6 +569,11 @@ namespace SignalGo.Server.Models
                 return (T)result.FirstOrDefault(x => x.GetType() == typeof(T));
             }
             return default(T);
+        }
+
+        public static List<T> GetAllCustomSettings()
+        {
+            return CustomClientSavedSettings.Values.SelectMany(x => x).Where(x => x.GetType() == typeof(T)).Select(x => (T)x).ToList();
         }
 
         public static IEnumerable<T> GetCustomClientSettings(string customClientId)
