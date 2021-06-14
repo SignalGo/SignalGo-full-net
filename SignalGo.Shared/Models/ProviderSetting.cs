@@ -44,6 +44,10 @@ namespace SignalGo.Shared.Models
         /// what status code you want to client see when access denied
         /// </summary>
         public HttpStatusCode DefaultAccessDenidHttpStatusCode { get; set; } = HttpStatusCode.Forbidden;
+        /// <summary>
+        /// domain of cookie in response headers
+        /// </summary>
+        public string CookieDomain { get; set; }
     }
 
     /// <summary>

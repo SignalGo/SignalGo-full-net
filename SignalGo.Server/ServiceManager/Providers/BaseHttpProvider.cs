@@ -1072,6 +1072,7 @@ namespace SignalGo.Server.ServiceManager.Providers
 
         private static void FillReponseHeaders(HttpClientInfo client, OperationContext context)
         {
+            var domain = context.ServerBase.ProviderSetting.HttpSetting.CookieDomain;
             foreach (object contextResult in OperationContextBase.GetAllHttpKeySettings(context))
             {
                 foreach (var property in contextResult.GetType().GetListOfProperties().Select(x => new { Info = x, Attribute = x.GetCustomAttributes<HttpKeyAttribute>().GroupBy(y => y.KeyType) }))
@@ -1084,7 +1085,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                             {
                                 if (!client.ResponseHeaders.ContainsKey(httpKey.ResponseHeaderName))
                                 {
-                                    client.ResponseHeaders[httpKey.ResponseHeaderName] = new string[] { OperationContextBase.IncludeValue((string)property.Info.GetValue(contextResult, null), httpKey.KeyName, httpKey.HeaderValueSeparate, httpKey.HeaderKeyValueSeparate) + httpKey.Perfix };
+                                    client.ResponseHeaders[httpKey.ResponseHeaderName] = new string[] { OperationContextBase.IncludeValue((string)property.Info.GetValue(contextResult, null), httpKey.KeyName, httpKey.HeaderValueSeparate, httpKey.HeaderKeyValueSeparate, domain) + httpKey.Perfix };
                                 }
                             }
                         }

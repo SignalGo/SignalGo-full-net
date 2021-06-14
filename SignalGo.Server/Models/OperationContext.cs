@@ -445,12 +445,14 @@ namespace SignalGo.Server.Models
             return "";
         }
 
-        public static string IncludeValue(string value, string keyName, string valueSeparateChar, string keyValueSeparateChar)
+        public static string IncludeValue(string value, string keyName, string valueSeparateChar, string keyValueSeparateChar, string domain)
         {
             if (string.IsNullOrEmpty(value) || string.IsNullOrEmpty(keyName) || string.IsNullOrEmpty(keyValueSeparateChar))
                 return value;
-            return keyName + keyValueSeparateChar + value;
-
+            var result = keyName + keyValueSeparateChar + value;
+            if (!string.IsNullOrEmpty(domain))
+                result += $"{valueSeparateChar}domain{keyValueSeparateChar}{domain};";
+            return result;
         }
 
         internal static string GetKeyFromSetting(Type type, object setting)
