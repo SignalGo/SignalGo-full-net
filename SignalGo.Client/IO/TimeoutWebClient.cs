@@ -11,7 +11,7 @@ namespace SignalGo.Client.IO
         TimeSpan _timeout;
         public TimeoutWebClient(TimeSpan? timeOut)
         {
-            if (timeOut.HasValue)
+            if (!timeOut.HasValue)
                 timeOut = TimeSpan.FromMinutes(1);
             _timeout = timeOut.Value;
         }
