@@ -451,7 +451,7 @@ namespace SignalGo.Server.Models
                 return value;
             var result = keyName + keyValueSeparateChar + value;
             if (!string.IsNullOrEmpty(domain))
-                result += $"{valueSeparateChar}domain{keyValueSeparateChar}{domain};";
+                result += $"{valueSeparateChar}domain{keyValueSeparateChar}{domain}";
             return result;
         }
 
