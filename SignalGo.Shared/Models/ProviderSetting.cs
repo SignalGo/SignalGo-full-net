@@ -45,7 +45,7 @@ namespace SignalGo.Shared.Models
         /// </summary>
         public HttpStatusCode DefaultAccessDenidHttpStatusCode { get; set; } = HttpStatusCode.Forbidden;
         /// <summary>
-        /// domain of cookie in response headers
+        /// domain of cookie in response headers 
         /// </summary>
         public string CookieDomain { get; set; }
     }

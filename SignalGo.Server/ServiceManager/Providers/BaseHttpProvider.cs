@@ -1085,6 +1085,15 @@ namespace SignalGo.Server.ServiceManager.Providers
                             {
                                 if (!client.ResponseHeaders.ContainsKey(httpKey.ResponseHeaderName))
                                 {
+                                    if (string.IsNullOrEmpty(domain) && client.RequestHeaders.TryGetValue("host", out string[] values))
+                                    {
+                                        domain = values.FirstOrDefault();
+                                        if (!string.IsNullOrEmpty(domain) && domain.Contains('.'))
+                                        {
+                                            var split = domain.Split('.');
+                                            domain = split.Skip(split.Length - 2).FirstOrDefault() + '.' + split.LastOrDefault();
+                                        }
+                                    }
                                     client.ResponseHeaders[httpKey.ResponseHeaderName] = new string[] { OperationContextBase.IncludeValue((string)property.Info.GetValue(contextResult, null), httpKey.KeyName, httpKey.HeaderValueSeparate, httpKey.HeaderKeyValueSeparate, domain) + httpKey.Perfix };
                                 }
                             }
