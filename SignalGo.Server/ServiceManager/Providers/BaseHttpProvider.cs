@@ -631,8 +631,11 @@ namespace SignalGo.Server.ServiceManager.Providers
 
                     if (!controller.ResponseHeaders.ContainsKey("Connection"))
                         controller.ResponseHeaders.Add("Connection", "close".Split(','));
-
+                    serverBase.OnBeforeSendHttpHeaderAction?.Invoke(client as HttpClientInfo, serverBase, result);
                     byte[] dataBytes = Encoding.UTF8.GetBytes(data);
+                    if (serverBase.OnBeforeSendHttpDataFunction != null)
+                        dataBytes = serverBase.OnBeforeSendHttpDataFunction(client as HttpClientInfo, serverBase, dataBytes);
+
                     await SendResponseHeadersToClient(controller.Status, controller.ResponseHeaders, client, dataBytes.Length);
                     await SendResponseDataToClient(dataBytes, client);
                 }

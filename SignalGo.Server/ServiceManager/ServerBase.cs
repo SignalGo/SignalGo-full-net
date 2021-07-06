@@ -166,6 +166,14 @@ namespace SignalGo.Server.ServiceManager
         public OnCallMethod OnAfterCallMethodAction { get; set; }
 
         /// <summary>
+        /// you can edit http headers before send
+        /// </summary>
+        public Action<HttpClientInfo, ServerBase, object> OnBeforeSendHttpHeaderAction { get; set; }
+        /// <summary>
+        /// you can edit http response data before send
+        /// </summary>
+        public Func<HttpClientInfo, ServerBase, byte[], byte[]> OnBeforeSendHttpDataFunction { get; set; }
+        /// <summary>
         /// Error handling methods that return types (not void)
         /// exception is exception trow
         /// Type is service Type
@@ -330,7 +338,7 @@ namespace SignalGo.Server.ServiceManager
                             {
                                 ClientServiceCallMethodsResult.Remove(guid.ToString());
                                 callback.Value.GetType().GetMethods(BindingFlags.Public | BindingFlags.Instance)
-                                    .FirstOrDefault(x=>x.Name == "SetException" && x.GetParameters()[0].Name == "exception").Invoke(callback.Value, new object[] { new Exception("Client Disposed!") });
+                                    .FirstOrDefault(x => x.Name == "SetException" && x.GetParameters()[0].Name == "exception").Invoke(callback.Value, new object[] { new Exception("Client Disposed!") });
                             }
                         }
                     }
