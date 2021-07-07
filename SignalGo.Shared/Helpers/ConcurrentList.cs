@@ -71,6 +71,15 @@ namespace SignalGo.Shared.Helpers
             LockInternalListAndCommand(l => l.Add(item));
         }
 
+        public void AddWithNoDuplication(T item)
+        {
+            LockInternalListAndCommand(l =>
+            {
+                if (!l.Contains(item))
+                    l.Add(item);
+            });
+        }
+
         public void Clear()
         {
             LockInternalListAndCommand(l => l.Clear());

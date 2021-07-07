@@ -58,6 +58,42 @@ namespace SignalGo.Client.ClientManager
         }
 
         /// <summary>
+        /// when the client provider is busy to send data
+        /// </summary>
+        public Action<int> OnBusyStreamAction { get; set; }
+        /// <summary>
+        /// when the provider is finished from send data and its not busy more
+        /// </summary>
+        public Action<int> OnReleaseStreamAction { get; set; }
+        public object SendDataSemaphore { get; set; } =new object();
+        int SendDataQueue { get; set; } = 0;
+        void SetBusy()
+        {
+            lock(SendDataSemaphore)
+            {
+                SendDataQueue++;
+                OnBusyStreamAction?.Invoke(SendDataQueue);
+            }
+        }
+        void ReleaseBusy()
+        {
+            lock (SendDataSemaphore)
+            {
+                SendDataQueue--;
+                OnReleaseStreamAction?.Invoke(SendDataQueue);
+            }
+        }
+
+        void ResetBusy()
+        {
+            lock (SendDataSemaphore)
+            {
+                SendDataQueue = 0;
+                OnReleaseStreamAction?.Invoke(SendDataQueue);
+            }
+        }
+
+        /// <summary>
         /// get custom compression of client
         /// </summary>
         public Func<ICompression> GetCustomCompression { get; set; }
@@ -288,7 +324,6 @@ namespace SignalGo.Client.ClientManager
                 _client = new WebSocketClientWorker(new TcpClient());
             }
 #if (NETSTANDARD1_6)
-            Debug.WriteLine("DeadLock Warning Connect!");
             _client.ConnectAsync(address, port).GetAwaiter().GetResult();
 #else
             _client.Connect(address, port);
@@ -476,7 +511,6 @@ namespace SignalGo.Client.ClientManager
                             if (!IsConnected)
                                 break;
                             Thread.Sleep(ProviderSetting.PriorityFunctionDelayTime);
-                            Debug.WriteLine("DeadLock Warning RunPriorities!");
                             priorityAction = function().Result;
                             if (priorityAction == PriorityAction.BreakAll)
                                 break;
@@ -547,7 +581,6 @@ namespace SignalGo.Client.ClientManager
 #if (NET40 || NET35)
             MethodCallbackInfo callback = this.SendData<MethodCallbackInfo>(callInfo);
 #else
-            Debug.WriteLine("DeadLock Warning RegisterServerServiceInterface!");
             MethodCallbackInfo callback = this.SendData<MethodCallbackInfo>(callInfo).GetAwaiter().GetResult();
 #endif
             Type t = CSCodeInjection.GenerateInterfaceType(type, typeof(OperationCalls), new List<Type>() { typeof(ServiceContractAttribute), GetType() }, false);
@@ -599,7 +632,6 @@ namespace SignalGo.Client.ClientManager
 #if (NET40 || NET35)
                     ConnectorExtensions.SendData(this, serviceName, method.Name, method.MethodToParameters(x => ClientSerializationHelper.SerializeObject(x), args).ToArray());
 #else
-                    Debug.WriteLine("DeadLock Warning RegisterServerServiceInterfaceWrapper 2!");
                     ConnectorExtensions.SendDataAsync(this, serviceName, method.Name, method.MethodToParameters(x => ClientSerializationHelper.SerializeObject(x), args).ToArray()).GetAwaiter().GetResult();
 #endif
                     return null;
@@ -611,7 +643,6 @@ namespace SignalGo.Client.ClientManager
 #if (NET40 || NET35)
                     string data = ConnectorExtensions.SendData(this, serviceName, method.Name, method.MethodToParameters(x => ClientSerializationHelper.SerializeObject(x), args).ToArray());
 #else
-                    Debug.WriteLine("DeadLock Warning RegisterServerServiceInterfaceWrapper 3!");
                     string data = ConnectorExtensions.SendDataAsync(this, serviceName, method.Name, method.MethodToParameters(x => ClientSerializationHelper.SerializeObject(x), args).ToArray()).GetAwaiter().GetResult();
 #endif
                     if (data == null)
@@ -735,11 +766,9 @@ namespace SignalGo.Client.ClientManager
         //}
         public static T UploadStreamSync<T>(ClientProvider clientProvider, string serverAddress, int? port, string serviceName, string methodName, Shared.Models.ParameterInfo[] parameters, IStreamInfo iStream)
         {
-            Debug.WriteLine("DeadLock Warning UploadStreamSync!");
 #if (NET40 || NET35)
             return UploadStreamAsync<T>(clientProvider, serverAddress, port, serviceName, methodName, parameters, iStream).Result;
 #else
-            Debug.WriteLine("DeadLock Warning UploadStreamSync!");
             return UploadStreamAsync<T>(clientProvider, serverAddress, port, serviceName, methodName, parameters, iStream).GetAwaiter().GetResult();
 #endif
         }
@@ -1418,13 +1447,13 @@ namespace SignalGo.Client.ClientManager
                         while (true)
                         {
                             //first byte is DataType
-                            Debug.WriteLine($"Wait for get data from server {ServerUrl}");
 #if (NET35 || NET40)
                             DataType dataType = ReadDataTypeFunction();
 #else
                             DataType dataType = await ReadDataTypeFunction();
 #endif
-                            Debug.WriteLine($"Data from server taked: {dataType}");
+                            SetBusy();
+
 
                             if (dataType == DataType.PingPong)
                             {
@@ -1471,7 +1500,6 @@ namespace SignalGo.Client.ClientManager
                                 bool geted = WaitedMethodsForResponse.TryGetValue(callback.Guid, out ITaskCompletionManager<MethodCallbackInfo> keyValue);
                                 if (geted)
                                 {
-                                    Debug.WriteLine($"Callback Data received: {callback.Guid} has ex: {callback.IsException}");
                                     if (callback.IsException)
                                     {
                                         keyValue.SetException(new Exception(callback.Data));
@@ -1518,6 +1546,7 @@ namespace SignalGo.Client.ClientManager
                                 Disconnect();
                                 break;
                             }
+                            ReleaseBusy();
                         }
                     }
                     catch (Exception ex)
@@ -1526,6 +1555,10 @@ namespace SignalGo.Client.ClientManager
                         Console.WriteLine("Client Disconnected");
                         AutoLogger.LogError(ex, "StartToReadingClientData");
                         Disconnect();
+                    }
+                    finally
+                    {
+                        ResetBusy();
                     }
                 });
             }
@@ -1611,6 +1644,7 @@ namespace SignalGo.Client.ClientManager
         {
             try
             {
+                SetBusy();
                 if (_clientStream == null)
                     throw new Exception($"Client is not connected on {ServerUrl}");
                 //                if (IsWebSocket)
@@ -1663,15 +1697,12 @@ namespace SignalGo.Client.ClientManager
 #else
                 await StreamHelper.WriteToStreamAsync(_clientStream, bytes.ToArray());
 #endif
-                Debug.WriteLine($"Wait for task of {callback.Guid} send data success!");
                 //}
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Wait for task of {callback.Guid} has error {ex}");
                 try
                 {
-                    //Debug.WriteLine($"Get exception for task of {callback.Guid}");
                     if (WaitedMethodsForResponse.TryGetValue(callback.Guid, out ITaskCompletionManager<MethodCallbackInfo> keyValue))
                     {
                         keyValue.SetException(ex);
@@ -1680,6 +1711,10 @@ namespace SignalGo.Client.ClientManager
                 catch
                 {
                 }
+            }
+            finally
+            {
+                ReleaseBusy();
             }
         }
 
@@ -1808,6 +1843,7 @@ namespace SignalGo.Client.ClientManager
         {
             try
             {
+                SetBusy();
                 string json = ClientSerializationHelper.SerializeObject(callback);
                 if (ProtocolType == ClientProtocolType.WebSocket)
                     json += "#end";
@@ -1845,6 +1881,10 @@ namespace SignalGo.Client.ClientManager
             {
                 AutoLogger.LogError(ex, "SendCallbackData");
             }
+            finally
+            {
+                ReleaseBusy();
+            }
         }
 
 
@@ -1871,7 +1911,6 @@ namespace SignalGo.Client.ClientManager
             if (data.Count > ProviderSetting.MaximumSendDataBlock)
                 throw new Exception("SendCallbackData data length is upper than MaximumSendDataBlock");
             ServiceDetailEventTaskResult = new TaskCompletionSource<ProviderDetailsInfo>();
-            Debug.WriteLine("DeadLock Warning GetListOfServicesWithDetials!");
 #if (NET40 || NET35)
             StreamHelper.WriteToStream(_clientStream, data.ToArray());
             return ServiceDetailEventTaskResult.Task.Result;
@@ -1909,7 +1948,6 @@ namespace SignalGo.Client.ClientManager
             if (data.Count > ProviderSetting.MaximumSendDataBlock)
                 throw new Exception("SendCallbackData data length is upper than MaximumSendDataBlock");
             ServiceParameterDetailEventTaskResult = new TaskCompletionSource<string>();
-            Debug.WriteLine("DeadLock Warning GetMethodParameterDetial!");
 #if (NET40 || NET35)
             StreamHelper.WriteToStream(_clientStream, data.ToArray());
             return ServiceParameterDetailEventTaskResult.Task.Result;
