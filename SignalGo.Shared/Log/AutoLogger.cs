@@ -117,7 +117,7 @@ namespace SignalGo.Shared.Log
             builder.AppendLine("<------------------------------StackTrace One End------------------------------>");
         }
 #endif
-        private readonly SemaphoreSlim lockWaitToRead = new SemaphoreSlim(1, 1);
+        static readonly SemaphoreSlim lockWaitToRead = new SemaphoreSlim(1);
         /// <summary>
         /// log text message
         /// </summary>
