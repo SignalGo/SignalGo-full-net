@@ -53,6 +53,33 @@ namespace SignalGo.Shared.Models
             }
         }
 #endif
+#if (!NET35 && !NET40)
+        public async Task AddWithoutDupplicateAsync(T item)
+        {
+            try
+            {
+                if (_IsCanceled)
+                    return;
+                await _addLock.WaitAsync();
+                if (_items.Contains(item))
+                    return;
+                _items.Add(item);
+                //Console.WriteLine("added" + item);
+                if (_taskCompletionSource.Task.Status == TaskStatus.WaitingForActivation)
+                {
+                    CompleteTask();
+                }
+                else
+                {
+                    //Console.WriteLine("wrong status 2 : " + _taskCompletionSource.Task.Status);
+                }
+            }
+            finally
+            {
+                _addLock.Release();
+            }
+        }
+#endif
         public void Add(T item)
         {
             try
