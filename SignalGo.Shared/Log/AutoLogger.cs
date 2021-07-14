@@ -35,6 +35,9 @@ namespace SignalGo.Shared.Log
             {
                 if (!string.IsNullOrEmpty(_SavePath))
                     return _SavePath;
+                lockWaitToRead.Wait();
+                if (!string.IsNullOrEmpty(_SavePath))
+                    return _SavePath;
                 if (string.IsNullOrEmpty(DirectoryName))
                     _SavePath = DirectoryLocation;
                 else
@@ -51,6 +54,7 @@ namespace SignalGo.Shared.Log
 
                 }
                 _SavePath = Path.Combine(_SavePath, FileName);
+                lockWaitToRead.Release();
                 return _SavePath;
             }
         }
@@ -159,7 +163,7 @@ namespace SignalGo.Shared.Log
 #else
                 await lockWaitToRead.WaitAsync();
 #endif
-                using (FileStream stream = new FileStream(fileName, FileMode.OpenOrCreate, FileAccess.ReadWrite))
+                using (FileStream stream = new FileStream(fileName, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite))
                 {
                     stream.Seek(0, SeekOrigin.End);
                     byte[] bytes = Encoding.UTF8.GetBytes(Helpers.TextHelper.NewLine + str.ToString());
@@ -207,7 +211,7 @@ namespace SignalGo.Shared.Log
 #else
                     await lockWaitToRead.WaitAsync();
 #endif
-                    using (FileStream stream = new FileStream(fileName, FileMode.OpenOrCreate, FileAccess.ReadWrite))
+                    using (FileStream stream = new FileStream(fileName, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite))
                     {
                         stream.Seek(0, SeekOrigin.End);
                         byte[] bytes = Encoding.UTF8.GetBytes(Helpers.TextHelper.NewLine + str.ToString());
