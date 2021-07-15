@@ -420,6 +420,8 @@ namespace SignalGo.Client.ClientManager
                         break;
                     if (item is Action action)
                         action();
+                    if (item is Func<Task> voidFunction)
+                        await voidFunction();
                     else if (item is Func<PriorityAction>)
                     {
                         PriorityAction priorityAction = PriorityAction.TryAgain;
@@ -465,7 +467,7 @@ namespace SignalGo.Client.ClientManager
                 }
                 catch (Exception ex)
                 {
-
+                    AutoLogger.LogError(ex, "RunPrioritiesAsync");
                 }
             }
         }
@@ -907,12 +909,12 @@ namespace SignalGo.Client.ClientManager
                 _ = Task.Run(async () =>
                 {
 #endif
-                try
-                {
+                    try
+                    {
 #if (!NET40 && !NET35)
                         await Task.Delay(1000);
 #endif
-                    KeyValue<DataType, CompressMode> firstData = null;
+                        KeyValue<DataType, CompressMode> firstData = null;
 #if (NET40 || NET35)
                     iStream.GetPositionFlush = () =>
 #else
@@ -937,75 +939,75 @@ namespace SignalGo.Client.ClientManager
                         }
                         return -1;
                     };
-                    if (iStream.WriteManually != null && iStream.WriteManuallyAsync != null)
-                        throw new Exception("don't set both of WriteManually and WriteManuallyAsync");
-                    if (iStream.WriteManually != null)
-                        iStream.WriteManually(stream);
-                    else if (iStream.WriteManuallyAsync != null)
-                    {
+                        if (iStream.WriteManually != null && iStream.WriteManuallyAsync != null)
+                            throw new Exception("don't set both of WriteManually and WriteManuallyAsync");
+                        if (iStream.WriteManually != null)
+                            iStream.WriteManually(stream);
+                        else if (iStream.WriteManuallyAsync != null)
+                        {
 #if (NET40 || NET35)
                         iStream.WriteManuallyAsync(stream).Wait();
 #else
-                        await iStream.WriteManuallyAsync(stream);
+                            await iStream.WriteManuallyAsync(stream);
 #endif
-                    }
-                    else
-                    {
-                        long length = iStream.Length.Value;
-                        long position = 0;
-                        int blockOfRead = 1024 * 10;
-                        while (length != position)
+                        }
+                        else
                         {
+                            long length = iStream.Length.Value;
+                            long position = 0;
+                            int blockOfRead = 1024 * 10;
+                            while (length != position)
+                            {
 
-                            if (position + blockOfRead > length)
-                                blockOfRead = (int)(length - position);
-                            if (bytes.Length < blockOfRead)
-                                bytes = new byte[blockOfRead];
+                                if (position + blockOfRead > length)
+                                    blockOfRead = (int)(length - position);
+                                if (bytes.Length < blockOfRead)
+                                    bytes = new byte[blockOfRead];
 #if (NET40 || NET35)
                             int readCount = iStream.Stream.Read(bytes, blockOfRead);
 #else
-                            int readCount = await iStream.Stream.ReadAsync(bytes, blockOfRead);
+                                int readCount = await iStream.Stream.ReadAsync(bytes, blockOfRead);
 #endif
-                            position += readCount;
-                            byte[] data = bytes.Take(readCount).ToArray();
+                                position += readCount;
+                                byte[] data = bytes.Take(readCount).ToArray();
 #if (NET40 || NET35)
                             stream.Write(data, 0, data.Length);
 #else
-                            await stream.WriteAsync(data, 0, data.Length);
+                                await stream.WriteAsync(data, 0, data.Length);
 #endif
+                            }
                         }
-                    }
-                    //                        if (firstData == null || firstData.Key == DataType.FlushStream)
-                    //                        {
-                    //                            while (true)
-                    //                            {
-                    //#if (NET40 || NET35)
-                    //                                firstData = iStream.ReadFirstData(stream, maximumReceiveStreamHeaderBlock);
-                    //#else
-                    //                                firstData = await iStream.ReadFirstDataAsync(stream, maximumReceiveStreamHeaderBlock);
-                    //#endif
-                    //                                if (firstData.Key == DataType.FlushStream)
-                    //                                {
-                    //#if (NET40 || NET35)
-                    //                                    byte[] data = streamHelper.ReadBlockToEnd(stream, firstData.Value, maximumReceiveStreamHeaderBlock);
-                    //#else
-                    //                                    byte[] data = await streamHelper.ReadBlockToEndAsync(stream, firstData.Value, maximumReceiveStreamHeaderBlock);
-                    //#endif
-                    //                                }
-                    //                                else
-                    //                                    break;
-                    //                            }
-                    //                        }
+                        //                        if (firstData == null || firstData.Key == DataType.FlushStream)
+                        //                        {
+                        //                            while (true)
+                        //                            {
+                        //#if (NET40 || NET35)
+                        //                                firstData = iStream.ReadFirstData(stream, maximumReceiveStreamHeaderBlock);
+                        //#else
+                        //                                firstData = await iStream.ReadFirstDataAsync(stream, maximumReceiveStreamHeaderBlock);
+                        //#endif
+                        //                                if (firstData.Key == DataType.FlushStream)
+                        //                                {
+                        //#if (NET40 || NET35)
+                        //                                    byte[] data = streamHelper.ReadBlockToEnd(stream, firstData.Value, maximumReceiveStreamHeaderBlock);
+                        //#else
+                        //                                    byte[] data = await streamHelper.ReadBlockToEndAsync(stream, firstData.Value, maximumReceiveStreamHeaderBlock);
+                        //#endif
+                        //                                }
+                        //                                else
+                        //                                    break;
+                        //                            }
+                        //                        }
 #if (!NET40 && !NET35)
                         sendComeplete.SetResult(true);
 #endif
-                }
-                catch (Exception ex)
-                {
+                    }
+                    catch (Exception ex)
+                    {
 #if (!NET40 && !NET35)
                         sendComeplete.SetResult(false);
 #endif
-                }
+                    }
 #if (!NET40 && !NET35)
                 });
 #endif
@@ -1997,6 +1999,15 @@ namespace SignalGo.Client.ClientManager
         public void AddPriorityAction(Action action)
         {
             PriorityActionsAfterConnected.Add(action);
+        }
+
+        /// <summary>
+        /// calls this async func after connected and befor holded methods
+        /// </summary>
+        /// <param name="func"></param>
+        public void AddPriorityFunction(Func<Task> func)
+        {
+            PriorityActionsAfterConnected.Add(func);
         }
 
         /// <summary>
