@@ -65,11 +65,11 @@ namespace SignalGo.Client.ClientManager
         /// when the provider is finished from send data and its not busy more
         /// </summary>
         public Action<int> OnReleaseStreamAction { get; set; }
-        public object SendDataSemaphore { get; set; } =new object();
+        public object SendDataSemaphore { get; set; } = new object();
         int SendDataQueue { get; set; } = 0;
         void SetBusy()
         {
-            lock(SendDataSemaphore)
+            lock (SendDataSemaphore)
             {
                 SendDataQueue++;
                 OnBusyStreamAction?.Invoke(SendDataQueue);
@@ -672,7 +672,10 @@ namespace SignalGo.Client.ClientManager
                     Type methodType = method.ReturnType.GetListOfGenericArguments().FirstOrDefault();
                     MethodInfo madeMethod = findMethod.MakeGenericMethod(methodType);
 
-                    return madeMethod.Invoke(this, new object[] { this, serviceName, methodName, method, args });
+                    var castMethod = typeof(ConnectorBase).GetMethod(nameof(CastToObject), BindingFlags.Static | BindingFlags.Public).MakeGenericMethod(methodType);
+                    var taskObject = (Task<object>)castMethod.Invoke(null, new object[] { madeMethod.Invoke(this, new object[] { this, serviceName, methodName, method, args }) });
+
+                    return taskObject;
                 }
                 throw new NotSupportedException();
             });
@@ -681,6 +684,33 @@ namespace SignalGo.Client.ClientManager
             return objectInstance;
         }
 
+#if (!NET40 && !NET35)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="task"></param>
+        /// <returns></returns>
+        public static async Task<object> CastToObject<T>(Task<T> task)
+        {
+            return await task.ConfigureAwait(false);
+        }
+#else
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="task"></param>
+        /// <returns></returns>
+        public static Task<object> CastToObject<T>(Task<T> task)
+        {
+            return Task.Factory.StartNew<object>(()=>
+            {
+                return task.Result;
+            });
+        }
+
+#endif
         private ConcurrentDictionary<string, object> InstancesOfRegisterStreamService = new ConcurrentDictionary<string, object>();
         /// <summary>
         /// register service and method to server for file or stream download and upload
@@ -751,7 +781,10 @@ namespace SignalGo.Client.ClientManager
                 Type methodType = method.ReturnType.GetListOfGenericArguments().FirstOrDefault();
                 MethodInfo madeMethod = findMethod.MakeGenericMethod(methodType);
 
-                return madeMethod.Invoke(this, new object[] { this, serverAddress, port, name, method.Name, ArgumentsToParameters(args).ToArray(), iStream });
+                var castMethod = typeof(ConnectorBase).GetMethod(nameof(CastToObject), BindingFlags.Static | BindingFlags.Public).MakeGenericMethod(methodType);
+                var taskObject = (Task<object>)castMethod.Invoke(null, new object[] { madeMethod.Invoke(this, new object[] { this, serverAddress, port, name, method.Name, ArgumentsToParameters(args).ToArray(), iStream }) });
+
+                return taskObject;
             });
             InstancesOfRegisterStreamService.TryAdd(callKey, objectInstance);
             return objectInstance;

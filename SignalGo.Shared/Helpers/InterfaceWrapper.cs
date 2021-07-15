@@ -36,7 +36,7 @@ namespace SignalGo.Shared.Helpers
                     break;
             }
         }
-        public static TService Wrap<TService>(Func<string, System.Reflection.MethodInfo, object[], object> CallMethodAction, Func<string, System.Reflection.MethodInfo, object[], object> CallMethodAsyncAction)
+        public static TService Wrap<TService>(Func<string, System.Reflection.MethodInfo, object[], object> CallMethodAction, Func<string, System.Reflection.MethodInfo, object[], Task<object>> CallMethodAsyncAction)
             where TService : class
         {
             return (TService)Wrap(typeof(TService), CallMethodAction, CallMethodAsyncAction);
@@ -56,7 +56,7 @@ namespace SignalGo.Shared.Helpers
             return result;
         }
 
-        internal static object Wrap(Type serviceInterfaceType, Func<string, System.Reflection.MethodInfo, object[], object> CallMethodAction, Func<string, System.Reflection.MethodInfo, object[], object> CallMethodAsyncAction)
+        internal static object Wrap(Type serviceInterfaceType, Func<string, System.Reflection.MethodInfo, object[], object> CallMethodAction, Func<string, System.Reflection.MethodInfo, object[], Task<object>> CallMethodAsyncAction)
         {
             //this method load GetCurrentMethod for xamarin linked assembly
             //System.Reflection.MethodBase fix = System.Reflection.MethodInfo.GetCurrentMethod();
@@ -144,7 +144,7 @@ namespace SignalGo.Shared.Helpers
                     generator = methodImpl.GetILGenerator();
 
                     System.Reflection.MethodInfo invoke = null;
-                    if (method.ReturnType.GetBaseType() == typeof(Task))
+                    if (method.ReturnType.GetBaseType() == typeof(Task) || method.ReturnType == typeof(Task))
                     {
                         invoke = CallMethodAsyncAction.GetType().FindMethod("Invoke");
                         generator.Emit(OpCodes.Ldarg_0);//stack [this]
@@ -224,7 +224,6 @@ namespace SignalGo.Shared.Helpers
             Type newType = type.CreateType();
             return Activator.CreateInstance(newType, CallMethodAction, CallMethodAsyncAction);
 #endif
-
         }
     }
 }

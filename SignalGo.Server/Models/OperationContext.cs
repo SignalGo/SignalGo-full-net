@@ -678,7 +678,7 @@ namespace SignalGo.Server.Models
                     if (method.ReturnType == typeof(Task))
                         return Task.FromResult(result1);
                     return result1;
-                }, (serviceName, method, args) =>
+                }, async (serviceName, method, args) =>
                 {
                     //this is async action
                     Type returnType = method.ReturnType;
@@ -688,36 +688,21 @@ namespace SignalGo.Server.Models
                         returnType = method.ReturnType.GetGenericArguments()[0];
                     }
                     string methodName = method.Name;
+                    var castMethod = typeof(OCExtension).GetMethod(nameof(CastToObject), BindingFlags.Static | BindingFlags.Public).MakeGenericMethod(returnType);
                     if (client.IsWebSocket)
                     {
                         MethodInfo sendDataMethod = typeof(ServerExtensions).GetMethod("SendWebSocketDataWithCallClientServiceMethod", BindingFlags.Static | BindingFlags.NonPublic)
                             .MakeGenericMethod(returnType);
-                        return sendDataMethod.Invoke(null, new object[] { serverBase, client, returnType, serviceName, method.Name, method.MethodToParameters(x => ServerSerializationHelper.SerializeObject(x, serverBase), args).ToArray() });
+                        var taskObject = (Task<object>)castMethod.Invoke(null, new object[] { sendDataMethod.Invoke(null, new object[] { serverBase, client, returnType, serviceName, method.Name, method.MethodToParameters(x => ServerSerializationHelper.SerializeObject(x, serverBase), args).ToArray() }) });
+                        return await taskObject;
                     }
                     else
                     {
                         MethodInfo sendDataMethod = typeof(ServerExtensions).GetMethod("SendDataWithCallClientServiceMethod", BindingFlags.Static | BindingFlags.NonPublic)
                             .MakeGenericMethod(returnType);
-                        return sendDataMethod.Invoke(null, new object[] { serverBase, client, returnType, serviceName, method.Name, method.MethodToParameters(x => ServerSerializationHelper.SerializeObject(x, serverBase), args).ToArray() });
+                        var taskObject = (Task<object>)castMethod.Invoke(null, new object[] { sendDataMethod.Invoke(null, new object[] { serverBase, client, returnType, serviceName, method.Name, method.MethodToParameters(x => ServerSerializationHelper.SerializeObject(x, serverBase), args).ToArray() }) });
+                        return await taskObject;
                     }
-                    //}
-                    //this is async function
-                    //else if (method.ReturnType.GetBaseType() == typeof(Task))
-                    //{
-                    //    string methodName = method.Name;
-                    //    if (client.IsWebSocket)
-                    //    {
-                    //        MethodInfo sendDataMethod = typeof(ServerExtensions).GetMethod("SendWebSocketDataWithCallClientServiceMethod", BindingFlags.Static | BindingFlags.NonPublic)
-                    //            .MakeGenericMethod(method.ReturnType);
-                    //        return sendDataMethod.Invoke(null, new object[] { serverBase, client, method.ReturnType.GetGenericArguments()[0], serviceName, method.Name, method.MethodToParameters(x => ServerSerializationHelper.SerializeObject(x, serverBase), args).ToArray() });
-                    //    }
-                    //    else
-                    //    {
-                    //        MethodInfo sendDataMethod = typeof(ServerExtensions).GetMethod("SendDataWithCallClientServiceMethod", BindingFlags.Static | BindingFlags.NonPublic)
-                    //               .MakeGenericMethod(method.ReturnType);
-                    //        return sendDataMethod.Invoke(null, new object[] { serverBase, client, method.ReturnType.GetGenericArguments()[0], serviceName, method.Name, method.MethodToParameters(x => ServerSerializationHelper.SerializeObject(x, serverBase), args).ToArray() });
-                    //    }
-                    //}
                     throw new NotSupportedException();
                 });
 
@@ -730,6 +715,10 @@ namespace SignalGo.Server.Models
             }
         }
 
+        public static async Task<object> CastToObject<T>(Task<T> task)
+        {
+            return await task.ConfigureAwait(false);
+        }
         /// <summary>
         ///  get all client context service
         /// </summary>
