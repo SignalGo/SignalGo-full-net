@@ -145,15 +145,15 @@ namespace SignalGo.Client
                 {
                     ConnectAsync(url);
                     connectedAction(true);
-                    AutoReconnectWaitToDisconnectTaskResult.Task.Wait();
-                    AutoReconnectWaitToDisconnectTaskResult = new TaskCompletionSource<object>();
+                    AutoReconnectWaitToDisconnectTaskResult.GetTask();
+                    AutoReconnectWaitToDisconnectTaskResult = new ConcurrentTaskCompletionSource<object>();
                     ConnectAsyncAutoReconnect(url, connectedAction);
                 }
                 catch (Exception ex)
                 {
                     connectedAction(false);
                     Disconnect();
-                    AutoReconnectWaitToDisconnectTaskResult = new TaskCompletionSource<object>();
+                    AutoReconnectWaitToDisconnectTaskResult = new ConcurrentTaskCompletionSource<object>();
                     ConnectAsyncAutoReconnect(url, connectedAction);
                 }
             });
@@ -177,7 +177,7 @@ namespace SignalGo.Client
                     }
                     await AutoReconnectWaitToDisconnectTaskResult.Task;
                     await Task.Delay(1000);
-                    AutoReconnectWaitToDisconnectTaskResult = new TaskCompletionSource<object>();
+                    AutoReconnectWaitToDisconnectTaskResult = new ConcurrentTaskCompletionSource<object>();
 
                     ConnectAsyncAutoReconnect(url, connectedAction);
 
@@ -194,7 +194,7 @@ namespace SignalGo.Client
                     }
                     Disconnect();
                     await Task.Delay(1000);
-                    AutoReconnectWaitToDisconnectTaskResult = new TaskCompletionSource<object>();
+                    AutoReconnectWaitToDisconnectTaskResult = new ConcurrentTaskCompletionSource<object>();
                     ConnectAsyncAutoReconnect(url, connectedAction);
                 }
             });

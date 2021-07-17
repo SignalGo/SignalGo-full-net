@@ -60,11 +60,11 @@ namespace SignalGo.Shared.Helpers
 
     public class TaskCompletionManagerAsync<T> : ITaskCompletionManager<T>
     {
-        TaskCompletionSource<T> Value { get; set; } = new TaskCompletionSource<T>();
+        ConcurrentTaskCompletionSource<T> Value { get; set; } = new ConcurrentTaskCompletionSource<T>();
 #if (NET40 || NET35)
-        public Task<T> GetValue()
+        public T GetValue()
         {
-            return Value.Task;
+            return Value.Task.Result;
         }
 #else
         public async Task<T> GetValue()

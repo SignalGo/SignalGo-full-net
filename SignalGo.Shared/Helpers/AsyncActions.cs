@@ -1,4 +1,5 @@
-﻿using SignalGo.Shared.Log;
+﻿using SignalGo.Shared.Helpers;
+using SignalGo.Shared.Log;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -73,7 +74,7 @@ namespace SignalGo.Shared
         {
             if (UIThread == null)
                 throw new Exception("UI thread not initialized please call AsyncActions.InitializeUIThread in your ui thread to initialize");
-            TaskCompletionSource<T> tcs1 = new TaskCompletionSource<T>();
+            ConcurrentTaskCompletionSource<T> tcs1 = new ConcurrentTaskCompletionSource<T>();
             UIThread.Post(async (state) =>
             {
                 try

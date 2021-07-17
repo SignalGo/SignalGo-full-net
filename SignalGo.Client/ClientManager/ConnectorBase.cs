@@ -198,10 +198,10 @@ namespace SignalGo.Client.ClientManager
         internal ConcurrentDictionary<string, object> Services { get; set; } = new ConcurrentDictionary<string, object>();
 
         internal AutoResetEvent HoldAllPrioritiesResetEvent { get; set; } = new AutoResetEvent(true);
-        internal TaskCompletionSource<object> HoldAllPrioritiesTaskResult = new TaskCompletionSource<object>();
-        internal TaskCompletionSource<object> AutoReconnectWaitToDisconnectTaskResult = new TaskCompletionSource<object>();
-        internal TaskCompletionSource<ProviderDetailsInfo> ServiceDetailEventTaskResult = null;
-        internal TaskCompletionSource<string> ServiceParameterDetailEventTaskResult = null;
+        internal ConcurrentTaskCompletionSource<object> HoldAllPrioritiesTaskResult = new ConcurrentTaskCompletionSource<object>();
+        internal ConcurrentTaskCompletionSource<object> AutoReconnectWaitToDisconnectTaskResult = new ConcurrentTaskCompletionSource<object>();
+        internal ConcurrentTaskCompletionSource<ProviderDetailsInfo> ServiceDetailEventTaskResult = null;
+        internal ConcurrentTaskCompletionSource<string> ServiceParameterDetailEventTaskResult = null;
 
         internal SecuritySettingsInfo SecuritySettings { get; set; } = null;
 
@@ -456,8 +456,8 @@ namespace SignalGo.Client.ClientManager
                                 break;
                             else if (priorityAction == PriorityAction.HoldAll)
                             {
-                                HoldAllPrioritiesTaskResult = new TaskCompletionSource<object>();
-                                await HoldAllPrioritiesTaskResult.Task;
+                                HoldAllPrioritiesTaskResult = new ConcurrentTaskCompletionSource<object>();
+                                await HoldAllPrioritiesTaskResult.GetTask();
                             }
                         }
                         while (IsPriorityEnabled && priorityAction == PriorityAction.TryAgain);
@@ -518,8 +518,8 @@ namespace SignalGo.Client.ClientManager
                                 break;
                             else if (priorityAction == PriorityAction.HoldAll)
                             {
-                                HoldAllPrioritiesTaskResult = new TaskCompletionSource<object>();
-                                object result = HoldAllPrioritiesTaskResult.Task.Result;
+                                HoldAllPrioritiesTaskResult = new ConcurrentTaskCompletionSource<object>();
+                                object result = HoldAllPrioritiesTaskResult.GetTask();
                             }
                         }
                         while (IsPriorityEnabled && priorityAction == PriorityAction.TryAgain);
@@ -901,7 +901,7 @@ namespace SignalGo.Client.ClientManager
 #endif
 
 #if (!NET40 && !NET35)
-            TaskCompletionSource<bool> sendComeplete = new TaskCompletionSource<bool>();
+            ConcurrentTaskCompletionSource<bool> sendComeplete = new ConcurrentTaskCompletionSource<bool>();
 #endif
             if (isUpload)
             {
@@ -1032,7 +1032,7 @@ namespace SignalGo.Client.ClientManager
             byte[] callBackBytes = await streamHelper.ReadBlockToEndAsync(stream, CompressionHelper.GetCompression((CompressMode)compressModeByte, clientProvider?.GetCustomCompression), maximumReceiveStreamHeaderBlock);
 #endif
 #if (!NET40 && !NET35)
-            var isSend = await sendComeplete.Task;
+            var isSend = await sendComeplete.GetTask();
 #endif
             MethodCallbackInfo callbackInfo = ClientSerializationHelper.DeserializeObject<MethodCallbackInfo>(Encoding.UTF8.GetString(callBackBytes, 0, callBackBytes.Length));
             if (callbackInfo.IsException)
@@ -1945,16 +1945,16 @@ namespace SignalGo.Client.ClientManager
             data.AddRange(bytes);
             if (data.Count > ProviderSetting.MaximumSendDataBlock)
                 throw new Exception("SendCallbackData data length is upper than MaximumSendDataBlock");
-            ServiceDetailEventTaskResult = new TaskCompletionSource<ProviderDetailsInfo>();
+            ServiceDetailEventTaskResult = new ConcurrentTaskCompletionSource<ProviderDetailsInfo>();
 #if (NET40 || NET35)
             StreamHelper.WriteToStream(_clientStream, data.ToArray());
             return ServiceDetailEventTaskResult.Task.Result;
 #else
             await StreamHelper.WriteToStreamAsync(_clientStream, data.ToArray());
-            bool isReceived = await Task.WhenAny(ServiceDetailEventTaskResult.Task, Task.Delay(new TimeSpan(0, 0, 15))) == ServiceDetailEventTaskResult.Task;
+            bool isReceived = await Task.WhenAny(ServiceDetailEventTaskResult.GetTask(), Task.Delay(new TimeSpan(0, 0, 15))) == ServiceDetailEventTaskResult.GetTask();
             if (!isReceived)
                 throw new TimeoutException();
-            return await ServiceDetailEventTaskResult.Task;
+            return await ServiceDetailEventTaskResult.GetTask();
 #endif
         }
 
@@ -1982,13 +1982,13 @@ namespace SignalGo.Client.ClientManager
             data.AddRange(bytes);
             if (data.Count > ProviderSetting.MaximumSendDataBlock)
                 throw new Exception("SendCallbackData data length is upper than MaximumSendDataBlock");
-            ServiceParameterDetailEventTaskResult = new TaskCompletionSource<string>();
+            ServiceParameterDetailEventTaskResult = new ConcurrentTaskCompletionSource<string>();
 #if (NET40 || NET35)
             StreamHelper.WriteToStream(_clientStream, data.ToArray());
             return ServiceParameterDetailEventTaskResult.Task.Result;
 #else
             await StreamHelper.WriteToStreamAsync(_clientStream, data.ToArray());
-            return await ServiceParameterDetailEventTaskResult.Task;
+            return await ServiceParameterDetailEventTaskResult.GetTask();
 #endif
         }
 

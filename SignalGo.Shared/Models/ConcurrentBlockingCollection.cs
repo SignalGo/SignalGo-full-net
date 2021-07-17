@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SignalGo.Shared.Helpers;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -18,7 +19,7 @@ namespace SignalGo.Shared.Models
         private readonly SemaphoreSlim _takeLock = new SemaphoreSlim(1, 1);
 
         private readonly List<object> _items = new List<object>();
-        private TaskCompletionSource<T> _taskCompletionSource;
+        private ConcurrentTaskCompletionSource<T> _taskCompletionSource;
         private bool _isTakeTaskResult = false;
         public int Count
         {
@@ -104,9 +105,9 @@ namespace SignalGo.Shared.Models
             }
         }
 
-        private TaskCompletionSource<T> CreateNewTask()
+        private ConcurrentTaskCompletionSource<T> CreateNewTask()
         {
-            TaskCompletionSource<T> tcs = new TaskCompletionSource<T>();
+            ConcurrentTaskCompletionSource<T> tcs = new ConcurrentTaskCompletionSource<T>();
 
             CancellationTokenSource ct = new CancellationTokenSource();
             ct.Token.Register(() => tcs.TrySetCanceled(), useSynchronizationContext: false);
@@ -227,7 +228,7 @@ namespace SignalGo.Shared.Models
             {
                 Debug.WriteLine("DeadLock Warning ConcurrentBlockingCollection Take!");
                 _takeLock.Wait();
-                Task<T> result = _taskCompletionSource.Task;
+                var result = _taskCompletionSource.Task;
                 _isTakeTaskResult = true;
                 return result.Result;
             }

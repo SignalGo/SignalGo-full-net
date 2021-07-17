@@ -116,7 +116,7 @@ namespace SignalGo.Server.ServiceManager
 #if (NET35 || NET40)
             return null;// Task<object>.Factory.StartNew(run);
 #else
-            Type type = typeof(TaskCompletionSource<>).MakeGenericType(returnType);
+            Type type = typeof(ConcurrentTaskCompletionSource<>).MakeGenericType(returnType);
             object taskCompletionSource = Activator.CreateInstance(type);
             MethodCallInfo callInfo = new MethodCallInfo();
             callInfo.ServiceName = serviceName;
@@ -159,7 +159,7 @@ namespace SignalGo.Server.ServiceManager
 #if (NET35 || NET40)
             return null;// Task<object>.Factory.StartNew(run);
 #else
-            Type type = typeof(TaskCompletionSource<>).MakeGenericType(returnType);
+            Type type = typeof(ConcurrentTaskCompletionSource<>).MakeGenericType(returnType);
             object taskCompletionSource = Activator.CreateInstance(type);
             MethodCallInfo callInfo = new MethodCallInfo();
             callInfo.ServiceName = serviceName;
