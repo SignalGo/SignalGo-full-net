@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace SignalGo.Shared.Log
 {
@@ -35,9 +36,23 @@ namespace SignalGo.Shared.Log
             {
                 if (!string.IsNullOrEmpty(_SavePath))
                     return _SavePath;
+                return _SavePath;
+            }
+        }
+#if (NET35 || NET40)
+        public void GenerateSavePath()
+#else
+        public async Task GenerateSavePath()
+#endif
+        {
+            try
+            {
+#if (NET35 || NET40)
                 lockWaitToRead.Wait();
-                if (!string.IsNullOrEmpty(_SavePath))
-                    return _SavePath;
+#else
+                await lockWaitToRead.WaitAsync();
+#endif
+
                 if (string.IsNullOrEmpty(DirectoryName))
                     _SavePath = DirectoryLocation;
                 else
@@ -54,8 +69,10 @@ namespace SignalGo.Shared.Log
 
                 }
                 _SavePath = Path.Combine(_SavePath, FileName);
+            }
+            finally
+            {
                 lockWaitToRead.Release();
-                return _SavePath;
             }
         }
         /// <summary>
@@ -154,6 +171,11 @@ namespace SignalGo.Shared.Log
                 str.AppendLine("</StackTrace>");
             }
             str.AppendLine("<Text Log End>");
+#if (NET35 || NET40)
+            GenerateSavePath();
+#else
+            await GenerateSavePath();
+#endif
 
             string fileName = SavePath;
             try
@@ -167,7 +189,11 @@ namespace SignalGo.Shared.Log
                 {
                     stream.Seek(0, SeekOrigin.End);
                     byte[] bytes = Encoding.UTF8.GetBytes(Helpers.TextHelper.NewLine + str.ToString());
+#if (NET35 || NET40)
                     stream.Write(bytes, 0, bytes.Length);
+#else
+                    await stream.WriteAsync(bytes, 0, bytes.Length);
+#endif
                 }
             }
             catch (Exception ex)
@@ -202,6 +228,11 @@ namespace SignalGo.Shared.Log
                 str.AppendLine("Time : " + DateTime.Now.ToLocalTime().ToString());
                 str.AppendLine("--------------------------------------------------------------------------------------------------");
                 str.AppendLine("--------------------------------------------------------------------------------------------------");
+#if (NET35 || NET40)
+                GenerateSavePath();
+#else
+                await GenerateSavePath();
+#endif
                 string fileName = SavePath;
 
                 try
@@ -215,7 +246,12 @@ namespace SignalGo.Shared.Log
                     {
                         stream.Seek(0, SeekOrigin.End);
                         byte[] bytes = Encoding.UTF8.GetBytes(Helpers.TextHelper.NewLine + str.ToString());
+#if (NET35 || NET40)
                         stream.Write(bytes, 0, bytes.Length);
+#else
+                        await stream.WriteAsync(bytes, 0, bytes.Length);
+#endif
+
                     }
                 }
                 catch (Exception ex)

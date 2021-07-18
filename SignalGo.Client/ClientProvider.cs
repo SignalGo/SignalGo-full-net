@@ -199,6 +199,51 @@ namespace SignalGo.Client
                 }
             });
         }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="url"></param>
+        /// <param name="connectedAction"></param>
+        public void ConnectAsyncAutoReconnect(string url, Func<bool, Task> connectedAction)
+        {
+            Task.Run(async () =>
+            {
+                ProviderSetting.AutoReconnect = true;
+                try
+                {
+                    await ConnectAsync(url);
+                    try
+                    {
+                        await connectedAction(true);
+                    }
+                    catch
+                    {
+
+                    }
+                    await AutoReconnectWaitToDisconnectTaskResult.Task;
+                    await Task.Delay(1000);
+                    AutoReconnectWaitToDisconnectTaskResult = new ConcurrentTaskCompletionSource<object>();
+
+                    ConnectAsyncAutoReconnect(url, connectedAction);
+
+                }
+                catch (Exception ex)
+                {
+                    try
+                    {
+                        await connectedAction(false);
+                    }
+                    catch
+                    {
+
+                    }
+                    Disconnect();
+                    await Task.Delay(1000);
+                    AutoReconnectWaitToDisconnectTaskResult = new ConcurrentTaskCompletionSource<object>();
+                    ConnectAsyncAutoReconnect(url, connectedAction);
+                }
+            });
+        }
 #endif
 
         /// <summary>
@@ -310,7 +355,7 @@ namespace SignalGo.Client
 
         private void GetClientIdIfNeed()
         {
-            if (ProviderSetting.AutoDetectRegisterServices && ProtocolType != ClientProtocolType.HttpDuplex && ProtocolType !=  ClientProtocolType.WebSocket)
+            if (ProviderSetting.AutoDetectRegisterServices && ProtocolType != ClientProtocolType.HttpDuplex && ProtocolType != ClientProtocolType.WebSocket)
             {
                 byte[] data = new byte[]
                 {

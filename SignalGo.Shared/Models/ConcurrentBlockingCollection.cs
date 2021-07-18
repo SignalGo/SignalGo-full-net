@@ -19,7 +19,7 @@ namespace SignalGo.Shared.Models
         private readonly SemaphoreSlim _takeLock = new SemaphoreSlim(1, 1);
 
         private readonly List<object> _items = new List<object>();
-        private ConcurrentTaskCompletionSource<T> _taskCompletionSource;
+        private TaskCompletionSource<T> _taskCompletionSource;
         private bool _isTakeTaskResult = false;
         public int Count
         {
@@ -55,16 +55,19 @@ namespace SignalGo.Shared.Models
         }
 #endif
 #if (!NET35 && !NET40)
-        public async Task AddWithoutDupplicateAsync(T item)
+        public async Task<bool> AddWithoutDupplicateAsync(T item)
         {
+            bool isAdded = false;
             try
             {
                 if (_IsCanceled)
-                    return;
+                    return isAdded;
                 await _addLock.WaitAsync();
-                if (_items.Contains(item))
-                    return;
-                _items.Add(item);
+                if (!_items.Contains(item))
+                {
+                    isAdded = true;
+                    _items.Add(item);
+                }
                 //Console.WriteLine("added" + item);
                 if (_taskCompletionSource.Task.Status == TaskStatus.WaitingForActivation)
                 {
@@ -79,6 +82,7 @@ namespace SignalGo.Shared.Models
             {
                 _addLock.Release();
             }
+            return isAdded;
         }
 #endif
         public void Add(T item)
@@ -105,9 +109,9 @@ namespace SignalGo.Shared.Models
             }
         }
 
-        private ConcurrentTaskCompletionSource<T> CreateNewTask()
+        private TaskCompletionSource<T> CreateNewTask()
         {
-            ConcurrentTaskCompletionSource<T> tcs = new ConcurrentTaskCompletionSource<T>();
+            TaskCompletionSource<T> tcs = new TaskCompletionSource<T>();
 
             CancellationTokenSource ct = new CancellationTokenSource();
             ct.Token.Register(() => tcs.TrySetCanceled(), useSynchronizationContext: false);
@@ -123,7 +127,7 @@ namespace SignalGo.Shared.Models
                 object find = _items.DefaultIfEmpty(null).FirstOrDefault();
                 if (find != null)
                 {
-                    _items.RemoveAt(0);
+                    _items.Remove(find);
                     _taskCompletionSource.SetResult((T)find);
                 }
             }
@@ -134,7 +138,7 @@ namespace SignalGo.Shared.Models
                     object find = _items.DefaultIfEmpty(null).FirstOrDefault();
                     if (find != null)
                     {
-                        _items.RemoveAt(0);
+                        _items.Remove(find);
                         _taskCompletionSource = CreateNewTask();
                         _taskCompletionSource.SetResult((T)find);
                     }
