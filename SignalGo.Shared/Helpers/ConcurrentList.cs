@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SignalGo.Shared.Log;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -144,7 +145,15 @@ namespace SignalGo.Shared.Helpers
         {
             lock (lockObject)
             {
-                return func(_internalList);
+                try
+                {
+                    return func(_internalList);
+                }
+                catch(Exception ex)
+                {
+                    AutoLogger.Default.LogError(ex, "LockInternalListAndGet");
+                    return default;
+                }
             }
         }
 
