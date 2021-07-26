@@ -43,7 +43,7 @@ namespace SignalGo.Shared.Helpers
         {
             get
             {
-                return LockInternalListAndGet(l => l[index]);
+                return LockInternalListAndGet(l => l[index], index);
             }
             set
             {
@@ -141,7 +141,7 @@ namespace SignalGo.Shared.Helpers
             }
         }
 
-        protected virtual T LockInternalListAndGet(Func<IList<T>, T> func)
+        protected virtual T LockInternalListAndGet(Func<IList<T>, T> func, int index = int.MinValue)
         {
             lock (lockObject)
             {
@@ -149,9 +149,9 @@ namespace SignalGo.Shared.Helpers
                 {
                     return func(_internalList);
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
-                    AutoLogger.Default.LogError(ex, "LockInternalListAndGet");
+                    AutoLogger.Default.LogError(ex, $"LockInternalListAndGet {index}");
                     return default;
                 }
             }
