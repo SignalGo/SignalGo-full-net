@@ -1021,7 +1021,7 @@ namespace SignalGo.Server.ServiceManager.Providers
             try
             {
                 await SendCallbackData(methodCallback, client, serverBase);
-                Console.WriteLine($"Calling SendCallbackDataAsync done: {methodCallback.Guid}");
+                //Console.WriteLine($"Calling SendCallbackDataAsync done: {methodCallback.Guid}");
             }
             catch (Exception ex)
             {
