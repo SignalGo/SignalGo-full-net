@@ -18,7 +18,7 @@ namespace SignalGo.Shared.Helpers
         {
             try
             {
-                if (reader.Value is DateTime dateTime)
+                if (reader.Value is DateTime dateTime || DateTime.TryParse(reader.Value?.ToString(), out dateTime))
                 {
                     if (dateTime.Kind == DateTimeKind.Local)
                         return dateTime.ToUniversalTime();
@@ -44,7 +44,7 @@ namespace SignalGo.Shared.Helpers
         {
             try
             {
-                if (value is DateTime dateTime)
+                if (value is DateTime dateTime || DateTime.TryParse(value.ToString(), out dateTime))
                 {
                     if (dateTime.Kind == DateTimeKind.Local)
                         writer.WriteValue(dateTime.ToUniversalTime());
@@ -77,9 +77,12 @@ namespace SignalGo.Shared.Helpers
         {
             try
             {
-                if (reader.Value == null)
+                var value = reader.Value;
+                if (value == null)
                     return default(DateTime);
-                return ((DateTime)reader.Value).ToLocalTime();
+                else if (!(value is DateTime))
+                    value = DateTime.Parse(value.ToString());
+                return ((DateTime)value).ToLocalTime();
             }
             catch (Exception ex)
             {
@@ -97,6 +100,8 @@ namespace SignalGo.Shared.Helpers
                     writer.WriteValue(default(DateTime).ToLocalTime());
                 else
                 {
+                    if (!(value is DateTime))
+                        value = DateTime.Parse(value.ToString());
                     DateTime dt = ((DateTime)value).ToLocalTime();
                     writer.WriteValue(dt);
                 }
@@ -116,9 +121,12 @@ namespace SignalGo.Shared.Helpers
         {
             try
             {
-                if (reader.Value == null)
+                var value = reader.Value;
+                if (value == null)
                     return default(DateTime);
-                var result = DateTime.SpecifyKind((DateTime)reader.Value, DateTimeKind.Local);
+                else if (!(value is DateTime))
+                    value = DateTime.Parse(value.ToString());
+                var result = DateTime.SpecifyKind((DateTime)value, DateTimeKind.Local);
                 return result;
             }
             catch (Exception ex)
@@ -137,6 +145,8 @@ namespace SignalGo.Shared.Helpers
                     writer.WriteValue(default(DateTime));
                 else
                 {
+                    if (!(value is DateTime))
+                        value = DateTime.Parse(value.ToString());
                     DateTime dt = DateTime.SpecifyKind((DateTime)value, DateTimeKind.Local);
                     writer.WriteValue(dt);
                 }
