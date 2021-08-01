@@ -43,14 +43,14 @@ namespace SignalGo.Server.ServiceManager.Providers
                     //a server service method called from client
                     if (dataType == DataType.CallMethod)
                     {
-                        Debug.WriteLine($"Call Method Reciving data!");
+                        //Debug.WriteLine($"Call Method Reciving data!");
                         //Console.WriteLine($"Call Method Reciving data!");
                         byte[] bytes = await client.StreamHelper.ReadBlockToEndAsync(stream, CompressionHelper.GetCompression(compressMode, serverBase.GetCustomCompression), serverBase.ProviderSetting.MaximumReceiveDataBlock);
                         //if (ClientsSettings.ContainsKey(client))
                         //    bytes = DecryptBytes(bytes, client);
                         string json = Encoding.UTF8.GetString(bytes);
                         MethodCallInfo callInfo = ServerSerializationHelper.Deserialize<MethodCallInfo>(json, serverBase);
-                        Debug.WriteLine($"Call method received: {callInfo.Guid}");
+                        //Debug.WriteLine($"Call method received: {callInfo.Guid}");
                         //Console.WriteLine($"Call method received: {callInfo.Guid}");
                         if (callInfo.PartNumber != 0)
                         {
@@ -64,7 +64,7 @@ namespace SignalGo.Server.ServiceManager.Providers
 
                         _ = Task.Run(new Func<Task>(async () =>
                         {
-                            Debug.WriteLine($"Calling CallMethod: {callInfo.Guid}");
+                            //Debug.WriteLine($"Calling CallMethod: {callInfo.Guid}");
                             MethodCallbackInfo callbackResult = await CallMethod(callInfo, client, json, serverBase);
                             await SendCallbackDataAsync(callbackResult, client, serverBase);
                         }));

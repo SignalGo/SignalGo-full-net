@@ -1020,6 +1020,8 @@ namespace SignalGo.Server.ServiceManager.Providers
         {
             try
             {
+                if (client.IsDisposed)
+                    return;
                 await SendCallbackData(methodCallback, client, serverBase);
                 //Console.WriteLine($"Calling SendCallbackDataAsync done: {methodCallback.Guid}");
             }

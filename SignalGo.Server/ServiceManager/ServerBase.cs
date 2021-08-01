@@ -299,6 +299,7 @@ namespace SignalGo.Server.ServiceManager
                     }
                     return;
                 }
+                client.IsDisposed = true;
                 Clients.Remove(client.ClientId);
                 try
                 {

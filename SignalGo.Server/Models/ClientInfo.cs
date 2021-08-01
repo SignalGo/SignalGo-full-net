@@ -62,6 +62,10 @@ namespace SignalGo.Server.Models
             CurrentClientServer = serverBase;
         }
 
+        /// <summary>
+        /// when the client disposed
+        /// </summary>
+        public bool IsDisposed { get; set; }
         private ConcurrentDictionary<long, List<ICustomAsyncDisposable>> _CustomAsyncDisposableItems;
         public ConcurrentDictionary<long, List<ICustomAsyncDisposable>> CustomAsyncDisposableItems
         {
