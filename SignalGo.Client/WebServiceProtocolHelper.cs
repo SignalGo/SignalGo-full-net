@@ -1,5 +1,6 @@
 ﻿using SignalGo.Shared.DataTypes;
 using SignalGo.Shared.Helpers;
+using SignalGo.Shared.Log;
 using SignalGo.Shared.Models;
 using System;
 using System.Collections.Generic;
@@ -106,6 +107,14 @@ namespace SignalGo.Client
         }
 #if (!NETSTANDARD1_6 && !NET35 && !NET40)
 
+        private static string SerializeHeaders(this System.Net.WebHeaderCollection value)
+        {
+            var response = new System.Text.StringBuilder();
+            foreach (string k in value.Keys)
+                response.AppendLine(k + ": " + value[k]);
+            return response.ToString();
+        }
+
         public static async Task<T> CallWebServiceMethodAsync<T>(IWebServiceProtocolLogger logger, string headerTemplate, string url, string actionUrl, string targetNamespace, string methodName, ParameterInfo[] args)
         {
             StringBuilder stringBuilder = new StringBuilder();
@@ -136,7 +145,16 @@ namespace SignalGo.Client
                 }
                 logger?.BeforeCallAction?.Invoke(url, actionUrl, methodName, args, defaultData);
                 //System.Diagnostics.Debug.WriteLine(defaultData, $"Request: {actionUrl}");
-                string data = await client.UploadStringTaskAsync(url, defaultData);
+                string data;
+                try
+                {
+                    data = await client.UploadStringTaskAsync(url, defaultData);
+                }
+                catch (Exception ex)
+                {
+                    AutoLogger.Default.LogError(ex, $"UploadString has error to url {url} with request {defaultData} with headers {SerializeHeaders(client.Headers)}");
+                    throw;
+                }
                 logger.Settings.ResponseHeaders = client.ResponseHeaders;
                 //System.Diagnostics.Debug.WriteLine(data, $"Response: {url} ac:{actionUrl}");
                 if (typeof(T) == typeof(object))
