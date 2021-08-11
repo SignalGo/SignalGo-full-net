@@ -1753,6 +1753,88 @@ namespace SignalGo.Client.ClientManager
             }
         }
 
+#if (NET40 || NET35)
+        internal void SendDataAsync(MethodCallInfo callback)
+#else
+        internal async Task SendDataAsync(MethodCallInfo callback)
+#endif
+        {
+            try
+            {
+                SetBusy();
+                if (_clientStream == null)
+                    throw new Exception($"Client is not connected on {ServerUrl}");
+                //                if (IsWebSocket)
+                //                {
+                //                    string json = ClientSerializationHelper.SerializeObject(callback) + "#end";
+                //                    byte[] jsonBytes = Encoding.UTF8.GetBytes(json);
+                //#if (NET40 || NET35)
+                //                    StreamHelper.WriteToStream(_clientStream, new byte[] { (byte)DataType.CallMethod });
+                //                    StreamHelper.WriteToStream(_clientStream, new byte[] { (byte)CompressMode.None });
+                //                    StreamHelper.WriteToStream(_clientStream, jsonBytes.ToArray());
+                //#else
+                //                    await StreamHelper.WriteToStreamAsync(_clientStream, new byte[] { (byte)DataType.CallMethod });
+                //                    await StreamHelper.WriteToStreamAsync(_clientStream, new byte[] { (byte)CompressMode.None });
+                //                    await StreamHelper.WriteToStreamAsync(_clientStream, jsonBytes);
+                //#endif
+                //                }
+                //                else
+                //                {
+                string json = ClientSerializationHelper.SerializeObject(callback);
+                if (ProtocolType == ClientProtocolType.WebSocket)
+                {
+                    json += "#end";
+                }
+
+                List<byte> bytes = new List<byte>();
+                byte[] jsonBytes = Encoding.UTF8.GetBytes(json);
+                if (SecuritySettings != null)
+                    jsonBytes = EncryptBytes(jsonBytes);
+                jsonBytes = CompressionHelper.GetCompression(CurrentCompressionMode, GetCustomCompression).Compress(ref jsonBytes);
+                if (ProtocolType != ClientProtocolType.WebSocket)
+                {
+                    bytes.Add((byte)DataType.CallMethod);
+                    bytes.Add((byte)CurrentCompressionMode);
+
+                    byte[] dataLen = BitConverter.GetBytes(jsonBytes.Length);
+                    bytes.AddRange(dataLen);
+                }
+                else
+                {
+                    bytes.Add((byte)'1');
+                    bytes.Add((byte)',');
+                    bytes.Add((byte)'0');
+                    bytes.Add((byte)'/');
+                }
+                bytes.AddRange(jsonBytes);
+                if (bytes.Count > ProviderSetting.MaximumSendDataBlock)
+                    throw new Exception("SendData data length is upper than MaximumSendDataBlock");
+#if (NET40 || NET35)
+                StreamHelper.WriteToStream(_clientStream, bytes.ToArray());
+#else
+                await StreamHelper.WriteToStreamAsync(_clientStream, bytes.ToArray());
+#endif
+                //}
+            }
+            catch (Exception ex)
+            {
+                try
+                {
+                    if (WaitedMethodsForResponse.TryGetValue(callback.Guid, out ITaskCompletionManager<MethodCallbackInfo> keyValue))
+                    {
+                        keyValue.SetException(ex);
+                    }
+                }
+                catch
+                {
+                }
+            }
+            finally
+            {
+                ReleaseBusy();
+            }
+        }
+
         internal abstract StreamInfo RegisterFileStreamToDownload(MethodCallInfo Data);
         internal abstract void RegisterFileStreamToUpload(StreamInfo streamInfo, MethodCallInfo Data);
 

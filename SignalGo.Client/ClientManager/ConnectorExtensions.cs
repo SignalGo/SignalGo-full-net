@@ -3,7 +3,6 @@ using SignalGo.Shared.DataTypes;
 using SignalGo.Shared.Helpers;
 using SignalGo.Shared.Models;
 using System;
-using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
@@ -222,10 +221,10 @@ namespace SignalGo.Client.ClientManager
         {
             //TryAgain:
             bool isIgnorePriority = false;
+            TaskCompletionManagerAsync<MethodCallbackInfo> valueData = new TaskCompletionManagerAsync<MethodCallbackInfo>();
+            CancellationTokenSource ct = new CancellationTokenSource((int)connector.ProviderSetting.ReceiveDataTimeout.TotalMilliseconds);
             try
             {
-                TaskCompletionManagerAsync<MethodCallbackInfo> valueData = new TaskCompletionManagerAsync<MethodCallbackInfo>();
-                CancellationTokenSource ct = new CancellationTokenSource((int)connector.ProviderSetting.ReceiveDataTimeout.TotalMilliseconds);
                 ct.Token.Register(() => valueData.TrySetException(new TimeoutException()), useSynchronizationContext: false);
 
                 bool added = connector.WaitedMethodsForResponse.TryAdd(callInfo.Guid, valueData);
@@ -238,8 +237,7 @@ namespace SignalGo.Client.ClientManager
                 //
                 isIgnorePriority = method?.GetCustomAttributes<PriorityCallAttribute>().Count() > 0;
                 Debug.WriteLine($"Wait for task of {callInfo.Guid} of {connector.ServerUrl} async");
-                connector.SendData(callInfo);
-
+                await connector.SendDataAsync(callInfo);
                 var result = await valueData.GetValue();
                 Debug.WriteLine($"Wait for task of {callInfo.Guid} of {connector.ServerUrl} done! {result == null} async");
 
@@ -270,6 +268,7 @@ namespace SignalGo.Client.ClientManager
             }
             finally
             {
+                ct.Dispose();
                 connector.WaitedMethodsForResponse.Remove(callInfo.Guid);
             }
         }
