@@ -1,5 +1,4 @@
-﻿using SignalGo.Shared.DataTypes;
-using SignalGo.Shared.Helpers;
+﻿using SignalGo.Shared.Helpers;
 using SignalGo.Shared.Log;
 using SignalGo.Shared.Models;
 using System;
@@ -58,6 +57,7 @@ namespace SignalGo.Client
     public delegate void LoggerAction(string url, string actionUrl, string methodName, ParameterInfo[] args, object data);
     public static class WebServiceProtocolHelper
     {
+
         public static T CallWebServiceMethod<T>(IWebServiceProtocolLogger logger, string headerTemplate, string url, string actionUrl, string targetNamespace, string methodName, ParameterInfo[] args)
         {
             StringBuilder stringBuilder = new StringBuilder();
@@ -76,6 +76,7 @@ namespace SignalGo.Client
 	<soap:Body>{stringBuilder.ToString().Trim()}</soap:Body>
 </soap:Envelope>";
 #if (!NETSTANDARD1_6)
+
             using (IO.TimeoutWebClient client = new IO.TimeoutWebClient(logger.Settings.Timeout))
             {
                 if (!string.IsNullOrEmpty(actionUrl))
@@ -106,12 +107,13 @@ namespace SignalGo.Client
 #endif
         }
 #if (!NETSTANDARD1_6 && !NET35 && !NET40)
+        static System.Net.Http.HttpClient _httpClient = new System.Net.Http.HttpClient();
 
-        private static string SerializeHeaders(this System.Net.WebHeaderCollection value)
+        private static string SerializeHeaders(this System.Net.Http.Headers.HttpRequestHeaders headers)
         {
             var response = new System.Text.StringBuilder();
-            foreach (string k in value.Keys)
-                response.AppendLine(k + ": " + value[k]);
+            foreach (var k in headers)
+                response.AppendLine(k.Key + ": " + k.Value.FirstOrDefault());
             return response.ToString();
         }
 
@@ -132,71 +134,84 @@ namespace SignalGo.Client
 	</soap:Header>
 	<soap:Body>{stringBuilder.ToString().Trim()}</soap:Body>
 </soap:Envelope>";
-            using (IO.TimeoutWebClient client = new IO.TimeoutWebClient(logger.Settings.Timeout))
+            //using (IO.TimeoutWebClient client = new IO.TimeoutWebClient(logger.Settings.Timeout))
+            //{
+            var httpRequestMessage = new System.Net.Http.HttpRequestMessage();
+            var content_ = new System.Net.Http.StringContent(defaultData);
+            content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/xml");
+            httpRequestMessage.Content = content_;
+
+            if (!string.IsNullOrEmpty(actionUrl))
+                httpRequestMessage.Headers.TryAddWithoutValidation("SOAPAction", actionUrl);
+            httpRequestMessage.Headers.TryAddWithoutValidation("ContentType", "application/xml");
+            foreach (var item in logger.Settings.RequestHeaders.AllKeys)
             {
-                if (!string.IsNullOrEmpty(actionUrl))
-                    client.Headers["SOAPAction"] = actionUrl;
-                client.Headers.Add(HttpRequestHeader.ContentType, "application/xml");// $"text/xml; charset={logger.Settings.EncodingName};");
-                foreach (var item in logger.Settings.RequestHeaders.AllKeys)
+                var value = logger.Settings.RequestHeaders[item];
+                httpRequestMessage.Headers.TryAddWithoutValidation(item, value);
+            }
+
+            httpRequestMessage.RequestUri = new Uri(url);
+            httpRequestMessage.Method = new System.Net.Http.HttpMethod("POST");
+            logger?.BeforeCallAction?.Invoke(url, actionUrl, methodName, args, defaultData);
+            try
+            {
+                using (System.Net.Http.HttpResponseMessage response = await _httpClient.SendAsync(httpRequestMessage, System.Net.Http.HttpCompletionOption.ResponseContentRead))
                 {
-                    var value = logger.Settings.RequestHeaders[item];
-                    client.Headers.Add(item, value);
-                    //System.Diagnostics.Debug.WriteLine(value, $"Header: {item}");
+                    var data = await response.Content.ReadAsStringAsync();
+
+                    logger.Settings.ResponseHeaders = new WebHeaderCollection();
+                    foreach (var item in response.Headers)
+                    {
+                        logger.Settings.ResponseHeaders.Add(item.Key, item.Value.FirstOrDefault());
+                    }
+
+                    //System.Diagnostics.Debug.WriteLine(data, $"Response: {url} ac:{actionUrl}");
+                    if (typeof(T) == typeof(object))
+                        return default(T);
+                    logger?.AfterCallAction?.Invoke(url, actionUrl, methodName, args, data);
+                    XDocument doc = XDocument.Parse(data);
+                    var firstElement = doc.Elements().First();//
+                    var findElement = FindElement(doc.Elements(), typeof(T).Name);
+                    if (findElement == null)
+                    {
+                        findElement = doc.Elements().FirstOrDefault(x => x.Name.LocalName.EndsWith("envelope", StringComparison.OrdinalIgnoreCase));
+                        findElement = findElement.Elements().FirstOrDefault(x => x.Name.LocalName.EndsWith("body", StringComparison.OrdinalIgnoreCase));
+                        findElement = findElement.Elements().FirstOrDefault();
+                        XmlDocument node = new XmlDocument();
+                        node.LoadXml(findElement.Elements().First().ToString());
+                        //var name = findElement.Name.LocalName;
+                        //data = data.Replace(name, typeof(T).Name);
+                        //doc = XDocument.Parse(data);
+                        //firstElement = doc.Elements().First();//
+                        //findElement = FindElement(doc.Elements(), typeof(T).Name);
+                        string json = Newtonsoft.Json.JsonConvert.SerializeXmlNode(node);
+                        return Newtonsoft.Json.JsonConvert.DeserializeObject<T>(json, JsonSettingHelper.GlobalJsonSetting);
+                        //if (typeof(T).GetListOfProperties().Count() == 2)
+                        //{
+                        //    var property = typeof(T).GetListOfProperties().First();
+                        //    findElement = FindElement(doc.Elements(), property.Name);
+                        //    var obj = Activator.CreateInstance(typeof(T));
+                        //    try
+                        //    {
+                        //        property.SetValue(obj, Convert.ChangeType(findElement.Value, property.PropertyType));
+                        //        return (T)obj;
+                        //    }
+                        //    catch (Exception)
+                        //    {
+                        //    }
+                        //}
+                    }
+                    var attributes = firstElement.Attributes().ToList();
+                    attributes.AddRange(findElement.Attributes());
+                    findElement.ReplaceAttributes(attributes);
+                    var myResult = (T)Deserialize(logger, findElement, typeof(T));
+                    return myResult;
                 }
-                logger?.BeforeCallAction?.Invoke(url, actionUrl, methodName, args, defaultData);
-                //System.Diagnostics.Debug.WriteLine(defaultData, $"Request: {actionUrl}");
-                string data;
-                try
-                {
-                    data = await client.UploadStringTaskAsync(url, defaultData);
-                }
-                catch (Exception ex)
-                {
-                    AutoLogger.Default.LogError(ex, $"UploadString has error to url {url} with request {defaultData} with headers {SerializeHeaders(client.Headers)}");
-                    throw;
-                }
-                logger.Settings.ResponseHeaders = client.ResponseHeaders;
-                //System.Diagnostics.Debug.WriteLine(data, $"Response: {url} ac:{actionUrl}");
-                if (typeof(T) == typeof(object))
-                    return default(T);
-                logger?.AfterCallAction?.Invoke(url, actionUrl, methodName, args, data);
-                XDocument doc = XDocument.Parse(data);
-                var firstElement = doc.Elements().First();//
-                var findElement = FindElement(doc.Elements(), typeof(T).Name);
-                if (findElement == null)
-                {
-                    findElement = doc.Elements().FirstOrDefault(x => x.Name.LocalName.EndsWith("envelope", StringComparison.OrdinalIgnoreCase));
-                    findElement = findElement.Elements().FirstOrDefault(x => x.Name.LocalName.EndsWith("body", StringComparison.OrdinalIgnoreCase));
-                    findElement = findElement.Elements().FirstOrDefault();
-                    XmlDocument node = new XmlDocument();
-                    node.LoadXml(findElement.Elements().First().ToString());
-                    //var name = findElement.Name.LocalName;
-                    //data = data.Replace(name, typeof(T).Name);
-                    //doc = XDocument.Parse(data);
-                    //firstElement = doc.Elements().First();//
-                    //findElement = FindElement(doc.Elements(), typeof(T).Name);
-                    string json = Newtonsoft.Json.JsonConvert.SerializeXmlNode(node);
-                    return Newtonsoft.Json.JsonConvert.DeserializeObject<T>(json, JsonSettingHelper.GlobalJsonSetting);
-                    //if (typeof(T).GetListOfProperties().Count() == 2)
-                    //{
-                    //    var property = typeof(T).GetListOfProperties().First();
-                    //    findElement = FindElement(doc.Elements(), property.Name);
-                    //    var obj = Activator.CreateInstance(typeof(T));
-                    //    try
-                    //    {
-                    //        property.SetValue(obj, Convert.ChangeType(findElement.Value, property.PropertyType));
-                    //        return (T)obj;
-                    //    }
-                    //    catch (Exception)
-                    //    {
-                    //    }
-                    //}
-                }
-                var attributes = firstElement.Attributes().ToList();
-                attributes.AddRange(findElement.Attributes());
-                findElement.ReplaceAttributes(attributes);
-                var myResult = (T)Deserialize(logger, findElement, typeof(T));
-                return myResult;
+            }
+            catch (Exception ex)
+            {
+                AutoLogger.Default.LogError(ex, $"UploadString has error to url {url} with request {defaultData} with headers {SerializeHeaders(httpRequestMessage.Headers)}");
+                throw;
             }
         }
 #endif
