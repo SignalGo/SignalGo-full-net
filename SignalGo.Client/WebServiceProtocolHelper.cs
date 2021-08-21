@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
@@ -31,6 +32,7 @@ namespace SignalGo.Client
 
     public class WebServiceProtocolSettings
     {
+        public int RetryCount { get; set; }
         public TimeSpan? Timeout { get; set; }
         public string EncodingName { get; set; } = "utf-8";
         public Encoding Encoding { get; set; } = Encoding.UTF8;
@@ -136,6 +138,11 @@ namespace SignalGo.Client
 </soap:Envelope>";
             //using (IO.TimeoutWebClient client = new IO.TimeoutWebClient(logger.Settings.Timeout))
             //{
+
+            int tryCount = 0;
+            logger?.BeforeCallAction?.Invoke(url, actionUrl, methodName, args, defaultData);
+
+            TryAgainLabel:
             var httpRequestMessage = new System.Net.Http.HttpRequestMessage();
             var content_ = new System.Net.Http.StringContent(defaultData);
             content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/xml");
@@ -152,60 +159,72 @@ namespace SignalGo.Client
 
             httpRequestMessage.RequestUri = new Uri(url);
             httpRequestMessage.Method = new System.Net.Http.HttpMethod("POST");
-            logger?.BeforeCallAction?.Invoke(url, actionUrl, methodName, args, defaultData);
             try
             {
-                using (System.Net.Http.HttpResponseMessage response = await _httpClient.SendAsync(httpRequestMessage, System.Net.Http.HttpCompletionOption.ResponseContentRead))
+                var cts = new CancellationTokenSource();
+                if (logger.Settings.Timeout.HasValue)
+                    cts.CancelAfter(logger.Settings.Timeout.Value);
+                try
                 {
-                    var data = await response.Content.ReadAsStringAsync();
-
-                    logger.Settings.ResponseHeaders = new WebHeaderCollection();
-                    foreach (var item in response.Headers)
+                    using (System.Net.Http.HttpResponseMessage response = await _httpClient.SendAsync(httpRequestMessage, System.Net.Http.HttpCompletionOption.ResponseContentRead, cts.Token))
                     {
-                        logger.Settings.ResponseHeaders.Add(item.Key, item.Value.FirstOrDefault());
-                    }
+                        var data = await response.Content.ReadAsStringAsync();
 
-                    //System.Diagnostics.Debug.WriteLine(data, $"Response: {url} ac:{actionUrl}");
-                    if (typeof(T) == typeof(object))
-                        return default(T);
-                    logger?.AfterCallAction?.Invoke(url, actionUrl, methodName, args, data);
-                    XDocument doc = XDocument.Parse(data);
-                    var firstElement = doc.Elements().First();//
-                    var findElement = FindElement(doc.Elements(), typeof(T).Name);
-                    if (findElement == null)
-                    {
-                        findElement = doc.Elements().FirstOrDefault(x => x.Name.LocalName.EndsWith("envelope", StringComparison.OrdinalIgnoreCase));
-                        findElement = findElement.Elements().FirstOrDefault(x => x.Name.LocalName.EndsWith("body", StringComparison.OrdinalIgnoreCase));
-                        findElement = findElement.Elements().FirstOrDefault();
-                        XmlDocument node = new XmlDocument();
-                        node.LoadXml(findElement.Elements().First().ToString());
-                        //var name = findElement.Name.LocalName;
-                        //data = data.Replace(name, typeof(T).Name);
-                        //doc = XDocument.Parse(data);
-                        //firstElement = doc.Elements().First();//
-                        //findElement = FindElement(doc.Elements(), typeof(T).Name);
-                        string json = Newtonsoft.Json.JsonConvert.SerializeXmlNode(node);
-                        return Newtonsoft.Json.JsonConvert.DeserializeObject<T>(json, JsonSettingHelper.GlobalJsonSetting);
-                        //if (typeof(T).GetListOfProperties().Count() == 2)
-                        //{
-                        //    var property = typeof(T).GetListOfProperties().First();
-                        //    findElement = FindElement(doc.Elements(), property.Name);
-                        //    var obj = Activator.CreateInstance(typeof(T));
-                        //    try
-                        //    {
-                        //        property.SetValue(obj, Convert.ChangeType(findElement.Value, property.PropertyType));
-                        //        return (T)obj;
-                        //    }
-                        //    catch (Exception)
-                        //    {
-                        //    }
-                        //}
+                        logger.Settings.ResponseHeaders = new WebHeaderCollection();
+                        foreach (var item in response.Headers)
+                        {
+                            logger.Settings.ResponseHeaders.Add(item.Key, item.Value.FirstOrDefault());
+                        }
+
+                        //System.Diagnostics.Debug.WriteLine(data, $"Response: {url} ac:{actionUrl}");
+                        if (typeof(T) == typeof(object))
+                            return default(T);
+                        logger?.AfterCallAction?.Invoke(url, actionUrl, methodName, args, data);
+                        XDocument doc = XDocument.Parse(data);
+                        var firstElement = doc.Elements().First();//
+                        var findElement = FindElement(doc.Elements(), typeof(T).Name);
+                        if (findElement == null)
+                        {
+                            findElement = doc.Elements().FirstOrDefault(x => x.Name.LocalName.EndsWith("envelope", StringComparison.OrdinalIgnoreCase));
+                            findElement = findElement.Elements().FirstOrDefault(x => x.Name.LocalName.EndsWith("body", StringComparison.OrdinalIgnoreCase));
+                            findElement = findElement.Elements().FirstOrDefault();
+                            XmlDocument node = new XmlDocument();
+                            node.LoadXml(findElement.Elements().First().ToString());
+                            //var name = findElement.Name.LocalName;
+                            //data = data.Replace(name, typeof(T).Name);
+                            //doc = XDocument.Parse(data);
+                            //firstElement = doc.Elements().First();//
+                            //findElement = FindElement(doc.Elements(), typeof(T).Name);
+                            string json = Newtonsoft.Json.JsonConvert.SerializeXmlNode(node);
+                            return Newtonsoft.Json.JsonConvert.DeserializeObject<T>(json, JsonSettingHelper.GlobalJsonSetting);
+                            //if (typeof(T).GetListOfProperties().Count() == 2)
+                            //{
+                            //    var property = typeof(T).GetListOfProperties().First();
+                            //    findElement = FindElement(doc.Elements(), property.Name);
+                            //    var obj = Activator.CreateInstance(typeof(T));
+                            //    try
+                            //    {
+                            //        property.SetValue(obj, Convert.ChangeType(findElement.Value, property.PropertyType));
+                            //        return (T)obj;
+                            //    }
+                            //    catch (Exception)
+                            //    {
+                            //    }
+                            //}
+                        }
+                        var attributes = firstElement.Attributes().ToList();
+                        attributes.AddRange(findElement.Attributes());
+                        findElement.ReplaceAttributes(attributes);
+                        var myResult = (T)Deserialize(logger, findElement, typeof(T));
+                        return myResult;
                     }
-                    var attributes = firstElement.Attributes().ToList();
-                    attributes.AddRange(findElement.Attributes());
-                    findElement.ReplaceAttributes(attributes);
-                    var myResult = (T)Deserialize(logger, findElement, typeof(T));
-                    return myResult;
+                }
+                catch (Exception ex)
+                {
+                    tryCount++;
+                    if (tryCount >= logger.Settings.RetryCount)
+                        throw ex;
+                    goto TryAgainLabel;
                 }
             }
             catch (Exception ex)
