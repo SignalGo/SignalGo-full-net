@@ -123,6 +123,15 @@ namespace SignalGo.Server.ServiceManager.Providers
             if (isParameterDetails)
             {
                 int len = int.Parse(client.GetRequestHeaderValue("content-length"));
+
+                if (serverBase.ProviderSetting.HttpSetting.MaximumRequestBodySize > 0 && len > serverBase.ProviderSetting.HttpSetting.MaximumRequestBodySize)
+                {
+                    if (!await serverBase.Firewall.OnDangerDataReceived(client.TcpClient, Firewall.DangerDataType.RequestBodySize))
+                    {
+                        serverBase.DisposeClient(client, client.TcpClient, "firewall danger http header size!");
+                        return;
+                    }
+                }
                 if (content.Length < len)
                 {
                     List<byte> resultBytes = new List<byte>();
@@ -232,6 +241,15 @@ namespace SignalGo.Server.ServiceManager.Providers
             else if (isPost)
             {
                 int len = int.Parse(client.GetRequestHeaderValue("content-length"));
+
+                if (serverBase.ProviderSetting.HttpSetting.MaximumRequestBodySize > 0 && len > serverBase.ProviderSetting.HttpSetting.MaximumRequestBodySize)
+                {
+                    if (!await serverBase.Firewall.OnDangerDataReceived(client.TcpClient, Firewall.DangerDataType.RequestBodySize))
+                    {
+                        serverBase.DisposeClient(client, client.TcpClient, "firewall danger http header size!");
+                        return;
+                    }
+                }
                 if (content.Length < len)
                 {
                     List<byte> resultBytes = new List<byte>();
@@ -685,7 +703,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 if (!boundary.Contains("--"))
                     boundary = null;
                 int fileHeaderCount = 0;
-                Tuple<int, string, string> res = await GetHttpFileFileHeader(client.ClientStream, boundary, len);
+                Tuple<int, string, string> res = await GetHttpFileFileHeader(serverBase, client, client.ClientStream, boundary, len);
                 fileHeaderCount = res.Item1;
                 boundary = res.Item2;
                 string response = res.Item3;
@@ -917,6 +935,15 @@ namespace SignalGo.Server.ServiceManager.Providers
                 if (client.RequestHeaders.TryGetValue("content-length", out string[] values) && values != null && values.Length > 0)
                 {
                     int length = int.Parse(values[0]);
+
+                    if (serverBase.ProviderSetting.HttpSetting.MaximumRequestBodySize > 0 && length > serverBase.ProviderSetting.HttpSetting.MaximumRequestBodySize)
+                    {
+                        if (!await serverBase.Firewall.OnDangerDataReceived(client.TcpClient, Firewall.DangerDataType.RequestBodySize))
+                        {
+                            serverBase.DisposeClient(client, client.TcpClient, "firewall danger http header size!");
+                            return;
+                        }
+                    }
                     int readLength = 0;
                     List<byte> readBytes = new List<byte>();
                     while (readLength < length)
@@ -951,7 +978,7 @@ namespace SignalGo.Server.ServiceManager.Providers
 
 
 
-        internal static async Task<Tuple<int, string, string>> GetHttpFileFileHeader(PipeNetworkStream stream, string boundary, int maxLen)
+        internal static async Task<Tuple<int, string, string>> GetHttpFileFileHeader(ServerBase serverBase, ClientInfo client, PipeNetworkStream stream, string boundary, int maxLen)
         {
             List<byte> bytes = new List<byte>();
             byte findNextlvl = 0;
@@ -960,6 +987,16 @@ namespace SignalGo.Server.ServiceManager.Providers
             {
                 byte singleByte = await stream.ReadOneByteAsync();
                 bytes.Add(singleByte);
+
+                if (serverBase.ProviderSetting.HttpSetting.MaximumRequestBodySize > 0 && bytes.Count > serverBase.ProviderSetting.HttpSetting.MaximumRequestBodySize)
+                {
+                    if (!await serverBase.Firewall.OnDangerDataReceived(client.TcpClient, Firewall.DangerDataType.HeaderSize))
+                    {
+                        serverBase.DisposeClient(client, client.TcpClient, "firewall danger http header size!");
+                        throw new Exception("dropped from firewall!");
+                    }
+                }
+
                 if (bytes.Count >= maxLen)
                 {
                     string data = Encoding.UTF8.GetString(bytes.ToArray());

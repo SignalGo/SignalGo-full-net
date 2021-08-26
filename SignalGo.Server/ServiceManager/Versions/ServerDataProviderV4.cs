@@ -114,10 +114,21 @@ namespace SignalGo.Server.ServiceManager.Versions
             {
                 try
                 {
-                    tcpClient.GetStream().ReadTimeout = 5000;
-                    tcpClient.GetStream().WriteTimeout = 5000;
-                    PipeNetworkStream stream = new PipeNetworkStream(new NormalStream(await tcpClient.GetTcpStream(_serverBase)), (int)_serverBase.ProviderSetting.ReceiveDataTimeout.TotalMilliseconds);
-                    ExchangeClient(stream, tcpClient);
+                    if (await _serverBase.Firewall.OnTcpClientConnected(tcpClient))
+                    {
+                        tcpClient.GetStream().ReadTimeout = 5000;
+                        tcpClient.GetStream().WriteTimeout = 5000;
+                        PipeNetworkStream stream = new PipeNetworkStream(new NormalStream(await tcpClient.GetTcpStream(_serverBase)), (int)_serverBase.ProviderSetting.ReceiveDataTimeout.TotalMilliseconds);
+                        ExchangeClient(stream, tcpClient);
+                    }
+                    else
+                    {
+#if (NETSTANDARD)
+                        tcpClient.Dispose();
+#else
+                        tcpClient.Close();
+#endif
+                    }
                 }
                 catch (Exception)
                 {
@@ -172,6 +183,15 @@ namespace SignalGo.Server.ServiceManager.Versions
                     tcpClient.GetStream().WriteTimeout = (int)_serverBase.ProviderSetting.SendDataTimeout.TotalMilliseconds;
                 }
 
+                reader.MaximumLineSize = _serverBase.ProviderSetting.MaximumLineSize;
+                if (reader.MaximumLineSize > 0)
+                {
+                    reader.MaximumLineSizeReadedFunction = () =>
+                    {
+                        return _serverBase.Firewall.OnDangerDataReceived(tcpClient, Firewall.DangerDataType.FirstLineSize);
+                    };
+                }
+
                 string firstLineString = await reader.ReadLineAsync();
                 if (firstLineString.Contains("SignalGo-Stream/4.0"))
                 {
@@ -183,7 +203,11 @@ namespace SignalGo.Server.ServiceManager.Versions
                     client = CreateClientInfo(false, tcpClient, reader);
                     client.ProtocolType = ClientProtocolType.SignalGoStream;
                     client.StreamHelper = SignalGoStreamBase.CurrentBase;
-                    SignalGoStreamProvider.StartToReadingClientData(client, _serverBase);
+                    if (await _serverBase.Firewall.OnClientInitialized(client))
+                        SignalGoStreamProvider.StartToReadingClientData(client, _serverBase);
+                    else
+                        _serverBase.DisposeClient(client, tcpClient, "firewall dropped!");
+
                 }
                 else if (firstLineString.Contains("SignalGo-OneWay/4.0"))
                 {
@@ -195,7 +219,10 @@ namespace SignalGo.Server.ServiceManager.Versions
                     client = CreateClientInfo(false, tcpClient, reader);
                     client.ProtocolType = ClientProtocolType.SignalGoOneWay;
                     client.StreamHelper = SignalGoStreamBase.CurrentBase;
-                    OneWayServiceProvider.StartToReadingClientData(client, _serverBase);
+                    if (await _serverBase.Firewall.OnClientInitialized(client))
+                        OneWayServiceProvider.StartToReadingClientData(client, _serverBase);
+                    else
+                        _serverBase.DisposeClient(client, tcpClient, "firewall dropped!");
                 }
                 else if (firstLineString.Contains("SignalGo/4.0"))
                 {
@@ -213,7 +240,10 @@ namespace SignalGo.Server.ServiceManager.Versions
                         tcpClient.GetStream().ReadTimeout = -1;
                         tcpClient.GetStream().WriteTimeout = -1;
                     }
-                    await SignalGoDuplexServiceProvider.StartToReadingClientData(client, _serverBase);
+                    if (await _serverBase.Firewall.OnClientInitialized(client))
+                        await SignalGoDuplexServiceProvider.StartToReadingClientData(client, _serverBase);
+                    else
+                        _serverBase.DisposeClient(client, tcpClient, "firewall dropped!");
                 }
                 else if (firstLineString.Contains("HTTP/"))
                 {
@@ -222,7 +252,10 @@ namespace SignalGo.Server.ServiceManager.Versions
                         tcpClient.GetStream().ReadTimeout = (int)_serverBase.ProviderSetting.HttpSetting.ReceiveDataTimeout.TotalMilliseconds;
                         tcpClient.GetStream().WriteTimeout = (int)_serverBase.ProviderSetting.HttpSetting.SendDataTimeout.TotalMilliseconds;
                     }
-                    await HttpProvider.StartToReadingClientData(tcpClient, _serverBase, reader, new StringBuilder(firstLineString));
+                    if (await _serverBase.Firewall.OnClientInitialized(client))
+                        await HttpProvider.StartToReadingClientData(tcpClient, _serverBase, reader, new StringBuilder(firstLineString));
+                    else
+                        _serverBase.DisposeClient(client, tcpClient, "firewall dropped!");
                 }
                 else
                 {

@@ -23,6 +23,15 @@ namespace SignalGo.Shared.Models
         /// maximum value of timeout to wait for receive callbackinfo data
         /// </summary>
         public TimeSpan ReceiveDataTimeout { get; set; } = new TimeSpan(0, 0, 30);
+
+        /// <summary>
+        /// maximum size of string of all headers
+        /// </summary>
+        public int MaximumHeaderSize { get; set; } = -1;
+        /// <summary>
+        /// maximum size of request body size
+        /// </summary>
+        public int MaximumRequestBodySize { get; set; } = -1;
     }
 
     public class HttpSetting : BaseSetting
@@ -58,6 +67,10 @@ namespace SignalGo.Shared.Models
         public HttpSetting HttpSetting { get; set; } = new HttpSetting();
         public BaseSetting ServerServiceSetting { get; set; } = new BaseSetting();
 
+        /// <summary>
+        /// maximum size of lines to read
+        /// </summary>
+        public int MaximumLineSize { get; set; } = -1;
         /// <summary>
         /// when you want to use timeouts on your provider set it true
         /// the properties of set timeout is SendDataTimeout and ReceiveDataTimeout

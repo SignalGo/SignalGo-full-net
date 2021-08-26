@@ -75,7 +75,6 @@ namespace SignalGo.Server.ServiceManager.Providers
                 {
                     serviceName = serviceName.ToLower();
                     OperationContext.CurrentTaskServer = serverBase;
-
                     callback = new MethodCallbackInfo()
                     {
                         Guid = guid
@@ -97,6 +96,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     {
                         methodName = methodName.Split('.').FirstOrDefault();
                     }
+
                     var serviceInstance = await GetInstanceOfService(client, serviceName, serviceType, serverBase);
                     service = serviceInstance.Key;
                     isSingleInstance = serviceInstance.Value;
@@ -191,6 +191,13 @@ namespace SignalGo.Server.ServiceManager.Providers
                         {
                             parametersValues[0] = parameters.ToList();
                         }
+                    }
+
+                    var callResult = await serverBase.Firewall.OnCallingMethod(client, serviceName, serviceType, methodName, method, parametersValues?.ToArray());
+                    if (callResult != null)
+                    {
+                        callback.Data = ServerSerializationHelper.SerializeObject(result, serverBase, customDataExchanger: customDataExchanger.ToArray(), client: client, isEnabledReferenceResolver: isEnabledReferenceResolver, isEnabledReferenceResolverForArray: isEnabledReferenceResolverForArray);
+                        return new CallMethodResultInfo<OperationContext>(callback, streamInfo, httpKeyAttributes, serviceType, method, service, fileActionResult, context, result);
                     }
 
                     if (validationErrors != null && validationErrors.Count > 0)
@@ -527,6 +534,11 @@ namespace SignalGo.Server.ServiceManager.Providers
                 }
                 catch (Exception ex)
                 {
+                    if (!await serverBase.Firewall.OnServerInternalError(client, ex))
+                    {
+                        serverBase.DisposeClient(client, client.TcpClient, "firewall internal error!");
+                    }
+
                     exception = ex;
                     serverBase.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase CallMethod 2: {methodName} serviceName: {serviceName} jsonParameters : {jsonParameters} {ServerSerializationHelper.SerializeObject(parameters)} json: {json}");
                     if (serverBase.ErrorHandlingFunction != null)
@@ -551,8 +563,8 @@ namespace SignalGo.Server.ServiceManager.Providers
                     {
                         serverBase.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase CallMethod 2: {methodName}");
                     }
+                    DataExchanger.Clear();
                 }
-                DataExchanger.Clear();
                 return new CallMethodResultInfo<OperationContext>(callback, streamInfo, httpKeyAttributes, serviceType, method, service, fileActionResult, context, result);
             });
         }

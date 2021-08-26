@@ -44,6 +44,14 @@ namespace SignalGo.Shared.IO
 #endif
         private bool IsWaitToRead { get; set; } = false;
 
+        /// <summary>
+        /// maximum size of lines to read
+        /// </summary>
+        public int MaximumLineSize { get; set; } = -1;
+#if (!NET35 && !NET40)
+        public Func<Task<bool>> MaximumLineSizeReadedFunction { get; set; }
+#endif
+
         private readonly SemaphoreSlim lockWaitToRead = new SemaphoreSlim(1, 1);
 #if (!NET35 && !NET40)
         private async void ReadBufferAsync()
@@ -222,8 +230,23 @@ namespace SignalGo.Shared.IO
 #if (!NET35 && !NET40)
         public async Task<byte[]> ReadAsync(byte[] exitBytes)
         {
+            return await ReadLimitedAsync(exitBytes, -1);
+        }
+#endif
+
+#if (!NET35 && !NET40)
+        public async Task<byte[]> ReadLimitedAsync(byte[] exitBytes, int maximumSize)
+        {
             if (IsClosed && QueueBuffers.IsEmpty && BlockBuffers.Count == 0)
                 throw new Exception("read zero buffer! client disconnected");
+            //if (serverBase.ProviderSetting.HttpSetting.MaximumHeaderSize > 0 && builder.Length > serverBase.ProviderSetting.HttpSetting.MaximumHeaderSize)
+            //{
+            //    if (!await serverBase.Firewall.OnDangerDataReceived(client, Firewall.DangerDataType.HeaderSize))
+            //    {
+            //        serverBase.DisposeClient(client, client.TcpClient, "firewall danger http header size!");
+            //        return;
+            //    }
+            //}
             List<byte> bytes = new List<byte>();
             while (true)
             {
@@ -254,6 +277,13 @@ namespace SignalGo.Shared.IO
                     if (bytes.Count > 0 && bytes.Last() == exitBytes.First() && result.WhatIsFirstByte() == exitBytes.Last())
                         exitBytes = new byte[] { exitBytes.Last() };
                     bytes.AddRange(result.Read(exitBytes, out bool isFound));
+                    if (maximumSize > 0 && MaximumLineSizeReadedFunction != null && bytes.Count > maximumSize)
+                    {
+                        if (!await MaximumLineSizeReadedFunction())
+                        {
+                            throw new Exception("firewall dropped the connection!");
+                        }
+                    }
                     if (result.IsFinished)
                         QueueBuffers.TryDequeue(out result);
                     if (isFound)
@@ -265,6 +295,11 @@ namespace SignalGo.Shared.IO
 #endif
 
         public byte[] Read(byte[] exitBytes)
+        {
+            return ReadLimited(exitBytes, -1);
+        }
+
+        public byte[] ReadLimited(byte[] exitBytes, int maximumSize)
         {
             if (IsClosed && QueueBuffers.IsEmpty && BlockBuffers.Count == 0)
                 throw new Exception("read zero buffer! client disconnected");
@@ -382,12 +417,11 @@ namespace SignalGo.Shared.IO
             }
         }
 
-
         public string ReadLine()
         {
             if (IsClosed && QueueBuffers.IsEmpty && BlockBuffers.Count == 0)
                 throw new Exception("read zero buffer! client disconnected");
-            return Encoding.ASCII.GetString(Read(new byte[] { 13, 10 }));
+            return Encoding.ASCII.GetString(ReadLimited(new byte[] { 13, 10 }, MaximumLineSize));
         }
 
 #if (!NET35 && !NET40)
@@ -395,7 +429,7 @@ namespace SignalGo.Shared.IO
         {
             if (IsClosed && QueueBuffers.IsEmpty && BlockBuffers.Count == 0)
                 throw new Exception("read zero buffer! client disconnected");
-            return Encoding.ASCII.GetString(await ReadAsync(new byte[] { 13, 10 }));
+            return Encoding.ASCII.GetString(await ReadLimitedAsync(new byte[] { 13, 10 }, MaximumLineSize));
         }
 #endif
 

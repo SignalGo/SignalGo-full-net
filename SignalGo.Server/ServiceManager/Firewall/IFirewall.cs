@@ -16,19 +16,30 @@ namespace SignalGo.Server.ServiceManager.Firewall
         /// this is base of tcp connected to your server
         /// </summary>
         /// <param name="tcpClient"></param>
-        Task OnTcpClientConnected(TcpClient tcpClient);
+        Task<bool> OnTcpClientConnected(TcpClient tcpClient);
         /// <summary>
         /// when client initialized 
         /// </summary>
         /// <param name="clientInfo"></param>
-        Task OnClientInitialized(ClientInfo clientInfo);
+        Task<bool> OnClientInitialized(ClientInfo clientInfo);
+
+        /// <summary>
+        /// 1 MB is your Danger maximum received data from client
+        /// danger data is like 1 MB size of first line in http
+        /// or 1 MB header size
+        /// or 1 MB request size
+        /// </summary>
+        /// <param name="tcpClient"></param>
+        /// <param name="dangerDataType"></param>
+        /// <returns></returns>
+        Task<bool> OnDangerDataReceived(TcpClient tcpClient, DangerDataType dangerDataType);
         /// <summary>
         /// when server had unhandled internal or external error
         /// </summary>
         /// <param name="clientInfo"></param>
         /// <param name="exception"></param>
         /// <returns></returns>
-        Task OnServerInternalError(ClientInfo clientInfo, Exception exception);
+        Task<bool> OnServerInternalError(ClientInfo clientInfo, Exception exception);
         /// <summary>
         /// when client want to call your server method
         /// </summary>
@@ -38,7 +49,7 @@ namespace SignalGo.Server.ServiceManager.Firewall
         /// <param name="methodName"></param>
         /// <param name="methodInfo"></param>
         /// <param name="parameters"></param>
-        /// <returns></returns>
-        Task OnCallingMethod(ClientInfo clientInfo, string serviceName, Type serviceType, string methodName, MethodInfo methodInfo, object[] parameters);
+        /// <returns>if you set the result this will return to client before do anything</returns>
+        Task<object> OnCallingMethod(ClientInfo clientInfo, string serviceName, Type serviceType, string methodName, MethodInfo methodInfo, object[] parameters);
     }
 }

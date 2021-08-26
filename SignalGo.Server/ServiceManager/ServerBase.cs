@@ -1,5 +1,6 @@
 ﻿using SignalGo.Server.IO;
 using SignalGo.Server.Models;
+using SignalGo.Server.ServiceManager.Firewall;
 using SignalGo.Server.ServiceManager.Versions;
 using SignalGo.Shared;
 using SignalGo.Shared.Converters;
@@ -47,6 +48,7 @@ namespace SignalGo.Server.ServiceManager
         {
             WebcoketDatagramBase.Current = new WebcoketDatagram();
         }
+
         /// <summary>
         /// default constructor
         /// </summary>
@@ -55,6 +57,7 @@ namespace SignalGo.Server.ServiceManager
             JsonSettingHelper.Initialize();
         }
 
+        internal FirewallBase Firewall { get; set; } = new FirewallBase();
         /// <summary>
         /// get custom compression of client
         /// </summary>
@@ -366,6 +369,13 @@ namespace SignalGo.Server.ServiceManager
 
                 }
             }
+        }
+
+        public void SetFirewall(IFirewall firewall)
+        {
+            if (firewall == null)
+                throw new NullReferenceException("parameter firewall cannot be null or empty!");
+            Firewall.DefaultFirewall = firewall;
         }
 
         public void RemoveTask(int taskId)

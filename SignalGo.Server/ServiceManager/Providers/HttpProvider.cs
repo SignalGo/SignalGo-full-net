@@ -105,9 +105,20 @@ namespace SignalGo.Server.ServiceManager.Providers
                 {
                     string line = await reader.ReadLineAsync();
                     builder.Append(line);
+
+                    if (serverBase.ProviderSetting.HttpSetting.MaximumHeaderSize > 0 && builder.Length > serverBase.ProviderSetting.HttpSetting.MaximumHeaderSize)
+                    {
+                        if (!await serverBase.Firewall.OnDangerDataReceived(tcpClient, Firewall.DangerDataType.HeaderSize))
+                        {
+                            serverBase.DisposeClient(client, client.TcpClient, "firewall danger http header size!");
+                            return;
+                        }
+                    }
+
                     if (line == TextHelper.NewLine)
                         break;
                 }
+
                 string requestHeaders = builder.ToString();
                 if (requestHeaders.Contains("Sec-WebSocket-Key"))
                 {
