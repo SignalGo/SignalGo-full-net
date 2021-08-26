@@ -466,7 +466,9 @@ namespace SignalGo.Shared.IO
 
         public void Dispose()
         {
+#if (!NET35 && !NET40)
             MaximumLineSizeReadedFunction = null;
+#endif
             Stream.Dispose();
         }
     }
