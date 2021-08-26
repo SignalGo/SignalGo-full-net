@@ -123,6 +123,7 @@ namespace SignalGo.Server.ServiceManager.Versions
                     }
                     else
                     {
+                        _ConnectedCount--;
 #if (NETSTANDARD)
                         tcpClient.Dispose();
 #else
@@ -132,6 +133,7 @@ namespace SignalGo.Server.ServiceManager.Versions
                 }
                 catch (Exception)
                 {
+                    _ConnectedCount--;
 #if (NETSTANDARD)
                     tcpClient.Dispose();
 #else
