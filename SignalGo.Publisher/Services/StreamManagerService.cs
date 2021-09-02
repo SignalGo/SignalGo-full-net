@@ -24,7 +24,8 @@ namespace SignalGo.Publisher.Services
             string result = string.Empty;
             try
             {
-                using Stream stream = File.OpenRead(uploadInfo.FilePath);
+                using Stream stream = new MemoryStream(File.ReadAllBytes(uploadInfo.FilePath));
+                stream.Seek(0, SeekOrigin.Begin);
                 using var streamInfo = new StreamInfo()
                 {
                     FileName = uploadInfo.FileName,

@@ -78,10 +78,17 @@
                 </MenuItem>
             </Menu>
         </DockPanel>
-        <ListView x:Name="ProjectsListView" Grid.Row="1" MinWidth="150" Width="200" MaxWidth="300" ItemsSource="{Binding CurrentProjectsSettingInfo.ProjectInfo}" SelectedItem="{Binding SelectedProjectInfo}" HorizontalContentAlignment="Stretch">
-            <ListView.ItemTemplate>
-                <DataTemplate>
-                    <TextBlock>
+        <Grid Grid.Row="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <TextBox VerticalAlignment="Center" Height="30" Text="{Binding SearchText,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"/>
+
+            <ListView x:Name="ProjectsListView" Grid.Row="1" MinWidth="150" Width="200" MaxWidth="300" ItemsSource="{Binding Projects}" SelectedItem="{Binding SelectedProjectInfo}" HorizontalContentAlignment="Stretch">
+                <ListView.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock>
                         <TextBox Text="{Binding Name}">
                             <TextBox.Style>
                                 <Style TargetType="TextBox">
@@ -89,14 +96,14 @@
                                 </Style>
                             </TextBox.Style>
                         </TextBox>
-                    </TextBlock>
-                </DataTemplate>
-            </ListView.ItemTemplate>
+                        </TextBlock>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
 
-            <ListView.Resources>
-                <ControlTemplate x:Key="SelectedTemplate" TargetType="ListViewItem">
-                    <Border  Background="CadetBlue" CornerRadius="2,15,15,2" BorderThickness="1" BorderBrush="Transparent" Padding="5" HorizontalAlignment="Stretch" Margin="2" Cursor="Hand" >
-                        <TextBlock>
+                <ListView.Resources>
+                    <ControlTemplate x:Key="SelectedTemplate" TargetType="ListViewItem">
+                        <Border  Background="CadetBlue" CornerRadius="2,15,15,2" BorderThickness="1" BorderBrush="Transparent" Padding="5" HorizontalAlignment="Stretch" Margin="2" Cursor="Hand" >
+                            <TextBlock>
                             <TextBox Padding="5" Text="{Binding Name}">
                                 <TextBox.Style>
                                     <Style TargetType="TextBox">
@@ -104,39 +111,40 @@
                                      </Style>
                                 </TextBox.Style>
                              </TextBox>
-                        </TextBlock>
-                    </Border>
-                </ControlTemplate>
-                <Style TargetType="ListViewItem">
-                    <Setter Property="Template">
-                        <Setter.Value>
-                            <ControlTemplate TargetType="ListViewItem">
-                                <Border CornerRadius="0" BorderThickness="1" Background="WhiteSmoke" Padding="5" HorizontalAlignment="Stretch" Margin="0" Cursor="Hand" >
-                                    <TextBlock>
+                            </TextBlock>
+                        </Border>
+                    </ControlTemplate>
+                    <Style TargetType="ListViewItem">
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="ListViewItem">
+                                    <Border CornerRadius="0" BorderThickness="1" Background="WhiteSmoke" Padding="5" HorizontalAlignment="Stretch" Margin="0" Cursor="Hand" >
+                                        <TextBlock>
                                     <TextBlock Padding="5" Text="{Binding Name}">
-                                            <TextBlock.Style>
-                                                <Style TargetType="TextBlock">
-                                                    <EventSetter Event="KeyDown" Handler="projectItem_KeyDown" />
-                                                </Style>
-                                            </TextBlock.Style>
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <EventSetter Event="KeyDown" Handler="projectItem_KeyDown" />
+                                                    </Style>
+                                                </TextBlock.Style>
                                     </TextBlock>
                                     </TextBlock>
-                                </Border>
-                            </ControlTemplate>
-                        </Setter.Value>
-                    </Setter>
-                    <Style.Triggers>
-                        <MultiTrigger>
-                            <MultiTrigger.Conditions>
-                                <Condition Property="IsSelected" Value="true" />
-                            </MultiTrigger.Conditions>
-                            <Setter Property="Template" Value="{StaticResource SelectedTemplate}" />
-                        </MultiTrigger>
-                    </Style.Triggers>
-                </Style>
-            </ListView.Resources>
-        </ListView>
+                                    </Border>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                        <Style.Triggers>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsSelected" Value="true" />
+                                </MultiTrigger.Conditions>
+                                <Setter Property="Template" Value="{StaticResource SelectedTemplate}" />
+                            </MultiTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ListView.Resources>
+            </ListView>
 
+        </Grid>
         <Frame x:Name="mainframe" Grid.Column="1" Grid.Row="1" JournalOwnership="OwnsJournal" Loaded="Frame_Loaded" ClipToBounds="True" Background="#f6f6f7" Navigating="MainFrame_Navigating" NavigationUIVisibility="Hidden" VerticalAlignment="Stretch"/>
         <StatusBar Grid.Row="2" Grid.ColumnSpan="2" Background="Transparent">
             <StatusBarItem Background="WhiteSmoke" HorizontalAlignment="Left">

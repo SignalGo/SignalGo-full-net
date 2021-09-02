@@ -175,7 +175,11 @@ namespace SignalGo.Publisher.Engines.Commands
             {
                 string[] directories = Directory.GetDirectories(AssembliesPath);
                 string publishDir = directories.FirstOrDefault(x => x.Contains("publish"));
-
+                if (string.IsNullOrEmpty(publishDir))
+                {
+                    publishDir = Path.Combine(AssembliesPath, "publish");
+                }
+                Directory.CreateDirectory(publishDir);
                 zipFilePath = Path.Combine(AssembliesPath, $"{ServiceName}.zip");
                 if (File.Exists(zipFilePath))
                     File.Delete(zipFilePath);

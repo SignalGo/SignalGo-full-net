@@ -42,13 +42,13 @@ namespace SignalGo.Publisher.ViewModels
             BrowseProjectPathCommand = new Command(BrowseProjectPath);
             BrowseAssemblyPathCommand = new Command(BrowseAssemblyPath);
             ClearServerFileListCommand = new EventCommand(ClearFileList);
-            GetServerScreenShotCommand = new TaskCommand(CaptureApplicationProcess, () => !GetServerScreenShotCommand.IsBusy);
-            CancellationCommand = new Command(CancelCommands, () => !IsBusy);
+            GetServerScreenShotCommand = new TaskCommand(CaptureApplicationProcess, () => !IsBusy);
+            CancellationCommand = new Command(CancelCommands);
             DeleteCommand = new Command(DeleteProject);
             OpenProjectFolderCommand = new Command(OpenProjectFolder);
             RunTestsCommand = new Command(RunTests);
             RunCommandsCommand = new TaskCommand(RunCommands,
-                () => !RunCommandsCommand.IsBusy);
+                () => !IsBusy);
             RestorePackagesCommand = new Command(RestorePackages);
             RemoveIgnoredServerFileCommand = new Command<IgnoreFileInfo>(RemoveIgnoredServerFile);
             RemoveIgnoredFileCommand = new Command<IgnoreFileInfo>(RemoveIgnoredFile);
@@ -62,21 +62,23 @@ namespace SignalGo.Publisher.ViewModels
             RetryCommand = new TaskCommand<ICommand>(async (x) =>
             {
                 await x.Run(CancellationToken, ProjectInfo.Name);
-            }, (x) => !RetryCommand.IsBusy);
+            }, (x) => !IsBusy);
 
             ToDownCommand = new Command<ICommand>(MoveCommandLower);
             ToUpCommand = new Command<ICommand>(MoveCommandUpper);
             GitPullCommand = new Command(GitPull);
-            ClearLogsCommand = new TaskCommand(ClearLogs, () => !ClearLogsCommand.IsBusy);
+            ClearLogsCommand = new TaskCommand(ClearLogs, () => !IsBusy);
             PublishCommand = new Command(PublishToServers);
-            FetchFilesCommand = new TaskCommand(FetchFiles, () => !FetchFilesCommand.IsBusy);
+            FetchFilesCommand = new TaskCommand(FetchFiles, () => !IsBusy);
 
             LoadFileCommmand = new TaskCommand<string>(LoadFileDataFromServer);
 
-            UploadFileCommmand = new TaskCommand(UploadFileDataFromServer, () => !UploadFileCommmand.IsBusy);
-            RestartServiceCommand = new TaskCommand(RestartService, () => !RestartServiceCommand.IsBusy);
-            StopServiceCommand = new TaskCommand(StopService, () => !StopServiceCommand.IsBusy);
-            StartServiceCommand = new TaskCommand(StartService, () => !StartServiceCommand.IsBusy);
+            UploadFileCommmand = new TaskCommand(UploadFileDataFromServer, () => !IsBusy);
+            RestartServiceCommand = new TaskCommand(RestartService, () => !IsBusy);
+            StopServiceCommand = new TaskCommand(StopService, () => !IsBusy);
+            StartServiceCommand = new TaskCommand(StartService, () => !IsBusy);
+            IsChangeBusyWhenCommandExecute = true;
+            InitializeCommands();
             //InitializeCommands();
         }
 
@@ -389,7 +391,6 @@ namespace SignalGo.Publisher.ViewModels
         /// </summary>
         private void CancelCommands()
         {
-            IsBusy = true;
             try
             {
                 CancellationTokenSource.Cancel();
@@ -406,7 +407,6 @@ namespace SignalGo.Publisher.ViewModels
                 CancellationTokenSource = new CancellationTokenSource();
                 CancellationToken = new CancellationToken(false);
                 CancellationToken = CancellationTokenSource.Token;
-                IsBusy = false;
             }
         }
 

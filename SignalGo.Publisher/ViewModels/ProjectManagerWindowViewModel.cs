@@ -5,11 +5,13 @@ using SignalGo.Publisher.Models;
 using SignalGo.Publisher.Models.Extra;
 using SignalGo.Publisher.Views;
 using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 
 namespace SignalGo.Publisher.ViewModels
 {
@@ -26,9 +28,9 @@ namespace SignalGo.Publisher.ViewModels
             This = this;
             ChangeAccessControlCommand = new Command<bool>(ChangeAccessControl);
             CleanMemoryCommand = new TaskCommand(CleanAppMemory,
-                () => !CleanMemoryCommand.IsBusy);
+                () => !IsBusy);
             RunSelfUpdateCommand = new TaskCommand(RunSelfUpdate,
-                () => !RunSelfUpdateCommand.IsBusy);
+                () => !IsBusy);
             ShowAppHelpPageCommand = new Command(ShowAppHelpPage);
             AddNewServerCommand = new Command(AddNewServer);
             ShowSettingsCommand = new Command(ShowSettingsPage);
@@ -42,6 +44,8 @@ namespace SignalGo.Publisher.ViewModels
             ShowCommandManagerCommand = new Command(ShowCommandManagerPage);
             // get application resouce usage in background
             GetAppUsage();
+
+            Projects.Filter = new Predicate<object>(o => Filter(o as ProjectInfo));
         }
 
         public Command<bool> ChangeAccessControlCommand { get; set; }
@@ -80,6 +84,30 @@ namespace SignalGo.Publisher.ViewModels
             }
         }
 
+        string _SearchText;
+
+        public string SearchText
+        {
+            get
+            {
+                return _SearchText;
+            }
+            set
+            {
+                _SearchText = value;
+                OnPropertyChanged(nameof(SearchText));
+                Projects.Refresh();
+            }
+        }
+
+        public ICollectionView Projects
+        {
+            get
+            {
+                return CollectionViewSource.GetDefaultView(CurrentProjectsSettingInfo.ProjectInfo);
+            }
+        }
+
         public SettingInfo CurrentProjectsSettingInfo
         {
             get
@@ -94,6 +122,12 @@ namespace SignalGo.Publisher.ViewModels
             {
                 return UserSettingInfo.Current;
             }
+        }
+
+        private bool Filter(ProjectInfo projectInfo)
+        {
+            return string.IsNullOrEmpty(SearchText)
+                || projectInfo.Name.Contains(SearchText, StringComparison.OrdinalIgnoreCase);
         }
 
         private Task RunSelfUpdate()
@@ -265,5 +299,6 @@ namespace SignalGo.Publisher.ViewModels
                 OnPropertyChanged(nameof(IsAccessControlUnlocked));
             }
         }
+
     }
 }

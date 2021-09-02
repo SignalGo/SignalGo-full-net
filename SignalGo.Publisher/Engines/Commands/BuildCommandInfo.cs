@@ -33,7 +33,7 @@ namespace SignalGo.Publisher.Engines.Commands
             //ThreadPool.GetAvailableThreads(out maxT, out IOT);
             buildType = Configuration.IsBuild ? "Build" : "Rebuild";
             outputType = Configuration.IsRelease ? "Release" : "Debug";
-
+            Arguments = "/m";
             //Arguments = $"-t:{buildType} -r:{Configuration.IsRestore} -p:Configuration={outputType} -noWarn:MSB4011;CS1591 -nologo {SolutionFile}";
             IsEnabled = true;
         }
@@ -50,6 +50,8 @@ namespace SignalGo.Publisher.Engines.Commands
             Arguments = $"{SolutionFile} -t:{buildType} -r:{Configuration.IsRestore} -p:Configuration={outputType} -noWarn:MSB4011;CS1591 -nologo";
             Size = ProjectCount;
             processStartInfo.RedirectStandardOutput = true;
+            if (!File.Exists(Command))
+                throw new Exception($"File {Command} not found!");
             processStartInfo.FileName = $"{Command}";
             processStartInfo.CreateNoWindow = true;
             processStartInfo.Arguments = $" {Arguments}";

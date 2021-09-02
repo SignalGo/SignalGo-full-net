@@ -47,7 +47,7 @@ namespace SignalGo.Publisher.Engines.Commands
         /// <returns></returns>
         public override async Task<RunStatusType> Run(CancellationToken cancellationToken, string caller)
         {
-            await base.Run(cancellationToken, caller);
+            var runStatus = await base.Run(cancellationToken, caller);
             var compressedData = await Compress();
             var result = await Upload(compressedData, cancellationToken, true);
             return Status = result;
@@ -70,11 +70,11 @@ namespace SignalGo.Publisher.Engines.Commands
             processStartInfo.RedirectStandardOutput = true;
             processStartInfo.FileName = $"{Command}";
             processStartInfo.CreateNoWindow = true;
-            processStartInfo.Arguments = $" {Arguments}";
             processStartInfo.WorkingDirectory = WorkingPath;
             var solutionFile = GetSolutionFileName(WorkingPath, ServerDefaultSolutionShortName);
             // args to send to command
             Arguments = $"publish {solutionFile} --no-build -nologo";
+            processStartInfo.Arguments = $" {Arguments}";
         }
         public override bool CalculateStatus(string line)
         {
