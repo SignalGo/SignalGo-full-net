@@ -151,6 +151,23 @@ namespace SignalGo.Shared.Helpers
             HandleDeserializingObjectList.TryAdd(typeof(TResultType), new SerializeDelegateHandler() { Delegate = func, ParameterType = typeof(TType) });
         }
 
+        public static string Format(object value, string format, IFormatProvider formatProvider = null)
+        {
+            if (value == null)
+            {
+                return string.Empty;
+            }
+
+            IFormattable formattable = value as IFormattable;
+
+            if (formattable != null)
+            {
+                return formattable.ToString(format, formatProvider);
+            }
+
+            throw new ArgumentException("value");
+        }
+
         public static object ConvertType(Type toType, object value)
         {
             if (value == null)
@@ -196,13 +213,13 @@ namespace SignalGo.Shared.Helpers
             }
             else if (targetPropertyType == SerializeObjectType.DateTime)
             {
-                if (DateTime.TryParse(value.ToString(), out DateTime result))
+                if (DateTime.TryParse(Format(value, "o"), out DateTime result))
                     return result;
                 return default(DateTime);
             }
             else if (targetPropertyType == SerializeObjectType.DateTimeNullable)
             {
-                if (DateTime.TryParse(value.ToString(), out DateTime result))
+                if (DateTime.TryParse(Format(value, "o"), out DateTime result))
                     return (DateTime?)result;
                 return null;
             }
