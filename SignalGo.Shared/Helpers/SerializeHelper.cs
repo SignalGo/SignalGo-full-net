@@ -213,12 +213,22 @@ namespace SignalGo.Shared.Helpers
             }
             else if (targetPropertyType == SerializeObjectType.DateTime)
             {
+                if (!(value is DateTime))
+                {
+                    if (DateTime.TryParse(value.ToString(), out DateTime parsedValue))
+                        value = parsedValue;
+                }
                 if (DateTime.TryParse(Format(value, "o"), out DateTime result))
                     return result;
                 return default(DateTime);
             }
             else if (targetPropertyType == SerializeObjectType.DateTimeNullable)
             {
+                if (!(value is DateTime))
+                {
+                    if (DateTime.TryParse(value.ToString(), out DateTime parsedValue))
+                        value = parsedValue;
+                }
                 if (DateTime.TryParse(Format(value, "o"), out DateTime result))
                     return (DateTime?)result;
                 return null;
