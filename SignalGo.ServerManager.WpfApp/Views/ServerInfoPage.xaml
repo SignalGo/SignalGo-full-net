@@ -30,6 +30,9 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="auto"/>
                     <RowDefinition Height="auto"/>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="auto"/>
                     <RowDefinition/>
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
@@ -37,15 +40,24 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="auto"/>
                 </Grid.ColumnDefinitions>
+                
+                <Label Content="Name:" VerticalContentAlignment="Center"/>
+                <TextBox  Margin="5" Text="{Binding ServerInfo.Name}" Grid.Column="1" VerticalAlignment="Stretch" Height="25"/>
 
-                <Label Content="Guid:" VerticalContentAlignment="Center"/>
-                <TextBox  Margin="5" Text="{Binding ServerInfo.ServerKey}" Grid.Column="1" VerticalAlignment="Stretch" Height="25"/>
-                <!--<Button Command="{Binding SaveCommand}" Content="Save" Grid.Column="3" Grid.Row="0" Margin="10,0,0,0" Width="100" Height="25"/>-->
+                <Label Grid.Row="1" Content="Depend server names:" VerticalContentAlignment="Center"/>
+                <TextBox Grid.Row="1" Margin="5" Text="{Binding ServerInfo.DependServerNames}" Grid.Column="1" VerticalAlignment="Stretch" Height="25"/>
 
-                <TextBlock Text="Server File Path:" Grid.Row="1"/>
-                <TextBox Margin="5" Text="{Binding ServerInfo.AssemblyPath}" TextWrapping="WrapWithOverflow" ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Auto" Height="25" MaxHeight="40" Grid.Row="1" Grid.Column="1"/>
-                <Button Command="{Binding BrowsePathCommand}" Content="..." Grid.Column="3" Grid.Row="1" Width="75" Height="25"/>
-                <StackPanel Margin="5" Grid.Row="2" Grid.Column="0" Orientation="Horizontal"
+                <Label Grid.Row="2" Content="Guid:" VerticalContentAlignment="Center"/>
+                <TextBox Grid.Row="2"  Margin="5" Text="{Binding ServerInfo.ServerKey}" Grid.Column="1" VerticalAlignment="Stretch" Height="25"/>
+
+                <Label Content="Server File Path:" Grid.Row="3" VerticalContentAlignment="Center"/>
+                <TextBox Margin="5" Text="{Binding ServerInfo.AssemblyPath}" TextWrapping="WrapWithOverflow" ScrollViewer.CanContentScroll="True" ScrollViewer.VerticalScrollBarVisibility="Auto" Height="25" MaxHeight="40" Grid.Row="3" Grid.Column="1"/>
+                <Button Command="{Binding BrowsePathCommand}" Content="..." Grid.Column="4" Grid.Row="3" Width="75" Height="25"/>
+                
+                <Label Grid.Row="4" Content="Health Check Url:" VerticalContentAlignment="Center"/>
+                <TextBox Grid.Row="4"  Margin="5" Text="{Binding ServerInfo.HealthCheckUrl}" Grid.Column="1" VerticalAlignment="Stretch" Height="25"/>
+
+                <StackPanel Margin="5" Grid.Row="5" Grid.Column="0" Orientation="Horizontal"
                             Grid.ColumnSpan="2" VerticalAlignment="Top"
                             HorizontalAlignment="Stretch">
                     <TextBlock Text="Auto Start:"/>
@@ -54,7 +66,7 @@
                     <TextBox Margin="0" MaxWidth="100" MinWidth="50" Text="{Binding ServerInfo.StartDelay}" />
                 </StackPanel>
 
-                <StackPanel Grid.Row="2" Grid.ColumnSpan="3" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <StackPanel Grid.Row="5" Grid.ColumnSpan="3" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <StackPanel Orientation="Horizontal"  HorizontalAlignment="Center">
                         <TextBlock Text="Status: " Margin="10"/>
                         <TextBlock Text="{Binding ServerInfo.Status}" Margin="10"/>
@@ -64,12 +76,12 @@
                         <Button Command="{Binding StopCommand}" Content="Stop" Width="100" Height="30" Margin="10,0,0,0"/>
                     </StackPanel>
                 </StackPanel>
-                <StackPanel Orientation="Horizontal" Grid.Row="2" Grid.Column="2" VerticalAlignment="Bottom" >
+                <StackPanel Orientation="Horizontal" Grid.Row="5" Grid.Column="2" VerticalAlignment="Bottom" >
 
                     <Button Command="{Binding ChangeCommand}" VerticalAlignment="Bottom" Content="Save" Width="100" Height="30" Margin="5"/>
                     <Button Command="{Binding DeleteCommand}" VerticalAlignment="Bottom" Content="Delete!" Width="100" Height="30" Margin="5"/>
                 </StackPanel>
-                <StatusBar Grid.Row="2" VerticalAlignment="Bottom" Grid.ColumnSpan="2" Background="Transparent">
+                <StatusBar Grid.Row="5" VerticalAlignment="Bottom" Grid.ColumnSpan="2" Background="Transparent">
                     <StatusBarItem>
                         <Grid>
                             <StackPanel Orientation="Horizontal">

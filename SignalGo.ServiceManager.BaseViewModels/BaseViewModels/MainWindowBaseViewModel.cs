@@ -49,6 +49,7 @@ namespace SignalGo.ServiceManager.Core.BaseViewModels
                 return SettingInfo.Current;
             }
         }
+
         public void ShowServieLogs()
         {
             System.Diagnostics.Process.Start(

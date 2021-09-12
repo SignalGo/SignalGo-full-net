@@ -1,7 +1,9 @@
 ﻿using Newtonsoft.Json;
+using SignalGo.ServiceManager.Core.Engines.Models;
 using SignalGo.ServiceManager.Core.Helpers;
 using SignalGo.Shared.Log;
 using System;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Text;
 
@@ -26,7 +28,7 @@ namespace SignalGo.ServiceManager.Core.Models
             }
         }
         public UserSetting UserSettings { get; set; } = new UserSetting();
-
+        public ObservableCollection<HealthCheckInfo> HealthChecks { get; set; } = new ObservableCollection<HealthCheckInfo>();
         public static UserSettingInfo LoadUserSettingInfo()
         {
             try

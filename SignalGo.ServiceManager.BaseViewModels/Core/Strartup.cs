@@ -1,6 +1,7 @@
 ﻿using SignalGo.Publisher.Models;
 using SignalGo.Server.ServiceManager;
 using SignalGo.ServiceManager.Core.BaseViewModels;
+using SignalGo.ServiceManager.Core.Engines.Models;
 using SignalGo.ServiceManager.Core.Models;
 using SignalGo.ServiceManager.Core.Services;
 using SignalGo.Shared;
@@ -8,6 +9,7 @@ using SignalGo.Shared.Log;
 using System;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace SignalGo.ServiceManager.BaseViewModels.Core
 {
@@ -73,11 +75,46 @@ namespace SignalGo.ServiceManager.BaseViewModels.Core
         {
             try
             {
-                foreach (var server in SettingInfo.Current.ServerInfo.Where(x => x.AutoStartEnabled))
+                foreach (var server in SettingInfo.Current.ServerInfo.Where(x => x.AutoStartEnabled).ToList())
                 {
                     Console.WriteLine($"Your {server.Name} service key is : {server.ServerKey}", Console.ForegroundColor = ConsoleColor.Yellow);
                     Console.ResetColor();
-                    ServerInfoBaseViewModel.StartServer(server);
+                    _ = Task.Run(async() =>
+                    {
+                        try
+                        {
+                            await Task.Delay(1000);
+                            if (string.IsNullOrEmpty(server.DependServerNames))
+                                ServerInfoBaseViewModel.StartServer(server);
+                            else
+                            {
+                                foreach (var name in server.DependServerNames.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                                {
+                                    var server = SettingInfo.Current.ServerInfo.FirstOrDefault(x => x.Name == name);
+                                    while(true)
+                                    {
+                                        bool isHealthy = true;
+                                        foreach (var healthCheck in UserSettingInfo.Current.HealthChecks.ToList())
+                                        {
+                                            if (!await healthCheck.CheckIsHealthy(server))
+                                            {
+                                                isHealthy = false;
+                                                break;
+                                            }
+                                        }
+                                        if (isHealthy)
+                                            break;
+                                    }
+                                }
+                                ServerInfoBaseViewModel.StartServer(server);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine(ex);
+                            AutoLogger.Default.LogError(ex, "StartServer");
+                        }
+                    });
                 }
             }
             catch (Exception ex)

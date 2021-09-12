@@ -12,6 +12,7 @@ using System.Windows.Media.Animation;
 using System.Windows.Navigation;
 using MvvmGo.ViewModels;
 using SignalGo.Publisher.Shared.Helpers;
+using SignalGo.ServiceManager.Core.Engines;
 
 namespace SignalGo.ServerManager.WpfApp.Views
 {
@@ -65,6 +66,8 @@ namespace SignalGo.ServerManager.WpfApp.Views
                 StartUp.Exit();
             };
             mainframe.Navigate(new FirstPage());
+
+            HealthCheckEngine.Start();
         }
 
         private void MainFrame_Navigating(object sender, NavigatingCancelEventArgs e)

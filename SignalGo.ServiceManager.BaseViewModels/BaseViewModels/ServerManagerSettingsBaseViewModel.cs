@@ -1,5 +1,6 @@
 ﻿using MvvmGo.Commands;
 using MvvmGo.ViewModels;
+using SignalGo.ServiceManager.Core.Engines.Models;
 using SignalGo.ServiceManager.Core.Models;
 using System;
 using System.Diagnostics;
@@ -13,14 +14,27 @@ namespace SignalGo.ServiceManager.Core.BaseViewModels
         public Command RestoreDefaults { get; set; }
         public Command SaveCommand { get; set; }
         public Command BackCommand { get; set; }
+        public Command AddHealthCheckCommand { get; set; }
+        public Command DeleteHealthCheckCommand { get; set; }
         public ServerManagerSettingsBaseViewModel()
         {
             SaveCommand = new Command(Save);
             BackCommand = new Command(Back);
             BrowseBackupPathCommand = new Command(BrowseBackupPath);
             BrowseLoggerPathCommand = new Command(BrowseLoggerPath);
-        }
+            AddHealthCheckCommand = new Command(() =>
+            {
+                CurrentUserSettingInfo.HealthChecks.Add(new HealthCheckInfo()
+                {
+                    Name = "test"
+                });
+            });
 
+            DeleteHealthCheckCommand = new Command(() =>
+            {
+                CurrentUserSettingInfo.HealthChecks.Remove(SelectedHealthCheckInfo);
+            }, () => SelectedHealthCheckInfo != null);
+        }
 
         protected virtual void BrowseBackupPath()
         {
@@ -38,6 +52,23 @@ namespace SignalGo.ServiceManager.Core.BaseViewModels
             }
         }
 
+        HealthCheckInfo _SelectedHealthCheckInfo;
+
+        public HealthCheckInfo SelectedHealthCheckInfo
+        {
+            get
+            {
+                return _SelectedHealthCheckInfo;
+            }
+
+            set
+            {
+                _SelectedHealthCheckInfo = value;
+                OnPropertyChanged(nameof(SelectedHealthCheckInfo));
+                DeleteHealthCheckCommand.ValidateCanExecute();
+            }
+        }
+
         UserSetting _UserSetting;
         public UserSetting UserSetting
         {
@@ -52,6 +83,7 @@ namespace SignalGo.ServiceManager.Core.BaseViewModels
                 OnPropertyChanged(nameof(UserSetting));
             }
         }
+
 
         protected virtual void Back()
         {

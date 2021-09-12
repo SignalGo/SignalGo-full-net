@@ -39,41 +39,82 @@
                 </MenuItem>
             </Menu>
         </DockPanel>
-
-        <!--<Button Grid.Row="1" Command="{Binding AddNewServerCommand}" Content="Add new server" Padding="30,10,30,10" Margin="0,0,0,10"/>-->
-        <ListView x:Name="lstProjects" Grid.Row="1" Grid.RowSpan="2" Grid.Column="0" MinWidth="100" Width="150" MaxWidth="250" ItemsSource="{Binding CurrentSettingInfo.ServerInfo}" SelectedItem="{Binding SelectedServerInfo}">
-            <ListView.ItemTemplate>
-                <DataTemplate>
-                    <TextBlock Padding="5" Text="{Binding Name}"/>
-                </DataTemplate>
-            </ListView.ItemTemplate>
-            <ListView.Resources>
-                <ControlTemplate x:Key="SelectedTemplate" TargetType="ListViewItem">
-                    <Border  Background="CadetBlue" CornerRadius="2,15,15,2" BorderThickness="1" BorderBrush="Transparent" Padding="5" HorizontalAlignment="Stretch" Margin="2" Cursor="Hand" >
-                        <TextBlock Padding="5" Text="{Binding Name}"/>
-                    </Border>
-                </ControlTemplate>
-                <Style TargetType="ListViewItem">
-                    <Setter Property="Template">
-                        <Setter.Value>
-                            <ControlTemplate TargetType="ListViewItem">
-                                <Border CornerRadius="0" BorderThickness="0" Background="WhiteSmoke" Padding="5" HorizontalAlignment="Stretch" Margin="0" Cursor="Hand" >
-                                    <TextBlock Padding="5" Text="{Binding Name}"/>
+        <Grid Grid.Row="1" Grid.RowSpan="2" Grid.Column="0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <TextBox VerticalAlignment="Center" Height="30" Text="{Binding SearchText,Mode=TwoWay,UpdateSourceTrigger=PropertyChanged}"/>
+            <!--<Button Grid.Row="1" Command="{Binding AddNewServerCommand}" Content="Add new server" Padding="30,10,30,10" Margin="0,0,0,10"/>-->
+            <ListView x:Name="lstProjects" Grid.Row="1" MinWidth="100" Width="250" MaxWidth="250" ItemsSource="{Binding CurrentSettingInfo.ServerInfo}" SelectedItem="{Binding SelectedServerInfo}">
+                <ListView.Resources>
+                    <ControlTemplate x:Key="SelectedTemplate" TargetType="ListViewItem">
+                        <Border Background="CadetBlue" CornerRadius="2,15,15,2" BorderThickness="1" BorderBrush="Transparent" Padding="5" HorizontalAlignment="Stretch" Margin="2" Cursor="Hand" >
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Width="10" Height="10" CornerRadius="10">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsHealthy}" Value="False">
+                                                    <Setter Property="Background" Value="Red"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsHealthy}" Value="True">
+                                                    <Setter Property="Background" Value="Green"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
                                 </Border>
-                            </ControlTemplate>
-                        </Setter.Value>
-                    </Setter>
-                    <Style.Triggers>
-                        <MultiTrigger>
-                            <MultiTrigger.Conditions>
-                                <Condition Property="IsSelected" Value="true" />
-                            </MultiTrigger.Conditions>
-                            <Setter Property="Template" Value="{StaticResource SelectedTemplate}" />
-                        </MultiTrigger>
-                    </Style.Triggers>
-                </Style>
-            </ListView.Resources>
-        </ListView>
+                                <TextBlock Grid.Column="1" Padding="5" Text="{Binding Name}"/>
+                            </Grid>
+                        </Border>
+                    </ControlTemplate>
+                    <Style TargetType="ListViewItem">
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="ListViewItem">
+                                    <Border CornerRadius="0" BorderThickness="0" Background="WhiteSmoke" Padding="5" HorizontalAlignment="Stretch" Margin="0" Cursor="Hand" >
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Border Width="10" Height="10" CornerRadius="10">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsHealthy}" Value="False">
+                                                                <Setter Property="Background" Value="Red"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding IsHealthy}" Value="True">
+                                                                <Setter Property="Background" Value="Green"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                            </Border>
+                                            <TextBlock Grid.Column="1" Padding="5" Text="{Binding Name}"/>
+                                        </Grid>
+                                    </Border>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                        <Style.Triggers>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsSelected" Value="true" />
+                                </MultiTrigger.Conditions>
+                                <Setter Property="Template" Value="{StaticResource SelectedTemplate}" />
+                            </MultiTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ListView.Resources>
+            </ListView>
+        </Grid>
         <Frame x:Name="mainframe" Grid.Column="1" Grid.Row="1" Grid.RowSpan="2" JournalOwnership="OwnsJournal" Loaded="Frame_Loaded" ClipToBounds="True" Background="#f6f6f7" Navigating="MainFrame_Navigating" NavigationUIVisibility="Hidden"/>
     </Grid>
 </Window>

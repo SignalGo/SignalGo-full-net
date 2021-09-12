@@ -3,6 +3,7 @@ using SignalGo.Publisher.Extensions;
 using System;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace SignalGo.Publisher.Models
@@ -52,6 +53,7 @@ namespace SignalGo.Publisher.Models
                         ProjectInfo = new ObservableCollection<ProjectInfo>(),
                     };
                 }
+                result.ProjectInfo = new ObservableCollection<ProjectInfo>(result.ProjectInfo.OrderBy(x => x.Name));
                 return result;
             }
             catch (Exception ex)

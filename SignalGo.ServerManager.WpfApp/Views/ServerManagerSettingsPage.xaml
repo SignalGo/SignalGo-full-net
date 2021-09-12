@@ -58,13 +58,103 @@
                 <Button Command="{Binding BackCommand}" Grid.Row="4" Grid.Column="0" VerticalAlignment="Bottom" Content="Back" Width="100" Height="30" Margin="10,0,0,0" HorizontalAlignment="Left"/>
             </Grid>
         </TabItem>
-        <TabItem Header="Variables">
+        <TabItem Header="Health Check">
             <Grid Margin="10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="auto"/>
                     <RowDefinition Height="*"/>
+                    <RowDefinition Height="auto"/>
                 </Grid.RowDefinitions>
-
+                <ListView x:Name="ListHealthChecks" SelectedItem="{Binding SelectedHealthCheckInfo,Mode=TwoWay}" Width="200" DisplayMemberPath="Name" ItemsSource="{Binding CurrentUserSettingInfo.HealthChecks}">
+                    <ListView.ContextMenu>
+                        <ContextMenu>
+                            <MenuItem Header="Delete" Command="{Binding DeleteHealthCheckCommand}"/>
+                        </ContextMenu>
+                    </ListView.ContextMenu>
+                </ListView>
+                <TabControl Grid.Column="1" DataContext="{Binding SelectedHealthCheckInfo}">
+                    <TabControl.Resources>
+                        <Style TargetType="Label">
+                            <Setter Property="Height" Value="25"/>
+                            <Setter Property="VerticalContentAlignment" Value="Center"/>
+                            <Setter Property="Margin" Value="0,10,10,0"/>
+                        </Style>
+                        <Style TargetType="CheckBox">
+                            <Setter Property="Height" Value="25"/>
+                            <Setter Property="VerticalContentAlignment" Value="Center"/>
+                            <Setter Property="Margin" Value="0,10,10,0"/>
+                        </Style>
+                        <Style TargetType="TextBox">
+                            <Setter Property="Height" Value="25"/>
+                            <Setter Property="VerticalAlignment" Value="Center"/>
+                            <Setter Property="Margin" Value="0,10,0,0"/>
+                        </Style>
+                    </TabControl.Resources>
+                    <TabItem Header="Settings">
+                        <Grid Margin="10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel >
+                                <Label Content="Name:"/>
+                                <Label Content="Check Time:"/>
+                                <Label Content="Post When Is Not Healthy:"/>
+                                <Label Content="Restart Time Not Healthy:"/>
+                                <CheckBox Content="Is Enabled" IsChecked="{Binding IsEnabled}"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1">
+                                <TextBox Text="{Binding Name}"/>
+                                <TextBox Text="{Binding CheckTime}"/>
+                                <TextBox Text="{Binding TimeToPostDataWhenIsNotHealthy}"/>
+                                <TextBox Text="{Binding RestartTimeAfterNotHealthy}"/>
+                            </StackPanel>
+                        </Grid>
+                    </TabItem>
+                    <TabItem Header="Health Check">
+                        <Grid>
+                            <Grid Margin="10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel >
+                                    <Label Content="Check Url:"/>
+                                    <Label Content="Data to post:" Height="100" VerticalContentAlignment="Top"/>
+                                    <Label Content="Health check contains:" Height="100" VerticalContentAlignment="Top"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1">
+                                    <TextBox Text="{Binding CheckUrl}"/>
+                                    <TextBox Text="{Binding DataToPostForGetResult}" Height="100" AcceptsReturn="True"/>
+                                    <TextBox Text="{Binding ConditionResultHasValue}" Height="100" AcceptsReturn="True"/>
+                                </StackPanel>
+                            </Grid>
+                        </Grid>
+                    </TabItem>
+                    <TabItem Header="Is not healthy">
+                        <Grid>
+                            <Grid Margin="10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel >
+                                    <Label Content="Url:"/>
+                                    <Label Content="Data to post:" Height="100" VerticalContentAlignment="Top"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1">
+                                    <TextBox Text="{Binding InvalidHealthCheckUrl}"/>
+                                    <TextBox Text="{Binding DataToPostForInvalidHealthCheck}" Height="100" AcceptsReturn="True"/>
+                                </StackPanel>
+                            </Grid>
+                        </Grid>
+                    </TabItem>
+                </TabControl>
+                <Button Command="{Binding AddHealthCheckCommand}" Grid.Row="1" Content="Add" Height="30"/>
+                <Button Command="{Binding SaveCommand}" Grid.Row="1" Grid.Column="1" VerticalAlignment="Bottom" Content="Save" Width="100" Height="30" Margin="10,0,0,0" HorizontalAlignment="Right"/>
             </Grid>
         </TabItem>
     </TabControl>

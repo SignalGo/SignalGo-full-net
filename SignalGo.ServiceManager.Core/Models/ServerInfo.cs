@@ -11,6 +11,8 @@ namespace SignalGo.ServiceManager.Core.Models
 {
     public class ServerInfo : BaseViewModel
     {
+        public string DependServerNames { get; set; }
+        public string HealthCheckUrl { get; set; }
         [JsonIgnore]
         public ServerProcessBaseInfo CurrentServerBase { get; set; }
         [JsonIgnore]
@@ -18,6 +20,7 @@ namespace SignalGo.ServiceManager.Core.Models
         [JsonIgnore]
         public Action ProcessStarted { get; set; }
 
+        private bool _IsHealthy;
         private Guid _ServerKey;
         private int _StartDelay = 0;
         private string _Name;
@@ -232,6 +235,21 @@ namespace SignalGo.ServiceManager.Core.Models
         public override System.Collections.Concurrent.ConcurrentDictionary<string, MvvmGo.Models.ViewModelItemsInfo> MessagesByProperty { get => base.MessagesByProperty; set => base.MessagesByProperty = value; }
         [JsonIgnore]
         public override Action<string> PropertyChangedAction { get => base.PropertyChangedAction; set => base.PropertyChangedAction = value; }
+
+        [JsonIgnore]
+        public bool IsHealthy
+        {
+            get
+            {
+                return _IsHealthy;
+            }
+
+            set
+            {
+                _IsHealthy = value;
+                OnPropertyChanged(nameof(IsHealthy));
+            }
+        }
         #endregion
     }
     public enum ServerInfoStatus
