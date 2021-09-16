@@ -17,6 +17,10 @@
         /// <summary>
         /// when the request body size is max
         /// </summary>
-        RequestBodySize = 3
+        RequestBodySize = 3,
+        /// <summary>
+        /// when header key and value is not valid
+        /// </summary>
+        InvalidHeader = 4
     }
 }

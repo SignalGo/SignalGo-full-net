@@ -95,5 +95,39 @@ namespace SignalGo.Server.ServiceManager.Firewall
 
             return Task.FromResult(true);
         }
+
+        public bool OnHttpHeaderComepleted(TcpClient tcpClient, ref string key, ref string value)
+        {
+            if (DefaultFirewall != null)
+            {
+                try
+                {
+                    return DefaultFirewall.OnHttpHeaderComepleted(tcpClient, ref key,ref value);
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError(ex, "OnHttpHeaderComepleted");
+                }
+            }
+
+            return true;
+        }
+
+        public Task<bool> OnHttpHeadersComepleted(ClientInfo clientInfo)
+        {
+            if (DefaultFirewall != null)
+            {
+                try
+                {
+                    return DefaultFirewall.OnHttpHeadersComepleted(clientInfo);
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError(ex, "OnHttpHeadersComepleted");
+                }
+            }
+
+            return Task.FromResult(true);
+        }
     }
 }

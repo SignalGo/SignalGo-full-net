@@ -27,6 +27,17 @@ namespace SignalGo.Shared.Http
             }
             return result;
         }
+        
+        public static Shared.Http.WebHeaderCollection GetHttpHeaders(Dictionary<string,string> headers)
+        {
+            Shared.Http.WebHeaderCollection result = new Shared.Http.WebHeaderCollection();
+            foreach (var item in headers)
+            {
+                result.Add(item.Key, item.Value.Trim());
+            }
+            return result;
+        }
+
         private ConcurrentDictionary<string, string[]> Items { get; set; } = new ConcurrentDictionary<string, string[]>();
         //
         // Summary:

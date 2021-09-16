@@ -41,6 +41,20 @@ namespace SignalGo.Server.ServiceManager.Firewall
         /// <returns></returns>
         Task<bool> OnServerInternalError(ClientInfo clientInfo, Exception exception);
         /// <summary>
+        /// when any http header read comeplete
+        /// </summary>
+        /// <param name="tcpClient"></param>
+        /// <param name="key"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        bool OnHttpHeaderComepleted(TcpClient tcpClient, ref string key, ref string value);
+        /// <summary>
+        /// when all of headers readed completed
+        /// </summary>
+        /// <param name="clientInfo"></param>
+        /// <returns></returns>
+        Task<bool> OnHttpHeadersComepleted(ClientInfo clientInfo);
+        /// <summary>
         /// when client want to call your server method
         /// </summary>
         /// <param name="clientInfo"></param>

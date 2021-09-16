@@ -1,6 +1,5 @@
 ﻿using SignalGo.Server.Helpers;
 using SignalGo.Server.ServiceManager;
-using SignalGo.Shared.DataTypes;
 using SignalGo.Shared.Http;
 using SignalGo.Shared.IO;
 using SignalGo.Shared.Models;
@@ -118,6 +117,11 @@ namespace SignalGo.Server.Models
         }
 
         /// <summary>
+        /// forward ip is your custom ip when you are using hardware firewall you can fill this
+        /// </summary>
+        public string ForwardIPAddress { get; set; }
+
+        /// <summary>
         /// version of client
         /// </summary>
         public uint? ClientVersion { get; set; }
@@ -132,7 +136,7 @@ namespace SignalGo.Server.Models
         /// <summary>
         /// tcp client
         /// </summary>
-        internal TcpClient TcpClient { get; set; }
+        public TcpClient TcpClient { get; internal set; }
         /// <summary>
         /// date of connected
         /// </summary>

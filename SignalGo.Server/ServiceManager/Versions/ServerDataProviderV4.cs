@@ -195,6 +195,7 @@ namespace SignalGo.Server.ServiceManager.Versions
                 }
 
                 string firstLineString = await reader.ReadLineAsync();
+
                 if (firstLineString.Contains("SignalGo-Stream/4.0"))
                 {
                     if (!_serverBase.ProviderSetting.IsEnabledToUseTimeout)
@@ -254,10 +255,7 @@ namespace SignalGo.Server.ServiceManager.Versions
                         tcpClient.GetStream().ReadTimeout = (int)_serverBase.ProviderSetting.HttpSetting.ReceiveDataTimeout.TotalMilliseconds;
                         tcpClient.GetStream().WriteTimeout = (int)_serverBase.ProviderSetting.HttpSetting.SendDataTimeout.TotalMilliseconds;
                     }
-                    if (await _serverBase.Firewall.OnClientInitialized(client))
-                        await HttpProvider.StartToReadingClientData(tcpClient, _serverBase, reader, new StringBuilder(firstLineString));
-                    else
-                        _serverBase.DisposeClient(client, tcpClient, "firewall dropped!");
+                    await HttpProvider.StartToReadingClientData(tcpClient, _serverBase, reader, new StringBuilder(firstLineString));
                 }
                 else
                 {

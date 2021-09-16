@@ -95,38 +95,69 @@ namespace SignalGo.Server.ServiceManager.Providers
             });
         }
 
+        static readonly char[] splitChars = { ':' };
         public static async Task StartToReadingClientData(TcpClient tcpClient, ServerBase serverBase, PipeNetworkStream reader, StringBuilder builder)
         {
             //Console.WriteLine($"Http Client Connected: {((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address.ToString().Replace("::ffff:", "")}");
             ClientInfo client = null;
             try
             {
+                reader.MaximumLineSize = serverBase.ProviderSetting.HttpSetting.MaximumHeaderSize;
+                if (reader.MaximumLineSize > 0)
+                {
+                    reader.MaximumLineSizeReadedFunction = () =>
+                    {
+                        return serverBase.Firewall.OnDangerDataReceived(tcpClient, Firewall.DangerDataType.HeaderSize);
+                    };
+                }
+
+                Dictionary<string, string> headers = new Dictionary<string, string>();
+                string firstLine = builder.ToString();
                 while (true)
                 {
                     string line = await reader.ReadLineAsync();
                     builder.Append(line);
 
-                    if (serverBase.ProviderSetting.HttpSetting.MaximumHeaderSize > 0 && builder.Length > serverBase.ProviderSetting.HttpSetting.MaximumHeaderSize)
+                    if (line == TextHelper.NewLine)
+                        break;
+                    var split = line.Split(splitChars, 2);
+                    if (split.Length != 2)
                     {
-                        if (!await serverBase.Firewall.OnDangerDataReceived(tcpClient, Firewall.DangerDataType.HeaderSize))
+                        if (!await serverBase.Firewall.OnDangerDataReceived(tcpClient, Firewall.DangerDataType.InvalidHeader))
                         {
-                            serverBase.DisposeClient(client, client.TcpClient, "firewall danger http header size!");
+                            serverBase.DisposeClient(client, tcpClient, "firewall dropped!");
                             return;
                         }
                     }
+                    string headerKey = split[0];
+                    string headerValue = split[1];
 
-                    if (line == TextHelper.NewLine)
-                        break;
+                    if (!headers.ContainsKey(headerKey))
+                    {
+                        if (!serverBase.Firewall.OnHttpHeaderComepleted(tcpClient, ref headerKey, ref headerValue))
+                        {
+                            serverBase.DisposeClient(client, tcpClient, "firewall dropped!");
+                            return;
+                        }
+                        headers.Add(headerKey, headerValue);
+                    }
                 }
 
-                string requestHeaders = builder.ToString();
-                if (requestHeaders.Contains("Sec-WebSocket-Key"))
+
+                if (headers.ContainsKey("Sec-WebSocket-Key"))
                 {
+                    string requestHeaders = builder.ToString();
                     tcpClient.ReceiveTimeout = -1;
                     tcpClient.SendTimeout = -1;
                     client = serverBase.ServerDataProvider.CreateClientInfo(false, tcpClient, reader);
                     client.ProtocolType = ClientProtocolType.WebSocket;
                     client.IsWebSocket = true;
+                    if (!await serverBase.Firewall.OnClientInitialized(client))
+                    {
+                        serverBase.DisposeClient(client, tcpClient, "firewall dropped!");
+                        return;
+                    }
+
                     string key = requestHeaders.Replace("ey:", "`").Split('`')[1].Replace("\r", "").Split('\n')[0].Trim();
                     string acceptKey = AcceptKey(ref key);
                     string newLine = TextHelper.NewLine;
@@ -155,11 +186,16 @@ namespace SignalGo.Server.ServiceManager.Providers
                     //    //await HttpProvider.AddWebSocketHttpClient(client, serverBase);
                     //}
                 }
-                else if (requestHeaders.Contains("SignalGoHttpDuplex"))
+                else if (headers.ContainsKey("SignalGoHttpDuplex"))
                 {
                     client = serverBase.ServerDataProvider.CreateClientInfo(false, tcpClient, reader);
                     client.ProtocolType = ClientProtocolType.HttpDuplex;
                     client.StreamHelper = SignalGoStreamBase.CurrentBase;
+                    if (!await serverBase.Firewall.OnClientInitialized(client))
+                    {
+                        serverBase.DisposeClient(client, tcpClient, "firewall dropped!");
+                        return;
+                    }
                     await SignalGoDuplexServiceProvider.StartToReadingClientData(client, serverBase);
                 }
                 else
@@ -170,20 +206,26 @@ namespace SignalGo.Server.ServiceManager.Providers
                         client = (HttpClientInfo)serverBase.ServerDataProvider.CreateClientInfo(true, tcpClient, reader);
                         client.ProtocolType = ClientProtocolType.Http;
                         client.StreamHelper = SignalGoStreamBase.CurrentBase;
-
-                        string[] lines = null;
-                        if (requestHeaders.Contains(TextHelper.NewLine + TextHelper.NewLine))
-                            lines = requestHeaders.Substring(0, requestHeaders.IndexOf(TextHelper.NewLine + TextHelper.NewLine)).Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-                        else
-                            lines = requestHeaders.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-                        if (lines.Length > 0)
+                        if (!await serverBase.Firewall.OnClientInitialized(client))
                         {
-
-                            string methodName = GetHttpMethodName(lines[0]);
-                            string address = GetHttpAddress(lines[0]);
-                            if (requestHeaders != null)
-                                ((HttpClientInfo)client).RequestHeaders = SignalGo.Shared.Http.WebHeaderCollection.GetHttpHeaders(lines.Skip(1).ToArray());
-
+                            serverBase.DisposeClient(client, tcpClient, "firewall dropped!");
+                            return;
+                        }
+                        //string[] lines = null;
+                        //if (requestHeaders.Contains(TextHelper.NewLine + TextHelper.NewLine))
+                        //    lines = requestHeaders.Substring(0, requestHeaders.IndexOf(TextHelper.NewLine + TextHelper.NewLine)).Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                        //else
+                        //    lines = requestHeaders.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                        if (headers.Count > 0)
+                        {
+                            string methodName = GetHttpMethodName(firstLine);
+                            string address = GetHttpAddress(firstLine);
+                            ((HttpClientInfo)client).RequestHeaders = SignalGo.Shared.Http.WebHeaderCollection.GetHttpHeaders(headers);
+                            if (!await serverBase.Firewall.OnHttpHeadersComepleted(client))
+                            {
+                                serverBase.DisposeClient(client, tcpClient, "firewall dropped!");
+                                return;
+                            }
                             await HandleHttpRequest(methodName, address, serverBase, (HttpClientInfo)client);
                         }
                         else
