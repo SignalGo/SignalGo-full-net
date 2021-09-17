@@ -43,9 +43,78 @@ namespace SignalGo.Server.ServiceManager.Providers
             return serverBase.RegisteredServiceTypes.ContainsKey(serviceName);
         }
 
-        public static Task<CallMethodResultInfo<OperationContext>> CallMethod(string serviceName, string guid, string realMethodName, string methodName, SignalGo.Shared.Models.ParameterInfo[] parameters, string jsonParameters, ClientInfo client, string json, ServerBase serverBase, HttpPostedFileInfo fileInfo, Func<MethodInfo, bool> canTakeMethod)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="serviceName"></param>
+        /// <param name="guid"></param>
+        /// <param name="realMethodName"></param>
+        /// <param name="methodName"></param>
+        /// <param name="parameters"></param>
+        /// <param name="jsonParameters"></param>
+        /// <param name="client"></param>
+        /// <param name="json"></param>
+        /// <param name="serverBase"></param>
+        /// <param name="fileInfo"></param>
+        /// <param name="canTakeMethod"></param>
+        /// <returns></returns>
+        public static async Task<CallMethodResultInfo<OperationContext>> CallMethod(string serviceName, string guid, string realMethodName, string methodName, SignalGo.Shared.Models.ParameterInfo[] parameters, string jsonParameters, ClientInfo client, string json, ServerBase serverBase, HttpPostedFileInfo fileInfo, Func<MethodInfo, bool> canTakeMethod)
         {
-            return Task.Run(async () =>
+            if (serverBase.Firewall?.DefaultFirewall != null)
+            {
+                var result = await Task.Run(async () =>
+                {
+                    int taskId = Task.CurrentId.GetValueOrDefault();
+                    serverBase.AddTask(taskId, client.ClientId);
+
+                    Exception exception = null;
+                    MethodCallbackInfo callback = new MethodCallbackInfo()
+                    {
+                        Guid = guid
+                    };
+
+                    OperationContext context = OperationContext.Current;
+                    try
+                    {
+                        var callResult = await serverBase.Firewall.OnCallingMethod(client, serviceName, methodName, parameters, jsonParameters);
+                        if (callResult != null)
+                        {
+                            callback.Data = ServerSerializationHelper.SerializeObject(callResult, serverBase, Newtonsoft.Json.NullValueHandling.Ignore, null, client, false, false);
+                        }
+                        else
+                            return null;
+                    }
+                    catch (Exception ex)
+                    {
+                        if (!await serverBase.Firewall.OnServerInternalError(client, ex))
+                        {
+                            serverBase.DisposeClient(client, client.TcpClient, "firewall internal error!");
+                        }
+
+                        exception = ex;
+                        serverBase.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase CallMethod 2: {methodName} serviceName: {serviceName} jsonParameters : {jsonParameters} {ServerSerializationHelper.SerializeObject(parameters)} json: {json}");
+                        if (serverBase.ErrorHandlingFunction != null)
+                        {
+                            callback.Data = ServerSerializationHelper.SerializeObject(serverBase.ErrorHandlingFunction(ex, null, null, client));
+                        }
+                        else
+                        {
+                            callback.IsException = true;
+                            callback.Data = ServerSerializationHelper.SerializeObject(ex.ToString(), serverBase);
+                        }
+                    }
+                    finally
+                    {
+                        serverBase.RemoveTask(taskId);
+                        DataExchanger.Clear();
+                    }
+                    return new CallMethodResultInfo<OperationContext>(callback, null, new List<HttpKeyAttribute>(), null, null, null, null, context, null);
+                });
+
+                if (result != null)
+                    return result;
+            }
+            return await Task.Run(async () =>
             {
                 int taskId = Task.CurrentId.GetValueOrDefault();
                 serverBase.AddTask(taskId, client.ClientId);
@@ -191,13 +260,6 @@ namespace SignalGo.Server.ServiceManager.Providers
                         {
                             parametersValues[0] = parameters.ToList();
                         }
-                    }
-
-                    var callResult = await serverBase.Firewall.OnCallingMethod(client, serviceName, serviceType, methodName, method, parametersValues?.ToArray());
-                    if (callResult != null)
-                    {
-                        callback.Data = ServerSerializationHelper.SerializeObject(result, serverBase, customDataExchanger: customDataExchanger.ToArray(), client: client, isEnabledReferenceResolver: isEnabledReferenceResolver, isEnabledReferenceResolverForArray: isEnabledReferenceResolverForArray);
-                        return new CallMethodResultInfo<OperationContext>(callback, streamInfo, httpKeyAttributes, serviceType, method, service, fileActionResult, context, result);
                     }
 
                     if (validationErrors != null && validationErrors.Count > 0)
@@ -567,6 +629,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 }
                 return new CallMethodResultInfo<OperationContext>(callback, streamInfo, httpKeyAttributes, serviceType, method, service, fileActionResult, context, result);
             });
+
         }
 
         static async Task<object> InvokerMethod(ClientInfo client, ServerBase serverBase, MethodInfo method, object service, List<object> parametersValues)

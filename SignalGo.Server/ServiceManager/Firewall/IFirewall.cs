@@ -59,11 +59,10 @@ namespace SignalGo.Server.ServiceManager.Firewall
         /// </summary>
         /// <param name="clientInfo"></param>
         /// <param name="serviceName"></param>
-        /// <param name="serviceType"></param>
         /// <param name="methodName"></param>
-        /// <param name="methodInfo"></param>
         /// <param name="parameters"></param>
+        /// <param name="jsonParameters"></param>
         /// <returns>if you set the result this will return to client before do anything</returns>
-        Task<object> OnCallingMethod(ClientInfo clientInfo, string serviceName, Type serviceType, string methodName, MethodInfo methodInfo, object[] parameters);
+        Task<object> OnCallingMethod(ClientInfo clientInfo, string serviceName, string methodName, SignalGo.Shared.Models.ParameterInfo[] parameters, string jsonParameters);
     }
 }

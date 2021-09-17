@@ -2,7 +2,6 @@
 using SignalGo.Shared.Log;
 using System;
 using System.Net.Sockets;
-using System.Reflection;
 using System.Threading.Tasks;
 
 namespace SignalGo.Server.ServiceManager.Firewall
@@ -11,13 +10,13 @@ namespace SignalGo.Server.ServiceManager.Firewall
     {
         AutoLogger Logger { get; set; } = new AutoLogger() { FileName = "Firewall.log" };
         internal IFirewall DefaultFirewall { get; set; }
-        public Task<object> OnCallingMethod(ClientInfo clientInfo, string serviceName, Type serviceType, string methodName, MethodInfo methodInfo, object[] parameters)
+        public Task<object> OnCallingMethod(ClientInfo clientInfo, string serviceName, string methodName, SignalGo.Shared.Models.ParameterInfo[] parameters, string jsonParameters)
         {
             if (DefaultFirewall != null)
             {
                 try
                 {
-                    return DefaultFirewall.OnCallingMethod(clientInfo, serviceName, serviceType, methodName, methodInfo, parameters);
+                    return DefaultFirewall.OnCallingMethod(clientInfo, serviceName, methodName, parameters, jsonParameters);
                 }
                 catch (Exception ex)
                 {
@@ -102,7 +101,7 @@ namespace SignalGo.Server.ServiceManager.Firewall
             {
                 try
                 {
-                    return DefaultFirewall.OnHttpHeaderComepleted(tcpClient, ref key,ref value);
+                    return DefaultFirewall.OnHttpHeaderComepleted(tcpClient, ref key, ref value);
                 }
                 catch (Exception ex)
                 {
