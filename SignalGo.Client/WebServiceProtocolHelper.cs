@@ -169,6 +169,15 @@ namespace SignalGo.Client
                     using (System.Net.Http.HttpResponseMessage response = await _httpClient.SendAsync(httpRequestMessage, System.Net.Http.HttpCompletionOption.ResponseContentRead, cts.Token))
                     {
                         var data = await response.Content.ReadAsStringAsync();
+                        if (response.Content.Headers.TryGetValues("Content-Type", out IEnumerable<string> values))
+                        {
+                            string type = values.FirstOrDefault();
+                            if (type != null && !type.ToLower().Contains("text/xml"))
+                            {
+                                tryCount = logger.Settings.RetryCount;
+                                throw new Exception($"I just support text/xml as content type your type is {type} and your data is :\\r\\n {data}");
+                            }
+                        }
 
                         logger.Settings.ResponseHeaders = new WebHeaderCollection();
                         foreach (var item in response.Headers)
