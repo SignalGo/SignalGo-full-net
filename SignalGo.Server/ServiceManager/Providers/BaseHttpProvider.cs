@@ -211,7 +211,8 @@ namespace SignalGo.Server.ServiceManager.Providers
 
             string fullAddress = address;
             address = address.Trim('/');
-            List<string> lines = address.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries).ToList();
+            var seperateServiceFromParameters = address.Split(new char[] { '?' }, 2);
+            List<string> lines = seperateServiceFromParameters[0].Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries).ToList();
             //if (lines.Count <= 1)
             //{
             //    string data = newLine + "SignalGo Error: method not found from address: " + address + newLine;
@@ -236,6 +237,11 @@ namespace SignalGo.Server.ServiceManager.Providers
                     string[] sp = methodName.Split(new[] { '?' }, 2);
                     methodName = sp.First();
                     parameters = sp.Last();
+                }
+                else
+                {
+                    if (seperateServiceFromParameters.Length > 1)
+                        parameters = seperateServiceFromParameters[1];
                 }
             }
             else if (isPost)
@@ -318,7 +324,7 @@ namespace SignalGo.Server.ServiceManager.Providers
 
             string realmethodName = methodName;
             methodName = methodName.ToLower();
-
+            //remove method name from address
             lines.RemoveAt(lines.Count - 1);
             address = "";
             foreach (string item in lines)
