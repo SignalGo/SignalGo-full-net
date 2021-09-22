@@ -186,6 +186,10 @@ namespace SignalGo.Server.ServiceManager
         /// </summary>
         public Func<Exception, Type, MethodInfo, ClientInfo, object> ErrorHandlingFunction { get; set; }
         /// <summary>
+        /// when server try to send response to client you can change response or customize it
+        /// </summary>
+        public Func<object, Type, MethodInfo, ClientInfo, object> OnSendResponseToClientFunction { get; set; }
+        /// <summary>
         /// if you don't want to trhow exception when method have error validation you can fill this function to customize your result for client
         /// </summary>
         public Func<List<BaseValidationRuleInfoAttribute>, object, MethodInfo, object> ValidationResultHandlingFunction { get; set; }
@@ -376,6 +380,11 @@ namespace SignalGo.Server.ServiceManager
             if (firewall == null)
                 throw new NullReferenceException("parameter firewall cannot be null or empty!");
             Firewall.DefaultFirewall = firewall;
+        }
+
+        public IFirewall GetFirewall()
+        {
+            return Firewall.DefaultFirewall;
         }
 
         public void RemoveTask(int taskId)
