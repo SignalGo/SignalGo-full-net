@@ -177,7 +177,6 @@ namespace SignalGo.Shared.Log
             await GenerateSavePath();
 #endif
 
-            string fileName = SavePath;
             try
             {
 #if (NET35 || NET40)
@@ -185,6 +184,7 @@ namespace SignalGo.Shared.Log
 #else
                 await lockWaitToRead.WaitAsync();
 #endif
+                string fileName = SavePath;
                 using (FileStream stream = new FileStream(fileName, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite))
                 {
                     stream.Seek(0, SeekOrigin.End);
@@ -198,7 +198,7 @@ namespace SignalGo.Shared.Log
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                Console.WriteLine($"for file {SavePath}" + ex);
             }
             finally
             {
@@ -233,7 +233,6 @@ namespace SignalGo.Shared.Log
 #else
                 await GenerateSavePath();
 #endif
-                string fileName = SavePath;
 
                 try
                 {
@@ -242,6 +241,7 @@ namespace SignalGo.Shared.Log
 #else
                     await lockWaitToRead.WaitAsync();
 #endif
+                    string fileName = SavePath;
                     using (FileStream stream = new FileStream(fileName, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite))
                     {
                         stream.Seek(0, SeekOrigin.End);
@@ -256,7 +256,7 @@ namespace SignalGo.Shared.Log
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine(ex);
+                    Console.WriteLine($"for file {SavePath}" + ex);
                 }
                 finally
                 {
