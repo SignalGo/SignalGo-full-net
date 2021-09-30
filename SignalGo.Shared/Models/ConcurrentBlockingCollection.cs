@@ -1,5 +1,4 @@
-﻿using SignalGo.Shared.Helpers;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -250,6 +249,26 @@ namespace SignalGo.Shared.Models
         public IEnumerator<T> GetEnumerator()
         {
             return _items.Cast<T>().GetEnumerator();
+        }
+
+#if (!NET35 && !NET40)
+        public async Task<List<T>> GetList()
+        {
+            try
+            {
+                await _addLock.WaitAsync();
+                return _items.Cast<T>().ToList();
+            }
+            finally
+            {
+                _addLock.Release();
+            }
+        }
+#endif
+
+        public List<T> GetList(Func<T, bool> predicate)
+        {
+            return _items.Cast<T>().Where(predicate).ToList();
         }
     }
 
