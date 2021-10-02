@@ -263,6 +263,21 @@ namespace SignalGo.Server.ServiceManager
         }
 
         /// <summary>
+        /// get service route name by service type
+        /// </summary>
+        /// <param name="serviceType"></param>
+        /// <returns></returns>
+        public string GetServiceName(Type serviceType)
+        {
+            ServiceContractAttribute service = serviceType?.GetClientServiceAttribute();
+            if (service != null)
+            {
+                return service.GetServiceName(false);
+            }
+            return null;
+        }
+
+        /// <summary>
         /// GetListOfRegistredTypes
         /// </summary>
         /// <returns></returns>
