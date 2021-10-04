@@ -183,6 +183,16 @@ namespace SignalGo.Shared.DataTypes
             return type.GetCustomAttributes<ServiceContractAttribute>(true).Any(x => x.ServiceType == ServiceType.ServerService);
         }
 
+        /// <summary>
+        /// check if type is server service
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public static bool IsAnyOfServerService(this Type type)
+        {
+            return type.GetCustomAttributes<ServiceContractAttribute>(true).Any(x => x.ServiceType == ServiceType.ServerService || x.ServiceType == ServiceType.HttpService || x.ServiceType == ServiceType.StreamService || x.ServiceType == ServiceType.OneWayService);
+        }
+
         public static bool HasServiceAttribute(this Type type)
         {
             return type.GetCustomAttributes<ServiceContractAttribute>(true).Count() > 0;
@@ -219,7 +229,7 @@ namespace SignalGo.Shared.DataTypes
         {
             ServiceContractAttribute[] serviceContract = type.GetCustomAttributes<ServiceContractAttribute>(true);
             if (serviceContract.Length == 0)
-                throw new Exception("your server class must have ServiceContract attribute that have ServiceType == ServiceType.SeverService parameter");
+                throw new Exception($"your server class must have ServiceContract attribute that have ServiceType == ServiceType.SeverService parameter of type {type.FullName}");
             return serviceContract;
         }
 
@@ -232,7 +242,7 @@ namespace SignalGo.Shared.DataTypes
         {
             ServiceContractAttribute serviceContract = type.GetCustomAttributes<ServiceContractAttribute>(true).Where(x => x.ServiceType == ServiceType.ServerService || x.ServiceType == ServiceType.HttpService || x.ServiceType == ServiceType.StreamService || x.ServiceType == ServiceType.OneWayService).FirstOrDefault();
             if (serviceContract == null)
-                throw new Exception("your server class must have ServiceContract attribute that have ServiceType == ServiceType.SeverService parameter");
+                throw new Exception($"your server class must have ServiceContract attribute that have ServiceType == ServiceType.SeverService parameter of type {type.FullName}");
             return serviceContract;
         }
 
@@ -257,7 +267,7 @@ namespace SignalGo.Shared.DataTypes
         {
             ServiceContractAttribute serviceContract = type.GetCustomAttributes<ServiceContractAttribute>(true).Where(x => x.ServiceType == ServiceType.ServerService || x.ServiceType == ServiceType.HttpService || x.ServiceType == ServiceType.StreamService || x.ServiceType == ServiceType.OneWayService).Where(x => x.GetServiceName(isClient).Equals(serviceName, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
             if (serviceContract == null)
-                throw new Exception("your server class must have ServiceContract attribute that have ServiceType == ServiceType.SeverService parameter");
+                throw new Exception($"your server class must have ServiceContract attribute that have ServiceType == ServiceType.SeverService parameter of type {type.FullName}");
             return serviceContract;
         }
         /// <summary>
@@ -269,7 +279,7 @@ namespace SignalGo.Shared.DataTypes
         {
             ServiceContractAttribute serviceContract = type.GetCustomAttributes<ServiceContractAttribute>(true).Where(x => x.ServiceType == ServiceType.ClientService).FirstOrDefault();
             if (serviceContract == null)
-                throw new Exception("your client class must have ServiceContract attribute that have ServiceType == ServiceType.ClientService parameter");
+                throw new Exception($"your client class must have ServiceContract attribute that have ServiceType == ServiceType.ClientService parameter of type {type.FullName}");
             return serviceContract;
         }
     }

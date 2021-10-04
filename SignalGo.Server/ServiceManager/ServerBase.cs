@@ -269,11 +269,27 @@ namespace SignalGo.Server.ServiceManager
         /// <returns></returns>
         public string GetServiceName(Type serviceType)
         {
-            ServiceContractAttribute service = serviceType?.GetClientServiceAttribute();
-            if (service != null)
+            if (serviceType == null)
+                return null;
+            if (serviceType.IsClientService())
             {
-                return service.GetServiceName(false);
+                ServiceContractAttribute service = serviceType.GetClientServiceAttribute();
+                if (service != null)
+                {
+                    return service.GetServiceName(false);
+                }
             }
+            else if (serviceType.IsAnyOfServerService())
+            {
+                ServiceContractAttribute service = serviceType.GetServerServiceAttribute();
+                if (service != null)
+                {
+                    return service.GetServiceName(false);
+                }
+            }
+            else
+                throw new Exception($"type of {serviceType} is not server or clientService I think you forgot to register it!");
+
             return null;
         }
 
