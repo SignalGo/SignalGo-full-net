@@ -67,7 +67,7 @@ namespace SignalGo.Client.ClientManager
         /// <returns></returns>
         public static async Task<T> SendDataAsync<T>(this ConnectorBase connector, string serviceName, string methodName, params Shared.Models.ParameterInfo[] args)
         {
-            string data = await SendDataAsync(connector, serviceName, methodName, args);
+            string data = await SendDataAsync(connector, serviceName, methodName, args).ConfigureAwait(false);
             if (string.IsNullOrEmpty(data))
                 return default(T);
             return ClientSerializationHelper.DeserializeObject<T>(data.ToString());
@@ -105,7 +105,7 @@ namespace SignalGo.Client.ClientManager
 #else
         internal static async Task<T> SendData<T>(this ConnectorBase connector, MethodCallInfo callInfo)
         {
-            string data = await SendDataAsync(connector, callInfo);
+            string data = await SendDataAsync(connector, callInfo).ConfigureAwait(false);
 #endif
 
             if (string.IsNullOrEmpty(data))
@@ -175,7 +175,7 @@ namespace SignalGo.Client.ClientManager
             //}
             string guid = Guid.NewGuid().ToString();
             callInfo.Guid = guid;
-            return await SendDataAsync(connector, callInfo);
+            return await SendDataAsync(connector, callInfo).ConfigureAwait(false);
         }
 #endif
 
@@ -210,7 +210,7 @@ namespace SignalGo.Client.ClientManager
             string guid = Guid.NewGuid().ToString();
             callInfo.Guid = guid;
 #if (!NET40 && !NET35)
-            return await SendDataAsync<T>(connector, method, callInfo, args);
+            return await SendDataAsync<T>(connector, method, callInfo, args).ConfigureAwait(false);
 #else
             return SendDataAsync<T>(connector, method, callInfo, args);
 #endif
@@ -237,8 +237,8 @@ namespace SignalGo.Client.ClientManager
                 //
                 isIgnorePriority = method?.GetCustomAttributes<PriorityCallAttribute>().Count() > 0;
                 Debug.WriteLine($"Wait for task of {callInfo.Guid} of {connector.ServerUrl} async");
-                await connector.SendDataAsync(callInfo);
-                var result = await valueData.GetValue();
+                await connector.SendDataAsync(callInfo).ConfigureAwait(false);
+                var result = await valueData.GetValue().ConfigureAwait(false);
                 Debug.WriteLine($"Wait for task of {callInfo.Guid} of {connector.ServerUrl} done! {result == null} async");
 
                 if (result == null)
@@ -260,7 +260,7 @@ namespace SignalGo.Client.ClientManager
             catch (Exception ex)
             {
                 Debug.WriteLine($"Wait for task of {callInfo.Guid} of {connector.ServerUrl} has exception! {ex}");
-                if (connector.IsConnected && !await connector.SendPingAndWaitToReceiveAsync())
+                if (connector.IsConnected && !await connector.SendPingAndWaitToReceiveAsync().ConfigureAwait(false))
                 {
                     connector.Disconnect();
                 }
@@ -343,7 +343,7 @@ namespace SignalGo.Client.ClientManager
 #if (NET40 || NET35)
                 string result = SendData(connector, callInfo);
 #else
-                string result = await SendDataAsync(connector, callInfo);
+                string result = await SendDataAsync(connector, callInfo).ConfigureAwait(false);
 #endif
                 object deserialeResult = ClientSerializationHelper.DeserializeObject(result, typeof(T));
                 return (T)deserialeResult;

@@ -668,11 +668,11 @@ namespace SignalGo.Server.Models
                         task = (Task)sendDataMethod.Invoke(null, new object[] { serverBase, client, returnType, serviceName, method.Name, method.MethodToParameters(x => ServerSerializationHelper.SerializeObject(x, serverBase), args).ToArray() });
                     }
                     Debug.WriteLine("DeadLock Warning GenerateClientServiceInstance!");
-                    task.GetAwaiter().GetResult();
+                    task.ConfigureAwait(false).GetAwaiter().GetResult();
                     object result1 = task.GetType().GetProperty("Result").GetValue(task);
                     if (result1 is Task task2)
                     {
-                        task2.GetAwaiter().GetResult();
+                        task2.ConfigureAwait(false).GetAwaiter().GetResult();
                         return task2.GetType().GetProperty("Result").GetValue(task2, null);
                     }
                     if (method.ReturnType == typeof(Task))
@@ -694,14 +694,14 @@ namespace SignalGo.Server.Models
                         MethodInfo sendDataMethod = typeof(ServerExtensions).GetMethod("SendWebSocketDataWithCallClientServiceMethod", BindingFlags.Static | BindingFlags.NonPublic)
                             .MakeGenericMethod(returnType);
                         var taskObject = (Task<object>)castMethod.Invoke(null, new object[] { sendDataMethod.Invoke(null, new object[] { serverBase, client, returnType, serviceName, method.Name, method.MethodToParameters(x => ServerSerializationHelper.SerializeObject(x, serverBase), args).ToArray() }) });
-                        return await taskObject;
+                        return await taskObject.ConfigureAwait(false);
                     }
                     else
                     {
                         MethodInfo sendDataMethod = typeof(ServerExtensions).GetMethod("SendDataWithCallClientServiceMethod", BindingFlags.Static | BindingFlags.NonPublic)
                             .MakeGenericMethod(returnType);
                         var taskObject = (Task<object>)castMethod.Invoke(null, new object[] { sendDataMethod.Invoke(null, new object[] { serverBase, client, returnType, serviceName, method.Name, method.MethodToParameters(x => ServerSerializationHelper.SerializeObject(x, serverBase), args).ToArray() }) });
-                        return await taskObject;
+                        return await taskObject.ConfigureAwait(false);
                     }
                     throw new NotSupportedException();
                 });

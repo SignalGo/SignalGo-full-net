@@ -36,7 +36,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                         client.RequestHeaders = requestHeaders;
                     if (responseHeaders != null)
                         client.ResponseHeaders = responseHeaders;
-                    await HandleHttpRequest(methodName, address, serverBase, client);
+                    await HandleHttpRequest(methodName, address, serverBase, client).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
@@ -44,7 +44,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                         throw;
                     serverBase.DisposeClient(client, null, "HttpProvider AddHttpClient exception");
                 }
-            });
+            }).ConfigureAwait(false);
         }
 
 #if (NET35 || NET40)
@@ -62,7 +62,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 try
                 {
                     client.IsWebSocket = true;
-                    await WebSocketProvider.StartToReadingClientData(client, serverBase);
+                    await WebSocketProvider.StartToReadingClientData(client, serverBase).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
@@ -86,7 +86,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 try
                 {
                     client.IsWebSocket = true;
-                    await SignalgoWebSocketProvider.StartToReadingClientData(client, serverBase);
+                    await SignalgoWebSocketProvider.StartToReadingClientData(client, serverBase).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
@@ -115,7 +115,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 string firstLine = builder.ToString();
                 while (true)
                 {
-                    string line = await reader.ReadLineAsync();
+                    string line = await reader.ReadLineAsync().ConfigureAwait(false);
                     builder.Append(line);
 
                     if (line == TextHelper.NewLine)
@@ -123,7 +123,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     var split = line.Split(splitChars, 2);
                     if (split.Length != 2)
                     {
-                        if (!await serverBase.Firewall.OnDangerDataReceived(tcpClient, Firewall.DangerDataType.InvalidHeader))
+                        if (!await serverBase.Firewall.OnDangerDataReceived(tcpClient, Firewall.DangerDataType.InvalidHeader).ConfigureAwait(false))
                         {
                             serverBase.DisposeClient(client, tcpClient, "firewall dropped!");
                             return;
@@ -152,7 +152,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     client = serverBase.ServerDataProvider.CreateClientInfo(false, tcpClient, reader);
                     client.ProtocolType = ClientProtocolType.WebSocket;
                     client.IsWebSocket = true;
-                    if (!await serverBase.Firewall.OnClientInitialized(client))
+                    if (!await serverBase.Firewall.OnClientInitialized(client).ConfigureAwait(false))
                     {
                         serverBase.DisposeClient(client, tcpClient, "firewall dropped!");
                         return;
@@ -168,10 +168,10 @@ namespace SignalGo.Server.ServiceManager.Providers
                      + "Connection: Upgrade" + newLine
                      + "Sec-WebSocket-Accept: " + acceptKey + newLine + newLine;
                     byte[] bytes = System.Text.Encoding.ASCII.GetBytes(response);
-                    await client.ClientStream.WriteAsync(bytes, 0, bytes.Length);
+                    await client.ClientStream.WriteAsync(bytes, 0, bytes.Length).ConfigureAwait(false);
                     client.StreamHelper = SignalGoStreamBase.CurrentBase;
                     client.ClientStream = new PipeNetworkStream(new WebSocketStream(client.TcpClient.GetStream()));
-                    await AddWebSocketHttpClient(client, serverBase);
+                    await AddWebSocketHttpClient(client, serverBase).ConfigureAwait(false);
                     //if (requestHeaders.Contains("SignalgoDuplexWebSocket"))
                     //{
                     //    await WebSocketProvider.StartToReadingClientData(client, serverBase);
@@ -191,12 +191,12 @@ namespace SignalGo.Server.ServiceManager.Providers
                     client = serverBase.ServerDataProvider.CreateClientInfo(false, tcpClient, reader);
                     client.ProtocolType = ClientProtocolType.HttpDuplex;
                     client.StreamHelper = SignalGoStreamBase.CurrentBase;
-                    if (!await serverBase.Firewall.OnClientInitialized(client))
+                    if (!await serverBase.Firewall.OnClientInitialized(client).ConfigureAwait(false))
                     {
                         serverBase.DisposeClient(client, tcpClient, "firewall dropped!");
                         return;
                     }
-                    await SignalGoDuplexServiceProvider.StartToReadingClientData(client, serverBase);
+                    await SignalGoDuplexServiceProvider.StartToReadingClientData(client, serverBase).ConfigureAwait(false);
                 }
                 else
                 {
@@ -206,7 +206,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                         client = (HttpClientInfo)serverBase.ServerDataProvider.CreateClientInfo(true, tcpClient, reader);
                         client.ProtocolType = ClientProtocolType.Http;
                         client.StreamHelper = SignalGoStreamBase.CurrentBase;
-                        if (!await serverBase.Firewall.OnClientInitialized(client))
+                        if (!await serverBase.Firewall.OnClientInitialized(client).ConfigureAwait(false))
                         {
                             serverBase.DisposeClient(client, tcpClient, "firewall dropped!");
                             return;
@@ -221,12 +221,12 @@ namespace SignalGo.Server.ServiceManager.Providers
                             string methodName = GetHttpMethodName(firstLine);
                             string address = GetHttpAddress(firstLine);
                             ((HttpClientInfo)client).RequestHeaders = SignalGo.Shared.Http.WebHeaderCollection.GetHttpHeaders(headers);
-                            if (!await serverBase.Firewall.OnHttpHeadersComepleted(client))
+                            if (!await serverBase.Firewall.OnHttpHeadersComepleted(client).ConfigureAwait(false))
                             {
                                 serverBase.DisposeClient(client, tcpClient, "firewall dropped!");
                                 return;
                             }
-                            await HandleHttpRequest(methodName, address, serverBase, (HttpClientInfo)client);
+                            await HandleHttpRequest(methodName, address, serverBase, (HttpClientInfo)client).ConfigureAwait(false);
                         }
                         else
                             serverBase.DisposeClient(client, tcpClient, "HttpProvider StartToReadingClientData no line detected");

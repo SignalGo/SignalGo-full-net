@@ -65,16 +65,16 @@ namespace SignalGo.Http
                     form.Add(jsonPart);
                 }
 
-                HttpResponseMessage httpresponse = await httpClient.PostAsync(url, form);
+                HttpResponseMessage httpresponse = await httpClient.PostAsync(url, form).ConfigureAwait(false);
                 if (!httpresponse.IsSuccessStatusCode)
                 {
                     // Unwrap the response and throw as an Api Exception:
-                    throw new Exception(await httpresponse.Content.ReadAsStringAsync());
+                    throw new Exception(await httpresponse.Content.ReadAsStringAsync().ConfigureAwait(false));
                 }
                 else
                 {
                     httpresponse.EnsureSuccessStatusCode();
-                    return new HttpClientResponse() { Data = await httpresponse.Content.ReadAsStringAsync(), ResponseHeaders = httpresponse.Headers, Status = httpresponse.StatusCode };
+                    return new HttpClientResponse() { Data = await httpresponse.Content.ReadAsStringAsync().ConfigureAwait(false), ResponseHeaders = httpresponse.Headers, Status = httpresponse.StatusCode };
                 }
             }
         }

@@ -27,7 +27,7 @@ namespace SignalGo.Server.ServiceManager.Providers
         {
             try
             {
-                CallMethodResultInfo<OperationContext> result = await CallMethod(callInfo.ServiceName, callInfo.Guid, callInfo.MethodName, callInfo.MethodName, callInfo.Parameters.ToArray(), null, client, json, serverBase, null, null);
+                CallMethodResultInfo<OperationContext> result = await CallMethod(callInfo.ServiceName, callInfo.Guid, callInfo.MethodName, callInfo.MethodName, callInfo.Parameters.ToArray(), null, client, json, serverBase, null, null).ConfigureAwait(false);
                 return result.CallbackInfo;
             }
             finally
@@ -76,7 +76,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     OperationContext context = OperationContext.Current;
                     try
                     {
-                        var callResult = await serverBase.Firewall.OnCallingMethod(client, serviceName, methodName, parameters, jsonParameters);
+                        var callResult = await serverBase.Firewall.OnCallingMethod(client, serviceName, methodName, parameters, jsonParameters).ConfigureAwait(false);
                         if (callResult != null)
                         {
                             callback.Data = ServerSerializationHelper.SerializeObject(callResult, serverBase, Newtonsoft.Json.NullValueHandling.Ignore, null, client, false, false);
@@ -86,7 +86,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     }
                     catch (Exception ex)
                     {
-                        if (!await serverBase.Firewall.OnServerInternalError(client, ex))
+                        if (!await serverBase.Firewall.OnServerInternalError(client, ex).ConfigureAwait(false))
                         {
                             serverBase.DisposeClient(client, client.TcpClient, "firewall internal error!");
                         }
@@ -109,7 +109,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                         DataExchanger.Clear();
                     }
                     return new CallMethodResultInfo<OperationContext>(callback, null, new List<HttpKeyAttribute>(), null, null, null, null, context, null);
-                });
+                }).ConfigureAwait(false);
 
                 if (result != null)
                     return result;
@@ -166,7 +166,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                         methodName = methodName.Split('.').FirstOrDefault();
                     }
 
-                    var serviceInstance = await GetInstanceOfService(client, serviceName, serviceType, serverBase);
+                    var serviceInstance = await GetInstanceOfService(client, serviceName, serviceType, serverBase).ConfigureAwait(false);
                     service = serviceInstance.Key;
                     isSingleInstance = serviceInstance.Value;
                     if (service == null)
@@ -408,12 +408,12 @@ namespace SignalGo.Server.ServiceManager.Providers
                                             {
                                                 try
                                                 {
-                                                    await serverBase.LockWaitToRead.WaitAsync();
+                                                    await serverBase.LockWaitToRead.WaitAsync().ConfigureAwait(false);
                                                     await Task.Run(async () =>
                                                     {
                                                         OperationContext.CurrentTaskServer = serverBase;
-                                                        result = await InvokerMethod(client, serverBase, method, service, parametersValues);
-                                                    });
+                                                        result = await InvokerMethod(client, serverBase, method, service, parametersValues).ConfigureAwait(false);
+                                                    }).ConfigureAwait(false);
                                                 }
                                                 finally
                                                 {
@@ -425,12 +425,12 @@ namespace SignalGo.Server.ServiceManager.Providers
                                             {
                                                 try
                                                 {
-                                                    await client.LockWaitToRead.WaitAsync();
+                                                    await client.LockWaitToRead.WaitAsync().ConfigureAwait(false);
                                                     await Task.Run(async () =>
                                                     {
                                                         OperationContext.CurrentTaskServer = serverBase;
-                                                        result = await InvokerMethod(client, serverBase, method, service, parametersValues);
-                                                    });
+                                                        result = await InvokerMethod(client, serverBase, method, service, parametersValues).ConfigureAwait(false);
+                                                    }).ConfigureAwait(false);
                                                 }
                                                 finally
                                                 {
@@ -443,12 +443,12 @@ namespace SignalGo.Server.ServiceManager.Providers
                                                 var slim = ConcurrentObjects.GetIpObject(client.IPAddress);
                                                 try
                                                 {
-                                                    await slim.WaitAsync();
+                                                    await slim.WaitAsync().ConfigureAwait(false);
                                                     await Task.Run(async () =>
                                                     {
                                                         OperationContext.CurrentTaskServer = serverBase;
-                                                        result = await InvokerMethod(client, serverBase, method, service, parametersValues);
-                                                    });
+                                                        result = await InvokerMethod(client, serverBase, method, service, parametersValues).ConfigureAwait(false);
+                                                    }).ConfigureAwait(false);
                                                 }
                                                 finally
                                                 {
@@ -461,12 +461,12 @@ namespace SignalGo.Server.ServiceManager.Providers
                                                 var slim = ConcurrentObjects.GetMethodObject(method);
                                                 try
                                                 {
-                                                    await slim.WaitAsync();
+                                                    await slim.WaitAsync().ConfigureAwait(false);
                                                     await Task.Run(async () =>
                                                     {
                                                         OperationContext.CurrentTaskServer = serverBase;
-                                                        result = await InvokerMethod(client, serverBase, method, service, parametersValues);
-                                                    });
+                                                        result = await InvokerMethod(client, serverBase, method, service, parametersValues).ConfigureAwait(false);
+                                                    }).ConfigureAwait(false);
                                                 }
                                                 finally
                                                 {
@@ -481,12 +481,12 @@ namespace SignalGo.Server.ServiceManager.Providers
                                                 var slim = ConcurrentObjects.GetInstanceObject(service);
                                                 try
                                                 {
-                                                    await slim.WaitAsync();
+                                                    await slim.WaitAsync().ConfigureAwait(false);
                                                     await Task.Run(async () =>
                                                     {
                                                         OperationContext.CurrentTaskServer = serverBase;
-                                                        result = await InvokerMethod(client, serverBase, method, service, parametersValues);
-                                                    });
+                                                        result = await InvokerMethod(client, serverBase, method, service, parametersValues).ConfigureAwait(false);
+                                                    }).ConfigureAwait(false);
                                                 }
                                                 finally
                                                 {
@@ -499,12 +499,12 @@ namespace SignalGo.Server.ServiceManager.Providers
                                                 var slim = ConcurrentObjects.GetInstanceObject(concurrentLockAttribute.Key);
                                                 try
                                                 {
-                                                    await slim.WaitAsync();
+                                                    await slim.WaitAsync().ConfigureAwait(false);
                                                     await Task.Run(async () =>
                                                     {
                                                         OperationContext.CurrentTaskServer = serverBase;
-                                                        result = await InvokerMethod(client, serverBase, method, service, parametersValues);
-                                                    });
+                                                        result = await InvokerMethod(client, serverBase, method, service, parametersValues).ConfigureAwait(false);
+                                                    }).ConfigureAwait(false);
                                                 }
                                                 finally
                                                 {
@@ -516,7 +516,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                                 }
                                 else
                                 {
-                                    result = await InvokerMethod(client, serverBase, method, service, parametersValues);
+                                    result = await InvokerMethod(client, serverBase, method, service, parametersValues).ConfigureAwait(false);
                                 }
 
                                 //if (taskResult != null)
@@ -554,7 +554,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                                         {
                                             if (item.IsThrowWhenNotDisposed)
                                                 throw new Exception($"You forgot to dispose object of type {item.GetType().FullName} in method {methodName} in service {serviceName}");
-                                            await item.CustomDisposeAsync();
+                                            await item.CustomDisposeAsync().ConfigureAwait(false);
                                         }
                                     }
                                 }
@@ -596,7 +596,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 }
                 catch (Exception ex)
                 {
-                    if (!await serverBase.Firewall.OnServerInternalError(client, ex))
+                    if (!await serverBase.Firewall.OnServerInternalError(client, ex).ConfigureAwait(false))
                     {
                         serverBase.DisposeClient(client, client.TcpClient, "firewall internal error!");
                     }
@@ -628,8 +628,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     DataExchanger.Clear();
                 }
                 return new CallMethodResultInfo<OperationContext>(callback, streamInfo, httpKeyAttributes, serviceType, method, service, fileActionResult, context, result);
-            });
-
+            }).ConfigureAwait(false);
         }
 
         static object HandleClientResponse(object response, ClientInfo client, ServerBase serverBase, Type serviceType, MethodInfo method)
@@ -652,7 +651,7 @@ namespace SignalGo.Server.ServiceManager.Providers
             if (IsTask(method))
             {
                 taskResult = (Task)method.Invoke(service, parametersValues.ToArray());
-                await taskResult;
+                await taskResult.ConfigureAwait(false);
             }
             else
                 return method.Invoke(service, parametersValues.ToArray());
@@ -867,7 +866,7 @@ namespace SignalGo.Server.ServiceManager.Providers
             {
                 try
                 {
-                    await client.LockWaitToRead.WaitAsync();
+                    await client.LockWaitToRead.WaitAsync().ConfigureAwait(false);
                     //finx service from multi instance services
                     if (serverBase.MultipleInstanceServices.TryGetValue(attribute.Name, out ConcurrentDictionary<string, object> result))
                     {
@@ -1108,7 +1107,7 @@ namespace SignalGo.Server.ServiceManager.Providers
             {
                 if (client.IsDisposed)
                     return;
-                await SendCallbackData(methodCallback, client, serverBase);
+                await SendCallbackData(methodCallback, client, serverBase).ConfigureAwait(false);
                 //Console.WriteLine($"Calling SendCallbackDataAsync done: {methodCallback.Guid}");
             }
             catch (Exception ex)
@@ -1151,7 +1150,7 @@ namespace SignalGo.Server.ServiceManager.Providers
             if (data.Count > serverBase.ProviderSetting.MaximumSendDataBlock)
                 throw new Exception($"{client.IPAddress} {client.ClientId} SendCallbackData data length exceeds MaximumSendDataBlock");
 
-            await client.StreamHelper.WriteToStreamAsync(client.ClientStream, data.ToArray());
+            await client.StreamHelper.WriteToStreamAsync(client.ClientStream, data.ToArray()).ConfigureAwait(false);
             //Console.WriteLine($"SendCallbackData done: {callback.Guid}");
         }
     }

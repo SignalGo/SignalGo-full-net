@@ -37,11 +37,11 @@ namespace SignalGo.Server.ServiceManager.Providers
                 {
                     if (client.RequestHeaders.ContainsKey("content-type") && client.GetRequestHeaderValue("content-type") == "SignalGo Service Reference")
                     {
-                        await SendSignalGoServiceReference(client, serverBase, address.Trim('/'), methodName);
+                        await SendSignalGoServiceReference(client, serverBase, address.Trim('/'), methodName).ConfigureAwait(false);
                     }
                     else
                     {
-                        await RunHttpRequest(serverBase, address, "GET", "", client);
+                        await RunHttpRequest(serverBase, address, "GET", "", client).ConfigureAwait(false);
                     }
                     serverBase.DisposeClient(client, null, "AddClient finish get call");
                 }
@@ -57,21 +57,21 @@ namespace SignalGo.Server.ServiceManager.Providers
 
                     if (client.RequestHeaders.ContainsKey("signalgo-servicedetail"))
                     {
-                        await GenerateServiceDetails(client, content, serverBase, newLine);
+                        await GenerateServiceDetails(client, content, serverBase, newLine).ConfigureAwait(false);
                     }
                     else if (client.RequestHeaders["content-type"] != null && client.GetRequestHeaderValue("content-type").ToLower().Contains("multipart/form-data"))
                     {
-                        await RunPostHttpRequestFile(address, "POST", content, client, serverBase);
+                        await RunPostHttpRequestFile(address, "POST", content, client, serverBase).ConfigureAwait(false);
                     }
                     else if (client.RequestHeaders["content-type"] != null && client.GetRequestHeaderValue("content-type") == "SignalGo Service Reference")
                     {
-                        await SendSignalGoServiceReference(client, serverBase, address.Trim('/'), methodName);
+                        await SendSignalGoServiceReference(client, serverBase, address.Trim('/'), methodName).ConfigureAwait(false);
                     }
                     else
                     {
-                        await RunHttpRequest(serverBase, address, "POST", content, client);
+                        await RunHttpRequest(serverBase, address, "POST", content, client).ConfigureAwait(false);
                     }
-                    await Task.Delay(1000);
+                    await Task.Delay(1000).ConfigureAwait(false);
                     serverBase.DisposeClient(client, null, "AddClient finish post call");
                 }
                 else if (methodName.ToLower() == "options" && !string.IsNullOrEmpty(address) && address != "/")
@@ -84,13 +84,13 @@ namespace SignalGo.Server.ServiceManager.Providers
 
                     byte[] dataBytes = Encoding.UTF8.GetBytes(message);
 
-                    await SendResponseHeadersToClient(HttpStatusCode.OK, client.ResponseHeaders, client, dataBytes.Length);
-                    await SendResponseDataToClient(dataBytes, client);
+                    await SendResponseHeadersToClient(HttpStatusCode.OK, client.ResponseHeaders, client, dataBytes.Length).ConfigureAwait(false);
+                    await SendResponseDataToClient(dataBytes, client).ConfigureAwait(false);
                     serverBase.DisposeClient(client, null, "AddClient finish post call");
                 }
                 else if (serverBase.RegisteredServiceTypes.ContainsKey("") && (string.IsNullOrEmpty(address) || address == "/"))
                 {
-                    await RunIndexHttpRequest(client, serverBase);
+                    await RunIndexHttpRequest(client, serverBase).ConfigureAwait(false);
                     serverBase.DisposeClient(client, null, "Index Page call");
                 }
                 else
@@ -99,8 +99,8 @@ namespace SignalGo.Server.ServiceManager.Providers
                     client.ResponseHeaders.Add("Connection", "Close");
 
                     byte[] dataBytes = Encoding.UTF8.GetBytes(newLine + "SignalGo Server OK" + newLine);
-                    await SendResponseHeadersToClient(HttpStatusCode.OK, client.ResponseHeaders, client, dataBytes.Length);
-                    await SendResponseDataToClient(dataBytes, client);
+                    await SendResponseHeadersToClient(HttpStatusCode.OK, client.ResponseHeaders, client, dataBytes.Length).ConfigureAwait(false);
+                    await SendResponseDataToClient(dataBytes, client).ConfigureAwait(false);
                     serverBase.DisposeClient(client, null, "AddClient http ok signalGo");
                 }
             }
@@ -126,7 +126,7 @@ namespace SignalGo.Server.ServiceManager.Providers
 
                 if (serverBase.ProviderSetting.HttpSetting.MaximumRequestBodySize > 0 && len > serverBase.ProviderSetting.HttpSetting.MaximumRequestBodySize)
                 {
-                    if (!await serverBase.Firewall.OnDangerDataReceived(client.TcpClient, Firewall.DangerDataType.RequestBodySize))
+                    if (!await serverBase.Firewall.OnDangerDataReceived(client.TcpClient, Firewall.DangerDataType.RequestBodySize).ConfigureAwait(false))
                     {
                         serverBase.DisposeClient(client, client.TcpClient, "firewall danger http header size!");
                         return;
@@ -139,7 +139,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     while (readedCount < len)
                     {
                         byte[] buffer = new byte[len - content.Length];
-                        int readCount = await client.ClientStream.ReadAsync(buffer, buffer.Length);
+                        int readCount = await client.ClientStream.ReadAsync(buffer, buffer.Length).ConfigureAwait(false);
                         if (readCount <= 0)
                             throw new Exception("zero byte readed socket disconnected!");
                         resultBytes.AddRange(buffer.ToList().GetRange(0, readCount));
@@ -170,8 +170,8 @@ namespace SignalGo.Server.ServiceManager.Providers
             }
 
             byte[] dataBytes = Encoding.UTF8.GetBytes(newLine + json + newLine);
-            await SendResponseHeadersToClient(HttpStatusCode.OK, client.ResponseHeaders, client, dataBytes.Length);
-            await SendResponseDataToClient(dataBytes, client);
+            await SendResponseHeadersToClient(HttpStatusCode.OK, client.ResponseHeaders, client, dataBytes.Length).ConfigureAwait(false);
+            await SendResponseDataToClient(dataBytes, client).ConfigureAwait(false);
         }
 
 
@@ -250,7 +250,7 @@ namespace SignalGo.Server.ServiceManager.Providers
 
                 if (serverBase.ProviderSetting.HttpSetting.MaximumRequestBodySize > 0 && len > serverBase.ProviderSetting.HttpSetting.MaximumRequestBodySize)
                 {
-                    if (!await serverBase.Firewall.OnDangerDataReceived(client.TcpClient, Firewall.DangerDataType.RequestBodySize))
+                    if (!await serverBase.Firewall.OnDangerDataReceived(client.TcpClient, Firewall.DangerDataType.RequestBodySize).ConfigureAwait(false))
                     {
                         serverBase.DisposeClient(client, client.TcpClient, "firewall danger http header size!");
                         return;
@@ -263,7 +263,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     while (readedCount < len)
                     {
                         byte[] buffer = new byte[len - content.Length];
-                        int readCount = await client.ClientStream.ReadAsync(buffer, buffer.Length);
+                        int readCount = await client.ClientStream.ReadAsync(buffer, buffer.Length).ConfigureAwait(false);
                         //#if (NET35 || NET40)
                         //                            int readCount = client.ClientStream.Read(buffer, 0, len - content.Length);
                         //#else
@@ -402,13 +402,13 @@ namespace SignalGo.Server.ServiceManager.Providers
                     }
                 }
 
-                CallMethodResultInfo<OperationContext> result = await CallHttpMethod(client, address, realmethodName, methodName, values, jsonParameters, serverBase, method, data, newLine, null, null);
+                CallMethodResultInfo<OperationContext> result = await CallHttpMethod(client, address, realmethodName, methodName, values, jsonParameters, serverBase, method, data, newLine, null, null).ConfigureAwait(false);
                 serviceType = result.ServiceType;
 
                 //}
                 //else
                 //{
-                //    CallMethodResultInfo<OperationContext> result = await CallHttpMethod(client, address, methodName, null, null, serverBase, method, data, newLine, null, null);
+                //    CallMethodResultInfo<OperationContext> result = await CallHttpMethod(client, address, methodName, null, null, serverBase, method, data, newLine, null, null).ConfigureAwait(false);
                 //    serviceType = result.ServiceType;
                 //}
             }
@@ -418,12 +418,12 @@ namespace SignalGo.Server.ServiceManager.Providers
                 if (serverBase.ErrorHandlingFunction != null)
                 {
                     ActionResult result = serverBase.ErrorHandlingFunction(ex, serviceType, method, client).ToActionResult();
-                    await RunHttpActionResult(client, result.Data, client, serverBase);
+                    await RunHttpActionResult(client, result.Data, client, serverBase).ConfigureAwait(false);
                 }
                 else
                 {
                     //data = newLine + ex.ToString() + address + newLine;
-                    await SendInternalErrorMessage(ex, address, serviceType, method, serverBase, client, newLine, HttpStatusCode.InternalServerError);
+                    await SendInternalErrorMessage(ex, address, serviceType, method, serverBase, client, newLine, HttpStatusCode.InternalServerError).ConfigureAwait(false);
                 }
                 if (!(ex is SocketException))
                     serverBase.AutoLogger.LogError(ex, "RunHttpRequest");
@@ -458,7 +458,7 @@ namespace SignalGo.Server.ServiceManager.Providers
 
             try
             {
-                CallMethodResultInfo<OperationContext> result = await CallHttpMethod(client, "", "-noName-", "-noName-", null, null, serverBase, method, null, newLine, null, x => x.GetCustomAttributes<HomePageAttribute>().Count() > 0);
+                CallMethodResultInfo<OperationContext> result = await CallHttpMethod(client, "", "-noName-", "-noName-", null, null, serverBase, method, null, newLine, null, x => x.GetCustomAttributes<HomePageAttribute>().Count() > 0).ConfigureAwait(false);
                 serviceType = result.ServiceType;
             }
             catch (Exception ex)
@@ -467,12 +467,12 @@ namespace SignalGo.Server.ServiceManager.Providers
                 if (serverBase.ErrorHandlingFunction != null)
                 {
                     ActionResult result = serverBase.ErrorHandlingFunction(ex, serviceType, method, client).ToActionResult();
-                    await RunHttpActionResult(client, result, client, serverBase);
+                    await RunHttpActionResult(client, result, client, serverBase).ConfigureAwait(false);
                 }
                 else
                 {
                     //string data = newLine + ex.ToString() + "" + newLine;
-                    await SendInternalErrorMessage(ex, "", serviceType, method, serverBase, client, newLine, HttpStatusCode.InternalServerError);
+                    await SendInternalErrorMessage(ex, "", serviceType, method, serverBase, client, newLine, HttpStatusCode.InternalServerError).ConfigureAwait(false);
                 }
                 if (!(ex is SocketException))
                     serverBase.AutoLogger.LogError(ex, "RunPostHttpRequestFile");
@@ -494,14 +494,14 @@ namespace SignalGo.Server.ServiceManager.Providers
                     item.Value = null;
                 }
             }
-            CallMethodResultInfo<OperationContext> result = await CallMethod(address, _guid, realMethodName, methodName, values?.ToArray(), jsonParameters, client, "", serverBase, fileInfo, canTakeMethod);
+            CallMethodResultInfo<OperationContext> result = await CallMethod(address, _guid, realMethodName, methodName, values?.ToArray(), jsonParameters, client, "", serverBase, fileInfo, canTakeMethod).ConfigureAwait(false);
 
             method = result.Method;
 
             if (result.CallbackInfo.IsException)
             {
                 //data = newLine + result.CallbackInfo.Data + newLine;
-                await SendInternalErrorMessage(new Exception(result.CallbackInfo.Data), address, result.ServiceType, method, serverBase, client, newLine, (result.CallbackInfo.IsAccessDenied ? serverBase.ProviderSetting.HttpSetting.DefaultAccessDenidHttpStatusCode : HttpStatusCode.InternalServerError));
+                await SendInternalErrorMessage(new Exception(result.CallbackInfo.Data), address, result.ServiceType, method, serverBase, client, newLine, (result.CallbackInfo.IsAccessDenied ? serverBase.ProviderSetting.HttpSetting.DefaultAccessDenidHttpStatusCode : HttpStatusCode.InternalServerError)).ConfigureAwait(false);
                 serverBase.AutoLogger.LogText(data);
                 return result;
             }
@@ -537,16 +537,16 @@ namespace SignalGo.Server.ServiceManager.Providers
                     client.Status = result.StreamInfo.Status.Value;
             }
             if (result.FileActionResult != null)
-                await RunHttpActionResult(client, result.FileActionResult, client, serverBase);
+                await RunHttpActionResult(client, result.FileActionResult, client, serverBase).ConfigureAwait(false);
             else if (result.CallbackInfo.Data == null)
             {
                 //data = newLine + $"result from method invoke {methodName}, is null " + address + newLine;
-                await SendInternalErrorMessage(new Exception($"result from method invoke {methodName} , is null"), address, result.ServiceType, method, serverBase, client, newLine, HttpStatusCode.InternalServerError);
+                await SendInternalErrorMessage(new Exception($"result from method invoke {methodName} , is null"), address, result.ServiceType, method, serverBase, client, newLine, HttpStatusCode.InternalServerError).ConfigureAwait(false);
                 serverBase.AutoLogger.LogText("RunHttpGETRequest : " + data);
             }
             else
             {
-                await RunHttpActionResult(client, result.CallbackInfo.Data, client, serverBase);
+                await RunHttpActionResult(client, result.CallbackInfo.Data, client, serverBase).ConfigureAwait(false);
             }
 
             return result;
@@ -598,21 +598,21 @@ namespace SignalGo.Server.ServiceManager.Providers
 
                     //response += len + newLine;
                     //byte[] bytes = System.Text.Encoding.ASCII.GetBytes(response);
-                    await SendResponseHeadersToClient(controller.Status, controller.ResponseHeaders, client, 0);
+                    await SendResponseHeadersToClient(controller.Status, controller.ResponseHeaders, client, 0).ConfigureAwait(false);
                     //List<byte> allb = new List<byte>();
                     //if (file.FileStream.CanSeek)
                     //    file.FileStream.Seek(0, System.IO.SeekOrigin.Begin);
                     while (fileLength != position)
                     {
                         byte[] data = new byte[1024 * 20];
-                        int readCount = await file.FileStream.ReadAsync(data, 0, data.Length);
+                        int readCount = await file.FileStream.ReadAsync(data, 0, data.Length).ConfigureAwait(false);
                         if (readCount == 0)
                             break;
                         byte[] bytes = data.ToList().GetRange(0, readCount).ToArray();
-                        await client.ClientStream.WriteAsync(bytes, 0, bytes.Length);
+                        await client.ClientStream.WriteAsync(bytes, 0, bytes.Length).ConfigureAwait(false);
                     }
                     //delay to fix fast dispose before client read data
-                    await Task.Delay(1000);
+                    await Task.Delay(1000).ConfigureAwait(false);
                     file.FileStream.Dispose();
                 }
                 else
@@ -660,8 +660,8 @@ namespace SignalGo.Server.ServiceManager.Providers
                     if (serverBase.OnBeforeSendHttpDataFunction != null)
                         dataBytes = serverBase.OnBeforeSendHttpDataFunction(client as HttpClientInfo, serverBase, dataBytes);
 
-                    await SendResponseHeadersToClient(controller.Status, controller.ResponseHeaders, client, dataBytes.Length);
-                    await SendResponseDataToClient(dataBytes, client);
+                    await SendResponseHeadersToClient(controller.Status, controller.ResponseHeaders, client, dataBytes.Length).ConfigureAwait(false);
+                    await SendResponseDataToClient(dataBytes, client).ConfigureAwait(false);
                 }
             }
             catch (Exception ex)
@@ -709,7 +709,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 if (!boundary.Contains("--"))
                     boundary = null;
                 int fileHeaderCount = 0;
-                Tuple<int, string, string> res = await GetHttpFileFileHeader(serverBase, client, client.ClientStream, boundary, len);
+                Tuple<int, string, string> res = await GetHttpFileFileHeader(serverBase, client, client.ClientStream, boundary, len).ConfigureAwait(false);
                 fileHeaderCount = res.Item1;
                 boundary = res.Item2;
                 string response = res.Item3;
@@ -887,7 +887,7 @@ namespace SignalGo.Server.ServiceManager.Providers
 
 
 
-                CallMethodResultInfo<OperationContext> result = await CallHttpMethod(client, address, realMethodName, methodName, values, jsonParameters, serverBase, method, data, newLine, fileInfo, null);
+                CallMethodResultInfo<OperationContext> result = await CallHttpMethod(client, address, realMethodName, methodName, values, jsonParameters, serverBase, method, data, newLine, fileInfo, null).ConfigureAwait(false);
 
                 serviceType = result.ServiceType;
                 serviceInstance = result.ServiceInstance;
@@ -902,12 +902,12 @@ namespace SignalGo.Server.ServiceManager.Providers
                 if (serverBase.ErrorHandlingFunction != null)
                 {
                     ActionResult result = serverBase.ErrorHandlingFunction(ex, serviceType, method, client).ToActionResult();
-                    await RunHttpActionResult(client, result, client, serverBase);
+                    await RunHttpActionResult(client, result, client, serverBase).ConfigureAwait(false);
                 }
                 else
                 {
                     //data = newLine + ex.ToString() + address + newLine;
-                    await SendInternalErrorMessage(ex, address, serviceType, method, serverBase, client, newLine, HttpStatusCode.InternalServerError);
+                    await SendInternalErrorMessage(ex, address, serviceType, method, serverBase, client, newLine, HttpStatusCode.InternalServerError).ConfigureAwait(false);
                 }
                 if (!(ex is SocketException))
                     serverBase.AutoLogger.LogError(ex, "RunPostHttpRequestFile");
@@ -944,7 +944,7 @@ namespace SignalGo.Server.ServiceManager.Providers
 
                     if (serverBase.ProviderSetting.HttpSetting.MaximumRequestBodySize > 0 && length > serverBase.ProviderSetting.HttpSetting.MaximumRequestBodySize)
                     {
-                        if (!await serverBase.Firewall.OnDangerDataReceived(client.TcpClient, Firewall.DangerDataType.RequestBodySize))
+                        if (!await serverBase.Firewall.OnDangerDataReceived(client.TcpClient, Firewall.DangerDataType.RequestBodySize).ConfigureAwait(false))
                         {
                             serverBase.DisposeClient(client, client.TcpClient, "firewall danger http header size!");
                             return;
@@ -973,8 +973,8 @@ namespace SignalGo.Server.ServiceManager.Providers
                 client.ResponseHeaders["Content-Type"] = "text/html; charset=utf-8".Split(',');
                 client.ResponseHeaders["Service-Type"] = "SignalGoServiceType".Split(',');
                 byte[] dataBytes = Encoding.UTF8.GetBytes(result);
-                await SendResponseHeadersToClient(HttpStatusCode.OK, client.ResponseHeaders, client, dataBytes.Length);
-                await SendResponseDataToClient(dataBytes, client);
+                await SendResponseHeadersToClient(HttpStatusCode.OK, client.ResponseHeaders, client, dataBytes.Length).ConfigureAwait(false);
+                await SendResponseDataToClient(dataBytes, client).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -991,12 +991,12 @@ namespace SignalGo.Server.ServiceManager.Providers
             string response = "";
             while (true)
             {
-                byte singleByte = await stream.ReadOneByteAsync();
+                byte singleByte = await stream.ReadOneByteAsync().ConfigureAwait(false);
                 bytes.Add(singleByte);
 
                 if (serverBase.ProviderSetting.HttpSetting.MaximumRequestBodySize > 0 && bytes.Count > serverBase.ProviderSetting.HttpSetting.MaximumRequestBodySize)
                 {
-                    if (!await serverBase.Firewall.OnDangerDataReceived(client.TcpClient, Firewall.DangerDataType.HeaderSize))
+                    if (!await serverBase.Firewall.OnDangerDataReceived(client.TcpClient, Firewall.DangerDataType.HeaderSize).ConfigureAwait(false))
                     {
                         serverBase.DisposeClient(client, client.TcpClient, "firewall danger http header size!");
                         throw new Exception("dropped from firewall!");
@@ -1102,8 +1102,8 @@ namespace SignalGo.Server.ServiceManager.Providers
                     message = newLine + $"{address + ":" + exception.ToString()}" + newLine;
                 }
                 byte[] dataBytes = Encoding.UTF8.GetBytes(message);
-                await SendResponseHeadersToClient(httpStatusCode, client.ResponseHeaders, client, dataBytes.Length);
-                await SendResponseDataToClient(dataBytes, client);
+                await SendResponseHeadersToClient(httpStatusCode, client.ResponseHeaders, client, dataBytes.Length).ConfigureAwait(false);
+                await SendResponseDataToClient(dataBytes, client).ConfigureAwait(false);
             }
             catch (SocketException)
             {
@@ -1183,13 +1183,13 @@ namespace SignalGo.Server.ServiceManager.Providers
             builder.AppendLine();
 
             byte[] headBytes = Encoding.UTF8.GetBytes(firstLine + builder.ToString());
-            await client.StreamHelper.WriteToStreamAsync(client.ClientStream, headBytes);
+            await client.StreamHelper.WriteToStreamAsync(client.ClientStream, headBytes).ConfigureAwait(false);
         }
 
 
         internal static async Task SendResponseDataToClient(byte[] dataBytes, ClientInfo client)
         {
-            await client.StreamHelper.WriteToStreamAsync(client.ClientStream, dataBytes);
+            await client.StreamHelper.WriteToStreamAsync(client.ClientStream, dataBytes).ConfigureAwait(false);
         }
     }
 }

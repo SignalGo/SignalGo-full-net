@@ -36,7 +36,7 @@ namespace SignalGo.Server.Owin
         public int Read(byte[] buffer, int offset, int count)
         {
             ArraySegment<byte> data = new ArraySegment<byte>(buffer, 0, count);
-            WebSocketReceiveResult result = _webSocket.ReceiveAsync(data, new System.Threading.CancellationToken()).GetAwaiter().GetResult();
+            WebSocketReceiveResult result = _webSocket.ReceiveAsync(data, new System.Threading.CancellationToken()).ConfigureAwait(false).GetAwaiter().GetResult();
             Array.Copy(buffer, data.Array, result.Count);
             return result.Count;
         }
@@ -46,7 +46,7 @@ namespace SignalGo.Server.Owin
             return Task.Run(async () =>
             {
                 ArraySegment<byte> data = new ArraySegment<byte>(buffer, 0, count);
-                WebSocketReceiveResult result = await _webSocket.ReceiveAsync(data, new System.Threading.CancellationToken());
+                WebSocketReceiveResult result = await _webSocket.ReceiveAsync(data, new System.Threading.CancellationToken()).ConfigureAwait(false);
                 //Array.Copy(buffer, data.Array, result.Count);
                 return result.Count;
             });
@@ -59,13 +59,13 @@ namespace SignalGo.Server.Owin
                 foreach (byte[] item in WebcoketDatagramBase.GetSegments(buffer.Take(count).ToArray()))
                 {
                     ArraySegment<byte> data = new ArraySegment<byte>(item, 0, item.Length);
-                    _webSocket.SendAsync(data, WebSocketMessageType.Binary, true, new System.Threading.CancellationToken()).GetAwaiter().GetResult();
+                    _webSocket.SendAsync(data, WebSocketMessageType.Binary, true, new System.Threading.CancellationToken()).ConfigureAwait(false).GetAwaiter().GetResult();
                 }
             }
             else
             {
                 ArraySegment<byte> data = new ArraySegment<byte>(buffer, 0, count);
-                _webSocket.SendAsync(data, WebSocketMessageType.Binary, true, new System.Threading.CancellationToken()).GetAwaiter().GetResult();
+                _webSocket.SendAsync(data, WebSocketMessageType.Binary, true, new System.Threading.CancellationToken()).ConfigureAwait(false).GetAwaiter().GetResult();
             }
         }
 
@@ -76,13 +76,13 @@ namespace SignalGo.Server.Owin
                 foreach (byte[] item in WebcoketDatagramBase.GetSegments(buffer.Take(count).ToArray()))
                 {
                     ArraySegment<byte> data = new ArraySegment<byte>(item, 0, item.Length);
-                    await _webSocket.SendAsync(data, WebSocketMessageType.Binary, true, new System.Threading.CancellationToken());
+                    await _webSocket.SendAsync(data, WebSocketMessageType.Binary, true, new System.Threading.CancellationToken()).ConfigureAwait(false);
                 }
             }
             else
             {
                 ArraySegment<byte> data = new ArraySegment<byte>(buffer, 0, count);
-                await _webSocket.SendAsync(data, WebSocketMessageType.Binary, true, new System.Threading.CancellationToken());
+                await _webSocket.SendAsync(data, WebSocketMessageType.Binary, true, new System.Threading.CancellationToken()).ConfigureAwait(false);
             }
         }
     }

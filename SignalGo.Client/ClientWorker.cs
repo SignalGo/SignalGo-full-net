@@ -57,7 +57,7 @@ namespace SignalGo.Client
         {
 #if (NETSTANDARD1_6)
             Debug.WriteLine("DeadLock Warning TcpClientWorker Connect!");
-            _tcpClient.ConnectAsync(address, port).GetAwaiter().GetResult();
+            _tcpClient.ConnectAsync(address, port).ConfigureAwait(false).GetAwaiter().GetResult();
 #else
             _tcpClient.Connect(address, port);
 #endif
@@ -123,7 +123,7 @@ namespace SignalGo.Client
             byte[] firstBytes = GetFirstLineBytes(uri.Host, port);
 #if (NETSTANDARD1_6)
             Debug.WriteLine("DeadLock Warning WebSocketClientWorker Connect!");
-            _tcpClient.ConnectAsync(uri.Host, port).GetAwaiter().GetResult();
+            _tcpClient.ConnectAsync(uri.Host, port).ConfigureAwait(false).GetAwaiter().GetResult();
 #else
             _tcpClient.Connect(uri.Host, port);
 #endif
@@ -182,14 +182,14 @@ Upgrade: websocket{newLine + newLine}";
             if (!Uri.TryCreate(address, UriKind.Absolute, out Uri uri))
                 throw new Exception($"cannot parse uri {address}");
             byte[] firstBytes = GetFirstLineBytes(uri.Host, port);
-            await _tcpClient.ConnectAsync(uri.Host, port);
+            await _tcpClient.ConnectAsync(uri.Host, port).ConfigureAwait(false);
             if (port == 443)
             {
 #if (NETSTANDARD1_6)
                 throw new NotSupportedException("not support ssl connection in NETSTANDARD 1.6");
 #else
                 SslStream sslStream = new SslStream(_tcpClient.GetStream());
-                await sslStream.AuthenticateAsClientAsync(host);
+                await sslStream.AuthenticateAsClientAsync(host).ConfigureAwait(false);
                 _stream = sslStream;
 #endif
             }
@@ -197,7 +197,7 @@ Upgrade: websocket{newLine + newLine}";
             {
                 _stream = _tcpClient.GetStream();
             }
-            await _stream.WriteAsync(firstBytes, 0, firstBytes.Length);
+            await _stream.WriteAsync(firstBytes, 0, firstBytes.Length).ConfigureAwait(false);
         }
 #endif
                 /// <summary>

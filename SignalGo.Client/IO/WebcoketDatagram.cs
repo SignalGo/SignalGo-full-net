@@ -142,9 +142,9 @@ namespace SignalGo.Client.IO
         public override async Task<Tuple<int, byte[]>> GetBlockLengthAsync(Stream stream, Func<int, Task<byte[]>> readBlockSizeAsync)
         {
             List<byte> bytes = new List<byte>();
-            bytes.AddRange(await readBlockSizeAsync(2));
+            bytes.AddRange(await readBlockSizeAsync(2).ConfigureAwait(false));
             if (bytes[1] > 125)
-                bytes.AddRange(await readBlockSizeAsync(2));
+                bytes.AddRange(await readBlockSizeAsync(2).ConfigureAwait(false));
             var len = GetLength(bytes.ToArray());
 
             return new Tuple<int, byte[]>(len, bytes.ToArray());

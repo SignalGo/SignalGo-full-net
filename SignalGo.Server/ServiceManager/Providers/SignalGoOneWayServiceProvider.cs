@@ -21,7 +21,7 @@ namespace SignalGo.Server.ServiceManager.Providers
             try
             {
                 //Console.WriteLine($"OneWay Client Connected: {client.IPAddress}");
-                await RunMethod(serverBase, client);
+                await RunMethod(serverBase, client).ConfigureAwait(false);
                 serverBase.DisposeClient(client, null, "OneWay StartToReadingClientData finished");
             }
             catch (Exception ex)
@@ -37,11 +37,11 @@ namespace SignalGo.Server.ServiceManager.Providers
             MethodCallbackInfo callback = null;
             try
             {
-                byte[] bytes = await client.StreamHelper.ReadBlockToEndAsync(client.ClientStream, CompressionHelper.GetCompression(serverBase.CurrentCompressionMode, serverBase.GetCustomCompression), serverBase.ProviderSetting.MaximumReceiveStreamHeaderBlock);
+                byte[] bytes = await client.StreamHelper.ReadBlockToEndAsync(client.ClientStream, CompressionHelper.GetCompression(serverBase.CurrentCompressionMode, serverBase.GetCustomCompression), serverBase.ProviderSetting.MaximumReceiveStreamHeaderBlock).ConfigureAwait(false);
                 string json = Encoding.UTF8.GetString(bytes);
                 MethodCallInfo callInfo = ServerSerializationHelper.Deserialize<MethodCallInfo>(json, serverBase);
                 //MethodsCallHandler.BeginStreamCallAction?.Invoke(client, guid, serviceName, methodName, values);
-                CallMethodResultInfo<OperationContext> result = await CallMethod(callInfo.ServiceName, callInfo.Guid, callInfo.MethodName, callInfo.MethodName, callInfo.Parameters, null, client, null, serverBase, null, null);
+                CallMethodResultInfo<OperationContext> result = await CallMethod(callInfo.ServiceName, callInfo.Guid, callInfo.MethodName, callInfo.MethodName, callInfo.Parameters, null, client, null, serverBase, null, null).ConfigureAwait(false);
                 callback = result.CallbackInfo;
                 callback.Guid = callInfo.Guid;
             }
@@ -57,7 +57,7 @@ namespace SignalGo.Server.ServiceManager.Providers
             {
                 //MethodsCallHandler.EndStreamCallAction?.Invoke(client, guid, serviceName, methodName, values, jsonResult, exception);
             }
-            await SendCallbackData(callback, client, serverBase);
+            await SendCallbackData(callback, client, serverBase).ConfigureAwait(false);
         }
     }
 }

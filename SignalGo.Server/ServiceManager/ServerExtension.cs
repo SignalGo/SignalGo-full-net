@@ -139,9 +139,9 @@ namespace SignalGo.Server.ServiceManager
             bytes.AddRange(dataLen);
             bytes.AddRange(jsonBytes);
 
-            await client.StreamHelper.WriteToStreamAsync(client.ClientStream, bytes.ToArray());
+            await client.StreamHelper.WriteToStreamAsync(client.ClientStream, bytes.ToArray()).ConfigureAwait(false);
             Task<T> result = (Task<T>)taskCompletionSource.GetType().GetProperty("Task").GetValue(taskCompletionSource, null);
-            return await result;
+            return await result.ConfigureAwait(false);
 #endif
         }
 
@@ -184,7 +184,7 @@ namespace SignalGo.Server.ServiceManager
                     cb.PartNumber = i == listOfParts.Count ? (short)-1 : (short)i;
                     json = (int)DataType.CallMethod + "," + (int)CompressMode.None + "/" + ServerSerializationHelper.SerializeObject(cb, serverBase);
                     byte[] bytes = Encoding.UTF8.GetBytes(json);
-                    await client.StreamHelper.WriteToStreamAsync(client.ClientStream, bytes);
+                    await client.StreamHelper.WriteToStreamAsync(client.ClientStream, bytes).ConfigureAwait(false);
                     i++;
                 }
             }
@@ -192,10 +192,10 @@ namespace SignalGo.Server.ServiceManager
             {
                 json = (int)DataType.CallMethod + "," + (int)CompressMode.None + "/" + json + "#end";
                 byte[] bytes = Encoding.UTF8.GetBytes(json);
-                await client.StreamHelper.WriteToStreamAsync(client.ClientStream, bytes);
+                await client.StreamHelper.WriteToStreamAsync(client.ClientStream, bytes).ConfigureAwait(false);
             }
             object value = taskCompletionSource.GetType().GetProperty("Task").GetValue(taskCompletionSource, null);
-            T result = await (Task<T>)value;
+            T result = await ((Task<T>)value).ConfigureAwait(false);
             return result;
 #endif
         }

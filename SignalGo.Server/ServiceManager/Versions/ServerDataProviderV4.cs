@@ -58,7 +58,7 @@ namespace SignalGo.Server.ServiceManager.Versions
                             //IsWaitForClient = true;
 #if (NETSTANDARD1_6)
                             Debug.WriteLine("DeadLock Warning Start Server!");
-                            TcpClient client = _server.AcceptTcpClientAsync().GetAwaiter().GetResult();
+                            TcpClient client = _server.AcceptTcpClientAsync().ConfigureAwait(false).GetAwaiter().GetResult();
 #else
                             TcpClient client = _server.AcceptTcpClient();
 
@@ -114,11 +114,11 @@ namespace SignalGo.Server.ServiceManager.Versions
             {
                 try
                 {
-                    if (await _serverBase.Firewall.OnTcpClientConnected(tcpClient))
+                    if (await _serverBase.Firewall.OnTcpClientConnected(tcpClient).ConfigureAwait(false))
                     {
                         tcpClient.GetStream().ReadTimeout = 5000;
                         tcpClient.GetStream().WriteTimeout = 5000;
-                        PipeNetworkStream stream = new PipeNetworkStream(new NormalStream(await tcpClient.GetTcpStream(_serverBase)), (int)_serverBase.ProviderSetting.ReceiveDataTimeout.TotalMilliseconds);
+                        PipeNetworkStream stream = new PipeNetworkStream(new NormalStream(await tcpClient.GetTcpStream(_serverBase).ConfigureAwait(false)), (int)_serverBase.ProviderSetting.ReceiveDataTimeout.TotalMilliseconds);
                         ExchangeClient(stream, tcpClient);
                     }
                     else
@@ -194,7 +194,7 @@ namespace SignalGo.Server.ServiceManager.Versions
                     };
                 }
 
-                string firstLineString = await reader.ReadLineAsync();
+                string firstLineString = await reader.ReadLineAsync().ConfigureAwait(false);
 
                 if (firstLineString.Contains("SignalGo-Stream/4.0"))
                 {
@@ -206,7 +206,7 @@ namespace SignalGo.Server.ServiceManager.Versions
                     client = CreateClientInfo(false, tcpClient, reader);
                     client.ProtocolType = ClientProtocolType.SignalGoStream;
                     client.StreamHelper = SignalGoStreamBase.CurrentBase;
-                    if (await _serverBase.Firewall.OnClientInitialized(client))
+                    if (await _serverBase.Firewall.OnClientInitialized(client).ConfigureAwait(false))
                         SignalGoStreamProvider.StartToReadingClientData(client, _serverBase);
                     else
                         _serverBase.DisposeClient(client, tcpClient, "firewall dropped!");
@@ -222,7 +222,7 @@ namespace SignalGo.Server.ServiceManager.Versions
                     client = CreateClientInfo(false, tcpClient, reader);
                     client.ProtocolType = ClientProtocolType.SignalGoOneWay;
                     client.StreamHelper = SignalGoStreamBase.CurrentBase;
-                    if (await _serverBase.Firewall.OnClientInitialized(client))
+                    if (await _serverBase.Firewall.OnClientInitialized(client).ConfigureAwait(false))
                         OneWayServiceProvider.StartToReadingClientData(client, _serverBase);
                     else
                         _serverBase.DisposeClient(client, tcpClient, "firewall dropped!");
@@ -243,8 +243,8 @@ namespace SignalGo.Server.ServiceManager.Versions
                         tcpClient.GetStream().ReadTimeout = -1;
                         tcpClient.GetStream().WriteTimeout = -1;
                     }
-                    if (await _serverBase.Firewall.OnClientInitialized(client))
-                        await SignalGoDuplexServiceProvider.StartToReadingClientData(client, _serverBase);
+                    if (await _serverBase.Firewall.OnClientInitialized(client).ConfigureAwait(false))
+                        await SignalGoDuplexServiceProvider.StartToReadingClientData(client, _serverBase).ConfigureAwait(false);
                     else
                         _serverBase.DisposeClient(client, tcpClient, "firewall dropped!");
                 }
@@ -255,7 +255,7 @@ namespace SignalGo.Server.ServiceManager.Versions
                         tcpClient.GetStream().ReadTimeout = (int)_serverBase.ProviderSetting.HttpSetting.ReceiveDataTimeout.TotalMilliseconds;
                         tcpClient.GetStream().WriteTimeout = (int)_serverBase.ProviderSetting.HttpSetting.SendDataTimeout.TotalMilliseconds;
                     }
-                    await HttpProvider.StartToReadingClientData(tcpClient, _serverBase, reader, new StringBuilder(firstLineString));
+                    await HttpProvider.StartToReadingClientData(tcpClient, _serverBase, reader, new StringBuilder(firstLineString)).ConfigureAwait(false);
                 }
                 else
                 {

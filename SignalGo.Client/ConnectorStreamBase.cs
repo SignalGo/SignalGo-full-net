@@ -92,52 +92,52 @@ namespace SignalGo.Client
         {
             throw new NotSupportedException();
 
-//#if (PORTABLE)
-//            if (IsDisposed || !_client.ReadStream.CanRead)
-//                return ;
-//#else
-//            if (IsDisposed || !_client.Connected)
-//                return;
-//#endif
-//            //connect to tcp
-//#if (NETSTANDARD1_6 || NETCOREAPP1_1)
-//            var downloadFileSocket = new TcpClient();
-//            var waitable = downloadFileSocket.ConnectAsync(_address, _port);
-//            waitable.Wait();
-//#elif (PORTABLE)
-//            var downloadFileSocket = new Sockets.Plugin.TcpSocketClient();
-//#else
-//            TcpClient downloadFileSocket = new TcpClient(_address, _port);
-//#endif
-//            var stream = new PipeNetworkStream(new NormalStream(downloadFileSocket.GetStream()));
-//            streamInfo.Stream = stream;
-//            downloadFileSocket.Client.Send(Encoding.UTF8.GetBytes("SignalGo/1.0"));
-//            //get OK SignalGo/1.0
-//            int o =await stream.ReadOneByteAcync();
-//            int k = await stream.ReadOneByteAcync();
+            //#if (PORTABLE)
+            //            if (IsDisposed || !_client.ReadStream.CanRead)
+            //                return ;
+            //#else
+            //            if (IsDisposed || !_client.Connected)
+            //                return;
+            //#endif
+            //            //connect to tcp
+            //#if (NETSTANDARD1_6 || NETCOREAPP1_1)
+            //            var downloadFileSocket = new TcpClient();
+            //            var waitable = downloadFileSocket.ConnectAsync(_address, _port);
+            //            waitable.Wait();
+            //#elif (PORTABLE)
+            //            var downloadFileSocket = new Sockets.Plugin.TcpSocketClient();
+            //#else
+            //            TcpClient downloadFileSocket = new TcpClient(_address, _port);
+            //#endif
+            //            var stream = new PipeNetworkStream(new NormalStream(downloadFileSocket.GetStream()));
+            //            streamInfo.Stream = stream;
+            //            downloadFileSocket.Client.Send(Encoding.UTF8.GetBytes("SignalGo/1.0"));
+            //            //get OK SignalGo/1.0
+            //            int o =await stream.ReadOneByteAcync().ConfigureAwait(false);
+            //            int k = await stream.ReadOneByteAcync().ConfigureAwait(false);
 
-//            //register client
-//            string json = JsonConvert.SerializeObject(new List<string>() { "/UploadFile" });
-//            List<byte> bytes = new List<byte>();
-//            byte[] jsonBytes = Encoding.UTF8.GetBytes(json);
-//            byte[] dataLen = BitConverter.GetBytes(jsonBytes.Length);
-//            bytes.AddRange(dataLen);
-//            bytes.AddRange(jsonBytes);
+            //            //register client
+            //            string json = JsonConvert.SerializeObject(new List<string>() { "/UploadFile" });
+            //            List<byte> bytes = new List<byte>();
+            //            byte[] jsonBytes = Encoding.UTF8.GetBytes(json);
+            //            byte[] dataLen = BitConverter.GetBytes(jsonBytes.Length);
+            //            bytes.AddRange(dataLen);
+            //            bytes.AddRange(jsonBytes);
 
-//            await StreamHelper.WriteToStreamAsync(stream, bytes.ToArray());
-//            ///send method data
-//            json = JsonConvert.SerializeObject(Data);
-//            bytes = new List<byte>();
-//            bytes.Add((byte)DataType.RegisterFileUpload);
-//            bytes.Add((byte)CompressMode.None);
-//            jsonBytes = Encoding.UTF8.GetBytes(json);
-//            dataLen = BitConverter.GetBytes(jsonBytes.Length);
-//            bytes.AddRange(dataLen);
-//            bytes.AddRange(jsonBytes);
-//            if (bytes.Count > ProviderSetting.MaximumSendDataBlock)
-//                throw new Exception("SendData data length is upper than MaximumSendDataBlock");
+            //            await StreamHelper.WriteToStreamAsync(stream, bytes.ToArray()).ConfigureAwait(false);
+            //            ///send method data
+            //            json = JsonConvert.SerializeObject(Data);
+            //            bytes = new List<byte>();
+            //            bytes.Add((byte)DataType.RegisterFileUpload);
+            //            bytes.Add((byte)CompressMode.None);
+            //            jsonBytes = Encoding.UTF8.GetBytes(json);
+            //            dataLen = BitConverter.GetBytes(jsonBytes.Length);
+            //            bytes.AddRange(dataLen);
+            //            bytes.AddRange(jsonBytes);
+            //            if (bytes.Count > ProviderSetting.MaximumSendDataBlock)
+            //                throw new Exception("SendData data length is upper than MaximumSendDataBlock");
 
-//            await StreamHelper.WriteToStreamAsync(stream, bytes.ToArray());
+            //            await StreamHelper.WriteToStreamAsync(stream, bytes.ToArray()).ConfigureAwait(false);
         }
     }
 }

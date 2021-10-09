@@ -35,7 +35,7 @@ namespace SignalGo.Shared.Models
             {
                 if (_IsCanceled)
                     return;
-                await _addLock.WaitAsync();
+                await _addLock.WaitAsync().ConfigureAwait(false);
                 _items.Add(item);
                 //Console.WriteLine("added" + item);
                 if (_taskCompletionSource.Task.Status == TaskStatus.WaitingForActivation)
@@ -61,7 +61,7 @@ namespace SignalGo.Shared.Models
             {
                 if (_IsCanceled)
                     return isAdded;
-                await _addLock.WaitAsync();
+                await _addLock.WaitAsync().ConfigureAwait(false);
                 if (!_items.Contains(item))
                 {
                     isAdded = true;
@@ -158,7 +158,7 @@ namespace SignalGo.Shared.Models
         {
             try
             {
-                await _addLock.WaitAsync();
+                await _addLock.WaitAsync().ConfigureAwait(false);
                 _IsCanceled = true;
                 object find = _items.DefaultIfEmpty(null).FirstOrDefault();
                 _taskCompletionSource.TrySetResult((T)find);
@@ -189,7 +189,7 @@ namespace SignalGo.Shared.Models
         {
             try
             {
-                await _addLock.WaitAsync();
+                await _addLock.WaitAsync().ConfigureAwait(false);
 
                 CompleteTask();
             }
@@ -200,10 +200,10 @@ namespace SignalGo.Shared.Models
 
             try
             {
-                await _takeLock.WaitAsync();
+                await _takeLock.WaitAsync().ConfigureAwait(false);
                 Task<T> result = _taskCompletionSource.Task;
                 _isTakeTaskResult = true;
-                return await result;
+                return await result.ConfigureAwait(false);
             }
             finally
             {
@@ -256,7 +256,7 @@ namespace SignalGo.Shared.Models
         {
             try
             {
-                await _addLock.WaitAsync();
+                await _addLock.WaitAsync().ConfigureAwait(false);
                 return _items.Cast<T>().ToList();
             }
             finally

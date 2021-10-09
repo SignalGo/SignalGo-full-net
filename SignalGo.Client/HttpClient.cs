@@ -296,16 +296,16 @@ namespace SignalGo.Client
             //                {
             //                    for (int i = 0; i < 6; i++)
             //                    {
-            //                        await Task.Delay(1000);
+            //                        await Task.Delay(1000).ConfigureAwait(false);
             //                    }
             //                    cancelSource.Cancel();
             //                });
             //            await Task.Run(async () =>
             //            {
-            //                await tcpClient.ConnectAsync(uri.Host, uri.Port);
-            //            }, cancelSource.Token);
+            //                await tcpClient.ConnectAsync(uri.Host, uri.Port).ConfigureAwait(false);
+            //            }, cancelSource.Token).ConfigureAwait(false);
             //#else
-            await tcpClient.ConnectAsync(uri.Host, uri.Port);
+            await tcpClient.ConnectAsync(uri.Host, uri.Port).ConfigureAwait(false);
             //#endif
             try
             {
@@ -363,7 +363,7 @@ namespace SignalGo.Client
                 if (uri.Port == 443)
                 {
                     SslStream sslStream = (SslStream)stream;
-                    await sslStream.AuthenticateAsClientAsync(uri.Host);
+                    await sslStream.AuthenticateAsClientAsync(uri.Host).ConfigureAwait(false);
                 }
                 stream.Write(headBytes, 0, headBytes.Length);
                 stream.Write(dataBytes, 0, dataBytes.Length);
@@ -377,8 +377,8 @@ namespace SignalGo.Client
                         if (wantReadCount > streamInfo.Length - sentBytesCount)
                             wantReadCount = (int)(streamInfo.Length - sentBytesCount);
                         byte[] result = new byte[wantReadCount];
-                        int readCount = await streamInfo.Stream.ReadAsync(result, wantReadCount);
-                        await stream.WriteAsync(result, 0, readCount);
+                        int readCount = await streamInfo.Stream.ReadAsync(result, wantReadCount).ConfigureAwait(false);
+                        await stream.WriteAsync(result, 0, readCount).ConfigureAwait(false);
                         sentBytesCount += readCount;
                     }
                 }
@@ -391,7 +391,7 @@ namespace SignalGo.Client
                 {
                     if (line != null)
                         lines.Add(line.TrimEnd());
-                    line = await pipelineReader.ReadLineAsync();
+                    line = await pipelineReader.ReadLineAsync().ConfigureAwait(false);
                 }
                 while (line != newLine);
                 HttpClientResponseBase httpClientResponse = new HttpClientResponseBase
@@ -421,7 +421,7 @@ namespace SignalGo.Client
         /// <returns></returns>
         public async Task<HttpClientResponse> PostAsync(string url, ParameterInfo[] parameterInfoes, BaseStreamInfo streamInfo = null)
         {
-            HttpClientResponseBase response = await PostHeadAsync(url, parameterInfoes, streamInfo);
+            HttpClientResponseBase response = await PostHeadAsync(url, parameterInfoes, streamInfo).ConfigureAwait(false);
             try
             {
                 HttpClientResponse httpClientResponse = new HttpClientResponse
@@ -438,7 +438,7 @@ namespace SignalGo.Client
                 {
                     byte[] bytes = new byte[512];
                     int readedCount = 0;
-                    readedCount = await response.Stream.ReadAsync(bytes, bytes.Length);
+                    readedCount = await response.Stream.ReadAsync(bytes, bytes.Length).ConfigureAwait(false);
                     for (int i = 0; i < readedCount; i++)
                     {
                         result[i + readCount] = bytes[i];

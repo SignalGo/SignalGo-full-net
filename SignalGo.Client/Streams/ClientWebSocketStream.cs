@@ -79,14 +79,14 @@ namespace SignalGo.Client.Streams
             lock (_clientWebSocket)
             {
                 Debug.WriteLine("DeadLock Warning ClientWebSocketStream Read!");
-                WebSocketReceiveResult result = _clientWebSocket.ReceiveAsync(new ArraySegment<byte>(buffer), new System.Threading.CancellationToken()).GetAwaiter().GetResult();
+                WebSocketReceiveResult result = _clientWebSocket.ReceiveAsync(new ArraySegment<byte>(buffer), new System.Threading.CancellationToken()).ConfigureAwait(false).GetAwaiter().GetResult();
                 return result.Count;
             }
         }
 
         public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
         {
-            WebSocketReceiveResult result = await _clientWebSocket.ReceiveAsync(new ArraySegment<byte>(buffer), cancellationToken);
+            WebSocketReceiveResult result = await _clientWebSocket.ReceiveAsync(new ArraySegment<byte>(buffer), cancellationToken).ConfigureAwait(false);
             return result.Count;
         }
 
@@ -105,24 +105,24 @@ namespace SignalGo.Client.Streams
             lock (_clientWebSocket)
             {
                 Debug.WriteLine("DeadLock Warning ClientWebSocketStream Write!");
-                 _clientWebSocket.SendAsync(new ArraySegment<byte>(buffer.Take(1).ToArray()), WebSocketMessageType.Binary, true, new CancellationToken()).GetAwaiter().GetResult();
-                 _clientWebSocket.SendAsync(new ArraySegment<byte>(buffer.Skip(1).Take(1).ToArray()), WebSocketMessageType.Binary, true, new CancellationToken()).GetAwaiter().GetResult();
+                 _clientWebSocket.SendAsync(new ArraySegment<byte>(buffer.Take(1).ToArray()), WebSocketMessageType.Binary, true, new CancellationToken()).ConfigureAwait(false).GetAwaiter().GetResult();
+                 _clientWebSocket.SendAsync(new ArraySegment<byte>(buffer.Skip(1).Take(1).ToArray()), WebSocketMessageType.Binary, true, new CancellationToken()).ConfigureAwait(false).GetAwaiter().GetResult();
                 if (buffer.Length > 2)
                 {
-                     //_clientWebSocket.SendAsync(new ArraySegment<byte>(buffer.Skip(2).Take(4).ToArray()), WebSocketMessageType.Binary, true, new CancellationToken()).GetAwaiter().GetResult();
-                     _clientWebSocket.SendAsync(new ArraySegment<byte>(buffer.Skip(2).ToArray()), WebSocketMessageType.Binary, true, new CancellationToken()).GetAwaiter().GetResult();
+                     //_clientWebSocket.SendAsync(new ArraySegment<byte>(buffer.Skip(2).Take(4).ToArray()), WebSocketMessageType.Binary, true, new CancellationToken()).ConfigureAwait(false).GetAwaiter().GetResult();
+                     _clientWebSocket.SendAsync(new ArraySegment<byte>(buffer.Skip(2).ToArray()), WebSocketMessageType.Binary, true, new CancellationToken()).ConfigureAwait(false).GetAwaiter().GetResult();
                 }
             }
         }
 
         public override async Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
         {
-            await _clientWebSocket.SendAsync(new ArraySegment<byte>(buffer.Take(1).ToArray()), WebSocketMessageType.Binary, true, cancellationToken);
-            await _clientWebSocket.SendAsync(new ArraySegment<byte>(buffer.Skip(1).Take(1).ToArray()), WebSocketMessageType.Binary, true, cancellationToken);
+            await _clientWebSocket.SendAsync(new ArraySegment<byte>(buffer.Take(1).ToArray()), WebSocketMessageType.Binary, true, cancellationToken).ConfigureAwait(false);
+            await _clientWebSocket.SendAsync(new ArraySegment<byte>(buffer.Skip(1).Take(1).ToArray()), WebSocketMessageType.Binary, true, cancellationToken).ConfigureAwait(false);
             if (buffer.Length > 2)
             {
                 //await _clientWebSocket.SendAsync(new ArraySegment<byte>(buffer.Skip(2).Take(4).ToArray()), WebSocketMessageType.Binary, true, cancellationToken);
-                await _clientWebSocket.SendAsync(new ArraySegment<byte>(buffer.Skip(2).ToArray()), WebSocketMessageType.Binary, true, cancellationToken);
+                await _clientWebSocket.SendAsync(new ArraySegment<byte>(buffer.Skip(2).ToArray()), WebSocketMessageType.Binary, true, cancellationToken).ConfigureAwait(false);
             }
         }
 

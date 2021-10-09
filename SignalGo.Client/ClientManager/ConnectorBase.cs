@@ -233,7 +233,7 @@ namespace SignalGo.Client.ClientManager
                 _client = new WebSocketClientWorker(new TcpClient());
             }
 
-            await _client.ConnectAsync(address, port);
+            await _client.ConnectAsync(address, port).ConfigureAwait(false);
             if (ProviderSetting.ServerServiceSetting.IsHttps)
             {
 #if (NETSTANDARD1_6)
@@ -243,13 +243,13 @@ namespace SignalGo.Client.ClientManager
                 if (ProtocolType == ClientProtocolType.WebSocket)
                 {
                     _clientStream = new PipeNetworkStream(new NormalStream(_client.GetStream()));
-                    await ReadAllWebSocketResponseLinesAsync();
+                    await ReadAllWebSocketResponseLinesAsync().ConfigureAwait(false);
                     _clientStream = new PipeNetworkStream(new WebSocketStream(_client.GetStream()));
                 }
                 else
                 {
                     SslStream sslStream = new SslStream(_client.GetStream());
-                    await sslStream.AuthenticateAsClientAsync(address);
+                    await sslStream.AuthenticateAsClientAsync(address).ConfigureAwait(false);
                     _clientStream = new PipeNetworkStream(new NormalStream(sslStream));
                 }
 #endif
@@ -259,7 +259,7 @@ namespace SignalGo.Client.ClientManager
                 _clientStream = new PipeNetworkStream(new NormalStream(_client.GetStream()));
                 if (ProtocolType == ClientProtocolType.WebSocket)
                 {
-                    await ReadAllWebSocketResponseLinesAsync();
+                    await ReadAllWebSocketResponseLinesAsync().ConfigureAwait(false);
                     _clientStream = new PipeNetworkStream(new WebSocketStream(_client.GetStream()));
                 }
             }
@@ -291,7 +291,7 @@ namespace SignalGo.Client.ClientManager
             StringBuilder stringBuilder = new StringBuilder();
             while (true)
             {
-                string line = await _clientStream.ReadLineAsync();
+                string line = await _clientStream.ReadLineAsync().ConfigureAwait(false);
                 stringBuilder.AppendLine(line);
                 if (string.IsNullOrEmpty(line) || line == TextHelper.NewLine)
                     break;
@@ -324,7 +324,7 @@ namespace SignalGo.Client.ClientManager
                 _client = new WebSocketClientWorker(new TcpClient());
             }
 #if (NETSTANDARD1_6)
-            _client.ConnectAsync(address, port).GetAwaiter().GetResult();
+            _client.ConnectAsync(address, port).ConfigureAwait(false).GetAwaiter().GetResult();
 #else
             _client.Connect(address, port);
 #endif
@@ -421,7 +421,7 @@ namespace SignalGo.Client.ClientManager
                     if (item is Action action)
                         action();
                     if (item is Func<Task> voidFunction)
-                        await voidFunction();
+                        await voidFunction().ConfigureAwait(false);
                     else if (item is Func<PriorityAction>)
                     {
                         PriorityAction priorityAction = PriorityAction.TryAgain;
@@ -450,14 +450,14 @@ namespace SignalGo.Client.ClientManager
                         {
                             if (!IsConnected)
                                 break;
-                            await Task.Delay(ProviderSetting.PriorityFunctionDelayTime);
-                            priorityAction = await function();
+                            await Task.Delay(ProviderSetting.PriorityFunctionDelayTime).ConfigureAwait(false);
+                            priorityAction = await function().ConfigureAwait(false);
                             if (priorityAction == PriorityAction.BreakAll)
                                 break;
                             else if (priorityAction == PriorityAction.HoldAll)
                             {
                                 HoldAllPrioritiesTaskResult = new ConcurrentTaskCompletionSource<object>();
-                                await HoldAllPrioritiesTaskResult.GetTask();
+                                await HoldAllPrioritiesTaskResult.GetTask().ConfigureAwait(false);
                             }
                         }
                         while (IsPriorityEnabled && priorityAction == PriorityAction.TryAgain);
@@ -583,7 +583,7 @@ namespace SignalGo.Client.ClientManager
 #if (NET40 || NET35)
             MethodCallbackInfo callback = this.SendData<MethodCallbackInfo>(callInfo);
 #else
-            MethodCallbackInfo callback = this.SendData<MethodCallbackInfo>(callInfo).GetAwaiter().GetResult();
+            MethodCallbackInfo callback = this.SendData<MethodCallbackInfo>(callInfo).ConfigureAwait(false).GetAwaiter().GetResult();
 #endif
             Type t = CSCodeInjection.GenerateInterfaceType(type, typeof(OperationCalls), new List<Type>() { typeof(ServiceContractAttribute), GetType() }, false);
 
@@ -623,7 +623,7 @@ namespace SignalGo.Client.ClientManager
                 MethodCallbackInfo callback = this.SendData<MethodCallbackInfo>(callInfo);
 #else
                 Debug.WriteLine("DeadLock Warning RegisterServerServiceInterfaceWrapper!");
-                MethodCallbackInfo callback = this.SendData<MethodCallbackInfo>(callInfo).GetAwaiter().GetResult();
+                MethodCallbackInfo callback = this.SendData<MethodCallbackInfo>(callInfo).ConfigureAwait(false).GetAwaiter().GetResult();
 #endif
             }
 
@@ -634,7 +634,7 @@ namespace SignalGo.Client.ClientManager
 #if (NET40 || NET35)
                     ConnectorExtensions.SendData(this, serviceName, method.Name, method.MethodToParameters(x => ClientSerializationHelper.SerializeObject(x), args).ToArray());
 #else
-                    ConnectorExtensions.SendDataAsync(this, serviceName, method.Name, method.MethodToParameters(x => ClientSerializationHelper.SerializeObject(x), args).ToArray()).GetAwaiter().GetResult();
+                    ConnectorExtensions.SendDataAsync(this, serviceName, method.Name, method.MethodToParameters(x => ClientSerializationHelper.SerializeObject(x), args).ToArray()).ConfigureAwait(false).GetAwaiter().GetResult();
 #endif
                     return null;
                 }
@@ -645,7 +645,7 @@ namespace SignalGo.Client.ClientManager
 #if (NET40 || NET35)
                     string data = ConnectorExtensions.SendData(this, serviceName, method.Name, method.MethodToParameters(x => ClientSerializationHelper.SerializeObject(x), args).ToArray());
 #else
-                    string data = ConnectorExtensions.SendDataAsync(this, serviceName, method.Name, method.MethodToParameters(x => ClientSerializationHelper.SerializeObject(x), args).ToArray()).GetAwaiter().GetResult();
+                    string data = ConnectorExtensions.SendDataAsync(this, serviceName, method.Name, method.MethodToParameters(x => ClientSerializationHelper.SerializeObject(x), args).ToArray()).ConfigureAwait(false).GetAwaiter().GetResult();
 #endif
                     if (data == null)
                         return null;
@@ -762,7 +762,7 @@ namespace SignalGo.Client.ClientManager
                 result.Wait();
 #else
                 //Debug.WriteLine("DeadLock Warning RegisterStreamServiceInterfaceWrapper 2!");
-                result.GetAwaiter().GetResult();
+                result.ConfigureAwait(false).GetAwaiter().GetResult();
 #endif
                 if (method.ReturnType == typeof(void))
                     return null;
@@ -804,7 +804,7 @@ namespace SignalGo.Client.ClientManager
 #if (NET40 || NET35)
             return UploadStreamAsync<T>(clientProvider, serverAddress, port, serviceName, methodName, parameters, iStream).Result;
 #else
-            return UploadStreamAsync<T>(clientProvider, serverAddress, port, serviceName, methodName, parameters, iStream).GetAwaiter().GetResult();
+            return UploadStreamAsync<T>(clientProvider, serverAddress, port, serviceName, methodName, parameters, iStream).ConfigureAwait(false).GetAwaiter().GetResult();
 #endif
         }
 
@@ -853,7 +853,7 @@ namespace SignalGo.Client.ClientManager
 #if (NET40 || NET35)
             stream.Write(bytes, 0, bytes.Length);
 #else
-            await stream.WriteAsync(bytes, 0, bytes.Length);
+            await stream.WriteAsync(bytes, 0, bytes.Length).ConfigureAwait(false);
 #endif
             bool isUpload = false;
             //if (parameters.Any(x => x.ParameterType == typeof(StreamInfo) || (x.ParameterType.GetIsGenericType() && x.ParameterType.GetGenericTypeDefinition() == typeof(StreamInfo<>))))
@@ -863,7 +863,7 @@ namespace SignalGo.Client.ClientManager
 #if (NET40 || NET35)
                 stream.Write(new byte[] { 0 }, 0, 1);
 #else
-                await stream.WriteAsync(new byte[] { 0 }, 0, 1);
+                await stream.WriteAsync(new byte[] { 0 }, 0, 1).ConfigureAwait(false);
 #endif
             }
             else
@@ -871,7 +871,7 @@ namespace SignalGo.Client.ClientManager
 #if (NET40 || NET35)
                 stream.Write(new byte[] { 1 }, 0, 1);
 #else
-                await stream.WriteAsync(new byte[] { 1 }, 0, 1);
+                await stream.WriteAsync(new byte[] { 1 }, 0, 1).ConfigureAwait(false);
 #endif
             }
             MethodCallInfo callInfo = new MethodCallInfo();
@@ -897,7 +897,7 @@ namespace SignalGo.Client.ClientManager
 #if (NET40 || NET35)
             streamHelper.WriteBlockToStream(stream, jsonBytes);
 #else
-            await streamHelper.WriteBlockToStreamAsync(stream, jsonBytes);
+            await streamHelper.WriteBlockToStreamAsync(stream, jsonBytes).ConfigureAwait(false);
 #endif
 
 #if (!NET40 && !NET35)
@@ -912,7 +912,7 @@ namespace SignalGo.Client.ClientManager
                     try
                     {
 #if (!NET40 && !NET35)
-                        await Task.Delay(1000);
+                        await Task.Delay(1000).ConfigureAwait(false);
 #endif
                         KeyValue<DataType, CompressMode> firstData = null;
 #if (NET40 || NET35)
@@ -926,14 +926,14 @@ namespace SignalGo.Client.ClientManager
 #if (NET40 || NET35)
                         firstData = iStream.ReadFirstData(stream, maximumReceiveStreamHeaderBlock);
 #else
-                        firstData = await iStream.ReadFirstDataAsync(stream, maximumReceiveStreamHeaderBlock);
+                        firstData = await iStream.ReadFirstDataAsync(stream, maximumReceiveStreamHeaderBlock).ConfigureAwait(false);
 #endif
                         if (firstData.Key == DataType.FlushStream)
                         {
 #if (NET40 || NET35)
                             byte[] data = streamHelper.ReadBlockToEnd(stream, CompressionHelper.GetCompression(firstData.Value, clientProvider.GetCustomCompression), maximumReceiveStreamHeaderBlock);
 #else
-                            byte[] data = await streamHelper.ReadBlockToEndAsync(stream, CompressionHelper.GetCompression(firstData.Value, clientProvider.GetCustomCompression), maximumReceiveStreamHeaderBlock);
+                            byte[] data = await streamHelper.ReadBlockToEndAsync(stream, CompressionHelper.GetCompression(firstData.Value, clientProvider.GetCustomCompression), maximumReceiveStreamHeaderBlock).ConfigureAwait(false);
 #endif
                             return BitConverter.ToInt64(data, 0);
                         }
@@ -948,7 +948,7 @@ namespace SignalGo.Client.ClientManager
 #if (NET40 || NET35)
                         iStream.WriteManuallyAsync(stream).Wait();
 #else
-                            await iStream.WriteManuallyAsync(stream);
+                            await iStream.WriteManuallyAsync(stream).ConfigureAwait(false);
 #endif
                         }
                         else
@@ -966,14 +966,14 @@ namespace SignalGo.Client.ClientManager
 #if (NET40 || NET35)
                             int readCount = iStream.Stream.Read(bytes, blockOfRead);
 #else
-                                int readCount = await iStream.Stream.ReadAsync(bytes, blockOfRead);
+                                int readCount = await iStream.Stream.ReadAsync(bytes, blockOfRead).ConfigureAwait(false);
 #endif
                                 position += readCount;
                                 byte[] data = bytes.Take(readCount).ToArray();
 #if (NET40 || NET35)
                             stream.Write(data, 0, data.Length);
 #else
-                                await stream.WriteAsync(data, 0, data.Length);
+                                await stream.WriteAsync(data, 0, data.Length).ConfigureAwait(false);
 #endif
                             }
                         }
@@ -1022,17 +1022,17 @@ namespace SignalGo.Client.ClientManager
             byte dataTypeByte = streamHelper.ReadOneByte(stream);
             byte compressModeByte = streamHelper.ReadOneByte(stream);
 #else
-            byte dataTypeByte = await streamHelper.ReadOneByteAsync(stream);
-            byte compressModeByte = await streamHelper.ReadOneByteAsync(stream);
+            byte dataTypeByte = await streamHelper.ReadOneByteAsync(stream).ConfigureAwait(false);
+            byte compressModeByte = await streamHelper.ReadOneByteAsync(stream).ConfigureAwait(false);
 #endif
 
 #if (NET40 || NET35)
             byte[] callBackBytes = streamHelper.ReadBlockToEnd(stream, CompressionHelper.GetCompression((CompressMode)compressModeByte, clientProvider?.GetCustomCompression), maximumReceiveStreamHeaderBlock);
 #else
-            byte[] callBackBytes = await streamHelper.ReadBlockToEndAsync(stream, CompressionHelper.GetCompression((CompressMode)compressModeByte, clientProvider?.GetCustomCompression), maximumReceiveStreamHeaderBlock);
+            byte[] callBackBytes = await streamHelper.ReadBlockToEndAsync(stream, CompressionHelper.GetCompression((CompressMode)compressModeByte, clientProvider?.GetCustomCompression), maximumReceiveStreamHeaderBlock).ConfigureAwait(false);
 #endif
 #if (!NET40 && !NET35)
-            var isSend = await sendComeplete.GetTask();
+            var isSend = await sendComeplete.GetTask().ConfigureAwait(false);
 #endif
             MethodCallbackInfo callbackInfo = ClientSerializationHelper.DeserializeObject<MethodCallbackInfo>(Encoding.UTF8.GetString(callBackBytes, 0, callBackBytes.Length));
             if (callbackInfo.IsException)
@@ -1086,7 +1086,7 @@ namespace SignalGo.Client.ClientManager
             return SendOneWayMethodAsync<T>(serverAddress, port, serviceName, methodName, parameters).Result;
 #else
             //Debug.WriteLine("DeadLock Warning SendOneWayMethod!");
-            return SendOneWayMethodAsync<T>(serverAddress, port, serviceName, methodName, parameters).GetAwaiter().GetResult();
+            return SendOneWayMethodAsync<T>(serverAddress, port, serviceName, methodName, parameters).ConfigureAwait(false).GetAwaiter().GetResult();
 #endif
         }
 
@@ -1137,17 +1137,17 @@ namespace SignalGo.Client.ClientManager
             streamHelper.WriteToStream(stream, lineBytes);
             streamHelper.WriteBlockToStream(stream, jsonBytes);
 #else
-            await streamHelper.WriteToStreamAsync(stream, lineBytes);
-            await streamHelper.WriteBlockToStreamAsync(stream, jsonBytes);
+            await streamHelper.WriteToStreamAsync(stream, lineBytes).ConfigureAwait(false);
+            await streamHelper.WriteBlockToStreamAsync(stream, jsonBytes).ConfigureAwait(false);
 #endif
 #if (NET40 || NET35)
             DataType dataType = (DataType)stream.ReadOneByte();
             CompressMode compressMode = (CompressMode)stream.ReadOneByte();
             byte[] readData = streamHelper.ReadBlockToEnd(stream, CompressionHelper.GetCompression(compressMode, null), int.MaxValue);
 #else
-            DataType dataType = (DataType)await stream.ReadOneByteAsync();
-            CompressMode compressMode = (CompressMode)await stream.ReadOneByteAsync();
-            byte[] readData = await streamHelper.ReadBlockToEndAsync(stream, CompressionHelper.GetCompression(compressMode, null), int.MaxValue);
+            DataType dataType = (DataType)await stream.ReadOneByteAsync().ConfigureAwait(false);
+            CompressMode compressMode = (CompressMode)await stream.ReadOneByteAsync().ConfigureAwait(false);
+            byte[] readData = await streamHelper.ReadBlockToEndAsync(stream, CompressionHelper.GetCompression(compressMode, null), int.MaxValue).ConfigureAwait(false);
 #endif
             json = Encoding.UTF8.GetString(readData, 0, readData.Length);
             MethodCallbackInfo callBack = ClientSerializationHelper.DeserializeObject<MethodCallbackInfo>(json);
@@ -1196,7 +1196,7 @@ namespace SignalGo.Client.ClientManager
             MethodCallbackInfo callback = this.SendData<MethodCallbackInfo>(callInfo);
 #else
             Debug.WriteLine("DeadLock Warning RegisterServerServiceDynamicInterface!");
-            MethodCallbackInfo callback = this.SendData<MethodCallbackInfo>(callInfo).GetAwaiter().GetResult();
+            MethodCallbackInfo callback = this.SendData<MethodCallbackInfo>(callInfo).ConfigureAwait(false).GetAwaiter().GetResult();
 #endif
             DynamicServiceObject obj = new DynamicServiceObject()
             {
@@ -1231,7 +1231,7 @@ namespace SignalGo.Client.ClientManager
             MethodCallbackInfo callback = this.SendData<MethodCallbackInfo>(callInfo);
 #else
             Debug.WriteLine("DeadLock Warning RegisterServerServiceDynamic!");
-            MethodCallbackInfo callback = this.SendData<MethodCallbackInfo>(callInfo).GetAwaiter().GetResult();
+            MethodCallbackInfo callback = this.SendData<MethodCallbackInfo>(callInfo).ConfigureAwait(false).GetAwaiter().GetResult();
 #endif
             DynamicServiceObject obj = new DynamicServiceObject()
             {
@@ -1263,7 +1263,7 @@ namespace SignalGo.Client.ClientManager
             MethodCallbackInfo callback = this.SendData<MethodCallbackInfo>(callInfo);
 #else
             Debug.WriteLine("DeadLock Warning RegisterServerServiceDynamic 2!");
-            MethodCallbackInfo callback = this.SendData<MethodCallbackInfo>(callInfo).GetAwaiter().GetResult();
+            MethodCallbackInfo callback = this.SendData<MethodCallbackInfo>(callInfo).ConfigureAwait(false).GetAwaiter().GetResult();
 #endif
             DynamicServiceObjectWitoutInterface obj = new DynamicServiceObjectWitoutInterface()
             {
@@ -1350,7 +1350,7 @@ namespace SignalGo.Client.ClientManager
 #if (NET40 || NET35)
             byte[] bytes = StreamHelper.ReadBlockToEnd(_clientStream, CompressionHelper.GetCompression(compressMode, GetCustomCompression), ProviderSetting.MaximumReceiveDataBlock);
 #else
-            byte[] bytes = await StreamHelper.ReadBlockToEndAsync(_clientStream, CompressionHelper.GetCompression(compressMode, GetCustomCompression), ProviderSetting.MaximumReceiveDataBlock);
+            byte[] bytes = await StreamHelper.ReadBlockToEndAsync(_clientStream, CompressionHelper.GetCompression(compressMode, GetCustomCompression), ProviderSetting.MaximumReceiveDataBlock).ConfigureAwait(false);
 #endif
             if (SecuritySettings != null)
                 bytes = DecryptBytes(bytes);
@@ -1368,7 +1368,7 @@ namespace SignalGo.Client.ClientManager
 #if (NET40 || NET35)
             string json = _clientStream.ReadLine("#end");
 #else
-            string json = await _clientStream.ReadLineAsync("#end");
+            string json = await _clientStream.ReadLineAsync("#end").ConfigureAwait(false);
 #endif
             //json = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
             return json.Substring(0, json.Length - 4); ;
@@ -1384,7 +1384,7 @@ namespace SignalGo.Client.ClientManager
 #if (NET40 || NET35)
             int dataTypeByte = StreamHelper.ReadOneByte(_clientStream);
 #else
-            int dataTypeByte = await StreamHelper.ReadOneByteAsync(_clientStream);
+            int dataTypeByte = await StreamHelper.ReadOneByteAsync(_clientStream).ConfigureAwait(false);
 #endif
             return (DataType)dataTypeByte;
         }
@@ -1399,7 +1399,7 @@ namespace SignalGo.Client.ClientManager
 #if (NET40 || NET35)
             int compressModeByte = StreamHelper.ReadOneByte(_clientStream);
 #else
-            int compressModeByte = await StreamHelper.ReadOneByteAsync(_clientStream);
+            int compressModeByte = await StreamHelper.ReadOneByteAsync(_clientStream).ConfigureAwait(false);
 #endif
             return (CompressMode)compressModeByte;
         }
@@ -1412,14 +1412,14 @@ namespace SignalGo.Client.ClientManager
 #if (NET40 || NET35)
             byte dataTypeByte = StreamHelper.ReadOneByte(_clientStream);
 #else
-            byte dataTypeByte = await StreamHelper.ReadOneByteAsync(_clientStream);
+            byte dataTypeByte = await StreamHelper.ReadOneByteAsync(_clientStream).ConfigureAwait(false);
 #endif
             //read ','
             char character = (char)dataTypeByte;
 #if (NET40 || NET35)
             StreamHelper.ReadOneByte(_clientStream);
 #else
-            await StreamHelper.ReadOneByteAsync(_clientStream);
+            await StreamHelper.ReadOneByteAsync(_clientStream).ConfigureAwait(false);
 #endif
             return (DataType)int.Parse(character.ToString());
         }
@@ -1433,14 +1433,14 @@ namespace SignalGo.Client.ClientManager
 #if (NET40 || NET35)
             byte compressModeByte = StreamHelper.ReadOneByte(_clientStream);
 #else
-            byte compressModeByte = await StreamHelper.ReadOneByteAsync(_clientStream);
+            byte compressModeByte = await StreamHelper.ReadOneByteAsync(_clientStream).ConfigureAwait(false);
 #endif
             char character = (char)compressModeByte;
             //read '/'
 #if (NET40 || NET35)
             StreamHelper.ReadOneByte(_clientStream);
 #else
-            await StreamHelper.ReadOneByteAsync(_clientStream);
+            await StreamHelper.ReadOneByteAsync(_clientStream).ConfigureAwait(false);
 #endif
             return (CompressMode)int.Parse(character.ToString());
         }
@@ -1485,7 +1485,7 @@ namespace SignalGo.Client.ClientManager
 #if (NET35 || NET40)
                             DataType dataType = ReadDataTypeFunction();
 #else
-                            DataType dataType = await ReadDataTypeFunction();
+                            DataType dataType = await ReadDataTypeFunction().ConfigureAwait(false);
 #endif
                             SetBusy();
 
@@ -1499,7 +1499,7 @@ namespace SignalGo.Client.ClientManager
 #if (NET35 || NET40)
                             CompressMode compresssMode = ReadCompressModeFunction();
 #else
-                            CompressMode compresssMode = await ReadCompressModeFunction();
+                            CompressMode compresssMode = await ReadCompressModeFunction().ConfigureAwait(false);
 #endif
                             // server is called client method
                             if (dataType == DataType.CallMethod)
@@ -1507,7 +1507,7 @@ namespace SignalGo.Client.ClientManager
 #if (NET40 || NET35)
                                 string json = ReadJsonFromStreamFunction(compresssMode);
 #else
-                                string json = await ReadJsonFromStreamFunction(compresssMode);
+                                string json = await ReadJsonFromStreamFunction(compresssMode).ConfigureAwait(false);
 #endif
                                 MethodCallInfo callInfo = ClientSerializationHelper.DeserializeObject<MethodCallInfo>(json);
                                 if (callInfo.Type == MethodType.User)
@@ -1526,7 +1526,7 @@ namespace SignalGo.Client.ClientManager
 #if (NET40 || NET35)
                                 string json = ReadJsonFromStreamFunction(compresssMode);
 #else
-                                string json = await ReadJsonFromStreamFunction(compresssMode);
+                                string json = await ReadJsonFromStreamFunction(compresssMode).ConfigureAwait(false);
 #endif
 
                                 MethodCallbackInfo callback = ClientSerializationHelper.DeserializeObject<MethodCallbackInfo>(json);
@@ -1548,7 +1548,7 @@ namespace SignalGo.Client.ClientManager
 #if (NET40 || NET35)
                                 string json = ReadJsonFromStreamFunction(compresssMode);
 #else
-                                string json = await ReadJsonFromStreamFunction(compresssMode);
+                                string json = await ReadJsonFromStreamFunction(compresssMode).ConfigureAwait(false);
 #endif
                                 ProviderDetailsInfo getServiceDetialResult = ClientSerializationHelper.DeserializeObject<ProviderDetailsInfo>(json);
                                 if (getServiceDetialResult == null)
@@ -1561,7 +1561,7 @@ namespace SignalGo.Client.ClientManager
 #if (NET40 || NET35)
                                 string json = ReadJsonFromStreamFunction(compresssMode);
 #else
-                                string json = await ReadJsonFromStreamFunction(compresssMode);
+                                string json = await ReadJsonFromStreamFunction(compresssMode).ConfigureAwait(false);
 #endif
                                 ServiceParameterDetailEventTaskResult.SetResult(json);
                             }
@@ -1570,7 +1570,7 @@ namespace SignalGo.Client.ClientManager
 #if (NET40 || NET35)
                                 string json = ReadJsonFromStreamFunction(compresssMode);
 #else
-                                string json = await ReadJsonFromStreamFunction(compresssMode);
+                                string json = await ReadJsonFromStreamFunction(compresssMode).ConfigureAwait(false);
 #endif
                                 //ClientId = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
                             }
@@ -1595,7 +1595,13 @@ namespace SignalGo.Client.ClientManager
                     {
                         ResetBusy();
                     }
-                });
+                })
+#if (NET40 || NET35)
+                                ;
+#else
+                      .ConfigureAwait(false);          
+#endif
+                    
             }
             catch
             {
@@ -1610,7 +1616,7 @@ namespace SignalGo.Client.ClientManager
             try
             {
                 PingAndWaitForPong.Reset();
-                await StreamHelper.WriteToStreamAsync(_clientStream, new byte[] { (byte)DataType.PingPong });
+                await StreamHelper.WriteToStreamAsync(_clientStream, new byte[] { (byte)DataType.PingPong }).ConfigureAwait(false);
                 return PingAndWaitForPong.WaitOne(new TimeSpan(0, 0, 3));
             }
             catch (Exception ex)
@@ -1691,9 +1697,9 @@ namespace SignalGo.Client.ClientManager
                 //                    StreamHelper.WriteToStream(_clientStream, new byte[] { (byte)CompressMode.None });
                 //                    StreamHelper.WriteToStream(_clientStream, jsonBytes.ToArray());
                 //#else
-                //                    await StreamHelper.WriteToStreamAsync(_clientStream, new byte[] { (byte)DataType.CallMethod });
-                //                    await StreamHelper.WriteToStreamAsync(_clientStream, new byte[] { (byte)CompressMode.None });
-                //                    await StreamHelper.WriteToStreamAsync(_clientStream, jsonBytes);
+                //                    await StreamHelper.WriteToStreamAsync(_clientStream, new byte[] { (byte)DataType.CallMethod }).ConfigureAwait(false);
+                //                    await StreamHelper.WriteToStreamAsync(_clientStream, new byte[] { (byte)CompressMode.None }).ConfigureAwait(false);
+                //                    await StreamHelper.WriteToStreamAsync(_clientStream, jsonBytes).ConfigureAwait(false);
                 //#endif
                 //                }
                 //                else
@@ -1730,7 +1736,7 @@ namespace SignalGo.Client.ClientManager
 #if (NET40 || NET35)
                 StreamHelper.WriteToStream(_clientStream, bytes.ToArray());
 #else
-                await StreamHelper.WriteToStreamAsync(_clientStream, bytes.ToArray());
+                await StreamHelper.WriteToStreamAsync(_clientStream, bytes.ToArray()).ConfigureAwait(false);
 #endif
                 //}
             }
@@ -1773,9 +1779,9 @@ namespace SignalGo.Client.ClientManager
                 //                    StreamHelper.WriteToStream(_clientStream, new byte[] { (byte)CompressMode.None });
                 //                    StreamHelper.WriteToStream(_clientStream, jsonBytes.ToArray());
                 //#else
-                //                    await StreamHelper.WriteToStreamAsync(_clientStream, new byte[] { (byte)DataType.CallMethod });
-                //                    await StreamHelper.WriteToStreamAsync(_clientStream, new byte[] { (byte)CompressMode.None });
-                //                    await StreamHelper.WriteToStreamAsync(_clientStream, jsonBytes);
+                //                    await StreamHelper.WriteToStreamAsync(_clientStream, new byte[] { (byte)DataType.CallMethod }).ConfigureAwait(false);
+                //                    await StreamHelper.WriteToStreamAsync(_clientStream, new byte[] { (byte)CompressMode.None }).ConfigureAwait(false);
+                //                    await StreamHelper.WriteToStreamAsync(_clientStream, jsonBytes).ConfigureAwait(false);
                 //#endif
                 //                }
                 //                else
@@ -1812,7 +1818,7 @@ namespace SignalGo.Client.ClientManager
 #if (NET40 || NET35)
                 StreamHelper.WriteToStream(_clientStream, bytes.ToArray());
 #else
-                await StreamHelper.WriteToStreamAsync(_clientStream, bytes.ToArray());
+                await StreamHelper.WriteToStreamAsync(_clientStream, bytes.ToArray()).ConfigureAwait(false);
 #endif
                 //}
             }
@@ -1899,7 +1905,7 @@ namespace SignalGo.Client.ClientManager
 #if (NET40 || NET35)
                         ((Task)method.Invoke(service, parameters.ToArray())).Wait();
 #else
-                        await (Task)method.Invoke(service, parameters.ToArray());
+                        await ((Task)method.Invoke(service, parameters.ToArray())).ConfigureAwait(false);
 #endif
                     }
                     //this is async function
@@ -1911,7 +1917,7 @@ namespace SignalGo.Client.ClientManager
                         data = task.GetType().GetProperty("Result").GetValue(task, null);
 #else
                         Task task = ((Task)method.Invoke(service, parameters.ToArray()));
-                        await task;
+                        await task.ConfigureAwait(false);
                         data = task.GetType().GetProperty("Result").GetValue(task, null);
 #endif
 
@@ -1991,7 +1997,7 @@ namespace SignalGo.Client.ClientManager
 #if (NET40 || NET35)
                 StreamHelper.WriteToStream(_clientStream, data.ToArray());
 #else
-                await StreamHelper.WriteToStreamAsync(_clientStream, data.ToArray());
+                await StreamHelper.WriteToStreamAsync(_clientStream, data.ToArray()).ConfigureAwait(false);
 #endif
             }
             catch (Exception ex)
@@ -2032,11 +2038,11 @@ namespace SignalGo.Client.ClientManager
             StreamHelper.WriteToStream(_clientStream, data.ToArray());
             return ServiceDetailEventTaskResult.Task.Result;
 #else
-            await StreamHelper.WriteToStreamAsync(_clientStream, data.ToArray());
-            bool isReceived = await Task.WhenAny(ServiceDetailEventTaskResult.GetTask(), Task.Delay(new TimeSpan(0, 0, 15))) == ServiceDetailEventTaskResult.GetTask();
+            await StreamHelper.WriteToStreamAsync(_clientStream, data.ToArray()).ConfigureAwait(false);
+            bool isReceived = await Task.WhenAny(ServiceDetailEventTaskResult.GetTask(), Task.Delay(new TimeSpan(0, 0, 15))).ConfigureAwait(false) == ServiceDetailEventTaskResult.GetTask();
             if (!isReceived)
                 throw new TimeoutException();
-            return await ServiceDetailEventTaskResult.GetTask();
+            return await ServiceDetailEventTaskResult.GetTask().ConfigureAwait(false);
 #endif
         }
 
@@ -2069,8 +2075,8 @@ namespace SignalGo.Client.ClientManager
             StreamHelper.WriteToStream(_clientStream, data.ToArray());
             return ServiceParameterDetailEventTaskResult.Task.Result;
 #else
-            await StreamHelper.WriteToStreamAsync(_clientStream, data.ToArray());
-            return await ServiceParameterDetailEventTaskResult.GetTask();
+            await StreamHelper.WriteToStreamAsync(_clientStream, data.ToArray()).ConfigureAwait(false);
+            return await ServiceParameterDetailEventTaskResult.GetTask().ConfigureAwait(false);
 #endif
         }
 

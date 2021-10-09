@@ -19,15 +19,15 @@ namespace SignalGo.Server.ServiceManager.Providers
             {
                 //Console.WriteLine($"Stream Client Connected: {client.IPAddress}");
                 PipeNetworkStream stream = client.ClientStream;
-                byte firstByte = await client.StreamHelper.ReadOneByteAsync(stream);
+                byte firstByte = await client.StreamHelper.ReadOneByteAsync(stream).ConfigureAwait(false);
                 if (firstByte == 0)
                 {
-                    await DownloadStreamFromClient(client, serverBase);
+                    await DownloadStreamFromClient(client, serverBase).ConfigureAwait(false);
                 }
                 //download from server and upload from client
                 else
                 {
-                    await UploadStreamToClient(client, serverBase);
+                    await UploadStreamToClient(client, serverBase).ConfigureAwait(false);
                 }
                 serverBase.DisposeClient(client, null, "StartToReadingClientData finished");
             }
@@ -49,12 +49,12 @@ namespace SignalGo.Server.ServiceManager.Providers
             string guid = null;
             try
             {
-                byte[] bytes = await client.StreamHelper.ReadBlockToEndAsync(client.ClientStream, CompressionHelper.GetCompression(CompressMode.None, serverBase.GetCustomCompression), serverBase.ProviderSetting.MaximumReceiveStreamHeaderBlock) ;
+                byte[] bytes = await client.StreamHelper.ReadBlockToEndAsync(client.ClientStream, CompressionHelper.GetCompression(CompressMode.None, serverBase.GetCustomCompression), serverBase.ProviderSetting.MaximumReceiveStreamHeaderBlock).ConfigureAwait(false);
                 string json = Encoding.UTF8.GetString(bytes);
                 MethodCallInfo callInfo = ServerSerializationHelper.Deserialize<MethodCallInfo>(json, serverBase);
                 guid = callInfo.Guid;
                 CallMethodResultInfo<OperationContext> result = await CallMethod(callInfo.ServiceName, callInfo.Guid, callInfo.MethodName, callInfo.MethodName,
-                    callInfo.Parameters, null, client, null, serverBase, null, null);
+                    callInfo.Parameters, null, client, null, serverBase, null, null).ConfigureAwait(false);
                 callback = result.CallbackInfo;
             }
             catch (IOException ex)
@@ -74,7 +74,7 @@ namespace SignalGo.Server.ServiceManager.Providers
             {
                 callback.Guid = guid;
             }
-            await SendCallbackData(callback, client, serverBase);
+            await SendCallbackData(callback, client, serverBase).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -91,24 +91,24 @@ namespace SignalGo.Server.ServiceManager.Providers
             bool isCallbackSended = false;
             try
             {
-                byte[] bytes = await client.StreamHelper.ReadBlockToEndAsync(client.ClientStream, CompressionHelper.GetCompression(CompressMode.None, serverBase.GetCustomCompression), serverBase.ProviderSetting.MaximumReceiveStreamHeaderBlock);
+                byte[] bytes = await client.StreamHelper.ReadBlockToEndAsync(client.ClientStream, CompressionHelper.GetCompression(CompressMode.None, serverBase.GetCustomCompression), serverBase.ProviderSetting.MaximumReceiveStreamHeaderBlock).ConfigureAwait(false);
                 string json = Encoding.UTF8.GetString(bytes);
                 MethodCallInfo callInfo = ServerSerializationHelper.Deserialize<MethodCallInfo>(json, serverBase);
                 CallMethodResultInfo<OperationContext> result = await CallMethod(callInfo.ServiceName, callInfo.Guid, callInfo.MethodName, callInfo.MethodName,
-                    callInfo.Parameters, null, client, null, serverBase, null, null);
+                    callInfo.Parameters, null, client, null, serverBase, null, null).ConfigureAwait(false);
                 callback = result.CallbackInfo;
                 streamInfo = result.StreamInfo;
                 userStream = streamInfo.Stream;
                 long len = streamInfo.Length.GetValueOrDefault();
-                await SendCallbackData(callback, client, serverBase);
+                await SendCallbackData(callback, client, serverBase).ConfigureAwait(false);
                 isCallbackSended = true;
                 long writeLen = 0;
                 while (writeLen < len)
                 {
                     bytes = new byte[1024 * 100];
-                    int readCount = await userStream.ReadAsync(bytes, bytes.Length);
+                    int readCount = await userStream.ReadAsync(bytes, bytes.Length).ConfigureAwait(false);
                     byte[] sendBytes = bytes.Take(readCount).ToArray();
-                    await stream.WriteAsync(sendBytes, 0, sendBytes.Length);
+                    await stream.WriteAsync(sendBytes, 0, sendBytes.Length).ConfigureAwait(false);
                     writeLen += readCount;
                 }
                 userStream.Dispose();
@@ -129,7 +129,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                         callback = new MethodCallbackInfo();
                     callback.IsException = true;
                     callback.Data = ServerSerializationHelper.SerializeObject(ex);
-                    await SendCallbackData(callback, client, serverBase);
+                    await SendCallbackData(callback, client, serverBase).ConfigureAwait(false);
                 }
             }
             finally

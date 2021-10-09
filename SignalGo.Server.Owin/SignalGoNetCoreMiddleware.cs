@@ -42,9 +42,9 @@ namespace SignalGo.Server.Owin
             if (!BaseProvider.ExistService(serviceName, CurrentServerBase) && !isWebSocketd && !context.Request.Headers.ContainsKey("signalgo") && !context.Request.Headers.ContainsKey("signalgo-servicedetail") && context.Request.Headers["content-type"] != "SignalGo Service Reference")
             {
                 if (_next != null)
-                    await _next.Invoke(context);
+                    await _next.Invoke(context).ConfigureAwait(false);
                 else if (_next2 != null)
-                    await _next2.Invoke();
+                    await _next2.Invoke().ConfigureAwait(false);
                 return;
             }
             context.Response.Headers.Add("IsSignalGoOverIIS", "true");
@@ -86,7 +86,7 @@ namespace SignalGo.Server.Owin
             {
                 owinClientInfo.StreamHelper = SignalGoStreamBase.CurrentBase;
                 bool web = context.WebSockets.IsWebSocketRequest;
-                WebSocket webSocket = await context.WebSockets.AcceptWebSocketAsync();
+                WebSocket webSocket = await context.WebSockets.AcceptWebSocketAsync().ConfigureAwait(false);
                 owinClientInfo.ClientStream = new PipeNetworkStream(new WebsocketStream(webSocket));
                 //if (context.Request.Headers["SignalgoDuplexWebSocket"] == "true")
                 //{
@@ -95,14 +95,14 @@ namespace SignalGo.Server.Owin
                 //    await HttpProvider.AddWebSocketHttpClient(owinClientInfo, CurrentServerBase);
                 //}
                 //else
-                await HttpProvider.AddWebSocketHttpClient(owinClientInfo, CurrentServerBase);
-                await Task.FromResult<object>(null);
+                await HttpProvider.AddWebSocketHttpClient(owinClientInfo, CurrentServerBase).ConfigureAwait(false);
+                await Task.FromResult<object>(null).ConfigureAwait(false);
             }
             else
             {
                 owinClientInfo.StreamHelper = SignalGoStreamBase.CurrentBase;
                 owinClientInfo.ClientStream = new PipeNetworkStream(new DuplexStream(context.Request.Body, context.Response.Body));
-                await HttpProvider.AddHttpClient(owinClientInfo, CurrentServerBase, uri, context.Request.Method, null, null);
+                await HttpProvider.AddHttpClient(owinClientInfo, CurrentServerBase, uri, context.Request.Method, null, null).ConfigureAwait(false);
             }
 
             EndInvokeConext?.Invoke(instance, context);

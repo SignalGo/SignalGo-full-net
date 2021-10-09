@@ -24,16 +24,16 @@ namespace SignalGo.Server.ServiceManager.Providers
                 Shared.IO.PipeNetworkStream stream = client.ClientStream;
                 while (true)
                 {
-                    byte oneByteOfDataType = await client.StreamHelper.ReadOneByteAsync(stream);
+                    byte oneByteOfDataType = await client.StreamHelper.ReadOneByteAsync(stream).ConfigureAwait(false);
                     //type of data
                     DataType dataType = (DataType)oneByteOfDataType;
                     if (dataType == DataType.PingPong)
                     {
-                        await client.StreamHelper.WriteToStreamAsync(client.ClientStream, new byte[] { 5 });
+                        await client.StreamHelper.WriteToStreamAsync(client.ClientStream, new byte[] { 5 }).ConfigureAwait(false);
                         continue;
                     }
                     //compress mode of data
-                    CompressMode compressMode = (CompressMode)await client.StreamHelper.ReadOneByteAsync(stream);
+                    CompressMode compressMode = (CompressMode)await client.StreamHelper.ReadOneByteAsync(stream).ConfigureAwait(false);
                     //a server service method called from client
                     if (dataType == DataType.CallMethod)
                     {
@@ -46,7 +46,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                         //}
                         //else
                         //{
-                        byte[] bytes = await client.StreamHelper.ReadBlockToEndAsync(stream, CompressionHelper.GetCompression(compressMode, serverBase.GetCustomCompression), serverBase.ProviderSetting.MaximumReceiveDataBlock);
+                        byte[] bytes = await client.StreamHelper.ReadBlockToEndAsync(stream, CompressionHelper.GetCompression(compressMode, serverBase.GetCustomCompression), serverBase.ProviderSetting.MaximumReceiveDataBlock).ConfigureAwait(false);
                         //if (ClientsSettings.ContainsKey(client))
                         //    bytes = DecryptBytes(bytes, client);
                         json = Encoding.UTF8.GetString(bytes);
@@ -74,7 +74,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     //reponse of client method that server called to client
                     else if (dataType == DataType.ResponseCallMethod)
                     {
-                        byte[] bytes = await client.StreamHelper.ReadBlockToEndAsync(stream, CompressionHelper.GetCompression(compressMode, serverBase.GetCustomCompression), serverBase.ProviderSetting.MaximumReceiveDataBlock);
+                        byte[] bytes = await client.StreamHelper.ReadBlockToEndAsync(stream, CompressionHelper.GetCompression(compressMode, serverBase.GetCustomCompression), serverBase.ProviderSetting.MaximumReceiveDataBlock).ConfigureAwait(false);
                         //if (ClientsSettings.ContainsKey(client))
                         //    bytes = DecryptBytes(bytes, client);
                         string json = Encoding.UTF8.GetString(bytes);
@@ -101,7 +101,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     }
                     else if (dataType == DataType.GetServiceDetails)
                     {
-                        byte[] bytes = await client.StreamHelper.ReadBlockToEndAsync(stream, CompressionHelper.GetCompression(compressMode, serverBase.GetCustomCompression), serverBase.ProviderSetting.MaximumReceiveDataBlock);
+                        byte[] bytes = await client.StreamHelper.ReadBlockToEndAsync(stream, CompressionHelper.GetCompression(compressMode, serverBase.GetCustomCompression), serverBase.ProviderSetting.MaximumReceiveDataBlock).ConfigureAwait(false);
                         //if (ClientsSettings.ContainsKey(client))
                         //    bytes = DecryptBytes(bytes, client);
                         string json = Encoding.UTF8.GetString(bytes);
@@ -118,11 +118,11 @@ namespace SignalGo.Server.ServiceManager.Providers
                         byte[] dataLen = BitConverter.GetBytes(jsonBytes.Length);
                         resultBytes.AddRange(dataLen);
                         resultBytes.AddRange(jsonBytes);
-                        await client.StreamHelper.WriteToStreamAsync(client.ClientStream, resultBytes.ToArray());
+                        await client.StreamHelper.WriteToStreamAsync(client.ClientStream, resultBytes.ToArray()).ConfigureAwait(false);
                     }
                     else if (dataType == DataType.GetMethodParameterDetails)
                     {
-                        byte[] bytes = await client.StreamHelper.ReadBlockToEndAsync(stream, CompressionHelper.GetCompression(compressMode, serverBase.GetCustomCompression), serverBase.ProviderSetting.MaximumReceiveDataBlock);
+                        byte[] bytes = await client.StreamHelper.ReadBlockToEndAsync(stream, CompressionHelper.GetCompression(compressMode, serverBase.GetCustomCompression), serverBase.ProviderSetting.MaximumReceiveDataBlock).ConfigureAwait(false);
                         //if (ClientsSettings.ContainsKey(client))
                         //    bytes = DecryptBytes(bytes, client);
                         string json = Encoding.UTF8.GetString(bytes);
@@ -146,7 +146,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                         byte[] dataLen = BitConverter.GetBytes(jsonBytes.Length);
                         resultBytes.AddRange(dataLen);
                         resultBytes.AddRange(jsonBytes);
-                        await client.StreamHelper.WriteToStreamAsync(client.ClientStream, resultBytes.ToArray());
+                        await client.StreamHelper.WriteToStreamAsync(client.ClientStream, resultBytes.ToArray()).ConfigureAwait(false);
                     }
                     else if (dataType == DataType.GetClientId)
                     {
@@ -162,7 +162,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                         if (result.Count > serverBase.ProviderSetting.MaximumSendDataBlock)
                             throw new Exception($"{client.IPAddress} {client.ClientId} GetClientId data length exceeds MaximumSendDataBlock");
 
-                        await client.StreamHelper.WriteToStreamAsync(client.ClientStream, result.ToArray());
+                        await client.StreamHelper.WriteToStreamAsync(client.ClientStream, result.ToArray()).ConfigureAwait(false);
                     }
                     else
                     {
@@ -198,7 +198,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 Debug.WriteLine("DeadLock Warning SendCallbackData!");
                 MethodCallbackInfo callbackResult = callback.Result;
 #else
-                MethodCallbackInfo callbackResult = await callback;
+                MethodCallbackInfo callbackResult = await callback.ConfigureAwait(false);
 #endif
                 string json = ServerSerializationHelper.SerializeObject(callbackResult, serverBase);
                 byte[] bytes = Encoding.UTF8.GetBytes(json);
@@ -209,7 +209,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 result.AddRange(BitConverter.GetBytes(bytes.Length));
                 result.AddRange(bytes);
 
-                await client.StreamHelper.WriteToStreamAsync(client.ClientStream, result.ToArray());
+                await client.StreamHelper.WriteToStreamAsync(client.ClientStream, result.ToArray()).ConfigureAwait(false);
             }
             catch (Exception ex)
             {

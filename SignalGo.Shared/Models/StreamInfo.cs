@@ -159,8 +159,8 @@ namespace SignalGo.Shared.Models
 #else
         public async Task<KeyValue<DataType, CompressMode>> ReadFirstDataAsync(PipeNetworkStream stream, int maximumReceiveStreamHeaderBlock)
         {
-            DataType responseType = (DataType)await SignalGoStreamBase.CurrentBase.ReadOneByteAsync(stream);
-            CompressMode compressMode = (CompressMode)await SignalGoStreamBase.CurrentBase.ReadOneByteAsync(stream);
+            DataType responseType = (DataType)await SignalGoStreamBase.CurrentBase.ReadOneByteAsync(stream).ConfigureAwait(false);
+            CompressMode compressMode = (CompressMode)await SignalGoStreamBase.CurrentBase.ReadOneByteAsync(stream).ConfigureAwait(false);
             return new KeyValue<DataType, CompressMode>(responseType, compressMode);
         }
 #endif
@@ -181,9 +181,9 @@ namespace SignalGo.Shared.Models
         {
             DataType dataType = DataType.FlushStream;
             CompressMode compressMode = CompressMode.None;
-            await SignalGoStreamBase.CurrentBase.WriteToStreamAsync(Stream, new byte[] { (byte)dataType, (byte)compressMode });
+            await SignalGoStreamBase.CurrentBase.WriteToStreamAsync(Stream, new byte[] { (byte)dataType, (byte)compressMode }).ConfigureAwait(false);
             byte[] data = BitConverter.GetBytes(position);
-            await SignalGoStreamBase.CurrentBase.WriteBlockToStreamAsync(Stream, data);
+            await SignalGoStreamBase.CurrentBase.WriteBlockToStreamAsync(Stream, data).ConfigureAwait(false);
         }
 #endif
 

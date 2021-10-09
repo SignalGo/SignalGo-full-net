@@ -15,7 +15,7 @@ namespace SignalGoTest.Download
             ITestServerStreamModel service = client.RegisterStreamServiceInterfaceWrapper<ITestServerStreamModel>();
             SignalGo.Shared.Models.StreamInfo<string> result = service.DownloadImage("hello world", new TestStreamModel() { Name = "test name", Values = new System.Collections.Generic.List<string>() { "value test 1", "value test 2" } });
             byte[] bytes = new byte[1024];
-            int readLen = result.Stream.ReadAsync(bytes, 1024).GetAwaiter().GetResult();
+            int readLen = result.Stream.ReadAsync(bytes, 1024).ConfigureAwait(false).GetAwaiter().GetResult();
             System.Diagnostics.Trace.Assert(result.Data == "hello return" && readLen == 4 && bytes[0] == 2 && bytes[1] == 5 && bytes[2] == 8 && bytes[3] == 9);
         }
 
@@ -86,7 +86,7 @@ namespace SignalGoTest.Download
             ITestServerStreamModel service = new SignalGoTest2Services.StreamServices.TestServerStreamModel("localhost", 1132);
             SignalGo.Shared.Models.StreamInfo<string> result = service.DownloadImage("hello world", new TestStreamModel() { Name = "test name", Values = new System.Collections.Generic.List<string>() { "value test 1", "value test 2" } });
             byte[] bytes = new byte[1024];
-            int readLen = result.Stream.ReadAsync(bytes, 1024).GetAwaiter().GetResult();
+            int readLen = result.Stream.ReadAsync(bytes, 1024).ConfigureAwait(false).GetAwaiter().GetResult();
             System.Diagnostics.Trace.Assert(result.Data == "hello return" && readLen == 4 && bytes[0] == 2 && bytes[1] == 5 && bytes[2] == 8 && bytes[3] == 9);
 
         }

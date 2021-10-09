@@ -47,7 +47,7 @@ namespace SignalGo.Client
             SendFirstLineData();
 #else
             Debug.WriteLine("DeadLock Warning Connect!");
-            SendFirstLineData().GetAwaiter().GetResult();
+            SendFirstLineData().ConfigureAwait(false).GetAwaiter().GetResult();
 #endif
             GetClientIdIfNeed();
 
@@ -86,13 +86,13 @@ namespace SignalGo.Client
                 ProtocolType = ClientProtocolType.WebSocket;
             ServerUrl = url;
             string hostName = uri.Host;
-            await base.ConnectAsync(hostName, uri.Port);
-            await SendFirstLineData();
-            await GetClientIdIfNeedAsync();
+            await base.ConnectAsync(hostName, uri.Port).ConfigureAwait(false);
+            await SendFirstLineData().ConfigureAwait(false);
+            await GetClientIdIfNeedAsync().ConfigureAwait(false);
             StartToReadingClientData();
 
             IsConnected = true;
-            await RunPrioritiesAsync();
+            await RunPrioritiesAsync().ConfigureAwait(false);
             if (IsAutoReconnecting)
                 OnConnectionChanged?.Invoke(ConnectionStatus.Reconnected);
             else
@@ -166,7 +166,7 @@ namespace SignalGo.Client
                 ProviderSetting.AutoReconnect = true;
                 try
                 {
-                    await ConnectAsync(url);
+                    await ConnectAsync(url).ConfigureAwait(false);
                     try
                     {
                         connectedAction(true);
@@ -175,8 +175,8 @@ namespace SignalGo.Client
                     {
 
                     }
-                    await AutoReconnectWaitToDisconnectTaskResult.Task;
-                    await Task.Delay(1000);
+                    await AutoReconnectWaitToDisconnectTaskResult.Task.ConfigureAwait(false);
+                    await Task.Delay(1000).ConfigureAwait(false);
                     AutoReconnectWaitToDisconnectTaskResult = new ConcurrentTaskCompletionSource<object>();
 
                     ConnectAsyncAutoReconnect(url, connectedAction);
@@ -193,7 +193,7 @@ namespace SignalGo.Client
 
                     }
                     Disconnect();
-                    await Task.Delay(1000);
+                    await Task.Delay(1000).ConfigureAwait(false);
                     AutoReconnectWaitToDisconnectTaskResult = new ConcurrentTaskCompletionSource<object>();
                     ConnectAsyncAutoReconnect(url, connectedAction);
                 }
@@ -211,17 +211,17 @@ namespace SignalGo.Client
                 ProviderSetting.AutoReconnect = true;
                 try
                 {
-                    await ConnectAsync(url);
+                    await ConnectAsync(url).ConfigureAwait(false);
                     try
                     {
-                        await connectedAction(true);
+                        await connectedAction(true).ConfigureAwait(false);
                     }
                     catch
                     {
 
                     }
-                    await AutoReconnectWaitToDisconnectTaskResult.Task;
-                    await Task.Delay(1000);
+                    await AutoReconnectWaitToDisconnectTaskResult.Task.ConfigureAwait(false);
+                    await Task.Delay(1000).ConfigureAwait(false);
                     AutoReconnectWaitToDisconnectTaskResult = new ConcurrentTaskCompletionSource<object>();
 
                     ConnectAsyncAutoReconnect(url, connectedAction);
@@ -231,14 +231,14 @@ namespace SignalGo.Client
                 {
                     try
                     {
-                        await connectedAction(false);
+                        await connectedAction(false).ConfigureAwait(false);
                     }
                     catch
                     {
 
                     }
                     Disconnect();
-                    await Task.Delay(1000);
+                    await Task.Delay(1000).ConfigureAwait(false);
                     AutoReconnectWaitToDisconnectTaskResult = new ConcurrentTaskCompletionSource<object>();
                     ConnectAsyncAutoReconnect(url, connectedAction);
                 }
@@ -263,7 +263,7 @@ namespace SignalGo.Client
 #if (NET40 || NET35)
                 SecuritySettingsInfo result = ConnectorExtensions.SendData<SecuritySettingsInfo>(this, new Shared.Models.MethodCallInfo() { Guid = Guid.NewGuid().ToString(), ServiceName = "/SetSettings", Data = JsonConvert.SerializeObject(securitySettings, JsonSettingHelper.GlobalJsonSetting) });
 #else
-                SecuritySettingsInfo result = await ConnectorExtensions.SendData<SecuritySettingsInfo>(this, new Shared.Models.MethodCallInfo() { Guid = Guid.NewGuid().ToString(), ServiceName = "/SetSettings", Data = JsonConvert.SerializeObject(securitySettings, JsonSettingHelper.GlobalJsonSetting) });
+                SecuritySettingsInfo result = await ConnectorExtensions.SendData<SecuritySettingsInfo>(this, new Shared.Models.MethodCallInfo() { Guid = Guid.NewGuid().ToString(), ServiceName = "/SetSettings", Data = JsonConvert.SerializeObject(securitySettings, JsonSettingHelper.GlobalJsonSetting) }).ConfigureAwait(false);
 #endif
             }
             else if (securitySettings.SecurityMode == SecurityMode.RSA_AESSecurity)
@@ -274,7 +274,7 @@ namespace SignalGo.Client
 #if (NET40 || NET35)
                 SecuritySettingsInfo result = ConnectorExtensions.SendData<SecuritySettingsInfo>(this, new Shared.Models.MethodCallInfo() { Guid = Guid.NewGuid().ToString(), ServiceName = "/SetSettings", Data = JsonConvert.SerializeObject(securitySettings, JsonSettingHelper.GlobalJsonSetting) });
 #else
-                SecuritySettingsInfo result = await ConnectorExtensions.SendData<SecuritySettingsInfo>(this, new Shared.Models.MethodCallInfo() { Guid = Guid.NewGuid().ToString(), ServiceName = "/SetSettings", Data = JsonConvert.SerializeObject(securitySettings, JsonSettingHelper.GlobalJsonSetting) });
+                SecuritySettingsInfo result = await ConnectorExtensions.SendData<SecuritySettingsInfo>(this, new Shared.Models.MethodCallInfo() { Guid = Guid.NewGuid().ToString(), ServiceName = "/SetSettings", Data = JsonConvert.SerializeObject(securitySettings, JsonSettingHelper.GlobalJsonSetting) }).ConfigureAwait(false);
 #endif
                 SecuritySettings = new SecuritySettingsInfo() { Data = new RSAAESEncryptionData() { Key = RSASecurity.Decrypt(result.Data.Key, RSASecurity.StringToKey(keys.PrivateKey)), IV = RSASecurity.Decrypt(result.Data.IV, RSASecurity.StringToKey(keys.PrivateKey)) }, SecurityMode = securitySettings.SecurityMode };
 #endif
@@ -348,7 +348,7 @@ namespace SignalGo.Client
                     (byte)CompressMode.None
                 };
 
-                await StreamHelper.WriteToStreamAsync(_clientStream, data.ToArray());
+                await StreamHelper.WriteToStreamAsync(_clientStream, data.ToArray()).ConfigureAwait(false);
             }
         }
 #endif

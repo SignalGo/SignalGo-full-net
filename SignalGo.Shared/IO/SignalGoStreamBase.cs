@@ -34,13 +34,13 @@ namespace SignalGo.Shared.IO
         public virtual async Task<byte[]> ReadBlockToEndAsync(PipeNetworkStream stream, ICompression compression, int maximum)
         {
             //first 4 bytes are size of block
-            byte[] dataLenByte = await ReadBlockSizeAsync(stream, 4);
+            byte[] dataLenByte = await ReadBlockSizeAsync(stream, 4).ConfigureAwait(false);
             //convert bytes to int
             int dataLength = BitConverter.ToInt32(dataLenByte, 0);
             if (dataLength > maximum)
                 throw new Exception("dataLength is upper than maximum :" + dataLength);
             //read a block
-            byte[] dataBytes = await ReadBlockSizeAsync(stream, dataLength);
+            byte[] dataBytes = await ReadBlockSizeAsync(stream, dataLength).ConfigureAwait(false);
             return compression.Decompress(ref dataBytes);
         }
 #endif
@@ -59,10 +59,11 @@ namespace SignalGo.Shared.IO
         }
 
 #if (!NET35 && !NET40)
-        public Task WriteBlockToStreamAsync(PipeNetworkStream stream, byte[] data)
+        public async Task WriteBlockToStreamAsync(PipeNetworkStream stream, byte[] data)
         {
             byte[] size = BitConverter.GetBytes(data.Length);
-            return stream.WriteAsync(size, 0, size.Length).ContinueWith((t) => stream.WriteAsync(data, 0, data.Length));
+            await stream.WriteAsync(size, 0, size.Length);
+            await stream.WriteAsync(data, 0, data.Length);
         }
 #endif
 
@@ -107,7 +108,7 @@ namespace SignalGo.Shared.IO
                     countToRead = count - lengthReaded;
                 }
                 byte[] readBytes = new byte[countToRead];
-                int readCount = await stream.ReadAsync(readBytes, countToRead);
+                int readCount = await stream.ReadAsync(readBytes, countToRead).ConfigureAwait(false);
                 if (readCount <= 0)
                     throw new Exception("read zero buffer! client disconnected: " + readCount);
                 lengthReaded += readCount;
@@ -146,7 +147,7 @@ namespace SignalGo.Shared.IO
 #if (!NET35 && !NET40)
         public virtual async Task WriteToStreamAsync(PipeNetworkStream stream, byte[] data)
         {
-            await stream.WriteAsync(data, 0, data.Length);
+            await stream.WriteAsync(data, 0, data.Length).ConfigureAwait(false);
         }
 #endif
 

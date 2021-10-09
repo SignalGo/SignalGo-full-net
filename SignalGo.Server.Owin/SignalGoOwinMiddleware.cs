@@ -87,7 +87,7 @@ namespace SignalGo.Server.Owin
                 WebSocket webSocket = ((WebSocketContext)value).WebSocket;
                 ClientInfo.ClientStream = new PipeNetworkStream(new WebsocketStream(webSocket));
                 WebcoketDatagramBase.Current = new WebcoketIISDatagram();
-                await HttpProvider.AddWebSocketHttpClient(ClientInfo, CurrentServerBase);
+                await HttpProvider.AddWebSocketHttpClient(ClientInfo, CurrentServerBase).ConfigureAwait(false);
 
                 //if (((WebSocketContext)value).Headers["SignalgoDuplexWebSocket"] == "true")
                 //{

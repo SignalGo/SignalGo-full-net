@@ -73,7 +73,7 @@ namespace SignalGo.Shared.IO
 #else
         public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
         {
-            int readCount = await _pipeNetworkStream.ReadAsync(buffer, count);
+            int readCount = await _pipeNetworkStream.ReadAsync(buffer, count).ConfigureAwait(false);
             return readCount;
         }
 #endif

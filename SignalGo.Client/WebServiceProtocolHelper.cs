@@ -166,9 +166,9 @@ namespace SignalGo.Client
                     cts.CancelAfter(logger.Settings.Timeout.Value);
                 try
                 {
-                    using (System.Net.Http.HttpResponseMessage response = await _httpClient.SendAsync(httpRequestMessage, System.Net.Http.HttpCompletionOption.ResponseContentRead, cts.Token))
+                    using (System.Net.Http.HttpResponseMessage response = await _httpClient.SendAsync(httpRequestMessage, System.Net.Http.HttpCompletionOption.ResponseContentRead, cts.Token).ConfigureAwait(false))
                     {
-                        var data = await response.Content.ReadAsStringAsync();
+                        var data = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                         if (response.Content.Headers.TryGetValues("Content-Type", out IEnumerable<string> values))
                         {
                             string type = values.FirstOrDefault();

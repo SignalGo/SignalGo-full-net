@@ -35,20 +35,20 @@ namespace SignalGo.Shared.IO
         //#if (!NET35 && !NET40)
         //        public override void WriteToStream(PipeNetworkStream stream, byte[] data)
         //        {
-        //            WriteToStreamAsync(stream, data).GetAwaiter().GetResult();
+        //            WriteToStreamAsync(stream, data).ConfigureAwait(false).GetAwaiter().GetResult();
         //        }
 
         //        public override byte[] ReadBlockSize(PipeNetworkStream stream, int count)
         //        {
-        //            return ReadBlockSizeAsync(stream, count).GetAwaiter().GetResult();
+        //            return ReadBlockSizeAsync(stream, count).ConfigureAwait(false).GetAwaiter().GetResult();
         //        }
         //        public override byte[] ReadBlockToEnd(PipeNetworkStream stream, CompressMode compress, int maximum)
         //        {
-        //            return ReadBlockToEndAsync(stream, compress, maximum).GetAwaiter().GetResult();
+        //            return ReadBlockToEndAsync(stream, compress, maximum).ConfigureAwait(false).GetAwaiter().GetResult();
         //        }
         //        public override byte ReadOneByte(PipeNetworkStream stream)
         //        {
-        //            return ReadOneByteAsync(stream).GetAwaiter().GetResult();
+        //            return ReadOneByteAsync(stream).ConfigureAwait(false).GetAwaiter().GetResult();
         //        }
         //#endif
 
@@ -103,7 +103,7 @@ namespace SignalGo.Shared.IO
         public byte[] ReadBlockSize(int count)
         {
             Debug.WriteLine("DeadLock Warning ReadBlockSize!");
-            return ReadBlockSizeAsync(count).GetAwaiter().GetResult();
+            return ReadBlockSizeAsync(count).ConfigureAwait(false).GetAwaiter().GetResult();
         }
 #endif
 
@@ -130,7 +130,7 @@ namespace SignalGo.Shared.IO
 #if (NET35 || NET40)
                 int readCount = _stream.Read(readBytes, 0, countToRead);
 #else
-                int readCount = await _stream.ReadAsync(readBytes, 0, countToRead);
+                int readCount = await _stream.ReadAsync(readBytes, 0, countToRead).ConfigureAwait(false);
 #endif
                 if (readCount <= 0)
                     throw new Exception("read zero buffer! client disconnected: " + readCount);
@@ -185,8 +185,8 @@ namespace SignalGo.Shared.IO
 # if (!NET35 && !NET40)
         public async Task<int> ReadAsync(byte[] buffer, int offset, int count)
         {
-            Tuple<int, byte[]> data = await WebcoketDatagramBase.Current.GetBlockLengthAsync(_stream, ReadBlockSizeAsync);
-            byte[] newBytes = await ReadBlockSizeAsync(data.Item1);
+            Tuple<int, byte[]> data = await WebcoketDatagramBase.Current.GetBlockLengthAsync(_stream, ReadBlockSizeAsync).ConfigureAwait(false);
+            byte[] newBytes = await ReadBlockSizeAsync(data.Item1).ConfigureAwait(false);
             List<byte> b = new List<byte>();
             b.AddRange(data.Item2);
             b.AddRange(newBytes);
@@ -230,14 +230,14 @@ namespace SignalGo.Shared.IO
                 foreach (byte[] item in WebcoketDatagramBase.GetSegments(buffer.Take(count).ToArray()))
                 {
                     byte[] encode = WebcoketDatagramBase.Current.Encode(item);
-                    await _stream.WriteAsync(encode, 0, encode.Length);
+                    await _stream.WriteAsync(encode, 0, encode.Length).ConfigureAwait(false);
                 }
             }
             else
             {
                 byte[] encode = WebcoketDatagramBase.Current.Encode(buffer.Take(count).ToArray());
                 //byte[] decode = WebcoketDatagramBase.Current.Dencode(encode);
-                await _stream.WriteAsync(encode, 0, encode.Length);
+                await _stream.WriteAsync(encode, 0, encode.Length).ConfigureAwait(false);
             }
         }
 #endif

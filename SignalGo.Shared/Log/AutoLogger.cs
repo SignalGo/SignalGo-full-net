@@ -50,7 +50,7 @@ namespace SignalGo.Shared.Log
 #if (NET35 || NET40)
                 lockWaitToRead.Wait();
 #else
-                await lockWaitToRead.WaitAsync();
+                await lockWaitToRead.WaitAsync().ConfigureAwait(false);
 #endif
 
                 if (string.IsNullOrEmpty(DirectoryName))
@@ -174,7 +174,7 @@ namespace SignalGo.Shared.Log
 #if (NET35 || NET40)
             GenerateSavePath();
 #else
-            await GenerateSavePath();
+            await GenerateSavePath().ConfigureAwait(false);
 #endif
 
             try
@@ -182,7 +182,7 @@ namespace SignalGo.Shared.Log
 #if (NET35 || NET40)
                 lockWaitToRead.Wait();
 #else
-                await lockWaitToRead.WaitAsync();
+                await lockWaitToRead.WaitAsync().ConfigureAwait(false);
 #endif
                 string fileName = SavePath;
                 using (FileStream stream = new FileStream(fileName, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite))
@@ -192,7 +192,7 @@ namespace SignalGo.Shared.Log
 #if (NET35 || NET40)
                     stream.Write(bytes, 0, bytes.Length);
 #else
-                    await stream.WriteAsync(bytes, 0, bytes.Length);
+                    await stream.WriteAsync(bytes, 0, bytes.Length).ConfigureAwait(false);
 #endif
                 }
             }
@@ -231,7 +231,7 @@ namespace SignalGo.Shared.Log
 #if (NET35 || NET40)
                 GenerateSavePath();
 #else
-                await GenerateSavePath();
+                await GenerateSavePath().ConfigureAwait(false);
 #endif
 
                 try
@@ -239,7 +239,7 @@ namespace SignalGo.Shared.Log
 #if (NET35 || NET40)
                     lockWaitToRead.Wait();
 #else
-                    await lockWaitToRead.WaitAsync();
+                    await lockWaitToRead.WaitAsync().ConfigureAwait(false);
 #endif
                     string fileName = SavePath;
                     using (FileStream stream = new FileStream(fileName, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite))
@@ -249,7 +249,7 @@ namespace SignalGo.Shared.Log
 #if (NET35 || NET40)
                         stream.Write(bytes, 0, bytes.Length);
 #else
-                        await stream.WriteAsync(bytes, 0, bytes.Length);
+                        await stream.WriteAsync(bytes, 0, bytes.Length).ConfigureAwait(false);
 #endif
 
                     }

@@ -55,7 +55,7 @@ namespace SignalGo.Shared.IO
 #if (NET35 || NET40)
                 int readCount = stream.Read(readBytes, countToRead);
 #else
-                int readCount = await stream.ReadAsync(readBytes, countToRead);
+                int readCount = await stream.ReadAsync(readBytes, countToRead).ConfigureAwait(false);
 #endif
                 if (readCount <= 0)
                     throw new Exception("read zero buffer! client disconnected: " + readCount);
@@ -76,9 +76,9 @@ namespace SignalGo.Shared.IO
             int len = BitConverter.ToInt32(lenBytes, 0);
             var result = ReadBlockSize(stream, len);
 #else
-            byte[] lenBytes = await ReadBlockSizeAsync(stream, 4);
+            byte[] lenBytes = await ReadBlockSizeAsync(stream, 4).ConfigureAwait(false);
             int len = BitConverter.ToInt32(lenBytes, 0);
-            var result = await ReadBlockSizeAsync(stream, len);
+            var result = await ReadBlockSizeAsync(stream, len).ConfigureAwait(false);
 #endif
             return compression.Decompress(ref result);
         }

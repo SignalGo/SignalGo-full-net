@@ -51,7 +51,7 @@ namespace SignalGo.Server.TelegramBot
             _serverBase = serverBase;
             _botClient = new TelegramBotClient(token, httpClient);
 
-            User me = await _botClient.GetMeAsync();
+            User me = await _botClient.GetMeAsync().ConfigureAwait(false);
             _botClient.OnCallbackQuery += _botClient_OnCallbackQuery;
             _botClient.OnMessage += Bot_OnMessage;
             _botClient.StartReceiving();
@@ -133,11 +133,11 @@ namespace SignalGo.Server.TelegramBot
                         clientInfo.ParameterInfoes.Clear();
                         if (!string.IsNullOrEmpty(clientInfo.CurrentMethodName) && !string.IsNullOrEmpty(clientInfo.CurrentServiceName))
                         {
-                            await ShowServiceMethods(clientInfo.CurrentServiceName, clientInfo, e.Message);
+                            await ShowServiceMethods(clientInfo.CurrentServiceName, clientInfo, e.Message).ConfigureAwait(false);
                         }
                         else
                         {
-                            await ShowServices(clientInfo, e);
+                            await ShowServices(clientInfo, e).ConfigureAwait(false);
                         }
                     }
                     else if (e.Message.Text == CurrentBotStructureInfo.GetSendButtonText(clientInfo) && !string.IsNullOrEmpty(clientInfo.CurrentServiceName) && !string.IsNullOrEmpty(clientInfo.CurrentMethodName))
@@ -146,13 +146,13 @@ namespace SignalGo.Server.TelegramBot
                         {
                             if (CurrentBotStructureInfo.OnBeforeMethodCall(_serverBase, clientInfo, clientInfo.CurrentServiceName, clientInfo.CurrentMethodName, clientInfo.ParameterInfoes))
                             {
-                                Shared.Models.CallMethodResultInfo<OperationContext> result = await CallMethod(clientInfo);
+                                Shared.Models.CallMethodResultInfo<OperationContext> result = await CallMethod(clientInfo).ConfigureAwait(false);
                                 MethodInfo method = service.GetFullServiceLevelMethods().FirstOrDefault(x => x.Name.Equals(clientInfo.CurrentMethodName, StringComparison.OrdinalIgnoreCase));
                                 if (OverridedMethodResponses.TryGetValue(service, out Dictionary<string, Delegate> methods) && methods.TryGetValue(clientInfo.CurrentMethodName, out Delegate function))
                                 {
                                     BotCustomResponse botCustomResponse = new BotCustomResponse();
                                     BotResponseInfoBase response = (BotResponseInfoBase)function.DynamicInvoke(result.Context, botCustomResponse, result.Result);
-                                    await ShowResultValue(response.Message, method, clientInfo, e);
+                                    await ShowResultValue(response.Message, method, clientInfo, e).ConfigureAwait(false);
                                     botCustomResponse.OnAfterComeplete?.Invoke();
                                 }
                                 else
@@ -160,9 +160,9 @@ namespace SignalGo.Server.TelegramBot
 
                                     string customResponse = CurrentBotStructureInfo.OnCustomResponse(_serverBase, clientInfo, clientInfo.CurrentServiceName, clientInfo.CurrentMethodName, clientInfo.ParameterInfoes, result, out bool responseChanged);
                                     if (responseChanged)
-                                        await ShowResultValue(customResponse, method, clientInfo, e);
+                                        await ShowResultValue(customResponse, method, clientInfo, e).ConfigureAwait(false);
                                     else
-                                        await ShowResultValue(result, method, clientInfo, e.Message);
+                                        await ShowResultValue(result, method, clientInfo, e.Message).ConfigureAwait(false);
                                 }
                             }
                         }
@@ -172,17 +172,17 @@ namespace SignalGo.Server.TelegramBot
                         string serviceName = GetServiceNameByCaption(e.Message.Text);
                         if (Services.ContainsKey(serviceName))
                         {
-                            await ShowServiceMethods(serviceName, clientInfo, e.Message);
+                            await ShowServiceMethods(serviceName, clientInfo, e.Message).ConfigureAwait(false);
                         }
                         else
                         {
                             if (string.IsNullOrEmpty(clientInfo.CurrentMethodName) && !string.IsNullOrEmpty(clientInfo.CurrentServiceName))
                             {
-                                await ShowServiceMethods(clientInfo.CurrentServiceName, clientInfo, e.Message);
+                                await ShowServiceMethods(clientInfo.CurrentServiceName, clientInfo, e.Message).ConfigureAwait(false);
                             }
                             else if (string.IsNullOrEmpty(clientInfo.CurrentServiceName))
                             {
-                                await ShowServices(clientInfo, e);
+                                await ShowServices(clientInfo, e).ConfigureAwait(false);
                             }
                         }
                     }
@@ -194,11 +194,11 @@ namespace SignalGo.Server.TelegramBot
                             MethodInfo method = GetMethodByCaption(service, e.Message.Text);
                             if (method != null)
                             {
-                                await ShowServiceMethods(method, clientInfo, e.Message);
+                                await ShowServiceMethods(method, clientInfo, e.Message).ConfigureAwait(false);
                             }
                             else
                             {
-                                await ShowServiceMethods(clientInfo.CurrentServiceName, clientInfo, e.Message);
+                                await ShowServiceMethods(clientInfo.CurrentServiceName, clientInfo, e.Message).ConfigureAwait(false);
                             }
                         }
                     }
@@ -210,7 +210,7 @@ namespace SignalGo.Server.TelegramBot
                             //MethodInfo method = FindMethodByName(service, clientInfo.CurrentMethodName);
                             //ParameterInfo parameter = method.GetParameters().FirstOrDefault(x => x.Name.Equals(e.Message.Text, StringComparison.OrdinalIgnoreCase));
                             ParameterInfo parameter = FindParameterByName(method, e.Message.Text, true);
-                            await GetParameterValueFromClient(method, parameter, clientInfo, e);
+                            await GetParameterValueFromClient(method, parameter, clientInfo, e).ConfigureAwait(false);
                         }
                     }
                     else
@@ -221,7 +221,7 @@ namespace SignalGo.Server.TelegramBot
                             //MethodInfo method = FindMethodByName(service, clientInfo.CurrentMethodName);
                             // ParameterInfo parameter = method.GetParameters().FirstOrDefault(x => x.Name.Equals(clientInfo.CurrentParameterName, StringComparison.OrdinalIgnoreCase));
                             ParameterInfo parameter = FindParameterByName(method, clientInfo.CurrentParameterName, false);
-                            await SetParameterValueFromClient(method, parameter, clientInfo, e);
+                            await SetParameterValueFromClient(method, parameter, clientInfo, e).ConfigureAwait(false);
                         }
                     }
                 }
@@ -235,13 +235,13 @@ namespace SignalGo.Server.TelegramBot
         private async Task<Shared.Models.CallMethodResultInfo<OperationContext>> CallMethod(TelegramClientInfo clientInfo)
         {
             Shared.Models.CallMethodResultInfo<OperationContext> result = await BaseProvider.CallMethod(clientInfo.CurrentServiceName, Guid.NewGuid().ToString(), clientInfo.CurrentMethodName, clientInfo.CurrentMethodName, clientInfo.ParameterInfoes.ToArray()
-                               , null, clientInfo, null, _serverBase, null, x => true);
+                               , null, clientInfo, null, _serverBase, null, x => true).ConfigureAwait(false);
             return result;
         }
 
         public async Task<T> CallServerMethod<T>(TelegramClientInfo clientInfo)
         {
-            Shared.Models.CallMethodResultInfo<OperationContext> result = await CallMethod(clientInfo);
+            Shared.Models.CallMethodResultInfo<OperationContext> result = await CallMethod(clientInfo).ConfigureAwait(false);
 
             if (Services.TryGetValue(clientInfo.CurrentServiceName, out Type service))
             {
@@ -287,7 +287,7 @@ namespace SignalGo.Server.TelegramBot
                         document: inputOnlineFile,
                         caption: $"Response of {methodInfo.Name}",
                         replyMarkup: replyMarkup
-                       );
+                       ).ConfigureAwait(false);
                 }
             }
             else
@@ -296,7 +296,7 @@ namespace SignalGo.Server.TelegramBot
                   chatId: message.Chat,
                   text: callMethodResultInfo.CallbackInfo.Data,
                   replyMarkup: replyMarkup
-                 );
+                 ).ConfigureAwait(false);
             }
         }
 
@@ -315,7 +315,7 @@ namespace SignalGo.Server.TelegramBot
               chatId: e.Message.Chat,
               text: response,
               replyMarkup: replyMarkup
-             );
+             ).ConfigureAwait(false);
         }
 
         public void ChangeParameterValue(MethodInfo methodInfo, ParameterInfo parameterInfo, TelegramClientInfo clientInfo, string value)
@@ -355,7 +355,7 @@ namespace SignalGo.Server.TelegramBot
                 chatId: e.Message.Chat,
                 text: CurrentBotStructureInfo.GetParameterValueChangedText(GetParameterCaption(methodInfo, parameterInfo), clientInfo),
                 replyMarkup: replyMarkup
-               );
+               ).ConfigureAwait(false);
         }
 
         private async Task GetParameterValueFromClient(MethodInfo methodInfo, ParameterInfo parameterInfo, TelegramClientInfo clientInfo, MessageEventArgs e)
@@ -374,7 +374,7 @@ namespace SignalGo.Server.TelegramBot
                         chatId: e.Message.Chat,
                         text: CurrentBotStructureInfo.GetParameterNotFoundText(e.Message.Text, clientInfo),
                         replyMarkup: replyMarkup
-                       );
+                       ).ConfigureAwait(false);
                 }
                 else
                 {
@@ -389,7 +389,7 @@ namespace SignalGo.Server.TelegramBot
                         chatId: e.Message.Chat,
                         text: CurrentBotStructureInfo.GetParameterSelectedText(GetParameterCaption(methodInfo, parameterInfo), clientInfo),
                         replyMarkup: replyMarkup
-                       );
+                       ).ConfigureAwait(false);
                 }
             }
         }
@@ -408,7 +408,7 @@ namespace SignalGo.Server.TelegramBot
                      chatId: clientInfo.Message.Chat,
                      text: text,
                      replyMarkup: replyMarkup
-                   );
+                   ).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -429,7 +429,7 @@ namespace SignalGo.Server.TelegramBot
                 chatId: message.Chat,
                 text: string.IsNullOrEmpty(customText) ? CurrentBotStructureInfo.GetMethodSelectedText(method.Name, clientInfo) : customText,
                 replyMarkup: replyMarkup
-               );
+               ).ConfigureAwait(false);
         }
 
         private async Task ShowServiceMethods(string serviceName, TelegramClientInfo clientInfo, Message message)
@@ -448,14 +448,14 @@ namespace SignalGo.Server.TelegramBot
                      chatId: message.Chat,
                      text: CurrentBotStructureInfo.GetServiceSelectedText(GetServiceName(service), GetServiceCaption(service), service, clientInfo),
                      replyMarkup: replyMarkup
-                   );
+                   ).ConfigureAwait(false);
             }
             else
             {
                 await _botClient.SendTextMessageAsync(
                     chatId: message.Chat,
                     text: CurrentBotStructureInfo.GetServiceNotFoundText(serviceName, clientInfo)
-                  );
+                  ).ConfigureAwait(false);
             }
         }
 
@@ -474,7 +474,7 @@ namespace SignalGo.Server.TelegramBot
                  chatId: e.Message.Chat,
                  text: text,
                  replyMarkup: replyMarkup
-               );
+               ).ConfigureAwait(false);
         }
 
         public async void ShowServices(TelegramClientInfo clientInfo, string message = null)
@@ -492,7 +492,7 @@ namespace SignalGo.Server.TelegramBot
                     chatId: clientInfo.Message.Chat,
                     text: message == null ? CurrentBotStructureInfo.GetServicesGeneratedText(clientInfo) : message,
                     replyMarkup: replyMarkup
-                  );
+                  ).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -510,7 +510,7 @@ namespace SignalGo.Server.TelegramBot
                     chatId: clientInfo.Message.Chat,
                     text: message == null ? CurrentBotStructureInfo.GetServicesGeneratedText(clientInfo) : message,
                     replyMarkup: replyMarkup
-                  );
+                  ).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -526,7 +526,7 @@ namespace SignalGo.Server.TelegramBot
         {
             try
             {
-                await ShowServiceMethods(serviceName, clientInfo, clientInfo.Message);
+                await ShowServiceMethods(serviceName, clientInfo, clientInfo.Message).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -558,7 +558,7 @@ namespace SignalGo.Server.TelegramBot
                 {
                     clientInfo.CurrentServiceName = serviceName;
                     MethodInfo method = FindMethod(service, methodName);
-                    await ShowServiceMethods(method, clientInfo, clientInfo.Message, customText);
+                    await ShowServiceMethods(method, clientInfo, clientInfo.Message, customText).ConfigureAwait(false);
                 }
             }
             catch (Exception ex)
