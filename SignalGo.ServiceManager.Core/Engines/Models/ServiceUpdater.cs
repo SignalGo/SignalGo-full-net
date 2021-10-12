@@ -100,7 +100,7 @@ namespace SignalGo.ServiceManager.Core.Engines.Models
                     }
                 }
                 if (compressionMethod == CompressionMethodType.Zip)
-                    ZipFile.ExtractToDirectory(zipFilePath, ExtractPath);
+                    ZipFile.ExtractToDirectory(zipFilePath, ExtractPath, true);
                 //Debug.WriteLine("archive extracted successfully");
                 Console.WriteLine("archive extracted successfully");
                 IsSuccess = true;
