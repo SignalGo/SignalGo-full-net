@@ -454,6 +454,16 @@ namespace SignalGo.Shared.Helpers
             return methods;
         }
 
+        public static List<PropertyInfo> GetListOfPropertiesWithAllOfBases(this Type type)
+        {
+            List<PropertyInfo> properties = new List<PropertyInfo>();
+            foreach (Type item in type.GetAllInheritances(false))
+            {
+                properties.AddRange(item.GetListOfProperties());
+            }
+            return properties;
+        }
+
         /// <summary>
         /// check the method IsOverride
         /// </summary>
