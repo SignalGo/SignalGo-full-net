@@ -612,7 +612,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                         await client.ClientStream.WriteAsync(bytes, 0, bytes.Length).ConfigureAwait(false);
                     }
                     //delay to fix fast dispose before client read data
-                    await Task.Delay(1000).ConfigureAwait(false);
+                    await Task.Delay(5000).ConfigureAwait(false);
                     file.FileStream.Dispose();
                 }
                 else

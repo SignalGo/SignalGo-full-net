@@ -32,7 +32,7 @@ namespace SignalGo.Server.ServiceManager.Versions
         public void Start(ServerBase serverBase, int port)
 #endif
         {
-            Thread thread = new Thread(() =>
+            Thread thread = new Thread(async() =>
             {
                 _serverBase = serverBase;
                 try
@@ -59,7 +59,10 @@ namespace SignalGo.Server.ServiceManager.Versions
 #if (NETSTANDARD1_6)
                             Debug.WriteLine("DeadLock Warning Start Server!");
                             TcpClient client = _server.AcceptTcpClientAsync().ConfigureAwait(false).GetAwaiter().GetResult();
+#elif (NETSTANDARD2_0)
+                            TcpClient client = await _server.AcceptTcpClientAsync().ConfigureAwait(false);
 #else
+
                             TcpClient client = _server.AcceptTcpClient();
 
 #endif
