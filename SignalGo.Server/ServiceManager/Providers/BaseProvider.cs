@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SignalGo.Server.ServiceManager.Providers
@@ -402,116 +403,100 @@ namespace SignalGo.Server.ServiceManager.Providers
                                 //Task taskResult = null;
                                 if (concurrentLockAttribute != null)
                                 {
+                                    SemaphoreSlim semaphore = null;
                                     switch (concurrentLockAttribute.Type)
                                     {
                                         case ConcurrentLockType.Full:
                                             {
-                                                try
+                                                if (!string.IsNullOrEmpty(concurrentLockAttribute.Key))
                                                 {
-                                                    await serverBase.LockWaitToRead.WaitAsync().ConfigureAwait(false);
-                                                    await Task.Run(async () =>
-                                                    {
-                                                        OperationContext.CurrentTaskServer = serverBase;
-                                                        result = await InvokerMethod(client, serverBase, method, service, parametersValues).ConfigureAwait(false);
-                                                    }).ConfigureAwait(false);
+                                                    var value = GetParameterValue(method, parametersValues, concurrentLockAttribute.Key);
+                                                    semaphore = ConcurrentObjects.GetParameterValue(value);
                                                 }
-                                                finally
+                                                else
                                                 {
-                                                    serverBase.LockWaitToRead.Release();
+                                                    semaphore = serverBase.LockWaitToRead;
                                                 }
                                                 break;
                                             }
                                         case ConcurrentLockType.PerClient:
                                             {
-                                                try
+                                                if (!string.IsNullOrEmpty(concurrentLockAttribute.Key))
                                                 {
-                                                    await client.LockWaitToRead.WaitAsync().ConfigureAwait(false);
-                                                    await Task.Run(async () =>
-                                                    {
-                                                        OperationContext.CurrentTaskServer = serverBase;
-                                                        result = await InvokerMethod(client, serverBase, method, service, parametersValues).ConfigureAwait(false);
-                                                    }).ConfigureAwait(false);
+                                                    var value = GetParameterValue(method, parametersValues, concurrentLockAttribute.Key);
+                                                    semaphore = ConcurrentObjects.GetCustomParameterValue(client.ClientId, value);
                                                 }
-                                                finally
-                                                {
-                                                    client.LockWaitToRead.Release();
-                                                }
+                                                else
+                                                    semaphore = client.LockWaitToRead;
                                                 break;
                                             }
                                         case ConcurrentLockType.PerIpAddress:
                                             {
-                                                var slim = ConcurrentObjects.GetIpObject(client.IPAddress);
-                                                try
+                                                if (!string.IsNullOrEmpty(concurrentLockAttribute.Key))
                                                 {
-                                                    await slim.WaitAsync().ConfigureAwait(false);
-                                                    await Task.Run(async () =>
-                                                    {
-                                                        OperationContext.CurrentTaskServer = serverBase;
-                                                        result = await InvokerMethod(client, serverBase, method, service, parametersValues).ConfigureAwait(false);
-                                                    }).ConfigureAwait(false);
+                                                    var value = GetParameterValue(method, parametersValues, concurrentLockAttribute.Key);
+                                                    semaphore = ConcurrentObjects.GetCustomParameterValue(client.IPAddress, value);
                                                 }
-                                                finally
-                                                {
-                                                    slim.Release();
-                                                }
+                                                else
+                                                    semaphore = ConcurrentObjects.GetIpObject(client.IPAddress);
                                                 break;
                                             }
                                         case ConcurrentLockType.PerMethod:
                                             {
-                                                var slim = ConcurrentObjects.GetMethodObject(method);
-                                                try
+                                                if (!string.IsNullOrEmpty(concurrentLockAttribute.Key))
                                                 {
-                                                    await slim.WaitAsync().ConfigureAwait(false);
-                                                    await Task.Run(async () =>
-                                                    {
-                                                        OperationContext.CurrentTaskServer = serverBase;
-                                                        result = await InvokerMethod(client, serverBase, method, service, parametersValues).ConfigureAwait(false);
-                                                    }).ConfigureAwait(false);
+                                                    var value = GetParameterValue(method, parametersValues, concurrentLockAttribute.Key);
+                                                    semaphore = ConcurrentObjects.GetCustomParameterValue(serviceName + "/" + method.Name, value);
                                                 }
-                                                finally
-                                                {
-                                                    slim.Release();
-                                                }
+                                                else
+                                                    semaphore = ConcurrentObjects.GetMethodObject(method);
                                                 break;
                                             }
                                         case ConcurrentLockType.PerSingleInstanceService:
                                             {
                                                 if (!isSingleInstance)
                                                     throw new Exception("you are using ConcurrentLockType.PerSingleInstanceService but your service type is not single instace! this type is not support for multiple instance of services");
-                                                var slim = ConcurrentObjects.GetInstanceObject(service);
-                                                try
+                                                if (!string.IsNullOrEmpty(concurrentLockAttribute.Key))
                                                 {
-                                                    await slim.WaitAsync().ConfigureAwait(false);
-                                                    await Task.Run(async () =>
-                                                    {
-                                                        OperationContext.CurrentTaskServer = serverBase;
-                                                        result = await InvokerMethod(client, serverBase, method, service, parametersValues).ConfigureAwait(false);
-                                                    }).ConfigureAwait(false);
+                                                    var value = GetParameterValue(method, parametersValues, concurrentLockAttribute.Key);
+                                                    semaphore = ConcurrentObjects.GetCustomParameterValue(serviceName, value);
                                                 }
-                                                finally
-                                                {
-                                                    slim.Release();
-                                                }
+                                                else
+                                                    semaphore = ConcurrentObjects.GetInstanceObject(service);
                                                 break;
                                             }
                                         case ConcurrentLockType.Key:
                                             {
-                                                var slim = ConcurrentObjects.GetInstanceObject(concurrentLockAttribute.Key);
-                                                try
-                                                {
-                                                    await slim.WaitAsync().ConfigureAwait(false);
-                                                    await Task.Run(async () =>
-                                                    {
-                                                        OperationContext.CurrentTaskServer = serverBase;
-                                                        result = await InvokerMethod(client, serverBase, method, service, parametersValues).ConfigureAwait(false);
-                                                    }).ConfigureAwait(false);
-                                                }
-                                                finally
-                                                {
-                                                    slim.Release();
-                                                }
+                                                semaphore = ConcurrentObjects.GetInstanceObject(concurrentLockAttribute.Key);
                                                 break;
                                             }
+                                        case ConcurrentLockType.PerSession:
+                                            {
+                                                string session = GetSessionKey(client);
+                                                if (!string.IsNullOrEmpty(concurrentLockAttribute.Key))
+                                                {
+                                                    var value = GetParameterValue(method, parametersValues, concurrentLockAttribute.Key);
+                                                    semaphore = ConcurrentObjects.GetCustomParameterValue(session, value);
+                                                }
+                                                else
+                                                    semaphore = ConcurrentObjects.GetStringValuesLocks(session);
+                                                break;
+                                            }
+                                        default:
+                                            throw new Exception($"ConcurrentLockType {concurrentLockAttribute.Type} not support!");
+                                    }
+                                    try
+                                    {
+                                        await semaphore.WaitAsync().ConfigureAwait(false);
+                                        await Task.Run(async () =>
+                                        {
+                                            OperationContext.CurrentTaskServer = serverBase;
+                                            result = await InvokerMethod(client, serverBase, method, service, parametersValues).ConfigureAwait(false);
+                                        }).ConfigureAwait(false);
+                                    }
+                                    finally
+                                    {
+                                        semaphore.Release();
                                     }
                                 }
                                 else
@@ -629,6 +614,110 @@ namespace SignalGo.Server.ServiceManager.Providers
                 }
                 return new CallMethodResultInfo<OperationContext>(callback, streamInfo, httpKeyAttributes, serviceType, method, service, fileActionResult, context, result);
             }).ConfigureAwait(false);
+        }
+
+        static object GetParameterValue(MethodInfo method, List<object> values, string path)
+        {
+            var splited = path.Split('/', '\\');
+            object[] currentValues = null;
+            for (int i = 0; i < splited.Length; i++)
+            {
+                var item = splited[i];
+                if (item == "*")
+                {
+                    if (i == 0)
+                    {
+                        if (values.Count == 1)
+                        {
+                            currentValues = new object[] { values[0] };
+                        }
+                        else
+                        {
+                            var nextItem = splited[i + 1];
+                            List<object> newValues = new List<object>();
+                            foreach (var value in values)
+                            {
+                                var newValue = GetValueOfPath(value, nextItem);
+                                if (newValue != null)
+                                    newValues.Add(newValue);
+                            }
+                            if (newValues.Count == 0)
+                                break;
+                            currentValues = newValues.ToArray();
+                        }
+                    }
+                    else
+                    {
+                        var nextItem = splited[i + 1];
+                        List<object> newValues = new List<object>();
+                        foreach (var allValue in currentValues)
+                        {
+                            newValues.AddRange(GetValues(allValue).Where(x => x != null));
+                        }
+
+                        if (newValues.Count == 0)
+                            break;
+                        currentValues = newValues.ToArray();
+                    }
+                }
+                else
+                {
+                    if (i == 0)
+                    {
+                        var parameters = method.GetParameters();
+                        var findParameter = parameters.FirstOrDefault(x => x.Name.Equals(item, StringComparison.OrdinalIgnoreCase));
+                        if (findParameter == null)
+                            break;
+                        var index = Array.IndexOf(parameters, findParameter);
+                        currentValues = new object[] { values[index] };
+                        if (currentValues == null)
+                            break;
+                    }
+                    else
+                    {
+                        List<object> newValues = new List<object>();
+                        foreach (var value in currentValues)
+                        {
+                            var newValue = GetValueOfPath(value, item);
+                            if (newValue != null)
+                                newValues.Add(newValue);
+                        }
+                        currentValues = newValues.ToArray();
+                    }
+                }
+            }
+            if (currentValues?.Length > 0)
+                return currentValues[0];
+            throw new Exception($"Cannot find path of {path} in parameter values in method {method.Name} in class {method.DeclaringType.FullName}! Please check your parameter values!");
+        }
+
+        static object GetValueOfPath(object value, string pathName)
+        {
+            if (value == null)
+                return null;
+            var property = value.GetType().GetListOfProperties().FirstOrDefault(x => x.Name.Equals(pathName, StringComparison.OrdinalIgnoreCase));
+            if (property == null)
+                return null;
+            return property.GetValue(value);
+        }
+
+        static List<object> GetValues(object value)
+        {
+            if (value == null)
+                return null;
+            return value.GetType().GetListOfProperties().Select(x => x.GetValue(value)).ToList();
+        }
+
+
+        static string GetSessionKey(ClientInfo client)
+        {
+            if (client is HttpClientInfo httpClient)
+            {
+                var headerValue = httpClient.GetRequestHeaderValue("Cookie");
+                var find = OperationContextBase.ExtractValue(headerValue, "_session", ";", "=");
+                return find;
+            }
+            return client.ClientId;
         }
 
         static object HandleClientResponse(object response, ClientInfo client, ServerBase serverBase, Type serviceType, MethodInfo method)

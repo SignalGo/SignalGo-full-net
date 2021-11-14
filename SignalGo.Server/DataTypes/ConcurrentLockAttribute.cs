@@ -30,7 +30,11 @@ namespace SignalGo.Server.DataTypes
         /// <summary>
         /// by a static string key
         /// </summary>
-        Key = 6
+        Key = 6,
+        /// <summary>
+        /// per client session header
+        /// </summary>
+        PerSession = 7
     }
     /// <summary>
     /// lock method when multipe clients are calling
@@ -59,8 +63,24 @@ namespace SignalGo.Server.DataTypes
         /// <param name="key"></param>
         public ConcurrentLockAttribute(string key)
         {
-            Type =  ConcurrentLockType.Key;
+            if (string.IsNullOrEmpty(key))
+                throw new Exception("key cannot be null as ConcurrentLockAttribute!");
+            Type = ConcurrentLockType.Key;
             Key = key;
+        }
+
+        /// <summary>
+        /// lock per value of parameter
+        /// its just support for ConcurrentLockType.Full and parameter path
+        /// </summary>
+        /// <param name="type">Set type as PerParameterValue</param>
+        /// <param name="parameterPath">Examples: "*/PropertyName" or "ParameterName/PropertyName"</param>
+        public ConcurrentLockAttribute(ConcurrentLockType type, string parameterPath)
+        {
+            if (string.IsNullOrEmpty(parameterPath))
+                throw new Exception("parameterPath cannot be null as ConcurrentLockAttribute!");
+            Type = type;
+            Key = parameterPath;
         }
 
         /// <summary>
