@@ -38,6 +38,7 @@ namespace SignalGo.Client
         public Encoding Encoding { get; set; } = Encoding.UTF8;
         public WebHeaderCollection ResponseHeaders { get; set; }
         public WebHeaderCollection RequestHeaders { get; set; } = new WebHeaderCollection();
+        public string DefaultContentType { get; set; } = "application/xml";
     }
 
     /// <summary>ISO-8859-1
@@ -56,9 +57,11 @@ namespace SignalGo.Client
 
         WebServiceProtocolSettings Settings { get; set; }
     }
+
     public delegate void LoggerAction(string url, string actionUrl, string methodName, ParameterInfo[] args, object data);
     public static class WebServiceProtocolHelper
     {
+        public static Func<Type, string, string> CustomJsonReplaceForDeserialize { get; set; }
 
         public static T CallWebServiceMethod<T>(IWebServiceProtocolLogger logger, string headerTemplate, string url, string actionUrl, string targetNamespace, string methodName, ParameterInfo[] args)
         {
@@ -142,15 +145,15 @@ namespace SignalGo.Client
             int tryCount = 0;
             logger?.BeforeCallAction?.Invoke(url, actionUrl, methodName, args, defaultData);
 
-            TryAgainLabel:
+TryAgainLabel:
             var httpRequestMessage = new System.Net.Http.HttpRequestMessage();
             var content_ = new System.Net.Http.StringContent(defaultData);
-            content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/xml");
+            content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse(logger.Settings.DefaultContentType);
             httpRequestMessage.Content = content_;
 
             if (!string.IsNullOrEmpty(actionUrl))
                 httpRequestMessage.Headers.TryAddWithoutValidation("SOAPAction", actionUrl);
-            httpRequestMessage.Headers.TryAddWithoutValidation("ContentType", "application/xml");
+            httpRequestMessage.Headers.TryAddWithoutValidation("ContentType", logger.Settings.DefaultContentType);
             foreach (var item in logger.Settings.RequestHeaders.AllKeys)
             {
                 var value = logger.Settings.RequestHeaders[item];
@@ -205,6 +208,8 @@ namespace SignalGo.Client
                             //firstElement = doc.Elements().First();//
                             //findElement = FindElement(doc.Elements(), typeof(T).Name);
                             string json = Newtonsoft.Json.JsonConvert.SerializeXmlNode(node);
+                            if (CustomJsonReplaceForDeserialize != null)
+                                json = CustomJsonReplaceForDeserialize(typeof(T), json);
                             return Newtonsoft.Json.JsonConvert.DeserializeObject<T>(json, JsonSettingHelper.GlobalJsonSetting);
                             //if (typeof(T).GetListOfProperties().Count() == 2)
                             //{
@@ -271,7 +276,7 @@ namespace SignalGo.Client
                         var value = item.GetValue(data, null);
                         if (value != null)
                         {
-                            stringBuilder.AppendLine($"<{item.Name}>{value}<{item.Name}/>");
+                            stringBuilder.AppendLine($"<{item.Name}>{value}</{item.Name}>");
                         }
                     }
                 }
