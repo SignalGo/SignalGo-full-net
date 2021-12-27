@@ -248,7 +248,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     string keyParameterValue = null;
                     if (parameters == null)
                         parameters = new Shared.Models.ParameterInfo[0];
-                    List<object> parametersValues = FixParametersCount(taskId, service, method, parameters.ToList(), serverBase, client, allMethods, customDataExchanger, jsonParameters, out List<BaseValidationRuleInfoAttribute> validationErrors, ref keyParameterValue);
+                    List<object> parametersValues = FixParametersCount(taskId, service, method, parameters.ToList(), serverBase, client, allMethods, customDataExchanger, jsonParameters, out List<BaseValidationRuleInfoAttribute> validationErrors, ref keyParameterValue, customOutputSerializerAttributes);
 
                     if (parametersValues.Count == 1 && parametersValues[0] == null)
                     {
@@ -763,7 +763,7 @@ namespace SignalGo.Server.ServiceManager.Providers
         /// <param name="serverBase"></param>
         /// <param name="client"></param>
         /// <returns></returns>
-        private static object DeserializeParameterValue(System.Reflection.ParameterInfo methodParameter, SignalGo.Shared.Models.ParameterInfo userParameterInfo, int parameterIndex, List<CustomDataExchangerAttribute> customDataExchanger, IEnumerable<MethodInfo> allMethods, ServerBase serverBase, ClientInfo client)
+        private static object DeserializeParameterValue(System.Reflection.ParameterInfo methodParameter, SignalGo.Shared.Models.ParameterInfo userParameterInfo, int parameterIndex, List<CustomDataExchangerAttribute> customDataExchanger, IEnumerable<MethodInfo> allMethods, ServerBase serverBase, ClientInfo client, List<CustomOutputSerializerAttribute> customOutputSerializerAttributes)
         {
             List<CustomDataExchangerAttribute> parameterDataExchanger = customDataExchanger.ToList();
             parameterDataExchanger.AddRange(GetMethodParameterBinds(parameterIndex, allMethods.ToArray()).Where(x => x.GetExchangerByUserCustomization(client)));
@@ -773,7 +773,12 @@ namespace SignalGo.Server.ServiceManager.Providers
             if (SerializeHelper.GetTypeCodeOfObject(methodParameter.ParameterType) != SerializeObjectType.Object && !userParameterInfo.Value.StartsWith("\""))
                 userParameterInfo.Value = "\"" + userParameterInfo.Value + "\"";
 
-            return ServerSerializationHelper.Deserialize(userParameterInfo.Value, methodParameter.ParameterType, serverBase, customDataExchanger: parameterDataExchanger.ToArray(), client: client);
+            if (customOutputSerializerAttributes?.Count > 0)
+            {
+                return customOutputSerializerAttributes.First().Deserialize(methodParameter.ParameterType, userParameterInfo.Value, serverBase, client);
+            }
+            else
+                return ServerSerializationHelper.Deserialize(userParameterInfo.Value, methodParameter.ParameterType, serverBase, customDataExchanger: parameterDataExchanger.ToArray(), client: client);
         }
 
         /// <summary>
@@ -805,7 +810,7 @@ namespace SignalGo.Server.ServiceManager.Providers
         /// <param name="customDataExchanger"></param>
         /// <param name="validationErrors"></param>
         /// <returns></returns>
-        private static List<object> FixParametersCount(int taskId, object service, MethodInfo method, List<SignalGo.Shared.Models.ParameterInfo> parameters, ServerBase serverBase, ClientInfo client, IEnumerable<MethodInfo> allMethods, List<CustomDataExchangerAttribute> customDataExchanger, string jsonParameters, out List<BaseValidationRuleInfoAttribute> validationErrors, ref string keyParameterValue)
+        private static List<object> FixParametersCount(int taskId, object service, MethodInfo method, List<SignalGo.Shared.Models.ParameterInfo> parameters, ServerBase serverBase, ClientInfo client, IEnumerable<MethodInfo> allMethods, List<CustomDataExchangerAttribute> customDataExchanger, string jsonParameters, out List<BaseValidationRuleInfoAttribute> validationErrors, ref string keyParameterValue, List<CustomOutputSerializerAttribute> customOutputSerializerAttributes)
         {
             List<object> parametersValues = new List<object>();
             System.Reflection.ParameterInfo[] methodParameters = method.GetParameters();
@@ -824,7 +829,7 @@ namespace SignalGo.Server.ServiceManager.Providers
             {
                 parameters.Clear();
                 parameters.Add(new Shared.Models.ParameterInfo() { Value = jsonParameters });
-                return FixParametersCount(taskId, service, method, parameters, serverBase, client, allMethods, customDataExchanger, null, out validationErrors, ref keyParameterValue);
+                return FixParametersCount(taskId, service, method, parameters, serverBase, client, allMethods, customDataExchanger, null, out validationErrors, ref keyParameterValue, customOutputSerializerAttributes);
             }
 
             bool hasIgnoreValidation = method.GetCustomAttributes<IgnoreValidationsAttribute>(true).Length > 0;
@@ -852,7 +857,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 object value = null;
                 if (userParameterInfo != null)
                 {
-                    value = DeserializeParameterValue(methodParameter, userParameterInfo, i, customDataExchanger, allMethods, serverBase, client);
+                    value = DeserializeParameterValue(methodParameter, userParameterInfo, i, customDataExchanger, allMethods, serverBase, client, customOutputSerializerAttributes);
                     parametersValues.Add(value);
                     parametersKeyValues[methodParameterName] = value;
                 }
@@ -864,7 +869,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                         try
                         {
                             parameters.Remove(findNoNameParameter);
-                            value = DeserializeParameterValue(methodParameter, findNoNameParameter, i, customDataExchanger, allMethods, serverBase, client);
+                            value = DeserializeParameterValue(methodParameter, findNoNameParameter, i, customDataExchanger, allMethods, serverBase, client, customOutputSerializerAttributes);
                             if (value == null)
                                 parametersValues.Add(findNoNameParameter.Value.Trim('"'));
                             else
@@ -882,7 +887,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     else if (!string.IsNullOrEmpty(jsonParameters))
                     {
                         hasNoName = false;
-                        value = DeserializeParameterValue(methodParameter, new Shared.Models.ParameterInfo() { Value = jsonParameters }, i, customDataExchanger, allMethods, serverBase, client);
+                        value = DeserializeParameterValue(methodParameter, new Shared.Models.ParameterInfo() { Value = jsonParameters }, i, customDataExchanger, allMethods, serverBase, client, customOutputSerializerAttributes);
                         parametersValues.Add(value);
                         parametersKeyValues[methodParameterName] = value;
                         jsonParameters = null;
