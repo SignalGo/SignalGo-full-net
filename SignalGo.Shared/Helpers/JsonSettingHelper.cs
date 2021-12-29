@@ -30,6 +30,8 @@ namespace SignalGo.Shared.Helpers
                     else
                         return dateTime;
                 }
+                else if (objectType.IsNullableValueType())
+                    return null;
                 return default(DateTime);
             }
             catch (Exception ex)
@@ -79,7 +81,11 @@ namespace SignalGo.Shared.Helpers
             {
                 var value = reader.Value;
                 if (value == null)
+                {
+                    if (objectType.IsNullableValueType())
+                        return null;
                     return default(DateTime);
+                }
                 else if (!(value is DateTime))
                     value = DateTime.Parse(value.ToString());
                 return ((DateTime)value).ToLocalTime();
@@ -123,7 +129,11 @@ namespace SignalGo.Shared.Helpers
             {
                 var value = reader.Value;
                 if (value == null)
+                {
+                    if (objectType.IsNullableValueType())
+                        return null;
                     return default(DateTime);
+                }
                 else if (!(value is DateTime))
                     value = DateTime.Parse(value.ToString());
                 var result = DateTime.SpecifyKind((DateTime)value, DateTimeKind.Local);

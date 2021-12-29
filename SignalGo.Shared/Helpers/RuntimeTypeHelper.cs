@@ -12,6 +12,20 @@ namespace SignalGo.Shared.Helpers
     public static class RuntimeTypeHelper
     {
         /// <summary>
+        /// check a type is nullable
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public static bool IsNullableValueType(this Type type)
+        {
+#if (NETSTANDARD1_6)
+            return type.GetGenericTypeDefinition() == typeof(Nullable<>);
+#else
+            return type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>);
+#endif
+        }
+
+        /// <summary>
         /// return types of method parameter
         /// </summary>
         /// <param name="serviceType"></param>
