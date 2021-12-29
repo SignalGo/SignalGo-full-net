@@ -5,6 +5,7 @@ using SignalGo.Shared.Models;
 using System;
 using System.Diagnostics;
 using System.Linq;
+using System.Net.Sockets;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -256,6 +257,11 @@ namespace SignalGo.Client.ClientManager
 
                 return result.Data;
 
+            }
+            catch(SocketException)
+            {
+                connector.Disconnect();
+                throw;
             }
             catch (Exception ex)
             {
