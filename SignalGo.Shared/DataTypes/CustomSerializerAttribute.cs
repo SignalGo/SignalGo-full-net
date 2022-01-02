@@ -8,8 +8,15 @@ namespace SignalGo.Shared.DataTypes
     /// <summary>
     /// custom serialize your object to do it faster
     /// </summary>
-    public abstract class CustomOutputSerializerAttribute : Attribute
+    public abstract class CustomSerializerAttribute : Attribute
     {
+        public CustomSerializerAttribute(LimitExchangeType limitExchangeType = LimitExchangeType.OutgoingCall)
+        {
+            LimitExchangeType = limitExchangeType;
+        }
+
+        public LimitExchangeType LimitExchangeType { get; set; } = LimitExchangeType.OutgoingCall;
+
         /// <summary>
         /// serialize data to string
         /// </summary>

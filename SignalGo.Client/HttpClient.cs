@@ -81,7 +81,7 @@ namespace SignalGo.Client
     /// </summary>
     public class HttpClient : IHttpClient
     {
-        public static CustomOutputSerializerAttribute CurrentCustomOutputSerializer;
+        public static CustomSerializerAttribute CurrentCustomOutputSerializer;
         public HttpClient()
         {
             JsonSettingHelper.Initialize();

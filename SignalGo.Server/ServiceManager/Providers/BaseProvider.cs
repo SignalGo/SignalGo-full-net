@@ -188,7 +188,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     List<CustomDataExchangerAttribute> customDataExchanger = new List<CustomDataExchangerAttribute>();
                     List<ClientLimitationAttribute> clientLimitationAttribute = new List<ClientLimitationAttribute>();
                     List<ConcurrentLockAttribute> concurrentLockAttributes = new List<ConcurrentLockAttribute>();
-                    List<CustomOutputSerializerAttribute> customOutputSerializerAttributes = new List<CustomOutputSerializerAttribute>();
+                    List<CustomSerializerAttribute> customOutputSerializerAttributes = new List<CustomSerializerAttribute>();
 #if (!NETSTANDARD1_6)
                     securityAttributes.AddRange(serviceType.GetCustomAttributes(typeof(ISecurityContract), true).Cast<ISecurityContract>());
 #endif
@@ -554,10 +554,11 @@ namespace SignalGo.Server.ServiceManager.Providers
                                         callback.Data = null;
                                     else
                                     {
-                                        if (customOutputSerializerAttributes.Count == 0)
+                                        var outputSerializer = customOutputSerializerAttributes.Where(x => x.LimitExchangeType == LimitExchangeType.Both || x.LimitExchangeType == LimitExchangeType.OutgoingCall).FirstOrDefault();
+                                        if (outputSerializer == null)
                                             callback.Data = ServerSerializationHelper.SerializeObject(HandleClientResponse(result, client, serverBase, serviceType, method), serverBase, customDataExchanger: customDataExchanger.ToArray(), client: client, isEnabledReferenceResolver: isEnabledReferenceResolver, isEnabledReferenceResolverForArray: isEnabledReferenceResolverForArray);
                                         else
-                                            callback.Data = customOutputSerializerAttributes.First().Serialize(HandleClientResponse(result, client, serverBase, serviceType, method), serverBase, client);
+                                            callback.Data = outputSerializer.Serialize(HandleClientResponse(result, client, serverBase, serviceType, method), serverBase, client);
                                     }
 
                                 }
@@ -763,7 +764,7 @@ namespace SignalGo.Server.ServiceManager.Providers
         /// <param name="serverBase"></param>
         /// <param name="client"></param>
         /// <returns></returns>
-        private static object DeserializeParameterValue(System.Reflection.ParameterInfo methodParameter, SignalGo.Shared.Models.ParameterInfo userParameterInfo, int parameterIndex, List<CustomDataExchangerAttribute> customDataExchanger, IEnumerable<MethodInfo> allMethods, ServerBase serverBase, ClientInfo client, List<CustomOutputSerializerAttribute> customOutputSerializerAttributes)
+        private static object DeserializeParameterValue(System.Reflection.ParameterInfo methodParameter, SignalGo.Shared.Models.ParameterInfo userParameterInfo, int parameterIndex, List<CustomDataExchangerAttribute> customDataExchanger, IEnumerable<MethodInfo> allMethods, ServerBase serverBase, ClientInfo client, List<CustomSerializerAttribute> customOutputSerializerAttributes)
         {
             List<CustomDataExchangerAttribute> parameterDataExchanger = customDataExchanger.ToList();
             parameterDataExchanger.AddRange(GetMethodParameterBinds(parameterIndex, allMethods.ToArray()).Where(x => x.GetExchangerByUserCustomization(client)));
@@ -772,10 +773,11 @@ namespace SignalGo.Server.ServiceManager.Providers
             //fix for deserialize from json
             if (SerializeHelper.GetTypeCodeOfObject(methodParameter.ParameterType) != SerializeObjectType.Object && !userParameterInfo.Value.StartsWith("\""))
                 userParameterInfo.Value = "\"" + userParameterInfo.Value + "\"";
+            var outputSerializer = customOutputSerializerAttributes?.Where(x => x.LimitExchangeType == LimitExchangeType.Both || x.LimitExchangeType == LimitExchangeType.IncomingCall).FirstOrDefault();
 
-            if (customOutputSerializerAttributes?.Count > 0)
+            if (outputSerializer != null)
             {
-                return customOutputSerializerAttributes.First().Deserialize(methodParameter.ParameterType, userParameterInfo.Value, serverBase, client);
+                return outputSerializer.Deserialize(methodParameter.ParameterType, userParameterInfo.Value, serverBase, client);
             }
             else
                 return ServerSerializationHelper.Deserialize(userParameterInfo.Value, methodParameter.ParameterType, serverBase, customDataExchanger: parameterDataExchanger.ToArray(), client: client);
@@ -810,7 +812,7 @@ namespace SignalGo.Server.ServiceManager.Providers
         /// <param name="customDataExchanger"></param>
         /// <param name="validationErrors"></param>
         /// <returns></returns>
-        private static List<object> FixParametersCount(int taskId, object service, MethodInfo method, List<SignalGo.Shared.Models.ParameterInfo> parameters, ServerBase serverBase, ClientInfo client, IEnumerable<MethodInfo> allMethods, List<CustomDataExchangerAttribute> customDataExchanger, string jsonParameters, out List<BaseValidationRuleInfoAttribute> validationErrors, ref string keyParameterValue, List<CustomOutputSerializerAttribute> customOutputSerializerAttributes)
+        private static List<object> FixParametersCount(int taskId, object service, MethodInfo method, List<SignalGo.Shared.Models.ParameterInfo> parameters, ServerBase serverBase, ClientInfo client, IEnumerable<MethodInfo> allMethods, List<CustomDataExchangerAttribute> customDataExchanger, string jsonParameters, out List<BaseValidationRuleInfoAttribute> validationErrors, ref string keyParameterValue, List<CustomSerializerAttribute> customOutputSerializerAttributes)
         {
             List<object> parametersValues = new List<object>();
             System.Reflection.ParameterInfo[] methodParameters = method.GetParameters();
@@ -996,7 +998,7 @@ namespace SignalGo.Server.ServiceManager.Providers
             , Shared.Models.ParameterInfo[] parameters
             , Type serviceType
             , List<CustomDataExchangerAttribute> customDataExchangerAttributes
-            , List<CustomOutputSerializerAttribute> customOutputSerializerAttributes
+            , List<CustomSerializerAttribute> customOutputSerializerAttributes
             , List<ISecurityContract> securityContractAttributes
             , List<ClientLimitationAttribute> clientLimitationAttributes
             , List<ConcurrentLockAttribute> concurrentLockAttributes
@@ -1012,7 +1014,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                         continue;
                     securityContractAttributes.AddRange(method.GetCustomAttributes(typeof(ISecurityContract), true).Cast<ISecurityContract>());
                     customDataExchangerAttributes.AddRange(method.GetCustomAttributes(typeof(CustomDataExchangerAttribute), true).Cast<CustomDataExchangerAttribute>().Where(x => x.GetExchangerByUserCustomization(client)));
-                    customOutputSerializerAttributes.AddRange(method.GetCustomAttributes(typeof(CustomOutputSerializerAttribute), true).Cast<CustomOutputSerializerAttribute>());
+                    customOutputSerializerAttributes.AddRange(method.GetCustomAttributes(typeof(CustomSerializerAttribute), true).Cast<CustomSerializerAttribute>());
                     clientLimitationAttributes.AddRange(method.GetCustomAttributes(typeof(ClientLimitationAttribute), true).Cast<ClientLimitationAttribute>());
                     concurrentLockAttributes.AddRange(method.GetCustomAttributes(typeof(ConcurrentLockAttribute), true).Cast<ConcurrentLockAttribute>());
                     if (item != serviceType)
@@ -1020,7 +1022,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                         MethodInfo newMethod = FindMethod(serviceType, methodName, parameters, canTakeMethod);
                         if (newMethod != null)
                         {
-                            customOutputSerializerAttributes.AddRange(newMethod.GetCustomAttributes(typeof(CustomOutputSerializerAttribute), true).Cast<CustomOutputSerializerAttribute>());
+                            customOutputSerializerAttributes.AddRange(newMethod.GetCustomAttributes(typeof(CustomSerializerAttribute), true).Cast<CustomSerializerAttribute>());
                             securityContractAttributes.AddRange(newMethod.GetCustomAttributes(typeof(ISecurityContract), true).Cast<ISecurityContract>());
                             customDataExchangerAttributes.AddRange(newMethod.GetCustomAttributes(typeof(CustomDataExchangerAttribute), true).Cast<CustomDataExchangerAttribute>().Where(x => x.GetExchangerByUserCustomization(client)));
                             clientLimitationAttributes.AddRange(newMethod.GetCustomAttributes(typeof(ClientLimitationAttribute), true).Cast<ClientLimitationAttribute>());
