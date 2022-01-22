@@ -501,7 +501,11 @@ namespace SignalGo.Server.ServiceManager.Providers
                                 }
                                 else
                                 {
-                                    result = await InvokerMethod(client, serverBase, method, service, parametersValues).ConfigureAwait(false);
+                                    await Task.Run(async () =>
+                                    {
+                                        OperationContext.CurrentTaskServer = serverBase;
+                                        result = await InvokerMethod(client, serverBase, method, service, parametersValues).ConfigureAwait(false);
+                                    }).ConfigureAwait(false);
                                 }
 
                                 //if (taskResult != null)
