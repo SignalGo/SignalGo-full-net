@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 
 namespace SignalGo.Shared.Helpers
@@ -110,6 +111,12 @@ namespace SignalGo.Shared.Helpers
         {
             lock (this)
                 return _internalList.SetEquals(other);
+        }
+
+        public int RemoveWhere(Predicate<T> match)
+        {
+            lock (this)
+                return _internalList.RemoveWhere(match);
         }
 
         public void SymmetricExceptWith(IEnumerable<T> other)

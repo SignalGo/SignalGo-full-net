@@ -137,7 +137,7 @@ namespace SignalGo.Server.Models
 
     public class OperationContextBase
     {
-        internal static ConcurrentDictionary<ClientInfo, HashSet<object>> SavedSettings { get; set; } = new ConcurrentDictionary<ClientInfo, HashSet<object>>();
+        internal static ConcurrentDictionary<ClientInfo, ConcurrentHash<object>> SavedSettings { get; set; } = new ConcurrentDictionary<ClientInfo, ConcurrentHash<object>>();
         internal static ConcurrentDictionary<string, string> SavedKeyParametersNameSettings { get; set; } = new ConcurrentDictionary<string, string>();
         internal static ConcurrentDictionary<string, HashSet<object>> CustomClientSavedSettings { get; set; } = new ConcurrentDictionary<string, HashSet<object>>();
         public static object GetCurrentSetting(Type type, OperationContext context)
@@ -252,7 +252,7 @@ namespace SignalGo.Server.Models
                 else
                     return null;
             }
-            else if (SavedSettings.TryGetValue(context.Client, out HashSet<object> result))
+            else if (SavedSettings.TryGetValue(context.Client, out ConcurrentHash<object> result))
             {
                 return result.FirstOrDefault(x => x.GetType() == type);
             }
@@ -270,7 +270,7 @@ namespace SignalGo.Server.Models
             OperationContext context = OperationContext.Current;
             if (context == null)
                 throw new Exception("Context is null or empty! Do not call this property inside of another thread or after await or another task");
-            if (SavedSettings.TryGetValue(context.Client, out HashSet<object> result))
+            if (SavedSettings.TryGetValue(context.Client, out ConcurrentHash<object> result))
             {
                 return result;
             }
@@ -285,7 +285,7 @@ namespace SignalGo.Server.Models
         {
             if (context != null)
             {
-                if (SavedSettings.TryGetValue(context.Client, out HashSet<object> result))
+                if (SavedSettings.TryGetValue(context.Client, out ConcurrentHash<object> result))
                 {
                     foreach (object item in result)
                     {
@@ -315,7 +315,7 @@ namespace SignalGo.Server.Models
         {
             if (clientInfo is HttpClientInfo)
                 return false;
-            else if (SavedSettings.TryGetValue(clientInfo, out HashSet<object> result))
+            else if (SavedSettings.TryGetValue(clientInfo, out ConcurrentHash<object> result))
             {
                 return result.Any(x => x.GetType() == type);
             }
@@ -333,8 +333,8 @@ namespace SignalGo.Server.Models
                 SetCustomClientSetting(key, setting);
             }
             if (!SavedSettings.ContainsKey(context.Client))
-                SavedSettings.TryAdd(context.Client, new HashSet<object>() { setting });
-            else if (SavedSettings.TryGetValue(context.Client, out HashSet<object> result) && !result.Contains(setting))
+                SavedSettings.TryAdd(context.Client, new ConcurrentHash<object>() { setting });
+            else if (SavedSettings.TryGetValue(context.Client, out ConcurrentHash<object> result) && !result.Contains(setting))
             {
                 result.RemoveWhere(x => x.GetType() == setting.GetType());
                 result.Add(setting);
@@ -343,7 +343,7 @@ namespace SignalGo.Server.Models
 
         public static object GetSetting(OperationContext context, Type type)
         {
-            if (SavedSettings.TryGetValue(context.Client, out HashSet<object> result))
+            if (SavedSettings.TryGetValue(context.Client, out ConcurrentHash<object> result))
             {
                 return result.FirstOrDefault(x => x.GetType() == type);
             }
@@ -356,7 +356,7 @@ namespace SignalGo.Server.Models
 
         public static object GetSetting(ClientInfo client, Type type)
         {
-            if (SavedSettings.TryGetValue(client, out HashSet<object> result))
+            if (SavedSettings.TryGetValue(client, out ConcurrentHash<object> result))
             {
                 return result.FirstOrDefault(x => x.GetType() == type);
             }
@@ -390,7 +390,7 @@ namespace SignalGo.Server.Models
         public static T GetSetting<T>(ClientInfo client)
         {
             Type type = typeof(T);
-            if (SavedSettings.TryGetValue(client, out HashSet<object> result))
+            if (SavedSettings.TryGetValue(client, out ConcurrentHash<object> result))
             {
                 return (T)result.FirstOrDefault(x => x.GetType() == type);
             }
@@ -403,7 +403,7 @@ namespace SignalGo.Server.Models
         /// <param name="client"></param>
         public static void ClearSetting(ClientInfo client)
         {
-            if (SavedSettings.TryGetValue(client, out HashSet<object> result))
+            if (SavedSettings.TryGetValue(client, out ConcurrentHash<object> result))
             {
                 result.Clear();
             }
@@ -502,7 +502,7 @@ namespace SignalGo.Server.Models
             OperationContext context = OperationContext.Current;
             if (context == null)
                 throw new Exception("Context is null or empty! Do not call this property inside of another thread or after await or another task");
-            if (SavedSettings.TryGetValue(context.Client, out HashSet<object> result))
+            if (SavedSettings.TryGetValue(context.Client, out ConcurrentHash<object> result))
             {
                 return result.Where(x => x.GetType() == typeof(T)).Select(x => (T)x);
             }
@@ -511,7 +511,7 @@ namespace SignalGo.Server.Models
 
         public static IEnumerable<T> GetSettings(ClientInfo client)
         {
-            if (SavedSettings.TryGetValue(client, out HashSet<object> result))
+            if (SavedSettings.TryGetValue(client, out ConcurrentHash<object> result))
             {
                 return result.Where(x => x.GetType() == typeof(T)).Select(x => (T)x);
             }
@@ -524,7 +524,7 @@ namespace SignalGo.Server.Models
 
         public static T GetSetting(ClientInfo client)
         {
-            if (SavedSettings.TryGetValue(client, out HashSet<object> result))
+            if (SavedSettings.TryGetValue(client, out ConcurrentHash<object> result))
             {
                 return (T)result.FirstOrDefault(x => x.GetType() == typeof(T));
             }
@@ -593,7 +593,7 @@ namespace SignalGo.Server.Models
         {
             foreach (ClientInfo item in clients)
             {
-                if (SavedSettings.TryGetValue(item, out HashSet<object> result))
+                if (SavedSettings.TryGetValue(item, out ConcurrentHash<object> result))
                 {
                     return result.Where(x => x.GetType() == typeof(T2) && func((T2)x)).Select(x => (T2)x);
                 }
@@ -605,7 +605,7 @@ namespace SignalGo.Server.Models
         {
             foreach (ClientInfo item in clients)
             {
-                if (SavedSettings.TryGetValue(item, out HashSet<object> result))
+                if (SavedSettings.TryGetValue(item, out ConcurrentHash<object> result))
                 {
                     T find = result.Where(x => x.GetType() == typeof(T) && func((T)x)).Select(x => (T)x).FirstOrDefault();
                     if (find != null)

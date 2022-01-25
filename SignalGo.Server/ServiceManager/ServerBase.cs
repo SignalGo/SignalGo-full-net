@@ -429,8 +429,8 @@ namespace SignalGo.Server.ServiceManager
         public void AddTask(int taskId, string clientId)
         {
             DataExchanger.Clear(taskId);
-            TaskOfClientInfoes.TryAdd(taskId, clientId);
-            OperationContext.CurrentTaskServerTasks.TryAdd(taskId, this);
+            TaskOfClientInfoes.ForceAdd(taskId, clientId);
+            OperationContext.CurrentTaskServerTasks.ForceAdd(taskId, this);
         }
 
         /// <summary>
