@@ -144,7 +144,6 @@ namespace SignalGo.Server.ServiceManager.Providers
                 try
                 {
                     serviceName = serviceName.ToLower();
-                    OperationContext.CurrentTaskServer = serverBase;
                     callback = new MethodCallbackInfo()
                     {
                         Guid = guid
@@ -488,11 +487,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                                     try
                                     {
                                         await semaphore.WaitAsync().ConfigureAwait(false);
-                                        await Task.Run(async () =>
-                                        {
-                                            OperationContext.CurrentTaskServer = serverBase;
-                                            result = await InvokerMethod(client, serverBase, method, service, parametersValues).ConfigureAwait(false);
-                                        }).ConfigureAwait(false);
+                                        result = await InvokerMethod(client, serverBase, method, service, parametersValues).ConfigureAwait(false);
                                     }
                                     finally
                                     {
@@ -501,11 +496,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                                 }
                                 else
                                 {
-                                    await Task.Run(async () =>
-                                    {
-                                        OperationContext.CurrentTaskServer = serverBase;
-                                        result = await InvokerMethod(client, serverBase, method, service, parametersValues).ConfigureAwait(false);
-                                    }).ConfigureAwait(false);
+                                    result = await InvokerMethod(client, serverBase, method, service, parametersValues).ConfigureAwait(false);
                                 }
 
                                 //if (taskResult != null)
@@ -738,7 +729,6 @@ namespace SignalGo.Server.ServiceManager.Providers
 
         static async Task<object> InvokerMethod(ClientInfo client, ServerBase serverBase, MethodInfo method, object service, List<object> parametersValues)
         {
-            OperationContext.CurrentTaskServer = serverBase;
             int taskId = Task.CurrentId.GetValueOrDefault();
             serverBase.AddTask(taskId, client.ClientId);
             Task taskResult;
