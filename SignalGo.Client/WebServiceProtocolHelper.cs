@@ -153,7 +153,7 @@ TryAgainLabel:
 
             if (!string.IsNullOrEmpty(actionUrl))
                 httpRequestMessage.Headers.TryAddWithoutValidation("SOAPAction", actionUrl);
-            httpRequestMessage.Headers.TryAddWithoutValidation("ContentType", logger.Settings.DefaultContentType);
+            httpRequestMessage.Headers.TryAddWithoutValidation("Content-Type", logger.Settings.DefaultContentType);
             foreach (var item in logger.Settings.RequestHeaders.AllKeys)
             {
                 var value = logger.Settings.RequestHeaders[item];
