@@ -2,6 +2,7 @@
 using SignalGo.Server.ServiceManager;
 using SignalGo.Shared.DataTypes;
 using SignalGo.Shared.Helpers;
+using SignalGo.Shared.Log;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -143,7 +144,7 @@ namespace SignalGo.Server.Models
         public static object GetCurrentSetting(Type type, OperationContext context)
         {
             if (context == null)
-                throw new Exception("Context is null or empty! Do not call this property inside of another thread or after await or another task");
+                throw new Exception($"Context is null or empty! Do not call this property inside of another thread or after await or another task, current TaskId is {Task.CurrentId?.ToString() ?? "null"}");
 
             if (context.Client is HttpClientInfo httpClient)
             {
@@ -269,7 +270,7 @@ namespace SignalGo.Server.Models
         {
             OperationContext context = OperationContext.Current;
             if (context == null)
-                throw new Exception("Context is null or empty! Do not call this property inside of another thread or after await or another task");
+                throw new Exception($"Context is null or empty! Do not call this property inside of another thread or after await or another task, current TaskId is {Task.CurrentId?.ToString() ?? "null"}");
             if (SavedSettings.TryGetValue(context.Client, out ConcurrentHash<object> result))
             {
                 return result;
@@ -485,7 +486,7 @@ namespace SignalGo.Server.Models
             {
                 OperationContext context = OperationContext.Current;
                 if (context == null)
-                    throw new Exception("Context is null or empty! Do not call this property inside of another thread or after await or another task");
+                    throw new Exception($"Context is null or empty! Do not call this property inside of another thread or after await or another task, current TaskId is {Task.CurrentId?.ToString() ?? "null"}");
 
                 SetSetting(value, context);
             }
@@ -501,7 +502,7 @@ namespace SignalGo.Server.Models
         {
             OperationContext context = OperationContext.Current;
             if (context == null)
-                throw new Exception("Context is null or empty! Do not call this property inside of another thread or after await or another task");
+                throw new Exception($"Context is null or empty! Do not call this property inside of another thread or after await or another task, current TaskId is {Task.CurrentId?.ToString() ?? "null"}");
             if (SavedSettings.TryGetValue(context.Client, out ConcurrentHash<object> result))
             {
                 return result.Where(x => x.GetType() == typeof(T)).Select(x => (T)x);
