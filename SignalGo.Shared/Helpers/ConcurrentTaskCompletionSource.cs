@@ -82,7 +82,8 @@ namespace SignalGo.Shared.Helpers
             {
                 try
                 {
-                    Value.TrySetResult(result);
+                    if (!Value.TrySetResult(result))
+                        AutoLogger.Default.LogText($"TrySetResult is false {IsCompleted()} {Value.Task.Status} {Value.Task.Exception}");
                 }
                 catch (Exception ex)
                 {
