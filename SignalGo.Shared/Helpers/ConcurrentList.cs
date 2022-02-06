@@ -10,7 +10,7 @@ namespace SignalGo.Shared.Helpers
     /// Represents a thread-safe list
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public class ConcurrentList<T> : IList<T>
+    public class ConcurrentList<T> : IEnumerable<T>
     {
         #region Fields
 
@@ -91,25 +91,6 @@ namespace SignalGo.Shared.Helpers
             return LockInternalListAndQuery(l => l.Contains(item));
         }
 
-        public void CopyTo(T[] array, int arrayIndex)
-        {
-            LockInternalListAndCommand(l =>
-            {
-                Array.Resize(ref array, l.Count);
-                l.CopyTo(array, arrayIndex);
-            });
-        }
-
-        public T[] ToArray()
-        {
-            return LockInternalListAndQuery(l => l.ToArray());
-        }
-
-        public IEnumerator<T> GetEnumerator()
-        {
-            return LockInternalListAndQuery(l => l.ToList().GetEnumerator());
-        }
-
         public int IndexOf(T item)
         {
             return LockInternalListAndQuery(l => l.IndexOf(item));
@@ -138,6 +119,11 @@ namespace SignalGo.Shared.Helpers
         IEnumerator IEnumerable.GetEnumerator()
         {
             return LockInternalListAndQuery(l => l.ToArray().GetEnumerator());
+        }
+
+        public IEnumerator<T> GetEnumerator()
+        {
+            return LockInternalListAndQuery(l => l.ToList().GetEnumerator());
         }
 
         #region Utilities
