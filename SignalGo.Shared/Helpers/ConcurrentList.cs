@@ -93,7 +93,11 @@ namespace SignalGo.Shared.Helpers
 
         public void CopyTo(T[] array, int arrayIndex)
         {
-            LockInternalListAndCommand(l => l.CopyTo(array, arrayIndex));
+            LockInternalListAndCommand(l =>
+            {
+                Array.Resize(ref array, l.Count);
+                l.CopyTo(array, arrayIndex);
+            });
         }
 
         public T[] ToArray()
@@ -103,7 +107,7 @@ namespace SignalGo.Shared.Helpers
 
         public IEnumerator<T> GetEnumerator()
         {
-            return LockInternalListAndQuery(l => l.GetEnumerator());
+            return LockInternalListAndQuery(l => l.ToList().GetEnumerator());
         }
 
         public int IndexOf(T item)
@@ -123,12 +127,17 @@ namespace SignalGo.Shared.Helpers
 
         public void RemoveAt(int index)
         {
-            LockInternalListAndCommand(l => l.RemoveAt(index));
+            LockInternalListAndCommand(l =>
+            {
+                if (_internalList.Count <= index)
+                    return;
+                l.RemoveAt(index);
+            });
         }
 
         IEnumerator IEnumerable.GetEnumerator()
         {
-            return LockInternalListAndQuery(l => l.GetEnumerator());
+            return LockInternalListAndQuery(l => l.ToArray().GetEnumerator());
         }
 
         #region Utilities
@@ -147,11 +156,14 @@ namespace SignalGo.Shared.Helpers
             {
                 try
                 {
+                    if (_internalList.Count == 0)
+                        return default;
                     return func(_internalList);
                 }
                 catch (Exception ex)
                 {
                     AutoLogger.Default.LogError(ex, $"LockInternalListAndGet {index}");
+                    AutoLogger.Default.LogText($"LockInternalListAndGet {_internalList.Count} {index} trace {Environment.StackTrace}");
                     return default;
                 }
             }
