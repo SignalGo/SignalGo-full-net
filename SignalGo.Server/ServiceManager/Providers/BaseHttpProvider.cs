@@ -417,7 +417,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 // exception = ex;
                 if (serverBase.ErrorHandlingFunction != null)
                 {
-                    ActionResult result = serverBase.ErrorHandlingFunction(ex, serviceType, method, client).ToActionResult();
+                    ActionResult result = serverBase.ErrorHandlingFunction(ex, serviceType, method, null, parameters, client).ToActionResult();
                     await RunHttpActionResult(client, result.Data, client, serverBase).ConfigureAwait(false);
                 }
                 else
@@ -466,7 +466,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 // exception = ex;
                 if (serverBase.ErrorHandlingFunction != null)
                 {
-                    ActionResult result = serverBase.ErrorHandlingFunction(ex, serviceType, method, client).ToActionResult();
+                    ActionResult result = serverBase.ErrorHandlingFunction(ex, serviceType, method, null, null, client).ToActionResult();
                     await RunHttpActionResult(client, result, client, serverBase).ConfigureAwait(false);
                 }
                 else
@@ -901,7 +901,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 // exception = ex;
                 if (serverBase.ErrorHandlingFunction != null)
                 {
-                    ActionResult result = serverBase.ErrorHandlingFunction(ex, serviceType, method, client).ToActionResult();
+                    ActionResult result = serverBase.ErrorHandlingFunction(ex, serviceType, method, null, parameters, client).ToActionResult();
                     await RunHttpActionResult(client, result, client, serverBase).ConfigureAwait(false);
                 }
                 else
@@ -1095,7 +1095,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 client.ResponseHeaders["Connection"] = "Close".Split(',');
                 if (serverBase.ErrorHandlingFunction != null)
                 {
-                    message = newLine + $"{serverBase.ErrorHandlingFunction(exception, srviceType, methodInfo, client).SerializeObject(serverBase)}" + newLine;
+                    message = newLine + $"{serverBase.ErrorHandlingFunction(exception, srviceType, methodInfo, null, address, client).SerializeObject(serverBase)}" + newLine;
                 }
                 else
                 {

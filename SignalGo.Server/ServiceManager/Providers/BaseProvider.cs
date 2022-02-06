@@ -96,7 +96,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                         serverBase.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase CallMethod 2: {methodName} serviceName: {serviceName} jsonParameters : {jsonParameters} {ServerSerializationHelper.SerializeObject(parameters)} json: {json}");
                         if (serverBase.ErrorHandlingFunction != null)
                         {
-                            callback.Data = ServerSerializationHelper.SerializeObject(HandleClientResponse(serverBase.ErrorHandlingFunction(ex, null, null, client), client, serverBase, null, null));
+                            callback.Data = ServerSerializationHelper.SerializeObject(HandleClientResponse(serverBase.ErrorHandlingFunction(ex, null, null, parameters, jsonParameters, client), client, serverBase, null, null));
                         }
                         else
                         {
@@ -564,7 +564,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                                 serverBase.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase CallMethod: {methodName}");
                                 if (serverBase.ErrorHandlingFunction != null)
                                 {
-                                    callback.Data = ServerSerializationHelper.SerializeObject(HandleClientResponse(serverBase.ErrorHandlingFunction(ex, serviceType, method, client), client, serverBase, serviceType, method));
+                                    callback.Data = ServerSerializationHelper.SerializeObject(HandleClientResponse(serverBase.ErrorHandlingFunction(ex, serviceType, method, parameters, jsonParameters, client), client, serverBase, serviceType, method));
                                 }
                                 else
                                 {
@@ -586,7 +586,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     serverBase.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase CallMethod 2: {methodName} serviceName: {serviceName} jsonParameters : {jsonParameters} {ServerSerializationHelper.SerializeObject(parameters)} json: {json}");
                     if (serverBase.ErrorHandlingFunction != null)
                     {
-                        callback.Data = ServerSerializationHelper.SerializeObject(HandleClientResponse(serverBase.ErrorHandlingFunction(ex, serviceType, method, client), client, serverBase, serviceType, method));
+                        callback.Data = ServerSerializationHelper.SerializeObject(HandleClientResponse(serverBase.ErrorHandlingFunction(ex, serviceType, method, parameters, jsonParameters, client), client, serverBase, serviceType, method));
                     }
                     else
                     {
