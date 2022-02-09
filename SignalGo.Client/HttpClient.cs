@@ -1,5 +1,6 @@
 ﻿using SignalGo.Shared.DataTypes;
 using SignalGo.Shared.Helpers;
+using SignalGo.Shared.Http;
 using SignalGo.Shared.IO;
 using SignalGo.Shared.Models;
 using System;
@@ -10,7 +11,6 @@ using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace SignalGo.Client
@@ -54,6 +54,27 @@ namespace SignalGo.Client
             return (T)streamInfo;
         }
     }
+    public class HttpClientDataResponse
+    {
+        public HttpClientDataResponse(byte[] data, Encoding encoding)
+        {
+            Data = data;
+            Encoding = encoding;
+        }
+
+        Encoding Encoding { get; set; }
+        public byte[] Data { get; set; }
+
+        public static implicit operator string(HttpClientDataResponse httpClientDataResponse)
+        {
+            return httpClientDataResponse.Encoding.GetString(httpClientDataResponse.Data);
+        }
+
+        public static implicit operator Exception(HttpClientDataResponse httpClientDataResponse)
+        {
+            return new Exception(httpClientDataResponse);
+        }
+    }
 
     /// <summary>
     /// reponse of http request
@@ -63,14 +84,15 @@ namespace SignalGo.Client
         /// <summary>
         /// data of response
         /// </summary>
-        public string Data { get; set; }
+        public HttpClientDataResponse Data { get; set; }
     }
+
     public interface IHttpClient
     {
         Encoding Encoding { get; set; }
         SignalGo.Shared.Http.WebHeaderCollection RequestHeaders { get; set; }
 
-        T Deserialize<T>(string json);
+        T Deserialize<T>(HttpClientDataResponse data);
         HttpClientResponse Post(string url, ParameterInfo[] parameterInfoes, BaseStreamInfo streamInfo = null);
 #if (!NET35 && !NET40 && !NETSTANDARD1_6)
         Task<HttpClientResponse> PostAsync(string url, ParameterInfo[] parameterInfoes, BaseStreamInfo streamInfo = null);
@@ -265,7 +287,7 @@ namespace SignalGo.Client
                     }
                     readCount += readedCount;
                 }
-                httpClientResponse.Data = Encoding.GetString(result);
+                httpClientResponse.Data = new HttpClientDataResponse(result, Encoding);
                 response = httpClientResponse;
                 return httpClientResponse;
             }
@@ -275,12 +297,19 @@ namespace SignalGo.Client
             }
 #endif
         }
-        public T Deserialize<T>(string json)
+        public T Deserialize<T>(HttpClientDataResponse data)
         {
-            if (CurrentCustomOutputSerializer == null)
-                return SignalGo.Client.ClientSerializationHelper.DeserializeObject<T>(json);
+            if (typeof(T) == typeof(ActionResult))
+            {
+                return (T)(object)new ActionResult(data.Data);
+            }
             else
-                return (T)CurrentCustomOutputSerializer.Deserialize(typeof(T), json, null, null);
+            {
+                if (CurrentCustomOutputSerializer == null)
+                    return SignalGo.Client.ClientSerializationHelper.DeserializeObject<T>(data);
+                else
+                    return (T)CurrentCustomOutputSerializer.Deserialize(typeof(T), data, null, null);
+            }
         }
 
 #if (!NET35 && !NET40 && !NETSTANDARD1_6)
@@ -329,7 +358,7 @@ namespace SignalGo.Client
                         }
                     }
                 }
-             
+
                 StringBuilder valueData = new StringBuilder();
                 if (parameterInfoes != null)
                 {
@@ -445,7 +474,7 @@ namespace SignalGo.Client
                     }
                     readCount += readedCount;
                 }
-                httpClientResponse.Data = Encoding.GetString(result);
+                httpClientResponse.Data = new HttpClientDataResponse(result, Encoding);
                 response = httpClientResponse;
                 return httpClientResponse;
             }
