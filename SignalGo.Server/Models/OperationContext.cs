@@ -2,11 +2,9 @@
 using SignalGo.Server.ServiceManager;
 using SignalGo.Shared.DataTypes;
 using SignalGo.Shared.Helpers;
-using SignalGo.Shared.Log;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -633,6 +631,16 @@ namespace SignalGo.Server.Models
         public ClientInfo Client { get; set; }
     }
 
+    public class ClientContext<TService, TSetting> : ClientContext<TService>
+    {
+        public ClientContext(TService service, ClientInfo client, TSetting setting) : base(service, client)
+        {
+            Setting = setting;
+        }
+
+        public TSetting Setting { get; set; }
+    }
+
     /// <summary>
     /// operation context extentions
     /// </summary>
@@ -651,58 +659,71 @@ namespace SignalGo.Server.Models
             {
                 T objectInstance = InterfaceWrapper.Wrap<T>((serviceName, method, args) =>
                 {
-                    string methodName = method.Name;
-                    Task task = null;
-                    Type returnType = method.ReturnType;
-                    if (returnType == typeof(void))
-                        returnType = typeof(object);
-                    if (client.IsWebSocket)
+                    try
                     {
-                        MethodInfo sendDataMethod = typeof(ServerExtensions).GetMethod("SendWebSocketDataWithCallClientServiceMethod", BindingFlags.Static | BindingFlags.NonPublic)
-                            .MakeGenericMethod(returnType);
-                        task = (Task)sendDataMethod.Invoke(null, new object[] { serverBase, client, returnType, serviceName, method.Name, method.MethodToParameters(x => ServerSerializationHelper.SerializeObject(x, serverBase), args).ToArray() });
+                        string methodName = method.Name;
+                        Task task = null;
+                        Type returnType = method.ReturnType;
+                        if (returnType == typeof(void))
+                            returnType = typeof(object);
+                        if (client.IsWebSocket)
+                        {
+                            MethodInfo sendDataMethod = typeof(ServerExtensions).GetMethod("SendWebSocketDataWithCallClientServiceMethod", BindingFlags.Static | BindingFlags.NonPublic)
+                                .MakeGenericMethod(returnType);
+                            task = (Task)sendDataMethod.Invoke(null, new object[] { serverBase, client, returnType, serviceName, method.Name, method.MethodToParameters(x => ServerSerializationHelper.SerializeObject(x, serverBase), args).ToArray() });
+                        }
+                        else
+                        {
+                            MethodInfo sendDataMethod = typeof(ServerExtensions).GetMethod("SendDataWithCallClientServiceMethod", BindingFlags.Static | BindingFlags.NonPublic)
+                                .MakeGenericMethod(returnType);
+                            task = (Task)sendDataMethod.Invoke(null, new object[] { serverBase, client, returnType, serviceName, method.Name, method.MethodToParameters(x => ServerSerializationHelper.SerializeObject(x, serverBase), args).ToArray() });
+                        }
+                        task.ConfigureAwait(false).GetAwaiter().GetResult();
+                        object result1 = task.GetType().GetProperty("Result").GetValue(task);
+                        if (result1 is Task task2)
+                        {
+                            task2.ConfigureAwait(false).GetAwaiter().GetResult();
+                            return task2.GetType().GetProperty("Result").GetValue(task2, null);
+                        }
+                        if (method.ReturnType == typeof(Task))
+                            return Task.FromResult(result1);
+                        return result1;
                     }
-                    else
+                    catch (Exception ex)
                     {
-                        MethodInfo sendDataMethod = typeof(ServerExtensions).GetMethod("SendDataWithCallClientServiceMethod", BindingFlags.Static | BindingFlags.NonPublic)
-                            .MakeGenericMethod(returnType);
-                        task = (Task)sendDataMethod.Invoke(null, new object[] { serverBase, client, returnType, serviceName, method.Name, method.MethodToParameters(x => ServerSerializationHelper.SerializeObject(x, serverBase), args).ToArray() });
+                        throw ex;
                     }
-                    Debug.WriteLine("DeadLock Warning GenerateClientServiceInstance!");
-                    task.ConfigureAwait(false).GetAwaiter().GetResult();
-                    object result1 = task.GetType().GetProperty("Result").GetValue(task);
-                    if (result1 is Task task2)
-                    {
-                        task2.ConfigureAwait(false).GetAwaiter().GetResult();
-                        return task2.GetType().GetProperty("Result").GetValue(task2, null);
-                    }
-                    if (method.ReturnType == typeof(Task))
-                        return Task.FromResult(result1);
-                    return result1;
                 }, async (serviceName, method, args) =>
                 {
-                    //this is async action
-                    Type returnType = method.ReturnType;
+                    try
+                    {
+                        //this is async action
+                        Type returnType = method.ReturnType;
 
-                    if (method.ReturnType.GetBaseType() == typeof(Task))
-                    {
-                        returnType = method.ReturnType.GetGenericArguments()[0];
+                        if (method.ReturnType.GetBaseType() == typeof(Task))
+                        {
+                            returnType = method.ReturnType.GetGenericArguments()[0];
+                        }
+                        string methodName = method.Name;
+                        var castMethod = typeof(OCExtension).GetMethod(nameof(CastToObject), BindingFlags.Static | BindingFlags.Public).MakeGenericMethod(returnType);
+                        if (client.IsWebSocket)
+                        {
+                            MethodInfo sendDataMethod = typeof(ServerExtensions).GetMethod("SendWebSocketDataWithCallClientServiceMethod", BindingFlags.Static | BindingFlags.NonPublic)
+                                .MakeGenericMethod(returnType);
+                            var taskObject = (Task<object>)castMethod.Invoke(null, new object[] { sendDataMethod.Invoke(null, new object[] { serverBase, client, returnType, serviceName, method.Name, method.MethodToParameters(x => ServerSerializationHelper.SerializeObject(x, serverBase), args).ToArray() }) });
+                            return await taskObject.ConfigureAwait(false);
+                        }
+                        else
+                        {
+                            MethodInfo sendDataMethod = typeof(ServerExtensions).GetMethod("SendDataWithCallClientServiceMethod", BindingFlags.Static | BindingFlags.NonPublic)
+                                .MakeGenericMethod(returnType);
+                            var taskObject = (Task<object>)castMethod.Invoke(null, new object[] { sendDataMethod.Invoke(null, new object[] { serverBase, client, returnType, serviceName, method.Name, method.MethodToParameters(x => ServerSerializationHelper.SerializeObject(x, serverBase), args).ToArray() }) });
+                            return await taskObject.ConfigureAwait(false);
+                        }
                     }
-                    string methodName = method.Name;
-                    var castMethod = typeof(OCExtension).GetMethod(nameof(CastToObject), BindingFlags.Static | BindingFlags.Public).MakeGenericMethod(returnType);
-                    if (client.IsWebSocket)
+                    catch (Exception ex)
                     {
-                        MethodInfo sendDataMethod = typeof(ServerExtensions).GetMethod("SendWebSocketDataWithCallClientServiceMethod", BindingFlags.Static | BindingFlags.NonPublic)
-                            .MakeGenericMethod(returnType);
-                        var taskObject = (Task<object>)castMethod.Invoke(null, new object[] { sendDataMethod.Invoke(null, new object[] { serverBase, client, returnType, serviceName, method.Name, method.MethodToParameters(x => ServerSerializationHelper.SerializeObject(x, serverBase), args).ToArray() }) });
-                        return await taskObject.ConfigureAwait(false);
-                    }
-                    else
-                    {
-                        MethodInfo sendDataMethod = typeof(ServerExtensions).GetMethod("SendDataWithCallClientServiceMethod", BindingFlags.Static | BindingFlags.NonPublic)
-                            .MakeGenericMethod(returnType);
-                        var taskObject = (Task<object>)castMethod.Invoke(null, new object[] { sendDataMethod.Invoke(null, new object[] { serverBase, client, returnType, serviceName, method.Name, method.MethodToParameters(x => ServerSerializationHelper.SerializeObject(x, serverBase), args).ToArray() }) });
-                        return await taskObject.ConfigureAwait(false);
+                        throw ex;
                     }
                     throw new NotSupportedException();
                 });
@@ -1177,7 +1198,7 @@ namespace SignalGo.Server.Models
         /// <param name="canTake"></param>
         /// <param name=""></param>
         /// <returns></returns>
-        public static IEnumerable<ClientContext<TService>> GetAllClientClientContextServices<TService, TSetting>(this ServerBase serverBase, Func<TSetting, bool> canTake) where TService : class
+        public static IEnumerable<ClientContext<TService, TSetting>> GetAllClientClientContextServices<TService, TSetting>(this ServerBase serverBase, Func<TSetting, bool> canTake) where TService : class
         {
             foreach (KeyValuePair<string, ClientInfo> item in serverBase.Clients)
             {
@@ -1187,7 +1208,30 @@ namespace SignalGo.Server.Models
                 else if (canTake.Invoke(setting))
                 {
                     TService find = GenerateClientServiceInstance<TService>(serverBase, item.Value);
-                    yield return new ClientContext<TService>(find, item.Value);
+                    yield return new ClientContext<TService, TSetting>(find, item.Value, setting);
+                }
+            }
+        }
+
+        /// <summary>
+        /// get all client clienccontext services with setting query
+        /// </summary>
+        /// <typeparam name="TService"></typeparam>
+        /// <typeparam name="TSetting"></typeparam>
+        /// <param name="serverBase"></param>
+        /// <param name="canTake"></param>
+        /// <returns></returns>
+        public static IEnumerable<TResult> GetAllClientClientContextServices<TService, TSetting, TResult>(this ServerBase serverBase, Func<TSetting, bool> canTake, Func<ClientContext<TService, TSetting>, TResult> func) where TService : class
+        {
+            foreach (KeyValuePair<string, ClientInfo> item in serverBase.Clients)
+            {
+                var setting = (TSetting)OperationContextBase.GetSetting(item.Value, typeof(TSetting));
+                if (setting == null)
+                    continue;
+                else if (canTake.Invoke(setting))
+                {
+                    TService find = GenerateClientServiceInstance<TService>(serverBase, item.Value);
+                    yield return func(new ClientContext<TService, TSetting>(find, item.Value, setting));
                 }
             }
         }
