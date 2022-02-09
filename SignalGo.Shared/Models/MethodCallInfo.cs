@@ -1,4 +1,6 @@
-﻿namespace SignalGo.Shared.Models
+﻿using System.Collections.Generic;
+
+namespace SignalGo.Shared.Models
 {
     /// <summary>
     /// signal go call method type
@@ -39,7 +41,7 @@
         /// <summary>
         /// method parameters
         /// </summary>
-        public ParameterInfo[] Parameters { get; set; }
+        public List<ParameterInfo> Parameters { get; set; }
         /// <summary>
         /// sender of call from ignalGo service or not
         /// </summary>

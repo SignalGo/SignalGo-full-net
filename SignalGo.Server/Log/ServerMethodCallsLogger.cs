@@ -4,6 +4,7 @@ using SignalGo.Shared.Events;
 using SignalGo.Shared.Log;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -85,7 +86,7 @@ namespace SignalGo.Server.Log
         /// <summary>
         /// parameters of method
         /// </summary>
-        public SignalGo.Shared.Models.ParameterInfo[] Parameters { get; set; }
+        public List<SignalGo.Shared.Models.ParameterInfo> Parameters { get; set; }
         /// <summary>
         /// method
         /// </summary>
@@ -104,7 +105,7 @@ namespace SignalGo.Server.Log
         /// <summary>
         /// parameters
         /// </summary>
-        public SignalGo.Shared.Models.ParameterInfo[] Parameters { get; set; }
+        public List<SignalGo.Shared.Models.ParameterInfo> Parameters { get; set; }
     }
 
     /// <summary>
@@ -119,7 +120,7 @@ namespace SignalGo.Server.Log
         /// <summary>
         /// parameters
         /// </summary>
-        public SignalGo.Shared.Models.ParameterInfo[] Parameters { get; set; }
+        public List<SignalGo.Shared.Models.ParameterInfo> Parameters { get; set; }
         /// <summary>
         /// method
         /// </summary>
@@ -138,7 +139,7 @@ namespace SignalGo.Server.Log
         /// <summary>
         /// parameters
         /// </summary>
-        public SignalGo.Shared.Models.ParameterInfo[] Parameters { get; set; }
+        public List<SignalGo.Shared.Models.ParameterInfo> Parameters { get; set; }
     }
 
     /// <summary>
@@ -340,7 +341,7 @@ namespace SignalGo.Server.Log
         {
             if (isStop)
                 return null;
-            CallMethodLogInformation log = new CallMethodLogInformation() { DateTimeStartMethod = DateTime.Now.ToLocalTime(), Method = method, Parameters = parameters, ServiceName = serviceName, ConnectedDateTime = connectedDateTime, IPAddress = ipAddress, ClientId = clientId, MethodName = method?.Name };
+            CallMethodLogInformation log = new CallMethodLogInformation() { DateTimeStartMethod = DateTime.Now.ToLocalTime(), Method = method, Parameters = parameters.ToList(), ServiceName = serviceName, ConnectedDateTime = connectedDateTime, IPAddress = ipAddress, ClientId = clientId, MethodName = method?.Name };
             Logs.Enqueue(log);
             return log;
         }
@@ -349,7 +350,7 @@ namespace SignalGo.Server.Log
         {
             if (isStop)
                 return null;
-            HttpCallMethodLogInformation log = new HttpCallMethodLogInformation() { DateTimeStartMethod = DateTime.Now.ToLocalTime(), Method = method, Parameters = parameters, Address = address, ConnectedDateTime = connectedDateTime, IPAddress = ipAddress, ClientId = clientId, MethodName = method?.Name };
+            HttpCallMethodLogInformation log = new HttpCallMethodLogInformation() { DateTimeStartMethod = DateTime.Now.ToLocalTime(), Method = method, Parameters = parameters.ToList(), Address = address, ConnectedDateTime = connectedDateTime, IPAddress = ipAddress, ClientId = clientId, MethodName = method?.Name };
             Logs.Enqueue(log);
             return log;
         }
@@ -358,7 +359,7 @@ namespace SignalGo.Server.Log
         {
             if (isStop)
                 return null;
-            CallClientMethodLogInformation log = new CallClientMethodLogInformation() { DateTimeStartMethod = DateTime.Now.ToLocalTime(), MethodName = methodName, Parameters = parameters, ServiceName = serviceName, ConnectedDateTime = connectedDateTime, IPAddress = ipAddress, ClientId = clientId };
+            CallClientMethodLogInformation log = new CallClientMethodLogInformation() { DateTimeStartMethod = DateTime.Now.ToLocalTime(), MethodName = methodName, Parameters = parameters.ToList(), ServiceName = serviceName, ConnectedDateTime = connectedDateTime, IPAddress = ipAddress, ClientId = clientId };
             Logs.Enqueue(log);
             return log;
         }
@@ -367,7 +368,7 @@ namespace SignalGo.Server.Log
         {
             if (isStop)
                 return null;
-            StreamCallMethodLogInformation log = new StreamCallMethodLogInformation() { DateTimeStartMethod = DateTime.Now.ToLocalTime(), MethodName = methodName, Parameters = parameters, ServiceName = serviceName, ConnectedDateTime = connectedDateTime, IPAddress = ipAddress, ClientId = clientId };
+            StreamCallMethodLogInformation log = new StreamCallMethodLogInformation() { DateTimeStartMethod = DateTime.Now.ToLocalTime(), MethodName = methodName, Parameters = parameters.ToList(), ServiceName = serviceName, ConnectedDateTime = connectedDateTime, IPAddress = ipAddress, ClientId = clientId };
             Logs.Enqueue(log);
             return log;
         }

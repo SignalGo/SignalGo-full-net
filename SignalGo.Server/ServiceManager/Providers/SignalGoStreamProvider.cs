@@ -54,7 +54,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 MethodCallInfo callInfo = ServerSerializationHelper.Deserialize<MethodCallInfo>(json, serverBase);
                 guid = callInfo.Guid;
                 CallMethodResultInfo<OperationContext> result = await CallMethod(callInfo.ServiceName, callInfo.Guid, callInfo.MethodName, callInfo.MethodName,
-                    callInfo.Parameters, null, client, null, serverBase, null, null).ConfigureAwait(false);
+                    callInfo.Parameters.ToArray(), null, client, null, serverBase, null, null).ConfigureAwait(false);
                 callback = result.CallbackInfo;
             }
             catch (IOException ex)
@@ -95,7 +95,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 string json = Encoding.UTF8.GetString(bytes);
                 MethodCallInfo callInfo = ServerSerializationHelper.Deserialize<MethodCallInfo>(json, serverBase);
                 CallMethodResultInfo<OperationContext> result = await CallMethod(callInfo.ServiceName, callInfo.Guid, callInfo.MethodName, callInfo.MethodName,
-                    callInfo.Parameters, null, client, null, serverBase, null, null).ConfigureAwait(false);
+                    callInfo.Parameters.ToArray(), null, client, null, serverBase, null, null).ConfigureAwait(false);
                 callback = result.CallbackInfo;
                 streamInfo = result.StreamInfo;
                 userStream = streamInfo.Stream;

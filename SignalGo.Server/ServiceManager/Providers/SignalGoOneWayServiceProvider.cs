@@ -41,7 +41,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 string json = Encoding.UTF8.GetString(bytes);
                 MethodCallInfo callInfo = ServerSerializationHelper.Deserialize<MethodCallInfo>(json, serverBase);
                 //MethodsCallHandler.BeginStreamCallAction?.Invoke(client, guid, serviceName, methodName, values);
-                CallMethodResultInfo<OperationContext> result = await CallMethod(callInfo.ServiceName, callInfo.Guid, callInfo.MethodName, callInfo.MethodName, callInfo.Parameters, null, client, null, serverBase, null, null).ConfigureAwait(false);
+                CallMethodResultInfo<OperationContext> result = await CallMethod(callInfo.ServiceName, callInfo.Guid, callInfo.MethodName, callInfo.MethodName, callInfo.Parameters.ToArray(), null, client, null, serverBase, null, null).ConfigureAwait(false);
                 callback = result.CallbackInfo;
                 callback.Guid = callInfo.Guid;
             }

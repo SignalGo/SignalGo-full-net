@@ -886,7 +886,7 @@ namespace SignalGo.Client.ClientManager
             //        iStream.ClientId = ClientId;
             //    }
             //}
-            callInfo.Parameters = parameters;// method.MethodToParameters(x => ClientSerializationHelper.SerializeObject(x), args).ToArray();
+            callInfo.Parameters = parameters.ToList();// method.MethodToParameters(x => ClientSerializationHelper.SerializeObject(x), args).ToArray();
             if (methodName.EndsWith("Async"))
                 methodName = methodName.Substring(0, methodName.Length - 5);
             callInfo.MethodName = methodName;
@@ -1122,7 +1122,7 @@ namespace SignalGo.Client.ClientManager
                 ServiceName = serviceName,
                 MethodName = methodName
             };
-            callInfo.Parameters = parameters;
+            callInfo.Parameters = parameters.ToList();
             callInfo.Guid = Guid.NewGuid().ToString();
             if (methodName.EndsWith("Async"))
                 methodName = methodName.Substring(0, methodName.Length - 5);

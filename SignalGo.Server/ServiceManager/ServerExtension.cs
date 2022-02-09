@@ -6,6 +6,7 @@ using SignalGo.Shared.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net.Sockets;
 using System.Reflection;
 using System.Text;
@@ -121,7 +122,7 @@ namespace SignalGo.Server.ServiceManager
             MethodCallInfo callInfo = new MethodCallInfo();
             callInfo.ServiceName = serviceName;
             callInfo.MethodName = methodName;
-            callInfo.Parameters = args;
+            callInfo.Parameters = args.ToList();
             var guid = Guid.NewGuid();
             callInfo.Guid = guid.ToString();
             serverBase.ClientServiceCallMethodsResult.TryAdd(callInfo.Guid, new KeyValue<Type, object>(returnType, taskCompletionSource));
@@ -164,7 +165,7 @@ namespace SignalGo.Server.ServiceManager
             MethodCallInfo callInfo = new MethodCallInfo();
             callInfo.ServiceName = serviceName;
             callInfo.MethodName = methodName;
-            callInfo.Parameters = args;
+            callInfo.Parameters = args.ToList();
             var guid = Guid.NewGuid();
             callInfo.Guid = guid.ToString();
             serverBase.ClientServiceCallMethodsResult.TryAdd(callInfo.Guid, new KeyValue<Type, object>(returnType, taskCompletionSource));

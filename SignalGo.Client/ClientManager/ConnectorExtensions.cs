@@ -169,7 +169,7 @@ namespace SignalGo.Client.ClientManager
             callInfo.ServiceName = serviceName;
 
             callInfo.MethodName = methodName;
-            callInfo.Parameters = args;
+            callInfo.Parameters = args.ToList();
             //foreach (var item in args)
             //{
             //    callInfo.Parameters.Add(new Shared.Models.ParameterInfo() { Value = ClientSerializationHelper.SerializeObject(item), Name = item?.GetType().FullName });
@@ -186,7 +186,7 @@ namespace SignalGo.Client.ClientManager
             callInfo.ServiceName = serviceName;
 
             callInfo.MethodName = methodName;
-            callInfo.Parameters = args;
+            callInfo.Parameters = args.ToList();
             //foreach (var item in args)
             //{
             //    callInfo.Parameters.Add(new Shared.Models.ParameterInfo() { Value = ClientSerializationHelper.SerializeObject(item), Name = item?.GetType().FullName });
@@ -345,7 +345,7 @@ namespace SignalGo.Client.ClientManager
             return Task.Run(async () =>
 #endif
             {
-                callInfo.Parameters = method.MethodToParameters(x => ClientSerializationHelper.SerializeObject(x), args).ToArray();
+                callInfo.Parameters = method.MethodToParameters(x => ClientSerializationHelper.SerializeObject(x), args).ToList();
 #if (NET40 || NET35)
                 string result = SendData(connector, callInfo);
 #else
