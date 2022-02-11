@@ -761,24 +761,13 @@ namespace SignalGo.Server.ServiceManager.Providers
                                 string newData = sp.Length > 1 ? datas : httpData.Substring(headLen + 4);//+ 4 Encoding.UTF8.GetString(byteData);
                                 newData = newData.Trim(TextHelper.NewLine.ToCharArray());
                                 //var newData = text.Substring(0, text.IndexOf(boundary) - 4);
-                                if (header.ToLower().IndexOf("content-disposition:") == 0)
+                                if (header.StartsWith("content-disposition:", StringComparison.OrdinalIgnoreCase))
                                 {
                                     CustomContentDisposition disp = new CustomContentDisposition(header.Trim().Split(new string[] { TextHelper.NewLine }, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault());
                                     if (disp.Parameters.ContainsKey("name"))
                                         name = disp.Parameters["name"];
-                                    //StringBuilder build = new StringBuilder();
-                                    //using (var reader = new StringReader(newData))
-                                    //{
-                                    //    while (true)
-                                    //    {
-                                    //        var line = reader.ReadLine();
-                                    //        if (line == null)
-                                    //            break;
-                                    //        else if (lineBreaks.Contains(line))
-                                    //            continue;
-                                    //        build.AppendLine(line);
-                                    //    }
-                                    //}
+                                    if (newData.StartsWith("content-disposition:", StringComparison.OrdinalIgnoreCase))
+                                        newData = null;
                                     multiPartParameter.Add(name, newData);
                                 }
                             }
