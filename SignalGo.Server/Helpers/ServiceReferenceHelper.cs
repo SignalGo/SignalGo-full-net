@@ -325,7 +325,8 @@ namespace SignalGo.Server.Helpers
                 NameSpace = type.GetNamesapce()
             };
             Type baseEumType = Enum.GetUnderlyingType(type);
-            enumReferenceInfo.TypeName = GetFullNameOfType(baseEumType, true, null, null, out _);
+            int startIndexAt = 0;
+            enumReferenceInfo.TypeName = GetFullNameOfType(baseEumType, true, null, null, ref startIndexAt, out _);
             foreach (object name in Enum.GetValues(type))
             {
                 object res = Convert.ChangeType(name, baseEumType);
@@ -373,14 +374,15 @@ namespace SignalGo.Server.Helpers
 
             Type baseType = type.GetBaseType();
             string genericParameterConstraints = null;
+            int startIndexAt = 0;
             if (baseType != typeof(object) && baseType != null)
             {
-                classReferenceInfo.BaseClassName = GetFullNameOfType(baseType, true, null, null, out _);
+                classReferenceInfo.BaseClassName = GetFullNameOfType(baseType, true, null, null, ref startIndexAt, out _);
             }
             else
-                classReferenceInfo.BaseClassName = GetFullNameOfType(typeof(NotifyPropertyChangedBase), true, null, null, out _);
+                classReferenceInfo.BaseClassName = GetFullNameOfType(typeof(NotifyPropertyChangedBase), true, null, null, ref startIndexAt, out _);
 
-            classReferenceInfo.Name = GetFullNameOfType(type, false, null, null, out genericParameterConstraints);
+            classReferenceInfo.Name = GetFullNameOfType(type, false, null, null, ref startIndexAt, out genericParameterConstraints);
             classReferenceInfo.GenericParameterConstraints = genericParameterConstraints;
 
             ModelsCodeGenerated.Add(type);
@@ -427,14 +429,15 @@ namespace SignalGo.Server.Helpers
             };
 
             Type baseType = type.GetBaseType();
+            int startIndexAt = 0;
             if (baseType != typeof(object) && baseType != null)
             {
-                classReferenceInfo.BaseClassName = GetFullNameOfType(baseType, true, null, null, out _);
+                classReferenceInfo.BaseClassName = GetFullNameOfType(baseType, true, null, null, ref startIndexAt, out _);
             }
             else
-                classReferenceInfo.BaseClassName = GetFullNameOfType(typeof(NotifyPropertyChangedBase), true, null, null, out _);
+                classReferenceInfo.BaseClassName = GetFullNameOfType(typeof(NotifyPropertyChangedBase), true, null, null, ref startIndexAt, out _);
 
-            classReferenceInfo.Name = GetFullNameOfType(type, false, null, null, out _);
+            classReferenceInfo.Name = GetFullNameOfType(type, false, null, null, ref startIndexAt, out _);
 
             ModelsCodeGenerated.Add(type);
 
@@ -462,7 +465,10 @@ namespace SignalGo.Server.Helpers
             AddToGenerate(methodInfo.ReturnType);
             string returnType = "void";
             if (methodInfo.ReturnType != typeof(void))
-                returnType = GetFullNameOfType(methodInfo.ReturnType, true, methodInfo, null, out _);
+            {
+                int startIndexAt = 0;
+                returnType = GetFullNameOfType(methodInfo.ReturnType, true, methodInfo, null, ref startIndexAt, out _);
+            }
             string methodName = methodInfo.Name;
 
             if (IsRenameDuplicateMethodNames)
@@ -491,10 +497,11 @@ namespace SignalGo.Server.Helpers
             if (!propertyInfo.CanWrite || !propertyInfo.CanRead)
                 return;
             AddToGenerate(propertyInfo.PropertyType);
+            int startIndexAt = 0;
             PropertyReferenceInfo propertyReferenceInfo = new PropertyReferenceInfo
             {
                 Name = propertyInfo.Name,
-                ReturnTypeName = GetFullNameOfType(propertyInfo.PropertyType, true, null, propertyInfo, out _)
+                ReturnTypeName = GetFullNameOfType(propertyInfo.PropertyType, true, null, propertyInfo, ref startIndexAt, out _)
             };
 
             classReferenceInfo.Properties.Add(propertyReferenceInfo);
@@ -507,7 +514,8 @@ namespace SignalGo.Server.Helpers
                 ParameterReferenceInfo parameterReferenceInfo = new ParameterReferenceInfo();
                 AddToGenerate(item.ParameterType);
                 parameterReferenceInfo.Name = item.Name;
-                parameterReferenceInfo.TypeName = GetFullNameOfType(item.ParameterType, true, methodInfo, null, out _);
+                int startIndexAt = 0;
+                parameterReferenceInfo.TypeName = GetFullNameOfType(item.ParameterType, true, methodInfo, null, ref startIndexAt, out _);
                 methodReferenceInfo.Parameters.Add(parameterReferenceInfo);
             }
         }
@@ -518,18 +526,18 @@ namespace SignalGo.Server.Helpers
                 NamespaceReferenceInfo.Usings.Add(type.GetNamesapce());
         }
 
-        private string GetFullNameOfType(Type type, bool withNameSpace, MethodInfo method, PropertyInfo property, out string genericParameterConstraints)
+        private string GetFullNameOfType(Type type, bool withNameSpace, MethodInfo method, PropertyInfo property, ref int startIndexAt, out string genericParameterConstraints)
         {
             genericParameterConstraints = null;
             if (method != null)
             {
-                var result = GetTupleParameterNames(type, method);
+                var result = GetTupleParameterNames(type, method, ref startIndexAt);
                 if (result != "()" && result != ")")
                     return result;
             }
             if (property != null)
             {
-                var result = GetTupleParameterNames(type, property);
+                var result = GetTupleParameterNames(type, property, ref startIndexAt);
                 if (result != "()" && result != ")")
                     return result;
             }
@@ -567,11 +575,11 @@ namespace SignalGo.Server.Helpers
             }
             else if (type.GetBaseType() == typeof(Task))
             {
-                return GetFullNameOfType(type.GetGenericArguments()[0], withNameSpace, method, property, out _);
+                return GetFullNameOfType(type.GetGenericArguments()[0], withNameSpace, method, property, ref startIndexAt, out _);
             }
             if (type.GetBaseType() == typeof(Array))
             {
-                return GetFullNameOfType(type.GetElementType(), withNameSpace, method, property, out _) + "[]";
+                return GetFullNameOfType(type.GetElementType(), withNameSpace, method, property, ref startIndexAt, out _) + "[]";
             }
             if (CannotGenerateAssemblyTypes(type))
                 AddUsingIfNotExist(type);
@@ -594,7 +602,6 @@ namespace SignalGo.Server.Helpers
                     }
                 }
 #endif
-
                 foreach (Type item in type.GetListOfGenericArguments())
                 {
                     AddToGenerate(item);
@@ -604,7 +611,7 @@ namespace SignalGo.Server.Helpers
                     {
                         generics += ", ";
                     }
-                    generics += GetFullNameOfType(item, true, method, property, out _);
+                    generics += GetFullNameOfType(item, true, method, property, ref startIndexAt, out _);
                 }
                 string name = "";
                 if (type.Name.IndexOf("`") != -1)
@@ -635,7 +642,7 @@ namespace SignalGo.Server.Helpers
             }
         }
 
-        string GetTupleParameterNames(Type type, MethodInfo method)
+        string GetTupleParameterNames(Type type, MethodInfo method, ref int startIndexAt)
         {
             StringBuilder result = new StringBuilder();
             result.Append("(");
@@ -654,13 +661,19 @@ namespace SignalGo.Server.Helpers
                             {
                                 var ng = ((System.Runtime.CompilerServices.TupleElementNamesAttribute)at).TransformNames;
                                 int index = 0;
-                                foreach (var ca in ng)
+                                var items = ng.Skip(startIndexAt).Take(tupleGenerics.Length).ToArray();
+                                foreach (var ca in items)
                                 {
-                                    result.Append($"{GetFullNameOfType(tupleGenerics[index], true, method, null, out _)} ");
+                                    int myStartIndexAt = tupleGenerics.Length;
+                                    result.Append($"{GetFullNameOfType(tupleGenerics[index], true, method, null, ref myStartIndexAt, out _)} ");
                                     result.Append($"{ca}");
                                     result.Append(", ");
                                     index++;
+                                    startIndexAt++;
                                 }
+                                if (result.Length > 2)
+                                    result = result[result.Length -1] == ',' ? result.Remove(result.Length - 1, 1) : result.Remove(result.Length - 2, 2);
+                                result.Append(")");
                             }
                         }
                     }
@@ -668,12 +681,12 @@ namespace SignalGo.Server.Helpers
             }
 #endif
             if (result.Length > 2)
-                result = result.Remove(result.Length - 2, 2);
+                result = result[result.Length - 1] == ')' ? result.Remove(result.Length - 1, 1) : result.Remove(result.Length - 2, 2);
             result.Append(")");
             return result.ToString();
         }
 
-        string GetTupleParameterNames(Type type, PropertyInfo property)
+        string GetTupleParameterNames(Type type, PropertyInfo property, ref int startIndexAt)
         {
             StringBuilder result = new StringBuilder();
             result.Append("(");
@@ -696,7 +709,7 @@ namespace SignalGo.Server.Helpers
                                     {
                                         foreach (var val in (IEnumerable<System.Reflection.CustomAttributeTypedArgument>)ca.Value)
                                         {
-                                            result.Append($"{GetFullNameOfType(tupleGenerics[index], true, null, property, out _)} ");
+                                            result.Append($"{GetFullNameOfType(tupleGenerics[index], true, null, property, ref startIndexAt, out _)} ");
                                             result.Append($"{val.Value}");
                                             result.Append(", ");
                                             index++;
