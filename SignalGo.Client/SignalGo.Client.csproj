@@ -62,6 +62,10 @@
     </UpgradeBackupLocation>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <OldToolsVersion>2.0</OldToolsVersion>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
   </PropertyGroup>
   <PropertyGroup Condition="'$(TargetFramework)'=='netstandard2.0'">
     <DefineConstants>__ANDROID__;$(AdditionalConstants)</DefineConstants>
