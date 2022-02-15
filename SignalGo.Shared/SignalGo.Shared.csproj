@@ -7,7 +7,7 @@
   </PropertyGroup>
   <PropertyGroup>
     <!--netstandard2.0;-->
-    <TargetFrameworks>netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>net45;net40;net35;netstandard2.0</TargetFrameworks>
     <!--<TargetFramework>netstandard2.0</TargetFramework>-->
     <MinimumVisualStudioVersion>10.0</MinimumVisualStudioVersion>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
