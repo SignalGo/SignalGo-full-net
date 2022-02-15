@@ -944,7 +944,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     while (readLength < length)
                     {
                         byte[] bytes = new byte[1024];
-                        var readCount = stream.Read(bytes, bytes.Length);
+                        var readCount = await stream.ReadAsync(bytes, bytes.Length);
                         readLength += readCount;
                         readBytes.AddRange(bytes.ToList().GetRange(0, readCount));
                     }
