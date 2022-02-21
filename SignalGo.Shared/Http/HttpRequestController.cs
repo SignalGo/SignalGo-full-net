@@ -1,8 +1,5 @@
 ﻿using SignalGo.Shared.Models;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace SignalGo.Shared.Http
 {
@@ -39,10 +36,39 @@ namespace SignalGo.Shared.Http
         }
 
         public System.Net.HttpStatusCode Status { get; set; } = System.Net.HttpStatusCode.OK;
-        public WebHeaderCollection RequestHeaders { get; set; }
-        public WebHeaderCollection ResponseHeaders { get; set; } = new WebHeaderCollection();
+        public IDictionary<string, string[]> RequestHeaders { get; set; }
+        public IDictionary<string, string[]> ResponseHeaders { get; set; } = new WebHeaderCollection();
 
-        public string IPAddress { get; set; }
+        string _IPAddress;
+        /// <summary>
+        /// ip address of client
+        /// </summary>
+        public string IPAddress
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(_IPAddress))
+                    _IPAddress = new System.Net.IPAddress(IPAddressBytes).ToString();
+                return _IPAddress;
+            }
+        }
+
+        byte[] _IPAddressBytes;
+        /// <summary>
+        /// bytes of ip address
+        /// </summary>
+        public byte[] IPAddressBytes
+        {
+            get
+            {
+                return _IPAddressBytes;
+            }
+            set
+            {
+                _IPAddressBytes = value;
+                _IPAddress = null;
+            }
+        }
 
         public ActionResult Content(string text)
         {
@@ -54,7 +80,7 @@ namespace SignalGo.Shared.Http
             return new ActionResult(data);
         }
 
-        HttpPostedFileInfo _currentFile = null;
+        private HttpPostedFileInfo _currentFile = null;
         public void SetFirstFile(HttpPostedFileInfo fileInfo)
         {
             _currentFile = fileInfo;

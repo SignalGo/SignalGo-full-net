@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-namespace SignalGo
+﻿namespace SignalGo
 {
     /// <summary>
     /// methods call and callback type
@@ -62,9 +57,13 @@ namespace SignalGo
         /// </summary>
         None = 0,
         /// <summary>
-        /// zip compress
+        /// custom compress
         /// </summary>
-        Zip = 1
+        Custom = 1,
+        /// <summary>
+        /// GZipStream compress
+        /// </summary>
+        Zip = 2
     }
 
     /// <summary>

@@ -1,15 +1,21 @@
-﻿<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
-  <!--<Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />-->
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup Label="Globals">
+    <SccProjectName>SAK</SccProjectName>
+    <SccProvider>SAK</SccProvider>
+    <SccAuxPath>SAK</SccAuxPath>
+    <SccLocalPath>SAK</SccLocalPath>
+  </PropertyGroup>
   <PropertyGroup>
-    <TargetFrameworks>net45;net40;net35;netstandard1.6;netstandard2.0;</TargetFrameworks>
-    <!---->
+    <!--netstandard2.0;-->
+    <TargetFrameworks>netstandard2.0</TargetFrameworks>
+    <!--<TargetFramework>netstandard2.0</TargetFramework>-->
     <MinimumVisualStudioVersion>10.0</MinimumVisualStudioVersion>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <AssemblyVersion>3.8</AssemblyVersion>
-    <FileVersion>3.8</FileVersion>
-    <VersionPrefix>3.8</VersionPrefix>
-    <Version>3.8</Version>
+    <AssemblyVersion>5.7.0.3</AssemblyVersion>
+    <FileVersion>5.7.0.3</FileVersion>
+    <!--<VersionPrefix>4.0</VersionPrefix>-->
+    <Version>5.7.0.3</Version>
     <!--<VersionSuffix>beta1</VersionSuffix>-->
     <Authors>Ali Yousefi</Authors>
     <Company></Company>
@@ -41,31 +47,36 @@
 
       11.manage data exchanger to customize model properties in send and receive data without create new class
       and other features...
+      
+      12.full async await tasks support
     </Description>
     <Copyright>Copyright © ali.visual.studio@gmail.com 2016</Copyright>
     <Summary>
     </Summary>
     <PackageReleaseNotes>
       1.fix bugs and more improvement
-      2.support for oneway services
-      3.support for host a website on signalgo
+      2.added HttpKeyAttribute for method parameters
+      3.support for SOAP protocol
+      4.support for http calls on add signalgoservice references (easy to call http services)
       read document examples here:
       https://github.com/SignalGo/SignalGo-full-net
 
     </PackageReleaseNotes>
     <NeutralLanguage>en-US</NeutralLanguage>
-    <PackageId>SignalGo.Shared</PackageId>
+    <PackageId>SignalGo.Net.Shared</PackageId>
     <PackageTags>SignalGo SignalR WCF Server Client Signal Sig RealTime Real-Time</PackageTags>
-    <PackageIconUrl>http://cdn.persiangig.com/preview/v14ukL88fq/SignalGo.png</PackageIconUrl>
+    <PackageIconUrl></PackageIconUrl>
     <PackageProjectUrl>https://github.com/SignalGo/SignalGo-full-net</PackageProjectUrl>
     <PackageLicenseUrl>https://github.com/SignalGo/SignalGo-full-net/blob/master/LICENSE</PackageLicenseUrl>
     <RepositoryUrl>https://github.com/SignalGo/SignalGo-full-net</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <RootNamespace>SignalGo.Shared</RootNamespace>
     <AssemblyName>SignalGo.Shared</AssemblyName>
-    <GenerateDocumentationFile>false</GenerateDocumentationFile>
-    <NetStandardImplicitPackageVersion>1.6.1</NetStandardImplicitPackageVersion>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!--<NetStandardImplicitPackageVersion>1.6.1</NetStandardImplicitPackageVersion>-->
     <MinClientVersion>2.12</MinClientVersion>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageIcon>icon.png</PackageIcon>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -76,7 +87,6 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
@@ -86,38 +96,12 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
 
-
-  <PropertyGroup Condition="'$(TargetFramework)'=='net45'">
-    <AssemblyTitle>SignalGo.Shared</AssemblyTitle>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(TargetFramework)'=='net40'">
-    <AssemblyTitle>SignalGo.Shared .NET 4.0</AssemblyTitle>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(TargetFramework)'=='net35'">
-    <AssemblyTitle>SignalGo.Shared .NET 3.5</AssemblyTitle>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(TargetFramework)'=='portable45-net45+win8'">
-    <TargetFrameworkIdentifier>.NETPortable</TargetFrameworkIdentifier>
-    <AssemblyTitle>SignalGo.Shared .NET Portable</AssemblyTitle>
-    <TargetFrameworkProfile>Profile7</TargetFrameworkProfile>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <NugetTargetMoniker>.NETPortable,Version=v4.5,Profile=Profile7</NugetTargetMoniker>
-    <LanguageTargets>$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets</LanguageTargets>
-    <DefineConstants>PORTABLE;$(AdditionalConstants)</DefineConstants>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(TargetFramework)'=='portable-net45+win8+wpa81'">
-    <TargetFrameworkIdentifier>.NETPortable</TargetFrameworkIdentifier>
-    <AssemblyTitle>SignalGo.Shared .NET Portable</AssemblyTitle>
-    <TargetFrameworkProfile>Profile111</TargetFrameworkProfile>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <NugetTargetMoniker>.NETPortable,Version=v0.0,Profile=Profile111</NugetTargetMoniker>
-    <LanguageTargets>$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets</LanguageTargets>
-    <DefineConstants>PORTABLE;$(AdditionalConstants)</DefineConstants>
-  </PropertyGroup>
+  <!--<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net45|AnyCPU'">
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsAsErrors />
+  </PropertyGroup>-->
 
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net35'">
@@ -127,8 +111,9 @@
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
     <PackageReference Include="TaskParallelLibrary" Version="1.0.2856" />
+    <PackageReference Include="NetLegacySupport.Tuple" Version="1.1.1" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net40'">
     <Reference Include="Microsoft.CSharp" />
@@ -138,7 +123,7 @@
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net45'">
     <Reference Include="Microsoft.CSharp" />
@@ -148,48 +133,66 @@
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard1.6'">
-    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
     <PackageReference Include="System.Diagnostics.StackTrace" Version="4.3.0" />
     <PackageReference Include="System.Xml.XmlSerializer" Version="4.3.0" />
     <PackageReference Include="System.Threading.Thread" Version="4.3.0" />
-    <PackageReference Include="System.Reflection.TypeExtensions" Version="4.5.0" />
-    <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
+    <PackageReference Include="System.Reflection.TypeExtensions" Version="4.7.0" />
+    <PackageReference Include="System.Reflection.Emit" Version="4.7.0" />
+    <!--<PackageReference Include="NETStandard.Library" Version="1.6.1" />-->
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
     <PackageReference Include="System.Reflection" Version="4.3.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
     <PackageReference Include="System.Diagnostics.StackTrace" Version="4.3.0" />
     <PackageReference Include="System.Xml.XmlSerializer" Version="4.3.0" />
     <PackageReference Include="System.Threading.Thread" Version="4.3.0" />
-    <PackageReference Include="System.Reflection.TypeExtensions" Version="4.5.0" />
-    <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
-    <PackageReference Include="NETStandard.Library" Version="2.0.3" />
+    <PackageReference Include="System.Reflection.TypeExtensions" Version="4.7.0" />
+    <PackageReference Include="System.Reflection.Emit" Version="4.7.0" />
+    <!--<PackageReference Include="NETStandard.Library" Version="2.0.0" />-->
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp1.1'">
-    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
+  <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp1.0'">
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
     <PackageReference Include="System.Diagnostics.StackTrace" Version="4.3.0" />
     <PackageReference Include="System.Xml.XmlSerializer" Version="4.3.0" />
     <PackageReference Include="System.Threading.Thread" Version="4.3.0" />
-    <PackageReference Include="System.Reflection.TypeExtensions" Version="4.5.0" />
-    <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
-    <PackageReference Include="runtime.win8-arm.Microsoft.NETCore.Runtime.CoreCLR" Version="1.0.7" />
+    <PackageReference Include="System.Reflection.TypeExtensions" Version="4.7.0" />
+    <PackageReference Include="System.Reflection.Emit" Version="4.7.0" />
+    <PackageReference Include="Microsoft.NETCore.App" Version="1.0.3" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp2.0'">
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+    <PackageReference Include="System.Diagnostics.StackTrace" Version="4.3.0" />
+    <PackageReference Include="System.Xml.XmlSerializer" Version="4.3.0" />
+    <PackageReference Include="System.Threading.Thread" Version="4.3.0" />
+    <PackageReference Include="System.Reflection.TypeExtensions" Version="4.7.0" />
+    <PackageReference Include="System.Reflection.Emit" Version="4.7.0" />
+    <PackageReference Include="Microsoft.NETCore.App" Version="2.0.0" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'portable45-net45+win8'">
-    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
     <PackageReference Include="rda.SocketsForPCL" Version="2.0.2" />
-    <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
+    <PackageReference Include="System.Reflection.Emit" Version="4.7.0" />
+    <PackageReference Include="Microsoft.Extensions.Primitives" Version="2.1.1" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'portable-net45+win8+wpa81'">
-    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
     <PackageReference Include="rda.SocketsForPCL" Version="2.0.2" />
-    <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
+    <PackageReference Include="System.Reflection.Emit" Version="4.7.0" />
   </ItemGroup>
   <ItemGroup>
     <Compile Remove="Log\MethodCallsLogger.cs" />
     <Compile Remove="Log\MethodCallsLogLoader.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\icon.png">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+  </ItemGroup>
+  <!--<Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />-->
 </Project>

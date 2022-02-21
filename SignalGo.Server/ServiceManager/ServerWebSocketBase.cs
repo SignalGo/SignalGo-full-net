@@ -1,21 +1,4 @@
-﻿using Newtonsoft.Json;
-using SignalGo.Server.Models;
-using SignalGo.Shared;
-using SignalGo.Shared.Helpers;
-using SignalGo.Shared.IO;
-using SignalGo.Shared.Log;
-using SignalGo.Shared.Models;
-using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Net.Sockets;
-using System.Security.Cryptography;
-using System.Text;
-using System.Threading;
-
-namespace SignalGo.Server.ServiceManager
+﻿namespace SignalGo.Server.ServiceManager
 {
     //public abstract class ServerWebSocketBase : ServerBase
     //{

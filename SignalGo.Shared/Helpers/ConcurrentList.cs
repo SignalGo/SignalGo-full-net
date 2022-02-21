@@ -1,8 +1,8 @@
-﻿using System;
+﻿using SignalGo.Shared.Log;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace SignalGo.Shared.Helpers
 {
@@ -10,11 +10,11 @@ namespace SignalGo.Shared.Helpers
     /// Represents a thread-safe list
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public class ConcurrentList<T> : IList<T>
+    public class ConcurrentList<T> : IEnumerable<T>
     {
         #region Fields
 
-        private IList<T> _internalList;
+        private readonly IList<T> _internalList;
 
         private readonly object lockObject = new object();
 
@@ -43,7 +43,7 @@ namespace SignalGo.Shared.Helpers
         {
             get
             {
-                return LockInternalListAndGet(l => l[index]);
+                return LockInternalListAndGet(l => l[index], index);
             }
             set
             {
@@ -59,11 +59,26 @@ namespace SignalGo.Shared.Helpers
             }
         }
 
-        public bool IsReadOnly => false;
+        public bool IsReadOnly
+        {
+            get
+            {
+                return false;
+            }
+        }
 
         public void Add(T item)
         {
             LockInternalListAndCommand(l => l.Add(item));
+        }
+
+        public void AddWithNoDuplication(T item)
+        {
+            LockInternalListAndCommand(l =>
+            {
+                if (!l.Contains(item))
+                    l.Add(item);
+            });
         }
 
         public void Clear()
@@ -74,21 +89,6 @@ namespace SignalGo.Shared.Helpers
         public bool Contains(T item)
         {
             return LockInternalListAndQuery(l => l.Contains(item));
-        }
-
-        public void CopyTo(T[] array, int arrayIndex)
-        {
-            LockInternalListAndCommand(l => l.CopyTo(array, arrayIndex));
-        }
-
-        public T[] ToArray()
-        {
-           return LockInternalListAndQuery(l => l.ToArray());
-        }
-
-        public IEnumerator<T> GetEnumerator()
-        {
-            return LockInternalListAndQuery(l => l.GetEnumerator());
         }
 
         public int IndexOf(T item)
@@ -108,12 +108,22 @@ namespace SignalGo.Shared.Helpers
 
         public void RemoveAt(int index)
         {
-            LockInternalListAndCommand(l => l.RemoveAt(index));
+            LockInternalListAndCommand(l =>
+            {
+                if (_internalList.Count <= index)
+                    return;
+                l.RemoveAt(index);
+            });
         }
 
         IEnumerator IEnumerable.GetEnumerator()
         {
-            return LockInternalListAndQuery(l => l.GetEnumerator());
+            return LockInternalListAndQuery(l => l.ToArray().GetEnumerator());
+        }
+
+        public IEnumerator<T> GetEnumerator()
+        {
+            return LockInternalListAndQuery(l => l.ToList().GetEnumerator());
         }
 
         #region Utilities
@@ -126,11 +136,22 @@ namespace SignalGo.Shared.Helpers
             }
         }
 
-        protected virtual T LockInternalListAndGet(Func<IList<T>, T> func)
+        protected virtual T LockInternalListAndGet(Func<IList<T>, T> func, int index = int.MinValue)
         {
             lock (lockObject)
             {
-                return func(_internalList);
+                try
+                {
+                    if (_internalList.Count == 0)
+                        return default;
+                    return func(_internalList);
+                }
+                catch (Exception ex)
+                {
+                    AutoLogger.Default.LogError(ex, $"LockInternalListAndGet {index}");
+                    AutoLogger.Default.LogText($"LockInternalListAndGet {_internalList.Count} {index} trace {Environment.StackTrace}");
+                    return default;
+                }
             }
         }
 

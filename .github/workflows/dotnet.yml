@@ -1,0 +1,43 @@
+name: .NET
+
+on:
+  push:
+    branches: [ version5 ]
+  pull_request:
+    branches: [ version5 ]
+
+jobs:
+  build:
+
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-2019]
+    steps:
+    - uses: actions/checkout@v2
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+    - name: Setup .NET 5.0.x
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 5.0.x
+    - name: Setup .NET 2.1.x
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 2.1.x
+    - name: Setup .NET 3.1
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 3.1
+    - name: Setup .NET 3.1.x
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 3.1.x
+    - name: Restore dependencies
+      run: dotnet restore
+    - name: Build
+      run: |
+           cd "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\MSBuild\Current\Bin\"
+           .\MSBuild.exe $Env:GITHUB_WORKSPACE\SignalGo.sln
+    - name: Test
+      run: dotnet test --no-build --verbosity normal

@@ -2,9 +2,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
-using System.Text;
 
 namespace SignalGo.Shared.Helpers
 {
@@ -109,7 +107,7 @@ namespace SignalGo.Shared.Helpers
                 { typeof(string), SerializeObjectType.String },
                 { typeof(void), SerializeObjectType.Void },
                 { typeof(IntPtr), SerializeObjectType.IntPtr },
-#if (!NETSTANDARD1_6 && !NETCOREAPP1_1 && !PORTABLE)
+#if (!NETSTANDARD && !NETCOREAPP && !PORTABLE)
                 { typeof(DBNull), SerializeObjectType.DBNull }
 #endif
         };
@@ -126,7 +124,7 @@ namespace SignalGo.Shared.Helpers
                 return SerializeObjectType.None;
             else if (TypeCodeMap.ContainsKey(type))
                 return TypeCodeMap[type];
-#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
+#if (NETSTANDARD || NETCOREAPP || PORTABLE)
             else if (type.GetTypeInfo().IsEnum)
                 return SerializeObjectType.Enum;
             else if (nullableType != null && nullableType.GetTypeInfo().IsEnum)
@@ -153,94 +151,130 @@ namespace SignalGo.Shared.Helpers
             HandleDeserializingObjectList.TryAdd(typeof(TResultType), new SerializeDelegateHandler() { Delegate = func, ParameterType = typeof(TType) });
         }
 
+        public static string Format(object value, string format, IFormatProvider formatProvider = null)
+        {
+            if (value == null)
+            {
+                return string.Empty;
+            }
+
+            IFormattable formattable = value as IFormattable;
+
+            if (formattable != null)
+            {
+                return formattable.ToString(format, formatProvider);
+            }
+
+            throw new ArgumentException("value");
+        }
+
         public static object ConvertType(Type toType, object value)
         {
             if (value == null)
                 return null;
-            var targetPropertyType = GetTypeCodeOfObject(toType);
+            else if (value.GetType() == toType)
+                return value;
+            SerializeObjectType targetPropertyType = GetTypeCodeOfObject(toType);
             if (targetPropertyType == SerializeObjectType.Boolean)
             {
-                return Convert.ToBoolean(value);
+                if (bool.TryParse(value.ToString(), out bool result))
+                    return result;
+                return default(bool);
             }
             else if (targetPropertyType == SerializeObjectType.BooleanNullable)
             {
-                if (value.ToString() == "null")
-                    return null;
-                return (bool?)Convert.ToBoolean(value);
+                if (bool.TryParse(value.ToString(), out bool result))
+                    return (bool?)result;
+                return null;
             }
             else if (targetPropertyType == SerializeObjectType.Byte)
             {
-                return Convert.ToByte(value);
+                if (byte.TryParse(value.ToString(), out byte result))
+                    return result;
+                return default(byte);
             }
             else if (targetPropertyType == SerializeObjectType.ByteNullable)
             {
-                if (value.ToString() == "null")
-                    return null;
-                return (byte?)Convert.ToByte(value);
+                if (byte.TryParse(value.ToString(), out byte result))
+                    return (byte?)result;
+                return null;
             }
             else if (targetPropertyType == SerializeObjectType.Char)
             {
-                return Convert.ToChar(value);
+                if (char.TryParse(value.ToString(), out char result))
+                    return result;
+                return default(char);
             }
             else if (targetPropertyType == SerializeObjectType.CharNullable)
             {
-                if (value.ToString() == "null")
-                    return null;
-                return (char?)Convert.ToChar(value);
+                if (char.TryParse(value.ToString(), out char result))
+                    return (char?)result;
+                return null;
             }
             else if (targetPropertyType == SerializeObjectType.DateTime)
             {
-                try
+                if (!(value is DateTime))
                 {
-                    return Convert.ToDateTime(value);
+                    if (DateTime.TryParse(value.ToString(), out DateTime parsedValue))
+                        value = parsedValue;
                 }
-                catch (Exception ex)
-                {
-                    AutoLogger.LogError(ex, $"cannot convert value {value} type of {value.GetType()} to DateTime!");
-                    return DateTime.MinValue;
-                }
+                if (DateTime.TryParse(Format(value, "o"), out DateTime result))
+                    return result;
+                return default(DateTime);
             }
             else if (targetPropertyType == SerializeObjectType.DateTimeNullable)
             {
-                if (value.ToString() == "null")
-                    return null;
-                return (DateTime?)Convert.ToDateTime(value);
+                if (!(value is DateTime))
+                {
+                    if (DateTime.TryParse(value.ToString(), out DateTime parsedValue))
+                        value = parsedValue;
+                }
+                if (DateTime.TryParse(Format(value, "o"), out DateTime result))
+                    return (DateTime?)result;
+                return null;
             }
             else if (targetPropertyType == SerializeObjectType.DateTimeOffset)
             {
-                return new DateTimeOffset(Convert.ToDateTime(value));
+                if (DateTimeOffset.TryParse(value.ToString(), out DateTimeOffset result))
+                    return result;
+                return default(DateTimeOffset);
             }
             else if (targetPropertyType == SerializeObjectType.DateTimeOffsetNullable)
             {
-                if (value.ToString() == "null")
-                    return null;
-                return (DateTimeOffset?)new DateTimeOffset(Convert.ToDateTime(value));
+                if (DateTimeOffset.TryParse(value.ToString(), out DateTimeOffset result))
+                    return (DateTimeOffset?)result;
+                return null;
+                //return (DateTimeOffset?)new DateTimeOffset(Convert.ToDateTime(value));
             }
             else if (targetPropertyType == SerializeObjectType.Decimal)
             {
-                return Convert.ToDecimal(value);
+                if (decimal.TryParse(value.ToString(), out decimal result))
+                    return result;
+                return default(decimal);
             }
             else if (targetPropertyType == SerializeObjectType.DecimalNullable)
             {
-                if (value.ToString() == "null")
-                    return null;
-                return (decimal?)Convert.ToDecimal(value);
+                if (decimal.TryParse(value.ToString(), out decimal result))
+                    return (decimal?)result;
+                return null;
             }
             else if (targetPropertyType == SerializeObjectType.Double)
             {
-                return Convert.ToDouble(value);
+                if (double.TryParse(value.ToString(), out double result))
+                    return result;
+                return default(double);
             }
             else if (targetPropertyType == SerializeObjectType.DoubleNullable)
             {
-                if (value.ToString() == "null")
-                    return null;
-                return (double?)Convert.ToDouble(value);
+                if (double.TryParse(value.ToString(), out double result))
+                    return (double?)result;
+                return null;
             }
             else if (targetPropertyType == SerializeObjectType.Enum)
             {
                 if (value == null)
                 {
-                    var values = Enum.GetValues(toType);
+                    Array values = Enum.GetValues(toType);
                     if (values.Length > 0)
                         return Enum.GetValues(toType).GetValue(0);
                     else
@@ -263,89 +297,111 @@ namespace SignalGo.Shared.Helpers
                     return null;
                 }
             }
-            else if (targetPropertyType == SerializeObjectType.Guid)
+            else if (targetPropertyType == SerializeObjectType.Guid || targetPropertyType == SerializeObjectType.GuidNullable)
             {
+#if (NET35)
                 return new Guid(value.ToString());
+#else
+                if (Guid.TryParse(value.ToString(), out Guid result))
+                    return result;
+                return Guid.Empty;
+#endif
             }
             else if (targetPropertyType == SerializeObjectType.Int16)
             {
-                return Convert.ToInt16(value);
+                if (short.TryParse(value.ToString(), out short result))
+                    return result;
+                return default(short);
             }
             else if (targetPropertyType == SerializeObjectType.Int16Nullable)
             {
-                if (value.ToString() == "null")
-                    return null;
-                return (short?)Convert.ToInt16(value);
+                if (short.TryParse(value.ToString(), out short result))
+                    return result;
+                return null;
             }
             else if (targetPropertyType == SerializeObjectType.Int32)
             {
-                return Convert.ToInt32(value);
+                if (int.TryParse(value.ToString(), out int result))
+                    return result;
+                return default(int);
             }
             else if (targetPropertyType == SerializeObjectType.Int32Nullable)
             {
-                if (value.ToString() == "null")
-                    return null;
-                return (int?)Convert.ToInt32(value);
+                if (int.TryParse(value.ToString(), out int result))
+                    return (int?)result;
+                return null;
             }
             else if (targetPropertyType == SerializeObjectType.Int64)
             {
-                return Convert.ToInt64(value);
+                if (long.TryParse(value.ToString(), out long result))
+                    return result;
+                return default(long);
             }
             else if (targetPropertyType == SerializeObjectType.Int64Nullable)
             {
-                if (value.ToString() == "null")
-                    return null;
-                return (long?)Convert.ToInt64(value);
+                if (long.TryParse(value.ToString(), out long result))
+                    return (long?)result;
+                return null;
             }
             else if (targetPropertyType == SerializeObjectType.UInt16)
             {
-                return Convert.ToUInt16(value);
+                if (ushort.TryParse(value.ToString(), out ushort result))
+                    return result;
+                return default(ushort);
             }
             else if (targetPropertyType == SerializeObjectType.UInt16Nullable)
             {
-                if (value.ToString() == "null")
-                    return null;
-                return (ushort?)Convert.ToUInt16(value);
+                if (ushort.TryParse(value.ToString(), out ushort result))
+                    return (ushort?)result;
+                return null;
             }
             else if (targetPropertyType == SerializeObjectType.UInt32)
             {
-                return Convert.ToUInt32(value);
+                if (uint.TryParse(value.ToString(), out uint result))
+                    return result;
+                return default(uint);
             }
             else if (targetPropertyType == SerializeObjectType.UInt32Nullable)
             {
-                if (value.ToString() == "null")
-                    return null;
-                return (uint?)Convert.ToUInt32(value);
+                if (uint.TryParse(value.ToString(), out uint result))
+                    return (uint?)result;
+                return null;
             }
             else if (targetPropertyType == SerializeObjectType.UInt64)
             {
-                return Convert.ToUInt64(value);
+                if (ulong.TryParse(value.ToString(), out ulong result))
+                    return result;
+                return default(ulong);
             }
             else if (targetPropertyType == SerializeObjectType.UInt64Nullable)
             {
-                if (value.ToString() == "null")
-                    return null;
-                return (ulong?)Convert.ToUInt64(value);
+                if (ulong.TryParse(value.ToString(), out ulong result))
+                    return (ulong?)result;
+                return null;
             }
             else if (targetPropertyType == SerializeObjectType.SByte)
             {
-                return Convert.ToSByte(value);
+                if (sbyte.TryParse(value.ToString(), out sbyte result))
+                    return result;
+                return default(sbyte);
             }
             else if (targetPropertyType == SerializeObjectType.SByteNullable)
             {
-                if (value.ToString() == "null")
-                    return null;
-                return (sbyte?)Convert.ToSByte(value);
+                if (sbyte.TryParse(value.ToString(), out sbyte result))
+                    return (sbyte?)result;
+                return null;
             }
             else if (targetPropertyType == SerializeObjectType.Single)
             {
-                return Convert.ToSingle(value);
+                if (float.TryParse(value.ToString(), out float result))
+                    return result;
+                return default(float);
             }
             else if (targetPropertyType == SerializeObjectType.FloatNullable)
             {
-                if (value.ToString() == "null")
-                    return null;
-                return (float?)Convert.ToSingle(value);
+                if (float.TryParse(value.ToString(), out float result))
+                    return (float?)result;
+                return null;
             }
             else if (targetPropertyType == SerializeObjectType.String)
             {
@@ -355,17 +411,21 @@ namespace SignalGo.Shared.Helpers
             }
             else if (targetPropertyType == SerializeObjectType.TimeSpan)
             {
-                return TimeSpan.Parse(value.ToString());
+                if (TimeSpan.TryParse(value.ToString(), out TimeSpan result))
+                    return result;
+                return TimeSpan.MinValue;
             }
             else if (targetPropertyType == SerializeObjectType.TimeSpanNullable)
             {
-                if (value.ToString() == "null")
-                    return null;
-                return (TimeSpan?)TimeSpan.Parse(value.ToString());
+                if (TimeSpan.TryParse(value.ToString(), out TimeSpan result))
+                    return (TimeSpan?)result;
+                return null;
             }
             else if (targetPropertyType == SerializeObjectType.Uri)
             {
-                return new Uri(value.ToString());
+                if (Uri.TryCreate(value.ToString(), UriKind.RelativeOrAbsolute, out Uri result))
+                    return result;
+                return null;
             }
             else
             {

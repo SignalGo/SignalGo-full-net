@@ -1,28 +1,150 @@
-﻿using System;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using SignalGoTest2.Models;
+using SignalGoTest2Services.Interfaces;
+using System.IO;
+using System.Threading.Tasks;
+using Xunit;
 
 namespace SignalGoTest.Download
 {
-    [TestClass]
     public class DownloadStreamTest
     {
-        [TestMethod]
+        [Fact]
         public void TestDownload()
         {
-            try
+            SignalGo.Client.ClientProvider client = GlobalInitalization.InitializeAndConnecteClient();
+            ITestServerStreamModel service = client.RegisterStreamServiceInterfaceWrapper<ITestServerStreamModel>();
+            SignalGo.Shared.Models.StreamInfo<string> result = service.DownloadImage("hello world", new TestStreamModel() { Name = "test name", Values = new System.Collections.Generic.List<string>() { "value test 1", "value test 2" } });
+            byte[] bytes = new byte[1024];
+            int readLen = result.Stream.ReadAsync(bytes, 1024).ConfigureAwait(false).GetAwaiter().GetResult();
+            System.Diagnostics.Trace.Assert(result.Data == "hello return" && readLen == 4 && bytes[0] == 2 && bytes[1] == 5 && bytes[2] == 8 && bytes[3] == 9);
+        }
+
+        [Fact]
+        public async Task TestDownloadAsync()
+        {
+            SignalGo.Client.ClientProvider client = GlobalInitalization.InitializeAndConnecteClient();
+            ITestServerStreamModel service = client.RegisterStreamServiceInterfaceWrapper<ITestServerStreamModel>();
+            SignalGo.Shared.Models.StreamInfo<string> result = await service.DownloadImageAsync("hello world", new TestStreamModel() { Name = "test name", Values = new System.Collections.Generic.List<string>() { "value test 1", "value test 2" } });
+            byte[] bytes = new byte[1024];
+            int readLen = await result.Stream.ReadAsync(bytes, 1024);
+            System.Diagnostics.Trace.Assert(result.Data == "hello return" && readLen == 4 && bytes[0] == 2 && bytes[1] == 5 && bytes[2] == 8 && bytes[3] == 9);
+        }
+
+        [Fact]
+        public void TestUpload()
+        {
+            SignalGo.Client.ClientProvider client = GlobalInitalization.InitializeAndConnecteClient();
+            using (MemoryStream memoryStream = new MemoryStream())
             {
-                GlobalInitalization.Initialize();
-                GlobalInitalization.InitializeAndConnecteClient();
-                //System.Threading.Thread.Sleep(1000 * 600);
-                var service = GlobalInitalization.GetStreamService();
-                var result = service.DownloadImage("hello world", new Models.TestStreamModel() { Name = "test name", Values = new System.Collections.Generic.List<string>() { "value test 1", "value test 2" } });
-                byte[] bytes = new byte[1024];
-                var readLen = result.Stream.Read(bytes, 0, bytes.Length);
-                System.Diagnostics.Trace.Assert(result.Data == "hello return" && readLen == 4 && bytes[0] == 2 && bytes[1] == 5 && bytes[2] == 8 && bytes[3] == 9);
+                byte[] bytes = new byte[1024 * 512];
+                for (int i = 0; i < bytes.Length; i++)
+                {
+                    bytes[i] = (byte)(i / 255);
+                }
+                memoryStream.Write(bytes, 0, bytes.Length);
+                memoryStream.Seek(0, SeekOrigin.Begin);
+                ITestServerStreamModel service = client.RegisterStreamServiceInterfaceWrapper<ITestServerStreamModel>();
+                string result = service.UploadImage("hello world", new SignalGo.Shared.Models.StreamInfo()
+                {
+                    Length = memoryStream.Length,
+                    Stream = memoryStream
+                }, new TestStreamModel() { Name = "test name", Values = new System.Collections.Generic.List<string>() { "value test 1", "value test 2" } });
+                Assert.True(result == "success", result);
             }
-            catch (Exception ex)
+        }
+
+        [Fact]
+        public async Task TestUploadAsync()
+        {
+            TestUpload();
+            using (MemoryStream memoryStream = new MemoryStream())
             {
-                System.Diagnostics.Trace.Assert(false);
+                byte[] bytes = new byte[1024 * 512];
+                for (int i = 0; i < bytes.Length; i++)
+                {
+                    bytes[i] = (byte)(i / 255);
+                }
+                memoryStream.Write(bytes, 0, bytes.Length);
+                memoryStream.Seek(0, SeekOrigin.Begin);
+                ITestServerStreamModel service = new SignalGoTest2Services.StreamServices.TestServerStreamModel("http://localhost:1132");
+                string result = await service.UploadImageAsync("hello world", new SignalGo.Shared.Models.StreamInfo()
+                {
+                    Length = memoryStream.Length,
+                    Stream = memoryStream
+                }, new TestStreamModel() { Name = "test name", Values = new System.Collections.Generic.List<string>() { "value test 1", "value test 2" } });
+                Assert.True(result == "success");
+            }
+        }
+
+
+
+
+        [Fact]
+        public void TestDownloadCross()
+        {
+            TestUpload();
+            ITestServerStreamModel service = new SignalGoTest2Services.StreamServices.TestServerStreamModel("localhost", 1132);
+            SignalGo.Shared.Models.StreamInfo<string> result = service.DownloadImage("hello world", new TestStreamModel() { Name = "test name", Values = new System.Collections.Generic.List<string>() { "value test 1", "value test 2" } });
+            byte[] bytes = new byte[1024];
+            int readLen = result.Stream.ReadAsync(bytes, 1024).ConfigureAwait(false).GetAwaiter().GetResult();
+            System.Diagnostics.Trace.Assert(result.Data == "hello return" && readLen == 4 && bytes[0] == 2 && bytes[1] == 5 && bytes[2] == 8 && bytes[3] == 9);
+
+        }
+
+        [Fact]
+        public async Task TestDownloadCrossAsync()
+        {
+            TestUpload();
+            ITestServerStreamModel service = new SignalGoTest2Services.StreamServices.TestServerStreamModel("localhost", 1132);
+            SignalGo.Shared.Models.StreamInfo<string> result = await service.DownloadImageAsync("hello world", new TestStreamModel() { Name = "test name", Values = new System.Collections.Generic.List<string>() { "value test 1", "value test 2" } });
+            byte[] bytes = new byte[1024];
+            int readLen = await result.Stream.ReadAsync(bytes, 1024);
+            System.Diagnostics.Trace.Assert(result.Data == "hello return" && readLen == 4 && bytes[0] == 2 && bytes[1] == 5 && bytes[2] == 8 && bytes[3] == 9);
+        }
+
+        [Fact]
+        public void TestUploadCross()
+        {
+            TestUpload();
+            ITestServerStreamModel service = new SignalGoTest2Services.StreamServices.TestServerStreamModel("localhost", 1132);
+            using (MemoryStream memoryStream = new MemoryStream())
+            {
+                byte[] bytes = new byte[1024 * 512];
+                for (int i = 0; i < bytes.Length; i++)
+                {
+                    bytes[i] = (byte)(i / 255);
+                }
+                memoryStream.Write(bytes, 0, bytes.Length);
+                memoryStream.Seek(0, SeekOrigin.Begin);
+                string result = service.UploadImage("hello world", new SignalGo.Shared.Models.StreamInfo()
+                {
+                    Length = memoryStream.Length,
+                    Stream = memoryStream
+                }, new TestStreamModel() { Name = "test name", Values = new System.Collections.Generic.List<string>() { "value test 1", "value test 2" } });
+                Assert.True(result == "success");
+            }
+        }
+
+        [Fact]
+        public async Task TestUploadCrossAsync()
+        {
+            TestUpload();
+            ITestServerStreamModel service = new SignalGoTest2Services.StreamServices.TestServerStreamModel("localhost", 1132);
+            using (MemoryStream memoryStream = new MemoryStream())
+            {
+                byte[] bytes = new byte[1024 * 512];
+                for (int i = 0; i < bytes.Length; i++)
+                {
+                    bytes[i] = (byte)(i / 255);
+                }
+                memoryStream.Write(bytes, 0, bytes.Length);
+                memoryStream.Seek(0, SeekOrigin.Begin);
+                string result = await service.UploadImageAsync("hello world", new SignalGo.Shared.Models.StreamInfo()
+                {
+                    Length = memoryStream.Length,
+                    Stream = memoryStream
+                }, new TestStreamModel() { Name = "test name", Values = new System.Collections.Generic.List<string>() { "value test 1", "value test 2" } });
+                Assert.True(result == "success");
             }
         }
     }

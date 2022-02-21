@@ -1,12 +1,16 @@
-﻿using System;
+﻿using SignalGo.Shared.DataTypes;
+using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System.Net;
 
 namespace SignalGo.Shared.Models
 {
-    public class HttpSetting
+    public class BaseSetting
     {
+        /// <summary>
+        /// if http protocolsetting is https
+        /// </summary>
+        public bool IsHttps { get; set; }
         /// <summary>
         /// when you want to use timeouts on your provider set it true
         /// </summary>
@@ -19,42 +23,81 @@ namespace SignalGo.Shared.Models
         /// maximum value of timeout to wait for receive callbackinfo data
         /// </summary>
         public TimeSpan ReceiveDataTimeout { get; set; } = new TimeSpan(0, 0, 30);
+
+        /// <summary>
+        /// maximum size of string of all headers
+        /// </summary>
+        public int MaximumHeaderSize { get; set; } = -1;
+        /// <summary>
+        /// maximum size of request body size
+        /// </summary>
+        public int MaximumRequestBodySize { get; set; } = -1;
     }
 
-    public class ServerServiceSetting
+    public class HttpSetting : BaseSetting
     {
         /// <summary>
-        /// when you want to use timeouts on your provider set it true
+        /// handle cross origin access from browser origin header
         /// </summary>
-        public bool IsEnabledToUseTimeout { get; set; }
+        public bool HandleCrossOriginAccess { get; set; }
         /// <summary>
-        /// maximum value of timeout to wait for send data
+        /// cors of origin to allow access
         /// </summary>
-        public TimeSpan SendDataTimeout { get; set; } = new TimeSpan(0, 0, 30);
+        public Func<object, string> GetCustomOriginFunction { get; set; }
+
         /// <summary>
-        /// maximum value of timeout to wait for receive callbackinfo data
+        /// X509Certificate
         /// </summary>
-        public TimeSpan ReceiveDataTimeout { get; set; } = new TimeSpan(0, 0, 30);
+        public System.Security.Cryptography.X509Certificates.X509Certificate X509Certificate { get; set; }
+        /// <summary>
+        /// what status code you want to client see when access denied
+        /// </summary>
+        public HttpStatusCode DefaultAccessDenidHttpStatusCode { get; set; } = HttpStatusCode.Forbidden;
+        /// <summary>
+        /// domain of cookie in response headers 
+        /// </summary>
+        public string CookieDomain { get; set; }
     }
+
     /// <summary>
     /// server or client connector provider setting
     /// </summary>
     public class ProviderSetting
     {
         public HttpSetting HttpSetting { get; set; } = new HttpSetting();
-        public ServerServiceSetting ServerServiceSetting { get; set; } = new ServerServiceSetting();
+        public BaseSetting ServerServiceSetting { get; set; } = new BaseSetting();
+
+        /// <summary>
+        /// maximum size of lines to read
+        /// </summary>
+        public int MaximumLineSize { get; set; } = -1;
+        /// <summary>
+        /// when you want to use timeouts on your provider set it true
+        /// the properties of set timeout is SendDataTimeout and ReceiveDataTimeout
+        /// or you can set it to false and server will wait fo data for ever
+        /// default is false
+        /// </summary>
+        public bool IsEnabledToUseTimeout { get; set; }
+        /// <summary>
+        /// maximum value of timeout to wait for send data
+        /// </summary>
+        public TimeSpan SendDataTimeout { get; set; } = new TimeSpan(0, 0, 30);
+        /// <summary>
+        /// maximum value of timeout to wait for receive callbackinfo data
+        /// </summary>
+        public TimeSpan ReceiveDataTimeout { get; set; } = new TimeSpan(0, 0, 30);
         /// <summary>
         /// maximum send data block
         /// </summary>
-        public uint MaximumSendDataBlock { get; set; } = uint.MaxValue;
+        public int MaximumSendDataBlock { get; set; } = int.MaxValue;
         /// <summary>
         /// maximum receive data block
         /// </summary>
-        public uint MaximumReceiveDataBlock { get; set; } = uint.MaxValue;
+        public int MaximumReceiveDataBlock { get; set; } = int.MaxValue;
         /// <summary>
         /// maximum header of stream for download from client
         /// </summary>
-        public uint MaximumReceiveStreamHeaderBlock { get; set; } = 65536;
+        public int MaximumReceiveStreamHeaderBlock { get; set; } = 65536;
         /// <summary>
         /// automatic try to reconnect after disconnect
         /// </summary>
@@ -79,7 +122,19 @@ namespace SignalGo.Shared.Models
         /// <summary>
         /// call again priority func<bool> for get return true
         /// </summary>
-        public int PriorityFunctionDelayTime { get; set; } = 2000;
+        public int PriorityFunctionDelayTime { get; set; } = 500;
 
+        /// <summary>
+        /// data exchanger is limitation of data types and properties to send and receive from client and server
+        /// </summary>
+        public bool IsEnabledDataExchanger { get; set; } = true;
+        /// <summary>
+        /// enable $Id 
+        /// </summary>
+        public bool IsEnabledReferenceResolver { get; set; } = true;
+        /// <summary>
+        ///  enable $ref 
+        /// </summary>
+        public bool IsEnabledReferenceResolverForArray { get; set; } = true;
     }
 }

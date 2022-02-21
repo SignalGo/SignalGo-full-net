@@ -1,4 +1,5 @@
-﻿using SignalGo.Server.ServiceManager;
+﻿using SignalGo.Server.Helpers;
+using SignalGo.Server.ServiceManager;
 using SignalGo.Shared.DataTypes;
 using SignalGo.Shared.Helpers;
 using SignalGo.Shared.Log;
@@ -7,35 +8,78 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading;
+using System.Threading.Tasks;
 
 namespace SignalGo.Server.Models
 {
     public class OperationContext
     {
+        public long TaskId { get; set; }
+        internal static ConcurrentDictionary<int, ServerBase> CurrentTaskServerTasks = new ConcurrentDictionary<int, ServerBase>();
+        internal static ServerBase CurrentTaskServer
+        {
+            get
+            {
+                if (Task.CurrentId != null && CurrentTaskServerTasks.TryGetValue(Task.CurrentId.GetValueOrDefault(), out ServerBase serverBase))
+                    return serverBase;
+                return null;
+            }
+            set
+            {
+                if (Task.CurrentId != null)
+                    CurrentTaskServerTasks[Task.CurrentId.GetValueOrDefault()] = value;
+            }
+        }
+
+        static AutoLogger AutoLogger { get; set; } = new AutoLogger() { FileName = "OperationContext.log" };
+        /// <summary>
+        /// if return null: Task.CurrentId is null or empty! Do not call this property or method inside of another thread or task you have to call this inside of server methods not another thread
+        /// </summary>
         public static OperationContext Current
         {
             get
             {
-                if (SynchronizationContext.Current != null && ServerBase.AllDispatchers.ContainsKey(SynchronizationContext.Current))
+                ServerBase currentServer = CurrentTaskServer;
+                var taskId = Task.CurrentId;
+                if (taskId != null && currentServer != null && currentServer.TaskOfClientInfoes.TryGetValue(taskId.GetValueOrDefault(), out string clientId))
                 {
-                    var clients = ServerBase.AllDispatchers[SynchronizationContext.Current];
-                    return new OperationContext() { Client = clients.FirstOrDefault(), Clients = clients, ServerBase = clients.FirstOrDefault().ServerBase };
+                    if (currentServer.Clients.TryGetValue(clientId, out ClientInfo clientInfo))
+                    {
+                        if (clientInfo.DisposeReason != null)
+                            AutoLogger.LogText($"clieant is disposed and you are taking context! reason: {clientInfo.DisposeReason} {taskId} {Environment.StackTrace}");
+                        return new OperationContext() { Client = clientInfo, ClientId = clientId, ServerBase = currentServer, TaskId = taskId.GetValueOrDefault() };
+                    }
+                    else
+                        AutoLogger.LogText($"taskId is not null but the clientInfo is null or empty! {taskId} {Environment.StackTrace}");
                 }
-                throw new Exception("SynchronizationContext is null or empty! Do not call this property or method in another thread. You must call this inside a server method, not from another thread");
+                else
+                    AutoLogger.LogText($"taskId is null or empty! {taskId} {Environment.StackTrace}");
+
+                return null;
             }
         }
+
         /// <summary>
-        /// The server provider
+        /// get operationcontext by client
+        /// </summary>
+        /// <param name="clientInfo"></param>
+        /// <returns></returns>
+        public static OperationContext GetCurrentByClient(ClientInfo clientInfo)
+        {
+            return new OperationContext() { Client = clientInfo, ClientId = clientInfo.ClientId, ServerBase = clientInfo.CurrentClientServer };
+        }
+        /// <summary>
+        /// server provider
         /// </summary>
         public ServerBase ServerBase { get; set; }
+
+        public string ClientId { get; set; }
         /// <summary>
-        /// The current client information
+        /// current client information
         /// </summary>
         public ClientInfo Client { get; private set; }
         /// <summary>
-        /// The current http client information
+        /// current http client information if client is http call
         /// </summary>
         public HttpClientInfo HttpClient
         {
@@ -44,12 +88,9 @@ namespace SignalGo.Server.Models
                 return (HttpClientInfo)Client;
             }
         }
+
         /// <summary>
-        /// All client's info on current thread
-        /// </summary>
-        public IEnumerable<ClientInfo> Clients { get; private set; }
-        /// <summary>
-        /// The list of all server clients
+        /// all of server clients
         /// </summary>
         public List<ClientInfo> AllServerClients
         {
@@ -60,7 +101,7 @@ namespace SignalGo.Server.Models
         }
 
         /// <summary>
-        /// Total number of connected clients
+        /// count of connected Clients
         /// </summary>
         public int ConnectedClientsCount
         {
@@ -71,13 +112,13 @@ namespace SignalGo.Server.Models
         }
 
         /// <summary>
-        /// Get the server service of type T 
+        /// get server service of
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
         public T GetService<T>() where T : class
         {
-            var attribute = typeof(T).GetCustomAttributes<ServiceContractAttribute>(true).Where(x => x.ServiceType == ServiceType.ServerService).FirstOrDefault();
+            ServiceContractAttribute attribute = typeof(T).GetCustomAttributes<ServiceContractAttribute>(true).Where(x => x.ServiceType == ServiceType.ServerService).FirstOrDefault();
             ServerBase.SingleInstanceServices.TryGetValue(attribute.Name, out object result);
             return (T)result;
         }
@@ -88,7 +129,8 @@ namespace SignalGo.Server.Models
         /// <returns></returns>
         public ClientInfo GetClientInfoByClientId(string clientId)
         {
-            return Current.ServerBase.GetClientByClientId(clientId);
+            Current.ServerBase.Clients.TryGetValue(clientId, out ClientInfo clientInfo);
+            return clientInfo;
         }
 
         public void AddResultOfDataExchanger(object instance, CustomDataExchangerAttribute customDataExchangerAttribute)
@@ -100,87 +142,294 @@ namespace SignalGo.Server.Models
         {
 
         }
+
     }
 
     public class OperationContextBase
     {
-        internal static ConcurrentDictionary<ClientInfo, HashSet<object>> SavedSettings { get; set; } = new ConcurrentDictionary<ClientInfo, HashSet<object>>();
+        internal static ConcurrentDictionary<ClientInfo, ConcurrentHash<object>> SavedSettings { get; set; } = new ConcurrentDictionary<ClientInfo, ConcurrentHash<object>>();
+        internal static ConcurrentDictionary<string, string> SavedKeyParametersNameSettings { get; set; } = new ConcurrentDictionary<string, string>();
         internal static ConcurrentDictionary<string, HashSet<object>> CustomClientSavedSettings { get; set; } = new ConcurrentDictionary<string, HashSet<object>>();
-        internal static object GetCurrentSetting(Type type)
+        public static object GetCurrentSetting(Type type, OperationContext context)
         {
-            var context = OperationContext.Current;
             if (context == null)
-                throw new Exception("SynchronizationContext is null or empty! Do not call this property in another thread that doesn't have any SynchronizationContext. You can call SynchronizationContext.SetSynchronizationContext(new SynchronizationContext()); and ServerBase.AllDispatchers must contain this");
+                throw new Exception($"Context is null or empty! Do not call this property inside of another thread or after await or another task, current TaskId is {Task.CurrentId?.ToString() ?? "null"}");
 
-            if (context.Client is HttpClientInfo)
+            if (context.Client is HttpClientInfo httpClient)
             {
-                var sessionPeroperty = type.GetListOfProperties().Where(x => x.GetCustomAttributes<HttpKeyAttribute>().FirstOrDefault(y => !y.IsExpireField) != null).Select(x => new { Info = x, Attribute = x.GetCustomAttributes<HttpKeyAttribute>().FirstOrDefault() }).FirstOrDefault();
-                var expirePeroperty = type.GetListOfProperties().Where(x => x.GetCustomAttributes<HttpKeyAttribute>().FirstOrDefault(y => y.IsExpireField) != null).Select(x => new { Info = x, Attribute = x.GetCustomAttributes<HttpKeyAttribute>().FirstOrDefault() }).FirstOrDefault();
-                //var property = type.GetListOfProperties().Select(x => new
-                //{
-                //    Info = x,
-                //    Attribute = x.GetCustomAttributes<HttpKeyAttribute>().FirstOrDefault(y => !y.IsExpireField),
-                //    ExpiredAttribute = type.GetListOfProperties().Where(y => y.GetCustomAttributes<HttpKeyAttribute>().FirstOrDefault(j => j.IsExpireField) != null).Select(y => y.GetCustomAttributes<HttpKeyAttribute>().FirstOrDefault(j => j.IsExpireField)).FirstOrDefault()
-                //}).FirstOrDefault(x => x.Attribute != null);
-                if (sessionPeroperty == null)
-                    throw new Exception("HttpKeyAttribute on one or more class properties not found. Please write your string property that has HttpKeyAttribute on the top!");
-                else if (sessionPeroperty.Info.PropertyType != typeof(string))
-                    throw new Exception("The type of your HttpKeyAttribute must be set as string because this will be used in headers of http calls and it's needed to be set as custom");
-
-                var httpClient = context.Client as HttpClientInfo;
-                var setting = GetSetting(context.Client, type);
-                if (setting == null && (httpClient.RequestHeaders == null || string.IsNullOrEmpty(httpClient.RequestHeaders[sessionPeroperty.Attribute.RequestHeaderName])))
-                    return null;
-
-                string key = "";
-                if (setting == null)
-                    key = ExtractValue(httpClient.RequestHeaders[sessionPeroperty.Attribute.RequestHeaderName], sessionPeroperty.Attribute.KeyName, sessionPeroperty.Attribute.HeaderValueSeparate, sessionPeroperty.Attribute.HeaderKeyValueSeparate);
-                else
-                    key = GetKeyFromSetting(type, setting);
-                if (CustomClientSavedSettings.TryGetValue(key, out HashSet<object> result))
+                bool isFindSessionProperty = false;
+                List<string> keys = new List<string>();
+                var properties = type.GetListOfProperties().Select(x => new { Info = x, Attribute = x.GetCustomAttributes<HttpKeyAttribute>().GroupBy(y => y.KeyType) });
+                bool hasExpireField = false;
+                foreach (var property in properties)
                 {
-                    var obj = result.FirstOrDefault(x => x.GetType() == type);
-                    if (obj == null)
-                        return null;
-                    if (expirePeroperty != null && obj != null && expirePeroperty.Attribute.CheckIsExpired(obj.GetType().GetProperty(expirePeroperty.Info.Name).GetValue(obj, null)))
+                    foreach (IGrouping<HttpKeyType, HttpKeyAttribute> group in property.Attribute)
                     {
-                        result.Remove(obj);
-                        if (result.Count == 0)
-                            CustomClientSavedSettings.TryRemove(key, out result);
-                        return null;
+                        if (group.Key == HttpKeyType.Cookie)
+                        {
+                            if (property.Info.PropertyType != typeof(string))
+                                throw new Exception("type of your HttpKeyAttribute must be as string because this will used for headers of http calls and you must made it custom");
+                            foreach (HttpKeyAttribute httpKey in group.ToList())
+                            {
+                                isFindSessionProperty = true;
+                                if (httpClient.RequestHeaders == null)
+                                    continue;
+                                var session = httpClient.GetRequestCookieHeaderValue(httpKey.RequestHeaderName);
+                                if (session == null)
+                                    continue;
+                                var key = ExtractValue(session, httpKey.KeyName, httpKey.HeaderValueSeparate, httpKey.HeaderKeyValueSeparate);
+
+                                object setting = null;
+                                if (!string.IsNullOrEmpty(key))
+                                    setting = GetSetting(key, type);
+
+                                if (setting == null)
+                                    keys.Add(key);
+                                else
+                                    keys.Add(GetKeyFromSetting(type, setting));
+                            }
+                        }
+                        else if (group.Key == HttpKeyType.ParameterName)
+                        {
+                            if (property.Info.PropertyType != typeof(string))
+                                throw new Exception("type of your HttpKeyAttribute must be as string because this will used for headers of http calls and you must made it custom");
+                            foreach (HttpKeyAttribute httpKey in group.ToList())
+                            {
+                                isFindSessionProperty = true;
+                                if (httpClient.HttpKeyParameterValue != null)
+                                {
+                                    keys.Add(httpClient.HttpKeyParameterValue);
+                                }
+
+                            }
+                        }
+                        else if (group.Key == HttpKeyType.ExpireField)
+                        {
+                            hasExpireField = true;
+                        }
                     }
-                    return obj;
                 }
+                foreach (var property in properties)
+                {
+                    foreach (IGrouping<HttpKeyType, HttpKeyAttribute> group in property.Attribute)
+                    {
+                        if (hasExpireField)
+                        {
+                            if (group.Key == HttpKeyType.ExpireField)
+                            {
+                                foreach (HttpKeyAttribute httpKey in group.ToList())
+                                {
+                                    foreach (string key in keys)
+                                    {
+                                        if (CustomClientSavedSettings.TryGetValue(key, out HashSet<object> result))
+                                        {
+                                            object obj = result.FirstOrDefault(x => x.GetType() == type);
+                                            if (obj == null)
+                                                continue;
+                                            if (httpKey.CheckIsExpired(obj.GetType().GetProperty(property.Info.Name).GetValue(obj, null)))
+                                            {
+                                                result.Remove(obj);
+                                                if (result.Count == 0)
+                                                    CustomClientSavedSettings.TryRemove(key, out result);
+                                                continue;
+                                            }
+                                            return obj;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        else
+                        {
+                            foreach (HttpKeyAttribute httpKey in group.ToList())
+                            {
+                                foreach (string key in keys)
+                                {
+                                    if (CustomClientSavedSettings.TryGetValue(key, out HashSet<object> result))
+                                    {
+                                        object obj = result.FirstOrDefault(x => x.GetType() == type);
+                                        if (obj == null)
+                                            continue;
+                                        return obj;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                if (!isFindSessionProperty)
+                    throw new Exception("HttpKeyAttribute on your one properties on class not found please made your string property that have HttpKeyAttribute on the top!");
+                else
+                    return null;
             }
-            else if (SavedSettings.TryGetValue(context.Client, out HashSet<object> result))
+            else if (SavedSettings.TryGetValue(context.Client, out ConcurrentHash<object> result))
             {
                 return result.FirstOrDefault(x => x.GetType() == type);
+            }
+            return null;
+        }
+
+
+
+        /// <summary>
+        /// get all settings of client
+        /// </summary>
+        /// <returns></returns>
+        public static IEnumerable<object> GetAllSettings()
+        {
+            OperationContext context = OperationContext.Current;
+            if (context == null)
+                throw new Exception($"Context is null or empty! Do not call this property inside of another thread or after await or another task, current TaskId is {Task.CurrentId?.ToString() ?? "null"}");
+            if (SavedSettings.TryGetValue(context.Client, out ConcurrentHash<object> result))
+            {
+                return result;
             }
             return null;
         }
 
         /// <summary>
-        /// Sets the settings for the current client
+        /// return all of settings that have http key attribute top of properties
+        /// </summary>
+        /// <returns></returns>
+        public static IEnumerable<object> GetAllHttpKeySettings(OperationContext context)
+        {
+            if (context != null)
+            {
+                if (SavedSettings.TryGetValue(context.Client, out ConcurrentHash<object> result))
+                {
+                    foreach (object item in result)
+                    {
+                        if (item.GetType().GetListOfProperties().Any(x => x.GetCustomAttributes(typeof(HttpKeyAttribute), true).Count() > 0))
+                            yield return item;
+                    }
+                }
+            }
+        }
+
+        public static void SetCustomClientSetting(string customClientId, object setting)
+        {
+            if (setting == null)
+                throw new Exception("setting is null or empty! please fill all parameters");
+            if (string.IsNullOrEmpty(customClientId))
+                throw new Exception("customClientId is null or empty! please fill all parameters on headers or etc");
+            else if (!CustomClientSavedSettings.TryAdd(customClientId, new HashSet<object>() { setting }) && CustomClientSavedSettings.TryGetValue(customClientId, out HashSet<object> result) && !result.Contains(setting))
+                result.Add(setting);
+            List<string> httpKeys = setting.GetType().GetListOfProperties().SelectMany(x => x.GetCustomAttributes(typeof(HttpKeyAttribute), true).Cast<HttpKeyAttribute>()).Where(x => x.KeyType == HttpKeyType.ParameterName).Select(x => x.KeyParameterName).ToList();
+            foreach (string item in httpKeys)
+            {
+                SavedKeyParametersNameSettings.TryAdd(item.ToLower(), item);
+            }
+        }
+
+        internal static bool HasSettingNoHttp(Type type, ClientInfo clientInfo)
+        {
+            if (clientInfo is HttpClientInfo)
+                return false;
+            else if (SavedSettings.TryGetValue(clientInfo, out ConcurrentHash<object> result))
+            {
+                return result.Any(x => x.GetType() == type);
+            }
+            return false;
+        }
+        /// <summary>
+        /// set setting for this client
         /// </summary>
         /// <param name="setting"></param>
         public static void SetSetting(object setting, OperationContext context)
         {
+            if (context.Client is HttpClientInfo)
+            {
+                string key = GetKeyFromSetting(setting.GetType(), setting);
+                SetCustomClientSetting(key, setting);
+            }
             if (!SavedSettings.ContainsKey(context.Client))
-                SavedSettings.TryAdd(context.Client, new HashSet<object>() { setting });
-            else if (SavedSettings.TryGetValue(context.Client, out HashSet<object> result) && !result.Contains(setting))
+                SavedSettings.TryAdd(context.Client, new ConcurrentHash<object>() { setting });
+            else if (SavedSettings.TryGetValue(context.Client, out ConcurrentHash<object> result) && !result.Contains(setting))
+            {
+                result.RemoveWhere(x => x.GetType() == setting.GetType());
                 result.Add(setting);
+            }
+        }
+
+        public static object GetSetting(OperationContext context, Type type)
+        {
+            if (SavedSettings.TryGetValue(context.Client, out ConcurrentHash<object> result))
+            {
+                return result.FirstOrDefault(x => x.GetType() == type);
+            }
+            else if (context.Client is HttpClientInfo httpClient)
+            {
+                return GetCurrentSetting(type, context);
+            }
+            return null;
         }
 
         public static object GetSetting(ClientInfo client, Type type)
         {
-            if (SavedSettings.TryGetValue(client, out HashSet<object> result))
+            if (SavedSettings.TryGetValue(client, out ConcurrentHash<object> result))
             {
                 return result.FirstOrDefault(x => x.GetType() == type);
             }
             return null;
         }
 
-        static string ExtractValue(string data, string keyName, string valueSeparateChar, string keyValueSeparateChar)
+        public static T GetSetting<T>(string key)
+        {
+            Type type = typeof(T);
+            if (CustomClientSavedSettings.TryGetValue(key, out HashSet<object> result))
+            {
+                return (T)result.FirstOrDefault(x => x.GetType() == type);
+            }
+            return default;
+        }
+
+        public static void RemoveSetting(string key)
+        {
+            CustomClientSavedSettings.TryRemove(key, out _);
+        }
+
+        public static object GetSetting(string key, Type type)
+        {
+            if (CustomClientSavedSettings.TryGetValue(key, out HashSet<object> result))
+            {
+                return result.FirstOrDefault(x => x.GetType() == type);
+            }
+            return default;
+        }
+
+        public static T GetSetting<T>(ClientInfo client)
+        {
+            Type type = typeof(T);
+            if (SavedSettings.TryGetValue(client, out ConcurrentHash<object> result))
+            {
+                return (T)result.FirstOrDefault(x => x.GetType() == type);
+            }
+            return default(T);
+        }
+
+        /// <summary>
+        /// clear all settings of client
+        /// </summary>
+        /// <param name="client"></param>
+        public static void ClearSetting(ClientInfo client)
+        {
+            if (SavedSettings.TryGetValue(client, out ConcurrentHash<object> result))
+            {
+                result.Clear();
+            }
+        }
+        /// <summary>
+        /// clear all custom client settings
+        /// </summary>
+        /// <param name="client"></param>
+        public static void ClearCustomSetting(ClientInfo client)
+        {
+            if (CustomClientSavedSettings.TryGetValue(client.ClientId, out HashSet<object> result))
+            {
+                result.Clear();
+            }
+        }
+        public static string ExtractValue(string data, string keyName, string valueSeparateChar, string keyValueSeparateChar)
         {
             if (string.IsNullOrEmpty(data) || string.IsNullOrEmpty(keyName) || (string.IsNullOrEmpty(valueSeparateChar) && string.IsNullOrEmpty(keyValueSeparateChar)))
                 return data;
@@ -194,9 +443,9 @@ namespace SignalGo.Server.Models
             }
             else
             {
-                foreach (var keyValue in data.Split(new string[] { valueSeparateChar }, StringSplitOptions.RemoveEmptyEntries))
+                foreach (string keyValue in data.Split(new string[] { valueSeparateChar }, StringSplitOptions.RemoveEmptyEntries))
                 {
-                    var separate = keyValue.Split(new string[] { keyValueSeparateChar }, StringSplitOptions.RemoveEmptyEntries);
+                    string[] separate = keyValue.Split(new string[] { keyValueSeparateChar }, StringSplitOptions.RemoveEmptyEntries);
                     if (string.IsNullOrEmpty(separate.FirstOrDefault()))
                         continue;
                     if (separate.FirstOrDefault().ToLower().Trim() == keyName.ToLower())
@@ -206,70 +455,64 @@ namespace SignalGo.Server.Models
             return "";
         }
 
-        internal static string IncludeValue(string value, string keyName, string valueSeparateChar, string keyValueSeparateChar)
+        public static string IncludeValue(string value, string keyName, string valueSeparateChar, string keyValueSeparateChar, string domain)
         {
             if (string.IsNullOrEmpty(value) || string.IsNullOrEmpty(keyName) || string.IsNullOrEmpty(keyValueSeparateChar))
                 return value;
-            return keyName + keyValueSeparateChar + value;
-
+            var result = keyName + keyValueSeparateChar + value;
+            if (!string.IsNullOrEmpty(domain))
+                result += $"{valueSeparateChar}domain{keyValueSeparateChar}{domain}";
+            return result;
         }
 
         internal static string GetKeyFromSetting(Type type, object setting)
         {
             var property = type.GetListOfProperties().Select(x => new { Info = x, Attribute = x.GetCustomAttributes<HttpKeyAttribute>().FirstOrDefault() }).FirstOrDefault(x => x.Attribute != null);
             if (property == null)
-                throw new Exception("HttpKeyAttribute on one or more class properties not found. Please write your string property that must have HttpKeyAttribute on the top!");
+                throw new Exception("HttpKeyAttribute on your one properties on class not found please made your string property that have HttpKeyAttribute on the top!");
             else if (property.Info.PropertyType != typeof(string))
-                throw new Exception("The type of your HttpKeyAttribute must be set as string because this will be used in headers of http calls and it's needed to be set as custom");
+                throw new Exception("type of your HttpKeyAttribute must be as string because this will used for headers of http calls and you must made it custom");
             return (string)property.Info.GetValue(setting, null);
         }
     }
 
     /// <summary>
-    /// Operation contract for client. Helps you to save a class and get it later inside your service class
+    /// operation contract for client that help you to save a class and get it later inside of your service class
     /// </summary>
     /// <typeparam name="T">type of your setting</typeparam>
     public class OperationContext<T> : OperationContextBase where T : class
     {
-
-        static T _Current = null;
         /// <summary>
-        /// Get the setting of type T you set before
+        /// get seeting of one type that you set it
         /// </summary>
         public static T CurrentSetting
         {
             get
             {
-                return (T)GetCurrentSetting(typeof(T));
+                return (T)GetCurrentSetting(typeof(T), OperationContext.Current);
             }
             set
             {
-                var context = OperationContext.Current;
+                OperationContext context = OperationContext.Current;
                 if (context == null)
-                    throw new Exception("SynchronizationContext is null or empty! Do not call this property in another thread that doesn't have any SynchronizationContext. You can call SynchronizationContext.SetSynchronizationContext(new SynchronizationContext()); and ServerBase.AllDispatchers must contain this");
+                    throw new Exception($"Context is null or empty! Do not call this property inside of another thread or after await or another task, current TaskId is {Task.CurrentId?.ToString() ?? "null"}");
 
-                if (context.Client is HttpClientInfo)
-                {
-                    var key = GetKeyFromSetting(typeof(T), value);
-                    SetCustomClientSetting(key, value);
-                    //SetSetting(value, context);
-                }
                 SetSetting(value, context);
             }
         }
 
 
         /// <summary>
-        /// Get the first setting of type T setted before
+        /// get first setting of type that setted
         /// </summary>
         /// <typeparam name="T">type of setting</typeparam>
         /// <returns></returns>
         public static IEnumerable<T> GetSettings()
         {
-            var context = OperationContext.Current;
-            if (SynchronizationContext.Current == null)
-                throw new Exception("SynchronizationContext is null or empty! Do not call this property in another thread that doesn't have any SynchronizationContext. You can call SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());");
-            if (SavedSettings.TryGetValue(context.Client, out HashSet<object> result))
+            OperationContext context = OperationContext.Current;
+            if (context == null)
+                throw new Exception($"Context is null or empty! Do not call this property inside of another thread or after await or another task, current TaskId is {Task.CurrentId?.ToString() ?? "null"}");
+            if (SavedSettings.TryGetValue(context.Client, out ConcurrentHash<object> result))
             {
                 return result.Where(x => x.GetType() == typeof(T)).Select(x => (T)x);
             }
@@ -278,16 +521,20 @@ namespace SignalGo.Server.Models
 
         public static IEnumerable<T> GetSettings(ClientInfo client)
         {
-            if (SavedSettings.TryGetValue(client, out HashSet<object> result))
+            if (SavedSettings.TryGetValue(client, out ConcurrentHash<object> result))
             {
                 return result.Where(x => x.GetType() == typeof(T)).Select(x => (T)x);
             }
             return null;
         }
+        public static T GetSetting(OperationContext context)
+        {
+            return (T)GetSetting(context, typeof(T));
+        }
 
         public static T GetSetting(ClientInfo client)
         {
-            if (SavedSettings.TryGetValue(client, out HashSet<object> result))
+            if (SavedSettings.TryGetValue(client, out ConcurrentHash<object> result))
             {
                 return (T)result.FirstOrDefault(x => x.GetType() == typeof(T));
             }
@@ -298,30 +545,19 @@ namespace SignalGo.Server.Models
 
         public static IEnumerable<T> GetSettings(string clientId)
         {
-            var clientInfo = OperationContext.Current.GetClientInfoByClientId(clientId);
+            ClientInfo clientInfo = OperationContext.Current.GetClientInfoByClientId(clientId);
             return GetSettings(clientInfo);
         }
 
         public static T GetSetting(string clientId)
         {
-            var clientInfo = OperationContext.Current.GetClientInfoByClientId(clientId);
+            ClientInfo clientInfo = OperationContext.Current.GetClientInfoByClientId(clientId);
             return GetSetting(clientInfo);
         }
 
-        public static void SetCustomClientSetting(string customClientId, object setting)
-        {
-            if (setting == null)
-                throw new Exception("Setting is null or empty! Please fill all parameters");
-            if (string.IsNullOrEmpty(customClientId))
-                throw new Exception("customClientId parameter is null or empty!");
-            //if (!CustomClientSavedSettings.ContainsKey(customClientId))
-            //    ;
-            else if (!CustomClientSavedSettings.TryAdd(customClientId, new HashSet<object>() { setting }) && CustomClientSavedSettings.TryGetValue(customClientId, out HashSet<object> result) && !result.Contains(setting))
-                result.Add(setting);
-        }
 
         /// <summary>
-        /// Get the custom setting of your client id, session etc.
+        /// get setting of your custom client id or sessions or etc
         /// </summary>
         /// <param name="customClientId"></param>
         /// <returns></returns>
@@ -347,6 +583,11 @@ namespace SignalGo.Server.Models
             return default(T);
         }
 
+        public static List<T> GetAllCustomSettings()
+        {
+            return CustomClientSavedSettings.Values.SelectMany(x => x).Where(x => x.GetType() == typeof(T)).Select(x => (T)x).ToList();
+        }
+
         public static IEnumerable<T> GetCustomClientSettings(string customClientId)
         {
             if (string.IsNullOrEmpty(customClientId))
@@ -358,13 +599,13 @@ namespace SignalGo.Server.Models
             return null;
         }
 
-        public static IEnumerable<T> GetSettings<T>(IEnumerable<ClientInfo> clients, Func<T, bool> func)
+        public static IEnumerable<T2> GetSettings<T2>(IEnumerable<ClientInfo> clients, Func<T2, bool> func)
         {
-            foreach (var item in clients)
+            foreach (ClientInfo item in clients)
             {
-                if (SavedSettings.TryGetValue(item, out HashSet<object> result))
+                if (SavedSettings.TryGetValue(item, out ConcurrentHash<object> result))
                 {
-                    return result.Where(x => x.GetType() == typeof(T) && func((T)x)).Select(x => (T)x);
+                    return result.Where(x => x.GetType() == typeof(T2) && func((T2)x)).Select(x => (T2)x);
                 }
             }
             return null;
@@ -372,31 +613,20 @@ namespace SignalGo.Server.Models
 
         public static IEnumerable<T> GetSettings(IEnumerable<ClientInfo> clients, Func<T, bool> func)
         {
-            foreach (var item in clients)
+            foreach (ClientInfo item in clients)
             {
-                if (SavedSettings.TryGetValue(item, out HashSet<object> result))
+                if (SavedSettings.TryGetValue(item, out ConcurrentHash<object> result))
                 {
-                    var find = result.Where(x => x.GetType() == typeof(T) && func((T)x)).Select(x => (T)x).FirstOrDefault();
+                    T find = result.Where(x => x.GetType() == typeof(T) && func((T)x)).Select(x => (T)x).FirstOrDefault();
                     if (find != null)
                         yield return find;
                 }
             }
         }
 
-        /// <summary>
-        /// Get all settings of client
-        /// </summary>
-        /// <returns></returns>
-        public static IEnumerable<object> GetAllSettings()
+        public static bool HasSettingNoHttp(ClientInfo clientInfo)
         {
-            var context = OperationContext.Current;
-            if (SynchronizationContext.Current == null)
-                throw new Exception("SynchronizationContext is null or empty! Do not call this property in another thread that doesn't have any SynchronizationContext. You can call SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());");
-            if (SavedSettings.TryGetValue(context.Client, out HashSet<object> result))
-            {
-                return result;
-            }
-            return null;
+            return HasSettingNoHttp(typeof(T), clientInfo);
         }
     }
 
@@ -412,695 +642,609 @@ namespace SignalGo.Server.Models
         public ClientInfo Client { get; set; }
     }
 
+    public class ClientContext<TService, TSetting> : ClientContext<TService>
+    {
+        public ClientContext(TService service, ClientInfo client, TSetting setting) : base(service, client)
+        {
+            Setting = setting;
+        }
+
+        public TSetting Setting { get; set; }
+    }
+
+    /// <summary>
+    /// operation context extentions
+    /// </summary>
     public static class OCExtension
     {
+        #region normal context services
         /// <summary>
-        /// Get the current context service
+        /// get current context service
         /// </summary>
         /// <typeparam name="T">type of service</typeparam>
         /// <param name="context">client context</param>
         /// <returns>list of service context</returns>
-        internal static ClientContext<T> GetClientClientContextService<T>(this OperationContext context)
+        internal static T GenerateClientServiceInstance<T>(ServerBase serverBase, ClientInfo client) where T : class
         {
-#if (NETSTANDARD1_6 || NETCOREAPP1_1)
-            if (typeof(T).GetTypeInfo().IsInterface)
-#else
-            if (typeof(T).IsInterface)
-#endif
+            if (typeof(T).GetIsInterface())
             {
-                if (!context.ServerBase.ClientServices.ContainsKey(context.Client))
+                T objectInstance = InterfaceWrapper.Wrap<T>((serviceName, method, args) =>
                 {
-                    context.ServerBase.RegisterClientServices(context.Client);
-                    if (!context.ServerBase.ClientServices.ContainsKey(context.Client))
+                    try
                     {
-                        try
+                        string methodName = method.Name;
+                        Task task = null;
+                        Type returnType = method.ReturnType;
+                        if (returnType == typeof(void))
+                            returnType = typeof(object);
+                        if (client.IsWebSocket)
                         {
-                            throw new Exception($"context client not exist! {context.Client.ClientId} {context.ServerBase.ClientServices.Count} {context.ServerBase.Services.Count} {DateTime.Now}");
+                            MethodInfo sendDataMethod = typeof(ServerExtensions).GetMethod("SendWebSocketDataWithCallClientServiceMethod", BindingFlags.Static | BindingFlags.NonPublic)
+                                .MakeGenericMethod(returnType);
+                            task = (Task)sendDataMethod.Invoke(null, new object[] { serverBase, client, returnType, serviceName, method.Name, method.MethodToParameters(x => ServerSerializationHelper.SerializeObject(x, serverBase), args).ToArray() });
                         }
-                        catch (Exception ex)
+                        else
                         {
-                            context.ServerBase.AutoLogger.LogError(ex, "GetClientClientContextService");
+                            MethodInfo sendDataMethod = typeof(ServerExtensions).GetMethod("SendDataWithCallClientServiceMethod", BindingFlags.Static | BindingFlags.NonPublic)
+                                .MakeGenericMethod(returnType);
+                            task = (Task)sendDataMethod.Invoke(null, new object[] { serverBase, client, returnType, serviceName, method.Name, method.MethodToParameters(x => ServerSerializationHelper.SerializeObject(x, serverBase), args).ToArray() });
                         }
-                        return null;
+                        task.ConfigureAwait(false).GetAwaiter().GetResult();
+                        object result1 = task.GetType().GetProperty("Result").GetValue(task);
+                        if (result1 is Task task2)
+                        {
+                            task2.ConfigureAwait(false).GetAwaiter().GetResult();
+                            return task2.GetType().GetProperty("Result").GetValue(task2, null);
+                        }
+                        if (method.ReturnType == typeof(Task))
+                            return Task.FromResult(result1);
+                        return result1;
                     }
-                    else
+                    catch (Exception ex)
                     {
-                        var attribName1 = typeof(T).GetClientServiceName();
-                        var serviceType1 = context.ServerBase.GetRegisteredClientServiceTypeByName(attribName1);
-                        var find1 = context.ServerBase.FindClientServerByType(context.Client, serviceType1);
-                        if (find1 == null)
-                        {
-                            try
-                            {
-                                throw new Exception($"context client not exist 2 ! {context.Client.ClientId} {context.ServerBase.ClientServices.Count} {context.ServerBase.Services.Count} {DateTime.Now}");
-                            }
-                            catch (Exception ex)
-                            {
-                                context.ServerBase.AutoLogger.LogError(ex, "GetClientClientContextService 2");
-                            }
-                            return null;
-                        }
-                        return new ClientContext<T>(find1, context.Client);
+                        throw ex;
                     }
-                }
-                var attribName = typeof(T).GetClientServiceName();
+                }, async (serviceName, method, args) =>
+                {
+                    try
+                    {
+                        //this is async action
+                        Type returnType = method.ReturnType;
 
-                var serviceType = context.ServerBase.GetRegisteredClientServiceTypeByName(attribName);
-                var find = context.ServerBase.FindClientServerByType(context.Client, serviceType);
-                if (find != null)
-                    return new ClientContext<T>(find, context.Client);
-                var obj = CSCodeInjection.InstanceServerInterface<T>(serviceType, new List<Type>() { typeof(ServiceContractAttribute) });
-                //dynamic dobj = obj;
-                if (CSCodeInjection.InvokedServerMethodAction == null)
-                    ServerExtension.Init();
+                        if (method.ReturnType.GetBaseType() == typeof(Task))
+                        {
+                            returnType = method.ReturnType.GetGenericArguments()[0];
+                        }
+                        string methodName = method.Name;
+                        var castMethod = typeof(OCExtension).GetMethod(nameof(CastToObject), BindingFlags.Static | BindingFlags.Public).MakeGenericMethod(returnType);
+                        if (client.IsWebSocket)
+                        {
+                            MethodInfo sendDataMethod = typeof(ServerExtensions).GetMethod("SendWebSocketDataWithCallClientServiceMethod", BindingFlags.Static | BindingFlags.NonPublic)
+                                .MakeGenericMethod(returnType);
+                            var taskObject = (Task<object>)castMethod.Invoke(null, new object[] { sendDataMethod.Invoke(null, new object[] { serverBase, client, returnType, serviceName, method.Name, method.MethodToParameters(x => ServerSerializationHelper.SerializeObject(x, serverBase), args).ToArray() }) });
+                            return await taskObject.ConfigureAwait(false);
+                        }
+                        else
+                        {
+                            MethodInfo sendDataMethod = typeof(ServerExtensions).GetMethod("SendDataWithCallClientServiceMethod", BindingFlags.Static | BindingFlags.NonPublic)
+                                .MakeGenericMethod(returnType);
+                            var taskObject = (Task<object>)castMethod.Invoke(null, new object[] { sendDataMethod.Invoke(null, new object[] { serverBase, client, returnType, serviceName, method.Name, method.MethodToParameters(x => ServerSerializationHelper.SerializeObject(x, serverBase), args).ToArray() }) });
+                            return await taskObject.ConfigureAwait(false);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        throw ex;
+                    }
+                    throw new NotSupportedException();
+                });
 
-                var field = serviceType
-#if (NETSTANDARD1_6 || NETCOREAPP1_1)
-                .GetTypeInfo()
-#endif
-                .GetProperty("InvokedServerMethodAction");
-
-                field.SetValue(obj, CSCodeInjection.InvokedServerMethodAction, null);
-
-                var field2 = serviceType
-#if (NETSTANDARD1_6 || NETCOREAPP1_1)
-                .GetTypeInfo()
-#endif
-                .GetProperty("InvokedServerMethodFunction");
-
-                field2.SetValue(obj, CSCodeInjection.InvokedServerMethodFunction, null);
-
-                //dobj.InvokedServerMethodAction = CSCodeInjection.InvokedServerMethodAction;
-                //dobj.InvokedServerMethodFunction = CSCodeInjection.InvokedServerMethodFunction;
-
-                var op = obj as OperationCalls;
-                op.ServerBase = context.ServerBase;
-                op.CurrentClient = context.Client;
-
-                context.ServerBase.ClientServices[context.Client].Add(obj);
-                if (!(obj is OperationCalls))
-                    context.ServerBase.AutoLogger.LogText("is not OprationCalls: " + obj.ToString(), true);
-
-                return new ClientContext<T>(obj, context.Client);
+                return objectInstance;
             }
             else
             {
-                context.ServerBase.AutoLogger.LogText("is not interface: " + typeof(T).ToString(), true);
-                return new ClientContext<T>((T)context.ServerBase.FindClientServerByType(context.Client, typeof(T)), context.Client);
-
+                object instance = Activator.CreateInstance(typeof(T));
+                return (T)instance;
             }
         }
 
-        static object FindClientService<T>(ServerBase serverBase, ClientInfo client, Type serviceType, string attribName)
+        public static async Task<object> CastToObject<T>(Task<T> task)
         {
-            var find = serverBase.FindClientServerByType(client, serviceType);
-            if (find == null)
-            {
-                GetClientContextService<T>(serverBase, client);
-                find = serverBase.FindClientServerByType(client, serviceType);
-                if (find == null)
-                    serverBase.AutoLogger.LogText($"FindClientService service not found : {serviceType.FullName} : name: {attribName} clientId: {client.ClientId}", true);
-            }
-            return find;
+            return await task.ConfigureAwait(false);
         }
-
         /// <summary>
-        ///  This gets all client context services in the selected operation context
+        ///  get all client context service
         /// </summary>
         /// <typeparam name="T">type of service</typeparam>
         /// <param name="context">client context</param>
         /// <returns>list of service context</returns>
-        public static List<ClientContext<T>> GetAllClientClientContextServices<T>(this OperationContext context)
+        public static IEnumerable<ClientContext<T>> GetAllClientClientContextServices<T>(this OperationContext context) where T : class
         {
-            var attribName = typeof(T).GetClientServiceName();
-            var serviceType = context.ServerBase.GetRegisteredClientServiceTypeByName(attribName);
-            List<ClientContext<T>> items = new List<ClientContext<T>>();
-            foreach (var item in context.ServerBase.Clients.Values.ToArray())
-            {
-                var find = FindClientService<T>(context.ServerBase, item, serviceType, attribName);
-
-                if (find != null)
-                    items.Add(new ClientContext<T>(find, item));
-            }
-            return items;
+            return GetAllClientClientContextServices<T>(context.ServerBase);
         }
 
         /// <summary>
-        /// This gets all client context services but ignore current context
+        /// get all client context but ignore current context
         /// </summary>
         /// <typeparam name="T">type of service</typeparam>
         /// <param name="context">client context</param>
         /// <returns>list of service context</returns>
-        public static List<ClientContext<T>> GetAllClientContextServicesButMe<T>(this OperationContext context)
+        public static IEnumerable<ClientContext<T>> GetAllClientContextServicesButMe<T>(this OperationContext context) where T : class
         {
-            var attribName = typeof(T).GetClientServiceName();
-            var serviceType = context.ServerBase.GetRegisteredClientServiceTypeByName(attribName);
-            List<ClientContext<T>> items = new List<ClientContext<T>>();
-            foreach (var item in context.ServerBase.Clients.Values.Where(x => x != context.Client).ToArray())
+            foreach (KeyValuePair<string, ClientInfo> item in context.ServerBase.Clients)
             {
-                var find = FindClientService<T>(context.ServerBase, item, serviceType, attribName);
-                if (find != null)
-                    items.Add(new ClientContext<T>(find, item));
+                if (item.Value == context.Client)
+                    continue;
+                T find = GenerateClientServiceInstance<T>(context.ServerBase, item.Value);
+                yield return new ClientContext<T>(find, item.Value);
             }
-            return items;
         }
 
         /// <summary>
-        /// This gets client's service contexts by Client id
+        /// get clients service context by session list
         /// </summary>
         /// <typeparam name="T">service type</typeparam>
         /// <param name="context">client context</param>
-        /// <param name="clientId">client id</param>
+        /// <param name="clientId">list of sessions</param>
         /// <returns>list of service context</returns>
-        public static ClientContext<T> GetClientContextService<T>(this OperationContext context, string clientId)
+        public static ClientContext<T> GetClientContextService<T>(this OperationContext context, string clientId) where T : class
         {
-            var attribName = typeof(T).GetClientServiceName();
-            var serviceType = context.ServerBase.GetRegisteredClientServiceTypeByName(attribName);
-            List<ClientContext<T>> items = new List<ClientContext<T>>();
-            context.ServerBase.Clients.TryGetValue(clientId, out ClientInfo clientInfo);
-            if (clientInfo != null)
-            {
-                var find = FindClientService<T>(context.ServerBase, clientInfo, serviceType, attribName);
-                return new ClientContext<T>(find, clientInfo);
-            }
-            return null;
+            return GetClientContextService<T>(context.ServerBase, clientId);
+
         }
 
         /// <summary>
-        /// This gets client's service context by client info
+        /// get clients service context by session list
         /// </summary>
         /// <typeparam name="T">service type</typeparam>
         /// <param name="context">client context</param>
         /// <param name="client">client</param>
         /// <returns>list of service context</returns>
-        public static ClientContext<T> GetClientContextService<T>(this OperationContext context, ClientInfo client)
+        public static ClientContext<T> GetClientContextService<T>(this OperationContext context, ClientInfo client) where T : class
         {
-            var attribName = typeof(T).GetClientServiceName();
-            var serviceType = context.ServerBase.GetRegisteredClientServiceTypeByName(attribName);
-            List<ClientContext<T>> items = new List<ClientContext<T>>();
-            var find = FindClientService<T>(context.ServerBase, client, serviceType, attribName);
-
-
-            return new ClientContext<T>(find, client);
+            return GetClientContextService<T>(context.ServerBase, client);
         }
 
         /// <summary>
-        /// This gets client's service context by Client id
+        /// get clients service context by session list
         /// </summary>
         /// <typeparam name="T">service type</typeparam>
         /// <param name="context">client context</param>
-        /// <param name="clientId">client id</param>
+        /// <param name="clientId">id of client</param>
         /// <returns>list of service context</returns>
-        public static T GetClientService<T>(this OperationContext context, string clientId)
+        public static T GetClientService<T>(this OperationContext context, string clientId) where T : class
         {
-            var client = GetClientContextService<T>(context, clientId);
-            if (client != null)
-                return client.Service;
-            return default(T);
+            return GetClientService<T>(context.ServerBase, clientId);
         }
 
         /// <summary>
-        /// This gets client's service context by client info
+        /// get clients service context by session list
         /// </summary>
         /// <typeparam name="T">service type</typeparam>
         /// <param name="context">client context</param>
         /// <param name="client">client</param>
         /// <returns>list of service context</returns>
-        public static T GetClientService<T>(this OperationContext context, ClientInfo client)
+        public static T GetClientService<T>(this OperationContext context, ClientInfo client) where T : class
         {
-            var result = GetClientContextService<T>(context, client);
-            if (result != null)
-                return result.Service;
-            return default(T);
+            return GetClientService<T>(context.ServerBase, client);
         }
 
         /// <summary>
-        /// This gets the list of clients service context by supplying a list of clients
+        /// get client service context by client list
         /// </summary>
         /// <typeparam name="T">type of service</typeparam>
         /// <param name="context">client context</param>
-        /// <param name="clients">list of clients from which get client context</param>
+        /// <param name="clients">clients of clients to get client context</param>
         /// <returns>list of service context</returns>
-        public static List<ClientContext<T>> GetListOfClientContextServices<T>(this OperationContext context, IEnumerable<ClientInfo> clients)
+        public static IEnumerable<ClientContext<T>> GetListOfClientContextServices<T>(this OperationContext context, IEnumerable<ClientInfo> clients) where T : class
         {
-            var attribName = typeof(T).GetClientServiceName();
-            var serviceType = context.ServerBase.GetRegisteredClientServiceTypeByName(attribName);
-            List<ClientContext<T>> items = new List<ClientContext<T>>();
-            foreach (var item in clients)
-            {
-                var find = FindClientService<T>(context.ServerBase, item, serviceType, attribName);
-
-                if (find != null)
-                    items.Add(new ClientContext<T>(find, item));
-            }
-            return items;
+            return GetListOfClientContextServices<T>(context.ServerBase, clients);
         }
 
         /// <summary>
-        /// This gets the list of clients service context by supplying a list of client id
+        /// get clients service context by session list
         /// </summary>
         /// <typeparam name="T">service type</typeparam>
         /// <param name="context">client context</param>
-        /// <param name="clientIds">list of clients id</param>
+        /// <param name="clientIds">list of sessions</param>
         /// <returns>list of service context</returns>
-        public static List<ClientContext<T>> GetListOfClientContextServices<T>(this OperationContext context, IEnumerable<string> clientIds)
+        public static IEnumerable<ClientContext<T>> GetListOfClientContextServices<T>(this OperationContext context, IEnumerable<string> clientIds) where T : class
         {
-            var attribName = typeof(T).GetClientServiceName();
-            var serviceType = context.ServerBase.GetRegisteredClientServiceTypeByName(attribName);
-            List<ClientContext<T>> items = new List<ClientContext<T>>();
-
-            foreach (var item in (from x in context.ServerBase.Clients.ToArray() where clientIds.Contains(x.Key) select x.Value))
-            {
-                var find = FindClientService<T>(context.ServerBase, item, serviceType, attribName);
-
-                if (find != null)
-                    items.Add(new ClientContext<T>(find, item));
-            }
-            return items;
+            return GetListOfClientContextServices<T>(context.ServerBase, clientIds);
         }
 
         /// <summary>
-        /// This gets the list client service context by providing a list of client id to ignore
+        /// get clients service context list and ignore custom session list
         /// </summary>
         /// <typeparam name="T">service type</typeparam>
         /// <param name="context">client context</param>
-        /// <param name="clientIds">list of client id to ignore</param>
+        /// <param name="clientIds">list of sessions to ingore get</param>
         /// <returns>list of service context</returns>
-        public static List<ClientContext<T>> GetListOfExcludeClientContextServices<T>(this OperationContext context, IEnumerable<string> clientIds)
+        public static IEnumerable<ClientContext<T>> GetListOfExcludeClientContextServices<T>(this OperationContext context, IEnumerable<string> clientIds) where T : class
         {
-            var attribName = typeof(T).GetClientServiceName();
-            var serviceType = context.ServerBase.GetRegisteredClientServiceTypeByName(attribName);
-            List<ClientContext<T>> items = new List<ClientContext<T>>();
-            foreach (var item in (from x in context.ServerBase.Clients.ToArray() where !clientIds.Contains(x.Key) select x.Value))
-            {
-                var find = FindClientService<T>(context.ServerBase, item, serviceType, attribName);
-                if (find != null)
-                    items.Add(new ClientContext<T>(find, item));
-            }
-            return items;
+            return GetListOfExcludeClientContextServices<T>(context.ServerBase, clientIds);
         }
 
 
 
 
         /// <summary>
-        /// This gets the current context service
+        /// get current context service
         /// </summary>
         /// <typeparam name="T">type of service</typeparam>
         /// <param name="context">client context</param>
         /// <returns>list of service context</returns>
-        public static T GetClientService<T>(this OperationContext context)
+        public static T GetClientService<T>(this OperationContext context) where T : class
         {
-            return GetClientClientContextService<T>(context).Service;
+            return GetClientService<T>(context, context.ClientId);
         }
 
         /// <summary>
-        ///  This gets all client context service
+        ///  get all client context service
         /// </summary>
         /// <typeparam name="T">type of service</typeparam>
         /// <param name="context">client context</param>
         /// <returns>list of service context</returns>
-        public static List<T> GetAllClientServices<T>(this OperationContext context)
+        public static IEnumerable<T> GetAllClientServices<T>(this OperationContext context) where T : class
         {
-            return (from x in GetAllClientClientContextServices<T>(context) select x.Service).ToList();
+            return GetAllClientServices<T>(context.ServerBase);
         }
 
         /// <summary>
-        /// This gets all client contexts but ignore current one
+        /// get all client context but ignore current context
         /// </summary>
         /// <typeparam name="T">type of service</typeparam>
         /// <param name="context">client context</param>
         /// <returns>list of service context</returns>
-        public static List<T> GetAllClientServicesButMe<T>(this OperationContext context)
+        public static IEnumerable<T> GetAllClientServicesButMe<T>(this OperationContext context) where T : class
         {
-            return (from x in GetAllClientContextServicesButMe<T>(context) select x.Service).ToList();
+            return (from x in GetAllClientContextServicesButMe<T>(context) select x.Service);
         }
 
         /// <summary>
-        /// This gets the list of client services of the specified list of client info
+        /// get client service by client list
         /// </summary>
         /// <typeparam name="T">type of service</typeparam>
         /// <param name="context">client context</param>
         /// <param name="clients">clients of clients to get client service</param>
         /// <returns>list of service</returns>
-        public static List<T> GetListOfClientServices<T>(this OperationContext context, IEnumerable<ClientInfo> clients)
+        public static IEnumerable<T> GetListOfClientServices<T>(this OperationContext context, IEnumerable<ClientInfo> clients) where T : class
         {
-            return (from x in GetListOfClientContextServices<T>(context, clients) select x.Service).ToList();
+            return GetListOfClientServices<T>(context.ServerBase, clients);
         }
 
         /// <summary>
-        /// This gets the list of clients services from the specified list list of client id
+        /// get clients service by session list
         /// </summary>
         /// <typeparam name="T">service type</typeparam>
         /// <param name="context">client context</param>
         /// <param name="clientIds">list of sessions</param>
         /// <returns>list of service</returns>
-        public static List<T> GetListOfClientServices<T>(this OperationContext context, IEnumerable<string> clientIds)
+        public static IEnumerable<T> GetListOfClientServices<T>(this OperationContext context, IEnumerable<string> clientIds) where T : class
         {
-            return (from x in GetListOfClientContextServices<T>(context, clientIds) select x.Service).ToList();
+            return GetListOfClientServices<T>(context.ServerBase, clientIds);
         }
 
         /// <summary>
-        /// This gets client's services list but ignore the list of lcient id specified
+        /// get clients services list and ignore custom session list
         /// </summary>
         /// <typeparam name="T">service type</typeparam>
         /// <param name="context">client context</param>
         /// <param name="clientIds">list of sessions to ingore get</param>
         /// <returns>list of services</returns>
-        public static List<T> GetListOfExcludeClientServices<T>(this OperationContext context, IEnumerable<string> clientIds)
+        public static IEnumerable<T> GetListOfExcludeClientServices<T>(this OperationContext context, IEnumerable<string> clientIds) where T : class
         {
-            return (from x in GetListOfExcludeClientContextServices<T>(context, clientIds) select x.Service).ToList();
+            return GetListOfExcludeClientServices<T>(context.ServerBase, clientIds);
         }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         /// <summary>
-        /// This gets the current context service
+        /// filter all client services context by client list
         /// </summary>
         /// <typeparam name="T">type of service</typeparam>
-        /// <param name="serverBase">server context</param>
-        /// <param name="client"></param>
+        /// <param name="context">client context</param>
+        /// <param name="clients">clients of clients to get client context</param>
         /// <returns>list of service context</returns>
-        public static ClientContext<T> GetClientContextService<T>(this ServerBase serverBase, ClientInfo client)
+        public static IEnumerable<ClientContext<T>> FilterClientContextServices<T>(this OperationContext context, Func<ClientInfo, bool> where) where T : class
         {
-#if (NETSTANDARD1_6 || NETCOREAPP1_1)
-            if (typeof(T).GetTypeInfo().IsInterface)
-#else
-            if (typeof(T).IsInterface)
-#endif
-            {
-                if (!serverBase.ClientServices.ContainsKey(client))
-                {
-                    serverBase.RegisterClientServices(client);
-                    if (!serverBase.ClientServices.ContainsKey(client))
-                    {
-                        try
-                        {
-                            throw new Exception($"Context client doesn't exist! {client.ClientId} {serverBase.ClientServices.Count} {serverBase.Services.Count} {DateTime.Now}");
-                        }
-                        catch (Exception ex)
-                        {
-                            serverBase.AutoLogger.LogError(ex, "GetClientContextService");
-                        }
-                        return null;
-                    }
-                }
-                var attribName = typeof(T).GetClientServiceName();
-                var serviceType = serverBase.GetRegisteredClientServiceTypeByName(attribName);
-                var find = serverBase.FindClientServerByType(client, serviceType);
-                if (find != null)
-                    return new ClientContext<T>(find, client);
-                var obj = CSCodeInjection.InstanceServerInterface<T>(serviceType, new List<Type>() { typeof(ServiceContractAttribute) });
-                //dynamic dobj = obj;
-                if (CSCodeInjection.InvokedServerMethodAction == null)
-                    ServerExtension.Init();
-                //dobj.InvokedServerMethodAction = CSCodeInjection.InvokedServerMethodAction;
-                //dobj.InvokedServerMethodFunction = CSCodeInjection.InvokedServerMethodFunction;
-
-                var field = serviceType
-#if (NETSTANDARD1_6 || NETCOREAPP1_1)
-                .GetTypeInfo()
-#endif
-                .GetProperty("InvokedServerMethodAction");
-
-                field.SetValue(obj, CSCodeInjection.InvokedServerMethodAction, null);
-
-                var field2 = serviceType
-#if (NETSTANDARD1_6 || NETCOREAPP1_1)
-                .GetTypeInfo()
-#endif
-                .GetProperty("InvokedServerMethodFunction");
-
-                field2.SetValue(obj, CSCodeInjection.InvokedServerMethodFunction, null);
-
-                var op = obj as OperationCalls;
-                op.ServerBase = serverBase;
-                op.CurrentClient = client;
-
-                serverBase.ClientServices[client].Add(obj);
-                if (!(obj is OperationCalls))
-                    serverBase.AutoLogger.LogText("is not OprationCalls: " + obj.ToString(), true);
-
-                return new ClientContext<T>(obj, client);
-            }
-            else
-            {
-                serverBase.AutoLogger.LogText("is not interface: " + typeof(T).ToString(), true);
-                return new ClientContext<T>((T)serverBase.FindClientServerByType(client, typeof(T)), client);
-
-            }
+            return FilterClientContextServices<T>(context.ServerBase, where);
         }
 
         /// <summary>
-        /// This gets all client context services but ignore current context
+        /// filter all client services context by client list
         /// </summary>
         /// <typeparam name="T">type of service</typeparam>
-        /// <param name="serverBase"></param>
-        /// <param name="client"></param>
+        /// <param name="context">client context</param>
+        /// <param name="clients">clients of clients to get client context</param>
         /// <returns>list of service context</returns>
-        public static List<ClientContext<T>> GetAllClientContextServicesButMe<T>(this ServerBase serverBase, ClientInfo client)
+        public static IEnumerable<ClientContext<T>> FilterClientContextServicesButMe<T>(this OperationContext context, Func<ClientInfo, bool> where) where T : class
         {
-            var attribName = typeof(T).GetClientServiceName();
-            var serviceType = serverBase.GetRegisteredClientServiceTypeByName(attribName);
-            List<ClientContext<T>> items = new List<ClientContext<T>>();
-            foreach (var item in serverBase.Clients.ToArray().Where(x => x.Value != client).Select(x => x.Value))
+            foreach (ClientInfo item in context.ServerBase.Clients.Values.Where(where))
             {
-                var find = FindClientService<T>(serverBase, item, serviceType, attribName);
-
-                if (find != null)
-                    items.Add(new ClientContext<T>(find, item));
+                if (item == context.Client)
+                    continue;
+                T find = GenerateClientServiceInstance<T>(context.ServerBase, item);
+                yield return new ClientContext<T>(find, item);
             }
-            return items;
         }
 
+        #endregion
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        #region client context services
+
+
+
+
         /// <summary>
-        /// This gets client's services context by client id
+        ///  get all client context service
+        /// </summary>
+        /// <typeparam name="T">type of service</typeparam>
+        /// <param name="context">client context</param>
+        /// <returns>list of service context</returns>
+        public static IEnumerable<ClientContext<T>> GetAllClientClientContextServices<T>(this ServerBase serverBase) where T : class
+        {
+            foreach (KeyValuePair<string, ClientInfo> item in serverBase.Clients)
+            {
+                T find = GenerateClientServiceInstance<T>(serverBase, item.Value);
+                yield return new ClientContext<T>(find, item.Value);
+            }
+        }
+
+
+        /// <summary>
+        /// get clients service context by session list
         /// </summary>
         /// <typeparam name="T">service type</typeparam>
-        /// <param name="serverBase"></param>
-        /// <param name="clientId">the client id</param>
+        /// <param name="context">client context</param>
+        /// <param name="clientId">list of sessions</param>
         /// <returns>list of service context</returns>
-        public static ClientContext<T> GetClientContextService<T>(this ServerBase serverBase, string clientId)
+        public static ClientContext<T> GetClientContextService<T>(this ServerBase serverBase, string clientId) where T : class
         {
-            var attribName = typeof(T).GetClientServiceName();
-            var serviceType = serverBase.GetRegisteredClientServiceTypeByName(attribName);
-            List<ClientContext<T>> items = new List<ClientContext<T>>();
             serverBase.Clients.TryGetValue(clientId, out ClientInfo clientInfo);
-            if (clientInfo != null)
-            {
-                var find = FindClientService<T>(serverBase, clientInfo, serviceType, attribName);
-                return new ClientContext<T>(find, clientInfo);
-            }
-            return null;
+            if (clientInfo == null)
+                return null;
+            T find = GenerateClientServiceInstance<T>(serverBase, clientInfo);
+            return new ClientContext<T>(find, clientInfo);
         }
 
-
         /// <summary>
-        /// This gets client's service context by client id
+        /// get clients service context by session list
         /// </summary>
         /// <typeparam name="T">service type</typeparam>
-        /// <param name="serverBase"></param>
-        /// <param name="clientId"></param>
+        /// <param name="context">client context</param>
+        /// <param name="client">client</param>
         /// <returns>list of service context</returns>
-        public static T GetClientService<T>(this ServerBase serverBase, string clientId)
+        public static ClientContext<T> GetClientContextService<T>(this ServerBase serverBase, ClientInfo client) where T : class
         {
-            var client = GetClientContextService<T>(serverBase, clientId);
+            string serviceName = typeof(T).GetClientServiceName(true);
+            serverBase.RegisteredServiceTypes.TryGetValue(serviceName, out Type serviceType);
+            T find = GenerateClientServiceInstance<T>(serverBase, client);
+            return new ClientContext<T>(find, client);
+        }
+
+        /// <summary>
+        /// get clients service context by session list
+        /// </summary>
+        /// <typeparam name="T">service type</typeparam>
+        /// <param name="context">client context</param>
+        /// <param name="clientId">id of client</param>
+        /// <returns>list of service context</returns>
+        public static T GetClientService<T>(this ServerBase serverBase, string clientId) where T : class
+        {
+            ClientContext<T> client = GetClientContextService<T>(serverBase, clientId);
             if (client != null)
                 return client.Service;
             return default(T);
         }
 
         /// <summary>
-        /// This gets client's service context by client info
+        /// get clients service context by session list
         /// </summary>
         /// <typeparam name="T">service type</typeparam>
-        /// <param name="serverBase"></param>
+        /// <param name="context">client context</param>
         /// <param name="client">client</param>
-        /// <returns>service context</returns>
-        public static T GetClientService<T>(this ServerBase serverBase, ClientInfo client)
+        /// <returns>list of service context</returns>
+        public static T GetClientService<T>(this ServerBase serverBase, ClientInfo client) where T : class
         {
-            var result = GetClientContextService<T>(serverBase, client);
+            ClientContext<T> result = GetClientContextService<T>(serverBase, client);
             if (result != null)
                 return result.Service;
             return default(T);
         }
 
         /// <summary>
-        /// This gets the list of client's service context of the specified list of client info
+        /// get client service context by client list
         /// </summary>
         /// <typeparam name="T">type of service</typeparam>
-        /// <param name="serverBase"></param>
+        /// <param name="context">client context</param>
         /// <param name="clients">clients of clients to get client context</param>
         /// <returns>list of service context</returns>
-        public static List<ClientContext<T>> GetListOfClientContextServices<T>(this ServerBase serverBase, IEnumerable<ClientInfo> clients)
+        public static IEnumerable<ClientContext<T>> GetListOfClientContextServices<T>(this ServerBase serverBase, IEnumerable<ClientInfo> clients) where T : class
         {
-            var attribName = typeof(T).GetClientServiceName();
-            var serviceType = serverBase.GetRegisteredClientServiceTypeByName(attribName);
-            List<ClientContext<T>> items = new List<ClientContext<T>>();
-            foreach (var item in clients)
+            foreach (ClientInfo item in clients)
             {
-                var find = FindClientService<T>(serverBase, item, serviceType, attribName);
-                if (find != null)
-                    items.Add(new ClientContext<T>(find, item));
+                T find = GenerateClientServiceInstance<T>(serverBase, item);
+                yield return new ClientContext<T>(find, item);
             }
-            return items;
         }
 
         /// <summary>
-        /// This gets the list of client's service context of the specified list of client id
+        /// filter all client services context by client list
         /// </summary>
-        /// <typeparam name="T">service type</typeparam>
-        /// <param name="serverBase"></param>
-        /// <param name="clientIds">list of client id</param>
+        /// <typeparam name="T">type of service</typeparam>
+        /// <param name="context">client context</param>
+        /// <param name="clients">clients of clients to get client context</param>
         /// <returns>list of service context</returns>
-        public static List<ClientContext<T>> GetListOfClientContextServices<T>(this ServerBase serverBase, IEnumerable<string> clientIds)
+        public static IEnumerable<ClientContext<T>> FilterClientContextServices<T>(this ServerBase serverBase, Func<ClientInfo, bool> where) where T : class
         {
-            var attribName = typeof(T).GetClientServiceName();
-            var serviceType = serverBase.GetRegisteredClientServiceTypeByName(attribName);
-            List<ClientContext<T>> items = new List<ClientContext<T>>();
-            foreach (var item in (from x in serverBase.Clients.ToArray() where clientIds.Contains(x.Key) select x.Value))
+            foreach (ClientInfo item in serverBase.Clients.Values.Where(where))
             {
-                var find = FindClientService<T>(serverBase, item, serviceType, attribName);
-
-                if (find != null)
-                    items.Add(new ClientContext<T>(find, item));
+                T find = GenerateClientServiceInstance<T>(serverBase, item);
+                yield return new ClientContext<T>(find, item);
             }
-            return items;
         }
 
         /// <summary>
-        /// This gets the list of client's service context of the specified server but ignore the provided list of client id
+        /// get clients service context by session list
         /// </summary>
         /// <typeparam name="T">service type</typeparam>
-        /// <param name="serverBase"></param>
+        /// <param name="context">client context</param>
+        /// <param name="clientIds">list of sessions</param>
+        /// <returns>list of service context</returns>
+        public static IEnumerable<ClientContext<T>> GetListOfClientContextServices<T>(this ServerBase serverBase, IEnumerable<string> clientIds) where T : class
+        {
+            foreach (string clientId in clientIds)
+            {
+                serverBase.Clients.TryGetValue(clientId, out ClientInfo clientInfo);
+                if (clientInfo == null)
+                    continue;
+                T find = GenerateClientServiceInstance<T>(serverBase, clientInfo);
+                yield return new ClientContext<T>(find, clientInfo);
+            }
+        }
+
+        /// <summary>
+        /// get clients service context list and ignore custom session list
+        /// </summary>
+        /// <typeparam name="T">service type</typeparam>
+        /// <param name="context">client context</param>
         /// <param name="clientIds">list of sessions to ingore get</param>
         /// <returns>list of service context</returns>
-        public static List<ClientContext<T>> GetListOfExcludeClientContextServices<T>(this ServerBase serverBase, IEnumerable<string> clientIds)
+        public static IEnumerable<ClientContext<T>> GetListOfExcludeClientContextServices<T>(this ServerBase serverBase, IEnumerable<string> clientIds) where T : class
         {
-            var attribName = typeof(T).GetClientServiceName();
-            var serviceType = serverBase.GetRegisteredClientServiceTypeByName(attribName);
-            List<ClientContext<T>> items = new List<ClientContext<T>>();
-            foreach (var item in (from x in serverBase.Clients.ToArray() where !clientIds.Contains(x.Key) select x.Value))
+            foreach (KeyValuePair<string, ClientInfo> client in serverBase.Clients)
             {
-                var find = FindClientService<T>(serverBase, item, serviceType, attribName);
-
-                if (find != null)
-                    items.Add(new ClientContext<T>(find, item));
+                if (clientIds.Contains(client.Key))
+                    continue;
+                T find = GenerateClientServiceInstance<T>(serverBase, client.Value);
+                yield return new ClientContext<T>(find, client.Value);
             }
-            return items;
         }
 
 
+
+
         /// <summary>
-        /// This gets the list of client's server services of the specified server but ignore the current context
+        ///  get all client context service
         /// </summary>
         /// <typeparam name="T">type of service</typeparam>
-        /// <param name="serverBase"></param>
-        /// <param name="client"></param>
+        /// <param name="context">client context</param>
         /// <returns>list of service context</returns>
-        public static List<T> GetAllClientServicesButMe<T>(this ServerBase serverBase, ClientInfo client)
+        public static IEnumerable<T> GetAllClientServices<T>(this ServerBase serverBase) where T : class
         {
-            return (from x in GetAllClientContextServicesButMe<T>(serverBase, client) select x.Service).ToList();
+            return (from x in GetAllClientClientContextServices<T>(serverBase) select x.Service);
         }
 
         /// <summary>
-        /// This gets the client service contexts of the client info list specified
+        /// get client service by client list
         /// </summary>
         /// <typeparam name="T">type of service</typeparam>
-        /// <param name="serverBase"></param>
-        /// <param name="clients">clients of clients to get client context</param>
-        /// <returns>list of service context</returns>
-        public static List<T> GetListOfClientServices<T>(this ServerBase serverBase, IEnumerable<ClientInfo> clients)
+        /// <param name="context">client context</param>
+        /// <param name="clients">clients of clients to get client service</param>
+        /// <returns>list of service</returns>
+        public static IEnumerable<T> GetListOfClientServices<T>(this ServerBase serverBase, IEnumerable<ClientInfo> clients) where T : class
         {
-            return (from x in GetListOfClientContextServices<T>(serverBase, clients) select x.Service).ToList();
+            return (from x in GetListOfClientContextServices<T>(serverBase, clients) select x.Service);
         }
 
         /// <summary>
-        ///This gets client service contexts of the client id list specified
+        /// get clients service by session list
         /// </summary>
-        /// <typeparam name="T">type of service</typeparam>
-        /// <param name="serverBase"></param>
-        /// <param name="clientIds">client id list to get client context</param>
-        /// <returns>list of service context</returns>
-        public static List<T> GetListOfClientServices<T>(this ServerBase serverBase, IEnumerable<string> clientIds)
+        /// <typeparam name="T">service type</typeparam>
+        /// <param name="context">client context</param>
+        /// <param name="clientIds">list of sessions</param>
+        /// <returns>list of service</returns>
+        public static IEnumerable<T> GetListOfClientServices<T>(this ServerBase serverBase, IEnumerable<string> clientIds) where T : class
         {
-            return (from x in GetListOfClientContextServices<T>(serverBase, clientIds) select x.Service).ToList();
+            return (from x in GetListOfClientContextServices<T>(serverBase, clientIds) select x.Service);
         }
 
         /// <summary>
-        /// This gets client's callback context list and ignore custom client id list
+        /// get clients services list and ignore custom session list
         /// </summary>
-        /// <typeparam name="T">callback type</typeparam>
-        /// <param name="serverBase"></param>
-        /// <param name="clientIds">list of client id to ignore get</param>
-        /// <returns>list of callback context</returns>
-        public static List<T> GetListOfExcludeClientServices<T>(this ServerBase serverBase, IEnumerable<string> clientIds)
+        /// <typeparam name="T">service type</typeparam>
+        /// <param name="context">client context</param>
+        /// <param name="clientIds">list of sessions to ingore get</param>
+        /// <returns>list of services</returns>
+        public static IEnumerable<T> GetListOfExcludeClientServices<T>(this ServerBase serverBase, IEnumerable<string> clientIds) where T : class
         {
-            return (from x in GetListOfExcludeClientContextServices<T>(serverBase, clientIds) select x.Service).ToList();
+            return (from x in GetListOfExcludeClientContextServices<T>(serverBase, clientIds) select x.Service);
         }
 
+
+        #endregion
         /// <summary>
-        /// This gets get all client services
+        /// get all client clienccontext services with setting query
         /// </summary>
-        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="TService"></typeparam>
+        /// <typeparam name="TSetting"></typeparam>
         /// <param name="serverBase"></param>
+        /// <param name="canTake"></param>
+        /// <param name=""></param>
         /// <returns></returns>
-        public static List<ClientContext<T>> GetAllClientContextServices<T>(this ServerBase serverBase)
+        public static IEnumerable<ClientContext<TService>> GetAllClientClientContextServices<TService, TSetting>(this OperationContext operationContext, Func<TSetting, bool> canTake) where TService : class
         {
-            var attribName = typeof(T).GetClientServiceName();
-            var serviceType = serverBase.GetRegisteredClientServiceTypeByName(attribName);
-            List<ClientContext<T>> items = new List<ClientContext<T>>();
-            foreach (var item in serverBase.Clients.ToArray())
-            {
-                var find = FindClientService<T>(serverBase, item.Value, serviceType, attribName);
-
-                if (find != null)
-                    items.Add(new ClientContext<T>(find, item.Value));
-            }
-            return items;
+            return GetAllClientClientContextServices<TService, TSetting>(operationContext.ServerBase, canTake);
         }
 
         /// <summary>
-        /// This gets all client services
+        /// get all client clienccontext services with setting query
         /// </summary>
-        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="TService"></typeparam>
+        /// <typeparam name="TSetting"></typeparam>
         /// <param name="serverBase"></param>
+        /// <param name="canTake"></param>
+        /// <param name=""></param>
         /// <returns></returns>
-        public static List<T> GetAllClientServices<T>(this ServerBase serverBase)
+        public static IEnumerable<ClientContext<TService, TSetting>> GetAllClientClientContextServices<TService, TSetting>(this ServerBase serverBase, Func<TSetting, bool> canTake) where TService : class
         {
-            var attribName = typeof(T).GetClientServiceName();
-            var serviceType = serverBase.GetRegisteredClientServiceTypeByName(attribName);
-            List<T> items = new List<T>();
-            foreach (var item in serverBase.Clients.ToArray())
+            foreach (KeyValuePair<string, ClientInfo> item in serverBase.Clients)
             {
-                var find = FindClientService<T>(serverBase, item.Value, serviceType, attribName);
-
-                if (find != null)
-                    items.Add((T)find);
+                var setting = (TSetting)OperationContextBase.GetSetting(item.Value, typeof(TSetting));
+                if (setting == null)
+                    continue;
+                else if (canTake.Invoke(setting))
+                {
+                    TService find = GenerateClientServiceInstance<TService>(serverBase, item.Value);
+                    yield return new ClientContext<TService, TSetting>(find, item.Value, setting);
+                }
             }
-            return items;
+        }
+
+        /// <summary>
+        /// get all client clienccontext services with setting query
+        /// </summary>
+        /// <typeparam name="TService"></typeparam>
+        /// <typeparam name="TSetting"></typeparam>
+        /// <param name="serverBase"></param>
+        /// <param name="canTake"></param>
+        /// <returns></returns>
+        public static IEnumerable<TResult> GetAllClientClientContextServices<TService, TSetting, TResult>(this ServerBase serverBase, Func<TSetting, bool> canTake, Func<ClientContext<TService, TSetting>, TResult> func) where TService : class
+        {
+            foreach (KeyValuePair<string, ClientInfo> item in serverBase.Clients)
+            {
+                var setting = (TSetting)OperationContextBase.GetSetting(item.Value, typeof(TSetting));
+                if (setting == null)
+                    continue;
+                else if (canTake.Invoke(setting))
+                {
+                    TService find = GenerateClientServiceInstance<TService>(serverBase, item.Value);
+                    yield return func(new ClientContext<TService, TSetting>(find, item.Value, setting));
+                }
+            }
         }
     }
 }

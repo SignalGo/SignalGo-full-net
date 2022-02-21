@@ -1,10 +1,4 @@
-﻿using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-namespace SignalGo.Shared.Models
+﻿namespace SignalGo.Shared.Models
 {
     /// <summary>
     /// a parameter data for method call
@@ -14,8 +8,7 @@ namespace SignalGo.Shared.Models
         /// <summary>
         /// type of parameter
         /// </summary>
-        [JsonIgnore]
-        public string Type { get; set; }
+        public string Name { get; set; }
         /// <summary>
         /// value of parameter
         /// </summary>

@@ -1,8 +1,4 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-using Newtonsoft.Json.Serialization;
-using SignalGo.Shared.DataTypes;
-using SignalGo.Shared.Helpers;
+﻿using SignalGo.Shared.DataTypes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,7 +11,7 @@ namespace SignalGo.Server.ServiceManager
     /// </summary>
     public class ServerProvider : UdpServiceBase
     {
-
+        public static ServerProvider CurrentServerProvider { get; set; }
         /// <summary>
         /// strat the server
         /// </summary>
@@ -33,7 +29,7 @@ namespace SignalGo.Server.ServiceManager
             if (string.IsNullOrEmpty(uri.AbsolutePath))
                 throw new Exception("this path is not support,please set full path example: http://localhost:5050/SignalGo");
 
-            Connect(uri.Port, new string[] { uri.AbsolutePath });
+            ServerDataProvider.Start(this, uri.Port);
         }
 
         /// <summary>
@@ -44,7 +40,7 @@ namespace SignalGo.Server.ServiceManager
         public void Start(string url, List<Assembly> assemblies)
         {
             Start(url);
-            var assembly = Assembly.GetEntryAssembly();
+            Assembly assembly = Assembly.GetEntryAssembly();
             if (assemblies == null)
                 assemblies = new List<Assembly>() { assembly };
             AutoRegisterServices(assemblies);
@@ -53,9 +49,9 @@ namespace SignalGo.Server.ServiceManager
 
         internal IEnumerable<Type> GetAllTypes(List<Assembly> assemblies)
         {
-            foreach (var asm in assemblies)
+            foreach (Assembly asm in assemblies)
             {
-                foreach (var type in asm.GetTypes())
+                foreach (Type type in asm.GetTypes())
                 {
                     yield return type;
                 }
@@ -73,136 +69,131 @@ namespace SignalGo.Server.ServiceManager
         /// <param name="assemblies">add your assemblies they have servicecontract over classes</param>
         public void AutoRegisterServices(List<Assembly> assemblies)
         {
-            List<Type> ServerServices = new List<Type>();
-            List<Type> ClientServices = new List<Type>();
-            List<Type> HttpServices = new List<Type>();
-            List<Type> StreamServices = new List<Type>();
-            List<Type> OneWayServices = new List<Type>();
+            //List<Type> ServerServices = new List<Type>();
+            //List<Type> ClientServices = new List<Type>();
+            //List<Type> HttpServices = new List<Type>();
+            //List<Type> StreamServices = new List<Type>();
             List<Type> AllTypes = GetAllTypes(assemblies).ToList();
 
-            foreach (var type in AllTypes)
+            foreach (Type type in AllTypes)
             {
-                var attributes = type.GetCustomAttributes<ServiceContractAttribute>();
+                ServiceContractAttribute[] attributes = type.GetCustomAttributes<ServiceContractAttribute>();
                 if (attributes.Length > 0)
                 {
-                    foreach (var att in attributes)
+                    foreach (ServiceContractAttribute att in attributes)
                     {
                         if (att.ServiceType == ServiceType.ServerService)
                         {
-                            if (!ServerServices.Contains(type))
-                            {
-                                if (type.GetIsInterface())
-                                {
-                                    var find = GetMainInheritancedType(type, AllTypes);
-                                    if (find != null)
-                                        ServerServices.Add(find);
-                                }
-                                else
-                                    ServerServices.Add(type);
-                            }
+                            //if (!ServerServices.Contains(type))
+                            //{
+                            //    if (type.GetIsInterface())
+                            //    {
+                            //        var find = GetMainInheritancedType(type, AllTypes);
+                            //        if (find != null)
+                            //            ServerServices.Add(find);
+                            //    }
+                            //    else
+                            //        ServerServices.Add(type);
+                            //}
+                            RegisterServerService(type);
                         }
                         else if (att.ServiceType == ServiceType.ClientService)
                         {
-                            if (!ClientServices.Contains(type) && type.GetIsInterface())
-                                ClientServices.Add(type);
-                        }
-                        else if (att.ServiceType == ServiceType.OneWayService)
-                        {
-                            if (!OneWayServices.Contains(type))
-                                OneWayServices.Add(type);
+                            //if (!ClientServices.Contains(type) && type.GetIsInterface())
+                            //    ClientServices.Add(type);
+                            RegisterClientService(type);
                         }
                         else if (att.ServiceType == ServiceType.HttpService)
                         {
-                            if (!HttpServices.Contains(type))
-                            {
-                                if (type.GetIsInterface())
-                                {
-                                    var find = GetMainInheritancedType(type, AllTypes);
-                                    if (find != null)
-                                        HttpServices.Add(find);
-                                }
-                                else
-                                    HttpServices.Add(type);
-                            }
+                            //if (!HttpServices.Contains(type))
+                            //{
+                            //    if (type.GetIsInterface())
+                            //    {
+                            //        var find = GetMainInheritancedType(type, AllTypes);
+                            //        if (find != null)
+                            //            HttpServices.Add(find);
+                            //    }
+                            //    else
+                            //        HttpServices.Add(type);
+                            //}
+                            RegisterServerService(type);
                         }
                         else if (att.ServiceType == ServiceType.StreamService)
                         {
-                            if (!StreamServices.Contains(type))
-                            {
-                                if (type.GetIsInterface())
-                                {
-                                    var find = GetMainInheritancedType(type, AllTypes);
-                                    if (find != null)
-                                        StreamServices.Add(find);
-                                }
-                                else
-                                    StreamServices.Add(type);
-                            }
+                            RegisterServerService(type);
+                            //if (!StreamServices.Contains(type))
+                            //{
+                            //    if (type.GetIsInterface())
+                            //    {
+                            //        var find = GetMainInheritancedType(type, AllTypes);
+                            //        if (find != null)
+                            //            StreamServices.Add(find);
+                            //    }
+                            //    else
+                            //        StreamServices.Add(type);
+                            //}
+                        }
+                        else if (att.ServiceType == ServiceType.OneWayService)
+                        {
+                            RegisterServerService(type);
+                            //if (!StreamServices.Contains(type))
+                            //{
+                            //    if (type.GetIsInterface())
+                            //    {
+                            //        var find = GetMainInheritancedType(type, AllTypes);
+                            //        if (find != null)
+                            //            StreamServices.Add(find);
+                            //    }
+                            //    else
+                            //        StreamServices.Add(type);
+                            //}
                         }
                     }
                 }
             }
 
-            if (ServerServices.Count > 0)
-            {
-                Console.WriteLine("Registering ServerServices:");
-                foreach (var item in ServerServices)
-                {
-                    RegisterServerService(item);
-                    Console.WriteLine(item.FullName);
-                }
-            }
-            if (ClientServices.Count > 0)
-            {
-                Console.WriteLine("Registering ClientServices:");
-                foreach (var item in ClientServices)
-                {
-#if (!NETSTANDARD1_6 && !NETCOREAPP1_1)
-                    if (item.GetIsInterface())
-                        RegisterClientServiceInterface(item);
-                    else
-#endif
-                    RegisterClientService(item);
-                    Console.WriteLine(item.FullName);
-                }
-            }
-
-            if (HttpServices.Count > 0)
-            {
-                Console.WriteLine("Registering HttpServices:");
-                foreach (var item in HttpServices)
-                {
-                    RegisterHttpService(item);
-                    Console.WriteLine(item.FullName);
-                }
-            }
-            if (StreamServices.Count > 0)
-            {
-                Console.WriteLine("Registering StreamServices:");
-                foreach (var item in StreamServices)
-                {
-                    RegisterStreamService(item);
-                    Console.WriteLine(item.FullName);
-                }
-            }
-            if (OneWayServices.Count > 0)
-            {
-                Console.WriteLine("Registering OneWayServices:");
-                foreach (var item in OneWayServices)
-                {
-                    RegisterOneWayService(item);
-                    Console.WriteLine(item.FullName);
-                }
-            }
-            //foreach (var item in assembly.GetTypes())
+            //if (ServerServices.Count > 0)
             //{
-            //    var attributes = item.GetCustomAttributes<HttpSupportAttribute>();
-            //    if (attributes.Length > 0)
+            //    Console.WriteLine("Registering ServerServices:");
+            //    foreach (var item in ServerServices)
             //    {
-            //        AddHttpService(item);
-            //        Console.WriteLine("Add Controller: " + attributes[0].Addresses.FirstOrDefault());
+            //        RegisterServerService(item);
+            //        Console.WriteLine(item.FullName);
             //    }
             //}
+            //            if (ClientServices.Count > 0)
+            //            {
+            //                Console.WriteLine("Registering ClientServices:");
+            //                foreach (var item in ClientServices)
+            //                {
+            //#if (!NETSTANDARD1_6 && !NETCOREAPP1_1)
+            //                    if (item.GetIsInterface())
+            //                        RegisterClientServiceInterface(item);
+            //                    else
+            //#endif
+            //                    RegisterClientService(item);
+            //                    Console.WriteLine(item.FullName);
+            //                }
+            //            }
+
+            //            if (HttpServices.Count > 0)
+            //            {
+            //                Console.WriteLine("Registering HttpServices:");
+            //                foreach (var item in HttpServices)
+            //                {
+            //                    RegisterHttpService(item);
+            //                    Console.WriteLine(item.FullName);
+            //                }
+            //            }
+            //            if (StreamServices.Count > 0)
+            //            {
+            //                Console.WriteLine("Registering StreamServices:");
+            //                foreach (var item in StreamServices)
+            //                {
+            //                    RegisterStreamService(item);
+            //                    Console.WriteLine(item.FullName);
+            //                }
+            //            }
         }
         //public void StartWebSocket(string url)
         //{

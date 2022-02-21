@@ -1,9 +1,8 @@
-﻿using SignalGo.Shared.Helpers;
-using System;
+﻿using SignalGo.Shared.Models.ServiceReference;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
-using System.Text;
 
 namespace SignalGo.Shared.Models
 {
@@ -41,6 +40,14 @@ namespace SignalGo.Shared.Models
         /// </summary>
         public string TestExample { get; set; }
         /// <summary>
+        /// example of json with fill data in request
+        /// </summary>
+        public string RequestJsonExample { get; set; }
+        /// <summary>
+        /// example of json with fill data in response
+        /// </summary>
+        public string ResponseJsonExample { get; set; }
+        /// <summary>
         /// requests of method
         /// </summary>
 #if (!NET35)
@@ -54,15 +61,31 @@ namespace SignalGo.Shared.Models
         /// if item is selected from treeview
         /// </summary>
         public bool IsSelected { get; set; }
+
+        public List<ParameterReferenceInfo> Parameters { get; set; } = new List<ParameterReferenceInfo>();
+
 #if (!NET35)
         public ServiceDetailsMethod Clone()
         {
-            return new ServiceDetailsMethod() { Id = Id, Comment = Comment, ExceptionsComment = ExceptionsComment, MethodName = MethodName, Requests = new ObservableCollection<ServiceDetailsRequestInfo>(), ReturnComment = ReturnComment, ReturnType = ReturnType, TestExample = TestExample, IsSelected = IsSelected, IsExpanded = IsExpanded };
+            return new ServiceDetailsMethod()
+            {
+                Id = Id,
+                Comment = Comment,
+                ExceptionsComment = ExceptionsComment,
+                MethodName = MethodName,
+                Requests = new ObservableCollection<ServiceDetailsRequestInfo>(),
+                ReturnComment = ReturnComment,
+                ReturnType = ReturnType,
+                TestExample = TestExample,
+                IsSelected = IsSelected,
+                IsExpanded = IsExpanded,
+                Parameters = Parameters.Select(x => x.Clone()).ToList()
+            };
         }
 #endif
     }
 
-    public class ServiceDetailsRequestInfo
+    public class ServiceDetailsRequestInfo : INotifyPropertyChanged
     {
         public bool IsSelected { get; set; }
         public string Name { get; set; }
@@ -70,6 +93,26 @@ namespace SignalGo.Shared.Models
         /// list of parameters
         /// </summary>
         public List<ServiceDetailsParameterInfo> Parameters { get; set; }
+
+        private string _Response;
+
+        /// <summary>
+        /// response of request
+        /// </summary>
+        public string Response
+        {
+            get
+            {
+                return _Response;
+            }
+            set
+            {
+                _Response = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Response)));
+            }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
 
         public ServiceDetailsRequestInfo Clone()
         {

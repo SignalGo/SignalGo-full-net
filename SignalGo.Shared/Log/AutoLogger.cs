@@ -1,9 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace SignalGo.Shared.Log
 {
@@ -16,7 +16,7 @@ namespace SignalGo.Shared.Log
         /// <summary>
         /// is enabled log system
         /// </summary>
-        public bool IsEnabled { get; set; } = true;
+        public static bool IsEnabled { get; set; } = true;
         /// <summary>
         /// full path of log
         /// </summary>
@@ -29,21 +29,50 @@ namespace SignalGo.Shared.Log
         /// file name to save
         /// </summary>
         public string FileName { get; set; }
-
-        string SavePath
+        string _SavePath;
+        private string SavePath
         {
             get
             {
-                string dir = "";
-                if (string.IsNullOrEmpty(DirectoryName))
-                    dir = DirectoryLocation;
-                else
-                    dir = Path.Combine(DirectoryLocation, DirectoryName);
-#if (!PORTABLE)
-                if (!Directory.Exists(dir))
-                    Directory.CreateDirectory(dir);
+                if (!string.IsNullOrEmpty(_SavePath))
+                    return _SavePath;
+                return _SavePath;
+            }
+        }
+#if (NET35 || NET40)
+        public void GenerateSavePath()
+#else
+        public async Task GenerateSavePath()
 #endif
-                return Path.Combine(dir, FileName);
+        {
+            try
+            {
+#if (NET35 || NET40)
+                lockWaitToRead.Wait();
+#else
+                await lockWaitToRead.WaitAsync().ConfigureAwait(false);
+#endif
+
+                if (string.IsNullOrEmpty(DirectoryName))
+                    _SavePath = DirectoryLocation;
+                else
+                    _SavePath = Path.Combine(DirectoryLocation, DirectoryName);
+                try
+                {
+#if (!PORTABLE)
+                    if (!Directory.Exists(_SavePath))
+                        Directory.CreateDirectory(_SavePath);
+#endif
+                }
+                catch
+                {
+
+                }
+                _SavePath = Path.Combine(_SavePath, FileName);
+            }
+            finally
+            {
+                lockWaitToRead.Release();
             }
         }
         /// <summary>
@@ -55,7 +84,9 @@ namespace SignalGo.Shared.Log
             try
             {
 #if (NETSTANDARD1_6)
-                DirectoryLocation = Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location);
+                System.Reflection.Assembly asm = System.Reflection.Assembly.GetEntryAssembly();
+                if (asm != null)
+                    DirectoryLocation = Path.GetDirectoryName(asm.Location);
 #else
                 if (!string.IsNullOrEmpty(AppDomain.CurrentDomain.BaseDirectory))
                     DirectoryLocation = Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory + Path.DirectorySeparatorChar);
@@ -74,7 +105,7 @@ namespace SignalGo.Shared.Log
         }
 #if (!PORTABLE)
 
-        void GetOneStackTraceText(StackTrace stackTrace, StringBuilder builder)
+        private void GetOneStackTraceText(StackTrace stackTrace, StringBuilder builder)
         {
             builder.AppendLine("<------------------------------StackTrace One Begin------------------------------>");
 
@@ -83,7 +114,7 @@ namespace SignalGo.Shared.Log
             // write call stack method names
             foreach (StackFrame stackFrame in stackFrames)
             {
-                var method = stackFrame.GetMethod();
+                System.Reflection.MethodBase method = stackFrame.GetMethod();
 
                 builder.AppendLine("<---Method Begin--->");
                 builder.AppendLine("File Name: " + stackFrame.GetFileName());
@@ -94,10 +125,10 @@ namespace SignalGo.Shared.Log
 
                 builder.AppendLine("Name: " + method.Name);
                 builder.AppendLine("Class: " + method.DeclaringType.Name);
-                var param = method.GetParameters();
+                System.Reflection.ParameterInfo[] param = method.GetParameters();
                 builder.AppendLine("Params Count: " + param.Length);
                 int i = 1;
-                foreach (var p in param)
+                foreach (System.Reflection.ParameterInfo p in param)
                 {
                     builder.AppendLine("Param " + i + ":" + p.ParameterType.Name);
                     i++;
@@ -107,26 +138,30 @@ namespace SignalGo.Shared.Log
             builder.AppendLine("<------------------------------StackTrace One End------------------------------>");
         }
 #endif
-
-        object lockOBJ = new object();
+        static readonly SemaphoreSlim lockWaitToRead = new SemaphoreSlim(1);
         /// <summary>
         /// log text message
         /// </summary>
         /// <param name="text">text to log</param>
         /// <param name="stacktrace">log stacktrace</param>
+#if (NET35 || NET40)
         public void LogText(string text, bool stacktrace = false)
+#else
+        public async void LogText(string text, bool stacktrace = false)
+#endif
         {
             if (string.IsNullOrEmpty(DirectoryLocation) || !IsEnabled)
+            {
                 return;
-#if (!PORTABLE)
+            }
             StringBuilder str = new StringBuilder();
-            str.AppendLine("<Text Log Start>");
+            str.AppendLine($"<Text Log Start> {DateTime.Now} {DateTime.Now.Ticks}");
             str.AppendLine(text);
             if (stacktrace)
             {
                 str.AppendLine("<StackTrace>");
                 StringBuilder builder = new StringBuilder();
-#if (NETSTANDARD1_6 || NETCOREAPP1_1)
+#if (NETSTANDARD || NETCOREAPP)
                 GetOneStackTraceText(new StackTrace(new Exception(text), true), builder);
 #else
                 GetOneStackTraceText(new StackTrace(true), builder);
@@ -136,25 +171,39 @@ namespace SignalGo.Shared.Log
                 str.AppendLine("</StackTrace>");
             }
             str.AppendLine("<Text Log End>");
+#if (NET35 || NET40)
+            GenerateSavePath();
+#else
+            await GenerateSavePath().ConfigureAwait(false);
+#endif
 
-            string fileName = SavePath;
             try
             {
-                lock (lockOBJ)
+#if (NET35 || NET40)
+                lockWaitToRead.Wait();
+#else
+                await lockWaitToRead.WaitAsync().ConfigureAwait(false);
+#endif
+                string fileName = SavePath;
+                using (FileStream stream = new FileStream(fileName, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite))
                 {
-                    using (var stream = new FileStream(fileName, FileMode.OpenOrCreate, FileAccess.ReadWrite))
-                    {
-                        stream.Seek(0, SeekOrigin.End);
-                        byte[] bytes = Encoding.UTF8.GetBytes(System.Environment.NewLine + str.ToString());
-                        stream.Write(bytes, 0, bytes.Length);
-                    }
+                    stream.Seek(0, SeekOrigin.End);
+                    byte[] bytes = Encoding.UTF8.GetBytes(Helpers.TextHelper.NewLine + str.ToString());
+#if (NET35 || NET40)
+                    stream.Write(bytes, 0, bytes.Length);
+#else
+                    await stream.WriteAsync(bytes, 0, bytes.Length).ConfigureAwait(false);
+#endif
                 }
             }
-            catch
+            catch (Exception ex)
             {
-
+                Console.WriteLine($"for file {SavePath}" + ex);
             }
-#endif
+            finally
+            {
+                lockWaitToRead.Release();
+            }
         }
 
 
@@ -163,11 +212,14 @@ namespace SignalGo.Shared.Log
         /// </summary>
         /// <param name="e">exception of log</param>
         /// <param name="title">title of log</param>
+#if (NET35 || NET40)
         public void LogError(Exception e, string title)
+#else
+        public async void LogError(Exception e, string title)
+#endif
         {
             if (string.IsNullOrEmpty(DirectoryLocation) || !IsEnabled)
                 return;
-#if (!PORTABLE)
             try
             {
                 StringBuilder str = new StringBuilder();
@@ -176,30 +228,45 @@ namespace SignalGo.Shared.Log
                 str.AppendLine("Time : " + DateTime.Now.ToLocalTime().ToString());
                 str.AppendLine("--------------------------------------------------------------------------------------------------");
                 str.AppendLine("--------------------------------------------------------------------------------------------------");
-                string fileName = SavePath;
+#if (NET35 || NET40)
+                GenerateSavePath();
+#else
+                await GenerateSavePath().ConfigureAwait(false);
+#endif
 
                 try
                 {
-                    lock (lockOBJ)
+#if (NET35 || NET40)
+                    lockWaitToRead.Wait();
+#else
+                    await lockWaitToRead.WaitAsync().ConfigureAwait(false);
+#endif
+                    string fileName = SavePath;
+                    using (FileStream stream = new FileStream(fileName, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite))
                     {
-                        using (FileStream stream = new FileStream(fileName, FileMode.OpenOrCreate, FileAccess.ReadWrite))
-                        {
-                            stream.Seek(0, SeekOrigin.End);
-                            byte[] bytes = Encoding.UTF8.GetBytes(System.Environment.NewLine + str.ToString());
-                            stream.Write(bytes, 0, bytes.Length);
-                        }
+                        stream.Seek(0, SeekOrigin.End);
+                        byte[] bytes = Encoding.UTF8.GetBytes(Helpers.TextHelper.NewLine + str.ToString());
+#if (NET35 || NET40)
+                        stream.Write(bytes, 0, bytes.Length);
+#else
+                        await stream.WriteAsync(bytes, 0, bytes.Length).ConfigureAwait(false);
+#endif
+
                     }
                 }
-                catch
+                catch (Exception ex)
                 {
-
+                    Console.WriteLine($"for file {SavePath}" + ex);
+                }
+                finally
+                {
+                    lockWaitToRead.Release();
                 }
             }
-            catch
+            catch (Exception ex)
             {
-
+                Console.WriteLine(ex);
             }
-#endif
         }
     }
 }

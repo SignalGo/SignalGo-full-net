@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace SignalGo.Server.DataTypes
 {
@@ -13,7 +10,7 @@ namespace SignalGo.Server.DataTypes
         ServerObject = 3,
     }
     /// <summary>
-    /// Main class and main method used by SignalGo ServerManager
+    /// main class and main method that use for SignalGo ServerManager
     /// </summary>
     public class MainStructureAttribute : Attribute
     {

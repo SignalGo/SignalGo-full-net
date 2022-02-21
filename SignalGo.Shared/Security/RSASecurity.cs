@@ -1,9 +1,5 @@
 ﻿#if (!PORTABLE)
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Security.Cryptography;
-using System.Text;
 
 namespace SignalGo.Shared.Security
 {
@@ -71,24 +67,24 @@ namespace SignalGo.Shared.Security
         //}
         public static RSAKey GenerateRandomKey()
         {
-            using (var csp = RSA.Create())
+            using (RSA csp = RSA.Create())
             {
                 csp.KeySize = 2048;
-                var privKey = csp.ExportParameters(true);
+                RSAParameters privKey = csp.ExportParameters(true);
 
-                var pubKey = csp.ExportParameters(false);
+                RSAParameters pubKey = csp.ExportParameters(false);
 
                 string pubKeyString, privKeyString;
 
-                using (var sw = new System.IO.StringWriter())
+                using (System.IO.StringWriter sw = new System.IO.StringWriter())
                 {
-                    var xs = new System.Xml.Serialization.XmlSerializer(typeof(RSAParameters));
+                    System.Xml.Serialization.XmlSerializer xs = new System.Xml.Serialization.XmlSerializer(typeof(RSAParameters));
                     xs.Serialize(sw, pubKey);
                     pubKeyString = sw.ToString();
                 }
-                using (var sw = new System.IO.StringWriter())
+                using (System.IO.StringWriter sw = new System.IO.StringWriter())
                 {
-                    var xs = new System.Xml.Serialization.XmlSerializer(typeof(RSAParameters));
+                    System.Xml.Serialization.XmlSerializer xs = new System.Xml.Serialization.XmlSerializer(typeof(RSAParameters));
                     xs.Serialize(sw, privKey);
                     privKeyString = sw.ToString();
                 }
@@ -98,23 +94,23 @@ namespace SignalGo.Shared.Security
 
         public static RSAParameters StringToKey(string xml)
         {
-            using (var sr = new System.IO.StringReader(xml))
+            using (System.IO.StringReader sr = new System.IO.StringReader(xml))
             {
-                var xs = new System.Xml.Serialization.XmlSerializer(typeof(RSAParameters));
+                System.Xml.Serialization.XmlSerializer xs = new System.Xml.Serialization.XmlSerializer(typeof(RSAParameters));
                 return (RSAParameters)xs.Deserialize(sr);
             }
         }
 
         public static byte[] Encrypt(byte[] bytes, RSAParameters publicKey)
         {
-            using (var csp = RSA.Create())
+            using (RSA csp = RSA.Create())
             {
-                
+
                 csp.ImportParameters(publicKey);
-#if (NETSTANDARD1_6 ||NETCOREAPP1_1)
+#if (NETSTANDARD ||NETCOREAPP)
                 var bytesCypherText = csp.Encrypt(bytes, RSAEncryptionPadding.OaepSHA1);
 #else
-                var bytesCypherText = csp.EncryptValue(bytes);
+                byte[] bytesCypherText = csp.EncryptValue(bytes);
 #endif
                 return bytesCypherText;
             }
@@ -122,13 +118,13 @@ namespace SignalGo.Shared.Security
 
         public static byte[] Decrypt(byte[] bytes, RSAParameters privateKey)
         {
-            using (var csp = RSA.Create())
+            using (RSA csp = RSA.Create())
             {
                 csp.ImportParameters(privateKey);
-#if (NETSTANDARD1_6 || NETCOREAPP1_1)
+#if (NETSTANDARD || NETCOREAPP)
                 var bytesCypherText = csp.Decrypt(bytes, RSAEncryptionPadding.OaepSHA1);
 #else
-                               var bytesCypherText = csp.DecryptValue(bytes);
+                byte[] bytesCypherText = csp.DecryptValue(bytes);
 #endif
                 return bytesCypherText;
             }

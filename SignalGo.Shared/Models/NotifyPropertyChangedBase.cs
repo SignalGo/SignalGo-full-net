@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.ComponentModel;
 
 namespace SignalGo.Shared.Models
 {
@@ -16,7 +11,7 @@ namespace SignalGo.Shared.Models
         /// notify property changed to ui
         /// </summary>
         /// <param name="propertyName"></param>
-        public void OnPropertyChanged(string propertyName)
+        public virtual void OnPropertyChanged(string propertyName)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }

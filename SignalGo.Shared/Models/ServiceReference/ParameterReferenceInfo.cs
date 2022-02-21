@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SignalGo.Shared.Models.ServiceReference
 {
@@ -10,5 +6,16 @@ namespace SignalGo.Shared.Models.ServiceReference
     {
         public string Name { get; set; }
         public string TypeName { get; set; }
+        public string Comment { get; set; }
+
+        public ParameterReferenceInfo Clone()
+        {
+            return new ParameterReferenceInfo()
+            {
+                Name = Name,
+                TypeName = TypeName,
+                Comment = Comment
+            };
+        }
     }
 }

@@ -1,8 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
-  <!--<Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />-->
+  <!--<Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')"netstandard1.6 />-->
   <PropertyGroup>
-    <TargetFrameworks>net45;net40;net35;netstandard1.6;netstandard2.0;</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0</TargetFrameworks>
+    <!--<TargetFramework>netstandard2.0</TargetFramework>-->
     <MinimumVisualStudioVersion>10.0</MinimumVisualStudioVersion>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -10,10 +11,10 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>SignalGo.Client</RootNamespace>
     <AssemblyName>SignalGo.Client</AssemblyName>
-    <AssemblyVersion>3.8</AssemblyVersion>
-    <FileVersion>3.8</FileVersion>
-    <VersionPrefix>3.8</VersionPrefix>
-    <Version>3.8</Version>
+    <AssemblyVersion>5.7.0.3</AssemblyVersion>
+    <FileVersion>5.7.0.3</FileVersion>
+    <!--<VersionPrefix>4.1</VersionPrefix>-->
+    <Version>5.7.0.3</Version>
     <DebugType>full</DebugType>
     <Copyright>Copyright © ali.visual.studio@gmail.com 2016</Copyright>
     <Description>
@@ -45,12 +46,13 @@
     </Description>
     <PackageLicenseUrl>https://github.com/SignalGo/SignalGo-full-net/blob/master/LICENSE</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/SignalGo/SignalGo-full-net</PackageProjectUrl>
-    <PackageIconUrl>http://cdn.persiangig.com/preview/v14ukL88fq/SignalGo.png</PackageIconUrl>
+    <PackageIconUrl></PackageIconUrl>
     <PackageTags>SignalGo SignalR WCF Server Client Signal Sig RealTime Real-Time</PackageTags>
     <PackageReleaseNotes>
       1.fix bugs and more improvement
-      2.support for oneway services
-      3.support for host a website on signalgo
+      2.added HttpKeyAttribute for method parameters
+      3.support for SOAP protocol
+      4.support for http calls on add signalgoservice references (easy to call http services)
       read document examples here:
       https://github.com/SignalGo/SignalGo-full-net
     </PackageReleaseNotes>
@@ -58,10 +60,17 @@
     </FileUpgradeFlags>
     <UpgradeBackupLocation>
     </UpgradeBackupLocation>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <OldToolsVersion>2.0</OldToolsVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(TargetFramework)'=='netstandard2.0'">
+    <DefineConstants>__ANDROID__;$(AdditionalConstants)</DefineConstants>
   </PropertyGroup>
   <PropertyGroup>
     <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\SignalGo.Client.xml</DocumentationFile>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageId>SignalGo.Net.Client</PackageId>
+    <PackageIcon>icon.png</PackageIcon>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -88,16 +97,6 @@
   <PropertyGroup Condition="'$(TargetFramework)'=='net45'">
     <DefineConstants>NET45;$(AdditionalConstants)</DefineConstants>
   </PropertyGroup>
-  <ItemGroup Condition="'$(TargetFramework)' == 'portable45-net45+win8'">
-    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
-    <PackageReference Include="rda.SocketsForPCL" Version="2.0.2" />
-    <PackageReference Include="DNS.PCL" Version="2.1.0" />
-  </ItemGroup>
-  <ItemGroup Condition="'$(TargetFramework)' == 'portable-net45+win8+wpa81'">
-    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
-    <PackageReference Include="rda.SocketsForPCL" Version="2.0.2" />
-    <PackageReference Include="DNS.PCL" Version="2.1.0" />
-  </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net35'">
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -105,7 +104,7 @@
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
     <PackageReference Include="TaskParallelLibrary" Version="1.0.2856" />
   </ItemGroup>
   <!-- Need to conditionally bring in references for the .NET Framework 4.0 target -->
@@ -117,7 +116,7 @@
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
     <PackageReference Include="ImpromptuInterface" Version="7.0.1" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net45'">
@@ -128,44 +127,53 @@
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
     <PackageReference Include="ImpromptuInterface" Version=" 7.0.1" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard1.6'">
-    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
     <PackageReference Include="System.Diagnostics.StackTrace" Version="4.3.0" />
     <PackageReference Include="System.Xml.XmlSerializer" Version="4.3.0" />
     <PackageReference Include="System.Threading.Thread" Version="4.3.0" />
-    <PackageReference Include="System.Reflection.TypeExtensions" Version="4.5.0" />
+    <PackageReference Include="System.Reflection.TypeExtensions" Version="4.7.0" />
     <PackageReference Include="System.Net.NameResolution" Version="4.3.0" />
-    <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
+    <PackageReference Include="System.Reflection.Emit" Version="4.7.0" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
-    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
     <PackageReference Include="System.Diagnostics.StackTrace" Version="4.3.0" />
     <PackageReference Include="System.Xml.XmlSerializer" Version="4.3.0" />
     <PackageReference Include="System.Threading.Thread" Version="4.3.0" />
-    <PackageReference Include="System.Reflection.TypeExtensions" Version="4.5.0" />
+    <PackageReference Include="System.Reflection.TypeExtensions" Version="4.7.0" />
     <PackageReference Include="System.Net.NameResolution" Version="4.3.0" />
-    <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
-    <PackageReference Include="NETStandard.Library" Version="2.0.3" />
+    <PackageReference Include="System.Reflection.Emit" Version="4.7.0" />
+    <!--<PackageReference Include="NETStandard.Library" Version="2.0.3" />-->
   </ItemGroup>
-  
+
   <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp1.1'">
-    <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
     <PackageReference Include="System.Diagnostics.StackTrace" Version="4.3.0" />
     <PackageReference Include="System.Xml.XmlSerializer" Version="4.3.0" />
     <PackageReference Include="System.Threading.Thread" Version="4.3.0" />
-    <PackageReference Include="System.Reflection.TypeExtensions" Version="4.5.0" />
+    <PackageReference Include="System.Reflection.TypeExtensions" Version="4.7.0" />
     <PackageReference Include="System.Net.NameResolution" Version="4.3.0" />
-    <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
+    <PackageReference Include="System.Reflection.Emit" Version="4.7.0" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\SignalGo.Shared\SignalGo.Shared.csproj">
-      <Project>{78D8601B-E331-47B7-A4A8-46B7460D82A4}</Project>
-      <Name>SignalGo.Shared</Name>
-    </ProjectReference>
+    <Folder Include="ClientManager\Providers\" />
     <Folder Include="Properties\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\SignalGo.Shared\SignalGo.Shared.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\icon.png">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="System.Net.Http" />
   </ItemGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

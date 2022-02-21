@@ -1,18 +1,15 @@
 ﻿using SignalGo.Shared.Log;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 #if (!PORTABLE)
 using System.Net.Sockets;
 #endif
-using System.Text;
 using System.Threading.Tasks;
 using SignalGo.Shared.Models;
 using Newtonsoft.Json;
 using SignalGo.Shared;
 using System.Collections.Concurrent;
-using System.Threading;
 
 namespace SignalGo.Client
 {
@@ -26,8 +23,8 @@ namespace SignalGo.Client
         /// </summary>
         public Action<byte[]> OnReceivedData { get; set; }
 #if (!PORTABLE)
-        Socket socket = null;
-        IPEndPoint iPEndPoint = null;
+        private Socket socket = null;
+        private IPEndPoint iPEndPoint = null;
 #else
         Sockets.Plugin.UdpSocketClient socket = null;
         string _ipAddress = null;
@@ -42,7 +39,7 @@ namespace SignalGo.Client
         {
             isStart = false;
 #if (!PORTABLE)
-            socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, System.Net.Sockets.ProtocolType.Udp);
             iPEndPoint = new IPEndPoint(IPAddress.Parse(ipAddress), port);
 #else
             socket = new Sockets.Plugin.UdpSocketClient();
@@ -63,7 +60,7 @@ namespace SignalGo.Client
 #if (PORTABLE)
         void StartReadingData()
 #else
-        void StartReadingData()
+        private void StartReadingData()
 #endif
         {
             Task.Factory.StartNew(() =>
@@ -87,7 +84,7 @@ namespace SignalGo.Client
                     while (!IsDisposed)
                     {
                         byte[] bytes = new byte[BufferSize];
-                        var readCount = socket.Receive(bytes);
+                        int readCount = socket.Receive(bytes);
                         OnReceivedData?.Invoke(bytes.ToList().GetRange(0, readCount).ToArray());
                     }
 #endif
@@ -111,9 +108,11 @@ namespace SignalGo.Client
             }
         }
 
-        BlockingCollection<byte[]> BytesToSend { get; set; } = new BlockingCollection<byte[]>();
-        bool isStart = false;
-        void StartEngineWriter()
+        private BlockingCollection<byte[]> BytesToSend { get; set; } = new BlockingCollection<byte[]>();
+
+        private bool isStart = false;
+
+        private void StartEngineWriter()
         {
             if (isStart)
                 return;
@@ -128,7 +127,7 @@ namespace SignalGo.Client
                 socket.SendToAsync(arrayToSend, arrayToSend.Length, _ipAddress, _port).Wait();
 
 #else
-                var sendCount = socket.SendTo(arrayToSend, arrayToSend.Length, SocketFlags.None, iPEndPoint);
+                int sendCount = socket.SendTo(arrayToSend, arrayToSend.Length, SocketFlags.None, iPEndPoint);
 #endif
 
             }

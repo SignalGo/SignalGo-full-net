@@ -1,73 +1,211 @@
-﻿using SignalGo.Server.ServiceManager;
+﻿using SignalGo.Server.Helpers;
+using SignalGo.Server.ServiceManager;
 using SignalGo.Shared.Http;
+using SignalGo.Shared.IO;
 using SignalGo.Shared.Models;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading;
 
 namespace SignalGo.Server.Models
 {
     /// <summary>
-    /// Informations about tcp client
+    /// client protocol
+    /// </summary>
+    public enum ClientProtocolType : byte
+    {
+        /// <summary>
+        /// unknown
+        /// </summary>
+        None = 0,
+        /// <summary>
+        /// http protocol
+        /// </summary>
+        Http = 1,
+        /// <summary>
+        /// signalgo duplex
+        /// </summary>
+        SignalGoDuplex = 2,
+        /// <summary>
+        /// one way protocol of signalgo
+        /// </summary>
+        SignalGoOneWay = 3,
+        /// <summary>
+        /// stream protocol
+        /// </summary>
+        SignalGoStream = 4,
+        /// <summary>
+        /// web socket protocol
+        /// </summary>
+        WebSocket = 5,
+        /// <summary>
+        /// http duplex client
+        /// </summary>
+        HttpDuplex = 6
+    }
+
+    /// <summary>
+    /// information of tcp client
     /// </summary>
     public class ClientInfo
     {
         /// <summary>
-        /// The client ID
+        /// 
         /// </summary>
-        public string ClientId { get; internal set; }
+        /// <param name="serverBase"></param>
+        public ClientInfo(ServerBase serverBase)
+        {
+            CurrentClientServer = serverBase;
+        }
+
         /// <summary>
-        /// The client's ip address
+        /// when the client disposed
         /// </summary>
-        public string IPAddress { get; set; }
+        public bool IsDisposed { get; set; }
+        private ConcurrentDictionary<long, List<ICustomAsyncDisposable>> _CustomAsyncDisposableItems;
+        public ConcurrentDictionary<long, List<ICustomAsyncDisposable>> CustomAsyncDisposableItems
+        {
+            get
+            {
+                if (_CustomAsyncDisposableItems == null)
+                    _CustomAsyncDisposableItems = new ConcurrentDictionary<long, List<ICustomAsyncDisposable>>();
+                return _CustomAsyncDisposableItems;
+            }
+        }
+
         /// <summary>
-        /// The client version 
+        /// current client server
+        /// </summary>
+        public ServerBase CurrentClientServer { get; set; }
+        /// <summary>
+        /// client id
+        /// </summary>
+        public string ClientId { get; set; }
+        public string DisposeReason { get; internal set; }
+        string _IPAddress;
+        /// <summary>
+        /// ip address of client
+        /// </summary>
+        public string IPAddress
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(_IPAddress))
+                    _IPAddress = new System.Net.IPAddress(IPAddressBytes).ToString();
+                return _IPAddress;
+            }
+        }
+
+        byte[] _IPAddressBytes;
+        /// <summary>
+        /// bytes of ip address
+        /// </summary>
+        public byte[] IPAddressBytes
+        {
+            get
+            {
+                return _IPAddressBytes;
+            }
+            set
+            {
+                _IPAddressBytes = value;
+                _IPAddress = null;
+            }
+        }
+
+        /// <summary>
+        /// forward ip is your custom ip when you are using hardware firewall you can fill this
+        /// </summary>
+        public string ForwardIPAddress { get; set; }
+
+        /// <summary>
+        /// version of client
         /// </summary>
         public uint? ClientVersion { get; set; }
         /// <summary>
-        /// General purpose client Tag property
+        /// tag of client
         /// </summary>
         public object Tag { get; set; }
         /// <summary>
-        /// Action raised after a client disconnects from server
+        /// when client disconnected
         /// </summary>
         public Action OnDisconnected { get; set; }
+        /// <summary>
+        /// tcp client
+        /// </summary>
+        public TcpClient TcpClient { get; internal set; }
+        /// <summary>
+        /// date of connected
+        /// </summary>
+        public DateTime ConnectedDateTime { get; set; }
+        /// <summary>
+        /// stream of client to read and write
+        /// </summary>
+        public PipeNetworkStream ClientStream { get; set; }
+        /// <summary>
+        /// client Stream
+        /// </summary>
+        public ISignalGoStream StreamHelper { get; set; } = null;
 
-        internal TcpClient TcpClient { get; set; }
-        internal bool IsVerification { get; set; }
-        internal ServerBase ServerBase { get; set; }
-        internal SynchronizationContext MainContext { get; set; }
-        internal Thread MainThread { get; set; }
-        internal System.Net.IPEndPoint UdpIp { get; set; }
-        internal bool IsWebSocket { get; set; }
-        internal DateTime ConnectedDateTime { get; set; }
-
-        public Stream ClientStream { get; set; }
+        /// <summary>
+        /// is client of owin client
+        /// </summary>
+        public virtual bool IsOwinClient
+        {
+            get
+            {
+                return false;
+            }
+        }
+        /// <summary>
+        /// is websocket client
+        /// </summary>
+        public bool IsWebSocket { get; set; }
+        /// <summary>
+        /// type of client protocol
+        /// </summary>
+        public ClientProtocolType ProtocolType { get; set; } = ClientProtocolType.None;
+        /// <summary>
+        /// lock for this client
+        /// </summary>
+        public SemaphoreSlim LockWaitToRead { get; set; } = new SemaphoreSlim(1, 1);
     }
 
     /// <summary>
-    /// informations about HTTP client
+    /// information of http client
     /// </summary>
     public class HttpClientInfo : ClientInfo, IHttpClientInfo
     {
         /// <summary>
-        /// Response status for client
+        /// current server base
+        /// </summary>
+        /// <param name="serverBase"></param>
+        public HttpClientInfo(ServerBase serverBase) : base(serverBase)
+        {
+        }
+        /// <summary>
+        /// status of response for client
         /// </summary>
         public System.Net.HttpStatusCode Status { get; set; } = System.Net.HttpStatusCode.OK;
         /// <summary>
-        /// The request headers sent by the client
+        /// headers of request that client sended
         /// </summary>
-        public WebHeaderCollection RequestHeaders { get; set; }
+        public virtual IDictionary<string, string[]> RequestHeaders { get; set; }
         /// <summary>
-        /// The reponse headers received by the client
+        /// reponse headers to client
         /// </summary>
-        public WebHeaderCollection ResponseHeaders { get; set; } = new WebHeaderCollection();
-
-        HttpPostedFileInfo _currentFile = null;
+        public virtual IDictionary<string, string[]> ResponseHeaders { get; set; } = new WebHeaderCollection();
+        /// <summary>
+        /// key parameter value
+        /// </summary>
+        public string HttpKeyParameterValue { get; set; }
+        /// <summary>
+        /// file of http posted file
+        /// </summary>
+        private HttpPostedFileInfo _currentFile = null;
         public void SetFirstFile(HttpPostedFileInfo fileInfo)
         {
             _currentFile = fileInfo;
@@ -77,6 +215,41 @@ namespace SignalGo.Server.Models
         {
             return _currentFile;
         }
+
+        public virtual string GetRequestHeaderValue(string header)
+        {
+            if (!RequestHeaders.ContainsKey(header))
+            {
+                return null;
+            }
+            return ((WebHeaderCollection)RequestHeaders)[header];
+        }
+
+        public virtual string GetRequestCookieHeaderValue(string header)
+        {
+            if (!RequestHeaders.ContainsKey(header))
+            {
+                //check the responses header when you are getting by context in the first time before sending one time of Cookie header to client
+                if (ResponseHeaders.TryGetValue("set-cookie", out string[] headers))
+                {
+                    if (headers == null)
+                        return null;
+                    return headers.FirstOrDefault();
+                }
+                return null;
+            }
+            return ((WebHeaderCollection)RequestHeaders)[header];
+        }
+
+        /// <summary>
+        /// change status code before send data as headers etc
+        /// </summary>
+        /// <param name="statusCode"></param>
+        public virtual void ChangeStatusCode(System.Net.HttpStatusCode statusCode)
+        {
+            Status = statusCode;
+        }
+
     }
 
 }

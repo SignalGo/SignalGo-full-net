@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
 namespace SignalGo.Shared.Models.ServiceReference
 {
@@ -13,7 +9,8 @@ namespace SignalGo.Shared.Models.ServiceReference
         CallbackLevel,
         ModelLevel,
         StreamLevel,
-        OneWayLevel
+        OneWayLevel,
+        InterfaceLevel
     }
     public class ClassReferenceInfo
     {
@@ -22,6 +19,10 @@ namespace SignalGo.Shared.Models.ServiceReference
         public string Name { get; set; }
         public string ServiceName { get; set; }
         public string BaseClassName { get; set; }
+        /// <summary>
+        /// example : Where T : struct
+        /// </summary>
+        public string GenericParameterConstraints { get; set; }
         public List<MethodReferenceInfo> Methods { get; set; } = new List<MethodReferenceInfo>();
         public List<PropertyReferenceInfo> Properties { get; set; } = new List<PropertyReferenceInfo>();
     }

@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 #if (!PORTABLE)
 using System.Security.Cryptography;
 #endif
@@ -22,7 +20,7 @@ namespace SignalGo.Shared.Security
 
         public static byte[] EncryptBytes(byte[] bytes, byte[] key, byte[] IV)
         {
-#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
+#if (NETSTANDARD || NETCOREAPP || PORTABLE)
             throw new NotSupportedException("not support for this .net standard version!");
 #else
             if (bytes == null || bytes.Length <= 0)
@@ -61,7 +59,7 @@ namespace SignalGo.Shared.Security
 
         public static byte[] DecryptBytes(byte[] bytes, byte[] Key, byte[] IV)
         {
-#if (NETSTANDARD1_6 || NETCOREAPP1_1 || PORTABLE)
+#if (NETSTANDARD || NETCOREAPP || PORTABLE)
             throw new NotSupportedException("not support for this .net standard version!");
 #else
             if (bytes == null || bytes.Length <= 0)
@@ -81,7 +79,7 @@ namespace SignalGo.Shared.Security
                 {
                     using (MemoryStream msDecrypt = new MemoryStream(bytes))
                     {
-                        using (var csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read))
+                        using (CryptoStream csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read))
                         {
                             int read;
                             byte[] buffer = new byte[16 * 1024];

@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SignalGo.Shared.DataTypes
 {
@@ -29,6 +25,10 @@ namespace SignalGo.Shared.DataTypes
         /// ignore properties to generate from server
         /// </summary>
         public string[] IgnoreProperties { get; set; }
+        /// <summary>
+        /// do data for all classes
+        /// </summary>
+        public bool ForAllClassess { get; set; }
         /// <summary>
         /// 
         /// </summary>

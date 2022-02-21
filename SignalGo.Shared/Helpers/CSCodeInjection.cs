@@ -1,4 +1,4 @@
-﻿#if (!NETSTANDARD1_6 && !NETCOREAPP1_1 && !PORTABLE)
+﻿#if (!NETSTANDARD && !NETCOREAPP && !PORTABLE)
 using Microsoft.CSharp;
 #endif
 using SignalGo.Shared.DataTypes;
@@ -7,7 +7,6 @@ using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 
 namespace SignalGo.Shared.Helpers
 {
@@ -19,21 +18,21 @@ namespace SignalGo.Shared.Helpers
         /// <summary>
         /// invoke action for void methods call
         /// </summary>
-        public static Action<object, MethodInfo, object[]> InvokedClientMethodAction { get; set; }
+        public static Action<object, MethodInfo, Shared.Models.ParameterInfo[]> InvokedClientMethodAction { get; set; }
         /// <summary>
         /// invoke function for non-void methods call
         /// </summary>
-        public static Func<object, MethodInfo, object[], object> InvokedClientMethodFunction { get; set; }
+        public static Func<object, MethodInfo, Shared.Models.ParameterInfo[], object> InvokedClientMethodFunction { get; set; }
 
         /// <summary>
         /// invoke action for void methods call
         /// </summary>
-        public static Action<object, MethodInfo, object[]> InvokedServerMethodAction { get; set; }
+        public static Action<object, MethodInfo, Shared.Models.ParameterInfo[]> InvokedServerMethodAction { get; set; }
         /// <summary>
         /// invoke function for non-void methods call
         /// </summary>
-        public static Func<object, MethodInfo, object[], object> InvokedServerMethodFunction { get; set; }
-#if (!NETSTANDARD1_6 && !NETSTANDARD2_0 && !NETCOREAPP1_1 && !PORTABLE)
+        public static Func<object, MethodInfo, Shared.Models.ParameterInfo[], object> InvokedServerMethodFunction { get; set; }
+#if (!NETSTANDARD && !NETCOREAPP && !PORTABLE)
         /// <summary>
         /// generate a class from an interface type
         /// </summary>
@@ -48,18 +47,18 @@ namespace SignalGo.Shared.Helpers
 #endif
         public static T InstanceServerInterface<T>(Type type, List<Type> assemblyTypes)
         {
-            var callback = Activator.CreateInstance(type);
-            var field = callback.GetType()
+            object callback = Activator.CreateInstance(type);
+            PropertyInfo field = callback.GetType()
                 .GetPropertyInfo("InvokedServerMethodAction");
 
-            field.SetValue(callback, new Action<object, MethodInfo, object[]>((t, method, param) =>
+            field.SetValue(callback, new Action<object, MethodInfo, Shared.Models.ParameterInfo[]>((t, method, param) =>
             {
                 InvokedServerMethodAction?.Invoke(t, method, param);
             }), null);
 
-            var field2 = callback.GetType()
+            PropertyInfo field2 = callback.GetType()
                 .GetPropertyInfo("InvokedServerMethodFunction");
-            field2.SetValue(callback, new Func<object, MethodInfo, object[], object>((t, method, param) =>
+            field2.SetValue(callback, new Func<object, MethodInfo, Shared.Models.ParameterInfo[], object>((t, method, param) =>
             {
                 return InvokedServerMethodFunction?.Invoke(t, method, param);
             }), null);
@@ -69,31 +68,31 @@ namespace SignalGo.Shared.Helpers
 
         public static object InstanceServerInterface(Type type, List<Type> assemblyTypes)
         {
-            var callback = Activator.CreateInstance(type);
-            var field = callback.GetType()
+            object callback = Activator.CreateInstance(type);
+            PropertyInfo field = callback.GetType()
                 .GetPropertyInfo("InvokedServerMethodAction");
 
-            field.SetValue(callback, new Action<object, MethodInfo, object[]>((t, method, param) =>
+            field.SetValue(callback, new Action<object, MethodInfo, Shared.Models.ParameterInfo[]>((t, method, param) =>
             {
                 InvokedServerMethodAction?.Invoke(t, method, param);
             }), null);
 
-            var field2 = callback.GetType()
+            PropertyInfo field2 = callback.GetType()
                 .GetPropertyInfo("InvokedServerMethodFunction");
-            field2.SetValue(callback, new Func<object, MethodInfo, object[], object>((t, method, param) =>
+            field2.SetValue(callback, new Func<object, MethodInfo, Shared.Models.ParameterInfo[], object>((t, method, param) =>
             {
                 return InvokedServerMethodFunction?.Invoke(t, method, param);
             }), null);
 
             return callback;
         }
-#if (!NETSTANDARD1_6 && !NETSTANDARD2_0 && !NETCOREAPP1_1 && !PORTABLE)
+#if (!NETSTANDARD && !NETCOREAPP && !PORTABLE)
 
-        static Type GenerateInterfaceServiceType(Type type, Type inter, List<Type> assemblyTypes, bool isServer)
+        private static Type GenerateInterfaceServiceType(Type type, Type inter, List<Type> assemblyTypes, bool isServer)
         {
             if (!type.IsInterface)
                 throw new Exception("type must be interface");
-            var attribs = type.GetCustomAttributes<ServiceContractAttribute>(true).Where(x => x.ServiceType == ServiceType.ServerService || x.ServiceType == ServiceType.ClientService);
+            IEnumerable<ServiceContractAttribute> attribs = type.GetCustomAttributes<ServiceContractAttribute>(true).Where(x => x.ServiceType == ServiceType.ServerService || x.ServiceType == ServiceType.ClientService);
             bool isServiceContract = false;
             ServiceContractAttribute attrib = attribs.FirstOrDefault();
             isServiceContract = attrib != null;
@@ -104,7 +103,7 @@ namespace SignalGo.Shared.Helpers
             return GenerateType(type, attrib.Name, inter, assemblyTypes, isServer);
         }
 
-        static Type GenerateType(Type type, string className, Type inter, List<Type> assemblyTypes, bool isServer)
+        private static Type GenerateType(Type type, string className, Type inter, List<Type> assemblyTypes, bool isServer)
         {
             string actionMethodName = isServer ? "InvokedServerMethodAction" : "InvokedClientMethodAction";
             string functionMethodName = isServer ? "InvokedServerMethodFunction" : "InvokedClientMethodFunction";
@@ -118,27 +117,27 @@ namespace SignalGo.Shared.Helpers
             types.Add(inter);
             if (inter != null)
             {
-                foreach (var property in inter.GetProperties())
+                foreach (PropertyInfo property in inter.GetProperties())
                 {
-                    var nameSpace = property.PropertyType.Namespace;
+                    string nameSpace = property.PropertyType.Namespace;
                     if (!foundedNameSpaces.Contains(nameSpace))
                         foundedNameSpaces.Add(nameSpace);
                     if (!types.Contains(property.PropertyType))
                         types.Add(property.PropertyType);
                     bodyGenerate += "public " + GetGenecricTypeString(property.PropertyType, ref types) + " " + property.Name + "{get;set;}";
                 }
-                foreach (var methd in inter.GetMethods())
+                foreach (MethodInfo methd in inter.GetMethods())
                 {
                     if (methd.IsSpecialName && (methd.Name.StartsWith("set_") || methd.Name.StartsWith("get_")))
                         continue;
-                    var nameSpace = methd.ReturnType.Namespace;
+                    string nameSpace = methd.ReturnType.Namespace;
                     if (!foundedNameSpaces.Contains(nameSpace))
                         foundedNameSpaces.Add(nameSpace);
                     if (!types.Contains(methd.ReturnType))
                         types.Add(methd.ReturnType);
                     bodyGenerate += "public " + GetGenecricTypeString(methd.ReturnType, ref types) + " " + methd.Name + "(";
-                    var parameters = methd.GetParameters();
-                    foreach (var p in parameters)
+                    ParameterInfo[] parameters = methd.GetParameters();
+                    foreach (ParameterInfo p in parameters)
                     {
                         nameSpace = p.ParameterType.Namespace;
                         if (!foundedNameSpaces.Contains(nameSpace))
@@ -153,23 +152,23 @@ namespace SignalGo.Shared.Helpers
                 }
             }
 
-            var interfaces = type.GetInterfaces();
+            Type[] interfaces = type.GetInterfaces();
             List<Type> allTypes = new List<Type>();
             allTypes.Add(type);
             allTypes.AddRange(interfaces);
-            foreach (var referenceType in allTypes)
+            foreach (Type referenceType in allTypes)
             {
-                foreach (var method in referenceType.GetMethods())
+                foreach (MethodInfo method in referenceType.GetMethods())
                 {
-                    var nameSpace = method.ReturnType.Namespace;
+                    string nameSpace = method.ReturnType.Namespace;
                     if (!foundedNameSpaces.Contains(nameSpace))
                         foundedNameSpaces.Add(nameSpace);
                     string body = "public " + GetGenecricTypeString(method.ReturnType, ref types) + " " + method.Name + "(";
                     string parameterBody = "";
-                    var listOfParameters = method.GetParameters().ToList();
+                    List<ParameterInfo> listOfParameters = method.GetParameters().ToList();
                     string invokeBody = "object[] signalGoParametersitems = new  object[" + listOfParameters.Count + "];";
 
-                    foreach (var p in listOfParameters)
+                    foreach (ParameterInfo p in listOfParameters)
                     {
                         nameSpace = p.ParameterType.Namespace;
                         if (!foundedNameSpaces.Contains(nameSpace))
@@ -203,24 +202,24 @@ namespace SignalGo.Shared.Helpers
 
 
             string[] nameSpaces = { type.Namespace, "System.Reflection", "System" };
-            var nameS = "namespace SignalGo.Shared.Runtime {";
-            foreach (var item in nameSpaces)
+            string nameS = "namespace SignalGo.Shared.Runtime {";
+            foreach (string item in nameSpaces)
             {
                 nameS += "using " + item + "; ";
             }
             string source = nameS + "public class " + className + " : " + type.Namespace + (inter == null ? "" : ("." + type.Name + " , " + inter.Namespace + "." + inter.Name)) + " {" +
                 bodyGenerate + "}}";
-            var assembly = CompileSource(source, GetTypesOfType(types));
+            Assembly assembly = CompileSource(source, GetTypesOfType(types));
             return assembly.GetType("SignalGo.Shared.Runtime." + className);
         }
 #endif
-        static string GetGenecricTypeString(Type type, ref List<Type> types)
+        private static string GetGenecricTypeString(Type type, ref List<Type> types)
         {
             string result = type.Namespace + "." + (type.Name.Contains("`") ? type.Name.Remove(type.Name.IndexOf('`')) : type.Name);
             if (type.GetIsGenericType())
             {
                 result += "<";
-                foreach (var item in type.GetListOfGenericArguments())
+                foreach (Type item in type.GetListOfGenericArguments())
                 {
                     result += GetGenecricTypeString(item, ref types) + ",";
                     if (!types.Contains(item))
@@ -266,7 +265,7 @@ namespace SignalGo.Shared.Helpers
         //        return "";
         //    return attributes;
         //}
-#if (!NETSTANDARD1_6 && !NETSTANDARD2_0 && !NETCOREAPP1_1 && !PORTABLE)
+#if (!NETSTANDARD && !NETCOREAPP && !PORTABLE)
         public static Action<CompilerResults, List<Type>, string> OnErrorAction { get; set; }
         private static Assembly CompileSource(string sourceCode, List<Type> types)
         {
@@ -279,7 +278,7 @@ namespace SignalGo.Shared.Helpers
 
             //parameters.ReferencedAssemblies.Add("mscorlib.dll");
             //parameters.ReferencedAssemblies.Add("system.dll");
-            foreach (var item in types)
+            foreach (Type item in types)
             {
                 if (!assemblies.Contains(item.Assembly.Location))
                     assemblies.Add(item.Assembly.Location);
@@ -292,7 +291,7 @@ namespace SignalGo.Shared.Helpers
             //    }
             //}
             //var asm = assem.Assembly.Location;
-            foreach (var asm in assemblies)
+            foreach (string asm in assemblies)
             {
                 parameters.ReferencedAssemblies.Add(asm);
             }
@@ -310,20 +309,20 @@ namespace SignalGo.Shared.Helpers
 #endif
 
 
-        static List<Type> GetTypesOfType(List<Type> types)
+        private static List<Type> GetTypesOfType(List<Type> types)
         {
             List<Type> all = new List<Type>();
 
-            foreach (var type in types)
+            foreach (Type type in types)
             {
-                var nestedTypes = type.GetListOfNestedTypes();
-                foreach (var ex in nestedTypes)
+                IEnumerable<Type> nestedTypes = type.GetListOfNestedTypes();
+                foreach (Type ex in nestedTypes)
                 {
                     if (!all.Contains(ex))
                         all.Add(ex);
                 }
-                var interfaces = type.GetListOfInterfaces();
-                foreach (var ex in interfaces)
+                IEnumerable<Type> interfaces = type.GetListOfInterfaces();
+                foreach (Type ex in interfaces)
                 {
                     if (!all.Contains(ex))
                         all.Add(ex);
@@ -337,17 +336,17 @@ namespace SignalGo.Shared.Helpers
         public static List<Type> GetListOfTypes(Type type)
         {
             List<Type> all = new List<Type>();
-            foreach (var ex in type.GetListOfNestedTypes())
+            foreach (Type ex in type.GetListOfNestedTypes())
             {
                 if (!all.Contains(ex))
                     all.Add(ex);
             }
-            foreach (var ex in type.GetListOfInterfaces())
+            foreach (Type ex in type.GetListOfInterfaces())
             {
                 if (!all.Contains(ex))
                     all.Add(ex);
             }
-            var parent = type.GetBaseType();
+            Type parent = type.GetBaseType();
 
             while (parent != null)
             {

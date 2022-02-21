@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-
-namespace SignalGo.Shared.DataTypes
+﻿namespace SignalGo.Shared.DataTypes
 {
     ///// <summary>
     ///// skip any data when serialize or deserializing in signalgo

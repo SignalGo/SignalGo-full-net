@@ -19,5 +19,6 @@ namespace SignalGoTest.Models
     public interface ITestServerStreamModel
     {
         StreamInfo<string> DownloadImage(string name, TestStreamModel testStreamModel);
+        string UploadImage(string name, StreamInfo streamInfo, TestStreamModel testStreamModel);
     }
 }

@@ -1,10 +1,5 @@
 ﻿using SignalGo.Shared.Models;
-using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SignalGoTest.Models
 {
@@ -17,7 +12,19 @@ namespace SignalGoTest.Models
 
         public string UploadImage(string name, StreamInfo streamInfo, TestStreamModel testStreamModel)
         {
-            return null;
+            int lengthWrite = 0;
+            while (lengthWrite != streamInfo.Length)
+            {
+                byte[] bytes = new byte[1024];
+                int readCount = streamInfo.Stream.ReadAsync(bytes, bytes.Length).ConfigureAwait(false).GetAwaiter().GetResult();
+                if (readCount <= 0)
+                    break;
+                lengthWrite += readCount;
+                //if you have a progress bar in client side this code will send your server position to client and client can position it if you don't have progressbar just pervent this line
+                //streamInfo.SetPositionFlushAsync(lengthWrite).ConfigureAwait(false).GetAwaiter().GetResult();
+            }
+
+            return "success";
         }
     }
 }

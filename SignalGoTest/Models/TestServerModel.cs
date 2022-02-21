@@ -1,10 +1,10 @@
 ﻿using SignalGo.Server.Models;
 using SignalGo.Shared.Converters;
 using SignalGo.Shared.DataTypes;
+using SignalGoTest.DataTypes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace SignalGoTest.Models
@@ -12,6 +12,123 @@ namespace SignalGoTest.Models
     public class TestSetting
     {
         public string Name { get; set; }
+    }
+
+    [ServiceContract("Authentication", ServiceType.HttpService, InstanceType.SingleInstance)]
+    [ServiceContract("Authentication", ServiceType.OneWayService, InstanceType.SingleInstance)]
+    [ServiceContract("Authentication", ServiceType.ServerService, InstanceType.SingleInstance)]
+    public class AuthenticationService
+    {
+        public MessageContract<UserInfo> Login(string userName, string password)
+        {
+            if (userName == "admin" && password == "123")
+            {
+                UserInfo user = new UserInfo() { FullName = "admin user", IsAdmin = true, IsUser = true, Password = password, UserName = userName, Id = 1 };
+                OperationContext<CurrentUserInfo>.CurrentSetting = new CurrentUserInfo()
+                {
+                    ExpireDate = DateTime.Now.AddSeconds(5),
+                    UserInfo = user,
+                    Session = Guid.NewGuid().ToString()
+                };
+                return new MessageContract<UserInfo>()
+                {
+                    IsSuccess = true,
+                    Data = user
+                };
+            }
+            else if (userName == "user" && password == "321")
+            {
+                UserInfo user = new UserInfo() { FullName = "normal user", IsAdmin = false, IsUser = true, Password = password, UserName = userName, Id = 2 };
+                OperationContext<CurrentUserInfo>.CurrentSetting = new CurrentUserInfo()
+                {
+                    ExpireDate = DateTime.Now.AddSeconds(5),
+                    UserInfo = user,
+                    Session = Guid.NewGuid().ToString()
+                };
+                return new MessageContract<UserInfo>()
+                {
+                    IsSuccess = true,
+                    Data = user
+                };
+            }
+            return new MessageContract<UserInfo>() { IsSuccess = false, Message = "Username or Password Incorrect!" };
+        }
+
+        public string WhatIsMyName()
+        {
+            CurrentUserInfo current = OperationContext<CurrentUserInfo>.CurrentSetting;
+            if (current != null)
+                return current.UserInfo.FullName;
+            return "Gust";
+        }
+
+        [TestSecurityPermissions(IsAdmin = true)]
+        public MessageContract AdminAccess()
+        {
+            CurrentUserInfo current = OperationContext<CurrentUserInfo>.CurrentSetting;
+            if (current != null && current.UserInfo.IsAdmin)
+                return new MessageContract() { IsSuccess = true, Message = "admin success" };
+            return new MessageContract() { IsSuccess = false, Message = "wrong called signalgo bug is here" };
+
+        }
+
+        [TestSecurityPermissions(IsUser = true)]
+        public MessageContract UserAccess()
+        {
+            CurrentUserInfo current = OperationContext<CurrentUserInfo>.CurrentSetting;
+            if (current != null && current.UserInfo.IsUser)
+                return new MessageContract() { IsSuccess = true, Message = "user success" };
+            return new MessageContract() { IsSuccess = false, Message = "wrong called signalgo bug is here" };
+        }
+
+        public MessageContract GustAccess()
+        {
+            return new MessageContract() { IsSuccess = true, Message = "gust success" };
+        }
+
+        public MessageContract TestCallbacksSync()
+        {
+            foreach (ITestClientServiceModel item in OperationContext.Current.GetAllClientServices<ITestClientServiceModel>())
+            {
+                try
+                {
+                    string result = item.HelloWorld("hello world");
+                    if (result != "Hello")
+                        return new MessageContract() { IsSuccess = false };
+
+                    result = item.TestMethod("ali", "yousefi");
+                    if (result != "ali yousefi")
+                        return new MessageContract() { IsSuccess = false };
+                }
+                catch (Exception ex)
+                {
+
+                }
+            }
+            return new MessageContract() { IsSuccess = true };
+        }
+
+        public async Task<MessageContract> TestCallbacksAsync()
+        {
+            foreach (ITestClientServiceModel item in OperationContext.Current.GetAllClientServices<ITestClientServiceModel>())
+            {
+                try
+                {
+                    string result = await item.HelloWorld2("hello world");
+                    if (result != "Hello")
+                        return new MessageContract() { IsSuccess = false };
+
+                    result = await item.TestMethod2("ali", "yousefi");
+                    if (result != "ali yousefi")
+                        return new MessageContract() { IsSuccess = false };
+                }
+                catch (Exception ex)
+                {
+
+                }
+            }
+            return new MessageContract() { IsSuccess = true };
+        }
     }
 
     public class TestServerModel : ITestServerModel
@@ -122,6 +239,25 @@ namespace SignalGoTest.Models
                 userInfoTest3.Id == 15 && userInfoTest3.Username == "user name" && userInfoTest3.Age == 0 && userInfoTest3.Password == null)
                 return true;
             return false;
+        }
+
+        public async Task<string> ServerAsyncMethod(string name)
+        {
+            await Task.Delay(1500);
+            if (name == "hello")
+                return "hello guys";
+            else
+                return "not found";
+        }
+
+        public ArticleInfo AddArticle(ArticleInfo articleInfo)
+        {
+            return articleInfo;
+        }
+
+        public MessageContract<ArticleInfo> AddArticleMessage(ArticleInfo articleInfo)
+        {
+            return new MessageContract<ArticleInfo>() { IsSuccess = true, Data = articleInfo };
         }
     }
 }

@@ -1,86 +1,49 @@
 ﻿using SignalGo.Client;
-using SignalGoTest.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using SignalGo.Shared;
-using System.Threading;
 using SignalGo.Server.ServiceManager;
-using SignalGo.Server.Models;
+using SignalGoTest.Callbacks;
+using SignalGoTest.Models;
+using System.Collections.Generic;
 
 namespace SignalGoTest
 {
     public static class GlobalInitalization
     {
-        static ServerProvider server;
-        static ClientProvider client;
+        private static ServerProvider server;
 
-        public static void Initialize()
+        static GlobalInitalization()
         {
-            if (server == null)
+            server = new SignalGo.Server.ServiceManager.ServerProvider();
+            server.RegisterServerService<Models.TestServerStreamModel>();
+            server.RegisterServerService<Models.TestServerModel>();
+            server.RegisterServerService<Models.AuthenticationService>();
+            server.RegisterClientService<Models.ITestClientServiceModel>();
+            server.Start("http://localhost:1132/SignalGoTestService");
+            server.ErrorHandlingFunction = (ex, serviceType, method, client) =>
             {
-                server = new SignalGo.Server.ServiceManager.ServerProvider();
-                server.RegisterServerService<TestServerStreamModel>();
-                server.RegisterServerService<TestServerModel>();
-                server.Start("http://localhost:1132/SignalGoTestService");
-                server.OnConnectedClientAction = (client) =>
+                return new MessageContract() { IsSuccess = false, Message = ex.ToString() };
+            };
+            server.ValidationResultHandlingFunction = (errors, service, method) =>
+            {
+                List<Models.ValidationRule> result = new List<Models.ValidationRule>();
+                foreach (BaseValidationRuleAttribute item in errors)
                 {
-                    
-                };
-                server.OnDisconnectedClientAction = (client) =>
-                {
+                    result.Add(new Models.ValidationRule() { Message = item.Message, Name = item.PropertyInfo?.Name });
 
-                };
-
-                server.InternalSetting = new SignalGo.Server.Settings.InternalSetting() { IsEnabledDataExchanger = true };
-                ////your client connector that will be connect to your server
-                //ClientProvider provider = new ClientProvider();
-                ////connect to your server must have full address that your server is listen
-                //provider.Connect("http://localhost:1132/SignalGoTestService");
-                //var service = provider.RegisterClientServiceInterfaceWrapper<ITestClientServerModel>();
-
-                //try
-                //{
-                //    var result = service.HelloWorld("ali");
-                //    //var result1 = await service.MUL(10, 20);
-                //    //var result3 = await service.WhoAmI();
-                //    //var result40 = service.Tagh(10, 3);
-                //    ////var result41 = service.Tagha(10, 3);
-                //    //var result4 = await service.TaghAsync(10, 3);
-                //    //var result5 = await service.LongValue();
-                //    //var result6 = await service.TimeS(100000000);
-                //}
-                //catch (Exception ex)
-                //{
-
-                //}
-                ////register your service interfacce for client
-                ////var testServerModel = provider.RegisterClientServiceDynamic<ITestServerModel>();
-                ////call server method and return value from your server to client
-                ////var result = testServerModel.HelloWorld("ali");
-                //provider.Dispose();
-                //Thread.Sleep(10000);
-                //print your result to console
-                //Console.WriteLine(result.Item1);
-            }
-            //client = new ClientProvider();
-            //client.Connect("http://localhost:1132/SignalGoTestService");
+                }
+                return new MessageContract<ArticleInfo>() { IsSuccess = false, Errors = result };
+            };
         }
 
-        public static ClientProvider InitializeAndConnecteClient()
+        public static ClientProvider InitializeAndConnecteClient(bool isWebSocket = false)
         {
             ClientProvider provider = new ClientProvider();
-            client = provider;
+            if (isWebSocket)
+                provider.ProtocolType = SignalGo.Client.ClientManager.ClientProtocolType.WebSocket;
             //connect to your server must have full address that your server is listen
             provider.Connect("http://localhost:1132/SignalGoTestService");
-            return provider;
-        }
+            provider.RegisterClientService<TestClientServiceModel>();
 
-        public static ITestServerStreamModel GetStreamService()
-        {
-            return client.RegisterStreamServiceInterfaceWrapper<ITestServerStreamModel>();
+            return provider;
         }
     }
 }

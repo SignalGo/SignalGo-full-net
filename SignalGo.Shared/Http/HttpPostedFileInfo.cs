@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using SignalGo.Shared.IO;
 using System.IO;
-using System.Linq;
-using System.Text;
 
 namespace SignalGo.Shared.Http
 {

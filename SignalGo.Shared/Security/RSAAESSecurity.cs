@@ -1,9 +1,6 @@
 ﻿#if (!PORTABLE)
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Security.Cryptography;
-using System.Text;
 
 namespace SignalGo.Shared.Security
 {
@@ -17,7 +14,7 @@ namespace SignalGo.Shared.Security
     {
         public RSAAESSecurity()
         {
-            var keys = RSASecurity.GenerateRandomKey();
+            RSAKey keys = RSASecurity.GenerateRandomKey();
             RSAReceiverEncryptKey = keys.PublicKey;
             RSADecryptKey = RSASecurity.StringToKey(keys.PrivateKey);
         }
@@ -37,7 +34,7 @@ namespace SignalGo.Shared.Security
         {
             return AESSecurity.EncryptBytes(bytes, AESKey, AESIV);
         }
-        
+
         public void SetAESKeys(byte[] key, byte[] IV)
         {
             AESKey = RSASecurity.Decrypt(key, RSADecryptKey);
@@ -46,7 +43,7 @@ namespace SignalGo.Shared.Security
 
         public static AESKey GenerateAESKeys()
         {
-#if (NETSTANDARD1_6 || NETCOREAPP1_1)
+#if (NETSTANDARD || NETCOREAPP)
             throw new NotSupportedException("not support for this .net standard version!");
 #else
             using (RijndaelManaged myRijndael = new RijndaelManaged())

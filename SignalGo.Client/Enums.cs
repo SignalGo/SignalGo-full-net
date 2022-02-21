@@ -1,16 +1,25 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace SignalGo.Client
+﻿namespace SignalGo.Client
 {
+    /// <summary>
+    /// handle action of priority systems
+    /// </summary>
     public enum PriorityAction
     {
+        /// <summary>
+        /// try agin to run priority method,this can run for ever if you return this always
+        /// </summary>
         TryAgain = 1,
+        /// <summary>
+        /// no plan for this periority and it will go next priority or finished if was last
+        /// </summary>
         NoPlan = 2,
+        /// <summary>
+        /// skip this priority and next and break all of priorities
+        /// </summary>
         BreakAll = 3,
+        /// <summary>
+        /// hold all priority and wait until set UnHoldPriority method
+        /// </summary>
         HoldAll = 4
     }
 

@@ -1,9 +1,8 @@
-﻿using SignalGo.Shared.Models;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
+using System.Threading.Tasks;
 
 namespace SignalGo.Shared.Helpers
 {
@@ -13,31 +12,45 @@ namespace SignalGo.Shared.Helpers
     public static class RuntimeTypeHelper
     {
         /// <summary>
+        /// check a type is nullable
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public static bool IsNullableValueType(this Type type)
+        {
+#if (NETSTANDARD1_6)
+            return type.GetGenericTypeDefinition() == typeof(Nullable<>);
+#else
+            return type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>);
+#endif
+        }
+
+        /// <summary>
         /// return types of method parameter
         /// </summary>
         /// <param name="serviceType"></param>
         /// <param name="callInfo"></param>
         /// <returns></returns>
-        public static List<Type> GetMethodTypes(Type serviceType, MethodCallInfo callInfo)
+        public static List<Type> GetMethodTypes(Type serviceType, string methodName, string[] parameters)
         {
             List<Type> methodParameterTypes = new List<Type>();
-#if (NETSTANDARD1_6)
+#if (NETSTANDARD)
             var methods = serviceType.GetTypeInfo().GetMethods();
 #else
-            var methods = serviceType.GetListOfMethods();
+            IEnumerable<MethodInfo> methods = serviceType.GetListOfMethods();
 #endif
             //int sLen = streamType == null ? 0 : 1;
-            foreach (var item in methods)
+            foreach (MethodInfo item in methods)
             {
-                if (item.Name == callInfo.MethodName)
+                if (item.Name == methodName)
                 {
-                    var plength = item.GetParameters().Length;
-                    if (plength != callInfo.Parameters.Count)
+                    int plength = item.GetParameters().Length;
+                    if (plength != parameters.Length)
                         continue;
-                    foreach (var p in item.GetParameters())
-                    {
-                        methodParameterTypes.Add(p.ParameterType);
-                    }
+                    //foreach (var p in parameters)
+                    //{
+                    //    methodParameterTypes.Add(p.ParameterType);
+                    //}
                     break;
                 }
             }
@@ -57,20 +70,20 @@ namespace SignalGo.Shared.Helpers
                 return;
             if (type.GetIsGenericType())
             {
-                foreach (var item in type.GetListOfGenericArguments())
+                foreach (Type item in type.GetListOfGenericArguments())
                 {
                     GetListOfUsedTypes(item, ref findedTypes);
                 }
             }
             else
             {
-                foreach (var item in type.GetListOfProperties())
+                foreach (PropertyInfo item in type.GetListOfProperties())
                 {
                     GetListOfUsedTypes(item.PropertyType, ref findedTypes);
                 }
             }
 
-            foreach (var item in type.GetListOfProperties())
+            foreach (PropertyInfo item in type.GetListOfProperties())
             {
                 GetListOfUsedTypes(item.PropertyType, ref findedTypes);
             }
@@ -100,6 +113,14 @@ namespace SignalGo.Shared.Helpers
                 return "decimal";
             else if (type == typeof(string))
                 return "string";
+            else if (type == typeof(Task))
+            {
+                return "void";
+            }
+            else if (type.GetBaseType() == typeof(Task))
+            {
+                return GetFriendlyName(type.GetGenericArguments()[0]);
+            }
             else if (type.GetIsGenericType())
                 return type.Name.Split('`')[0] + "<" + string.Join(", ", type.GetListOfGenericArguments().Select(x => GetFriendlyName(x)).ToArray()) + ">";
             else

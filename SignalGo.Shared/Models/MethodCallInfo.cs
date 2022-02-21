@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Collections.Generic;
 
 namespace SignalGo.Shared.Models
 {
@@ -44,7 +41,7 @@ namespace SignalGo.Shared.Models
         /// <summary>
         /// method parameters
         /// </summary>
-        public List<ParameterInfo> Parameters { get; set; } = new List<ParameterInfo>();
+        public List<ParameterInfo> Parameters { get; set; }
         /// <summary>
         /// sender of call from ignalGo service or not
         /// </summary>
@@ -57,8 +54,8 @@ namespace SignalGo.Shared.Models
 
         public MethodCallInfo Clone()
         {
-            var mci= (MethodCallInfo)MemberwiseClone();
-            mci.Parameters = this.Parameters;
+            MethodCallInfo mci = (MethodCallInfo)MemberwiseClone();
+            mci.Parameters = Parameters;
             return mci;
         }
     }

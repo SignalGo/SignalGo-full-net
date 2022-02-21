@@ -1,9 +1,5 @@
 ﻿using SignalGo.Shared.Http;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SignalGo.Shared.Models
 {
@@ -17,15 +13,19 @@ namespace SignalGo.Shared.Models
         /// <summary>
         /// headers of request that client sended
         /// </summary>
-        WebHeaderCollection RequestHeaders { get; set; }
+        IDictionary<string, string[]> RequestHeaders { get; set; }
         /// <summary>
         /// reponse headers to client
         /// </summary>
-        WebHeaderCollection ResponseHeaders { get; set; }
+        IDictionary<string, string[]> ResponseHeaders { get; set; }
         /// <summary>
         /// ip address of client
         /// </summary>
-        string IPAddress { get; set; }
+        string IPAddress { get; }
+        /// <summary>
+        /// bytes of ip address
+        /// </summary>
+        byte[] IPAddressBytes { get; set; }
         void SetFirstFile(HttpPostedFileInfo fileInfo);
         HttpPostedFileInfo TakeNextFile();
     }

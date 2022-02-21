@@ -1,10 +1,10 @@
-﻿using SignalGo.Shared.Log;
+﻿using SignalGo.Shared.Helpers;
+using SignalGo.Shared.Log;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace SignalGo.Shared
 {
@@ -34,12 +34,13 @@ namespace SignalGo.Shared
     {
         public static AutoLogger AutoLogger { get; set; } = new AutoLogger() { FileName = "AsyncActions Logs.log" };
 #if (!PORTABLE)
-        static SynchronizationContext UIThread { get; set; }
+        private static SynchronizationContext UIThread { get; set; }
         /// <summary>
         /// initialize ui thread
         /// </summary>
         public static void InitializeUIThread()
         {
+            var thread = Thread.CurrentThread;
             if (SynchronizationContext.Current == null)
                 SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());
             UIThread = SynchronizationContext.Current;
@@ -65,6 +66,69 @@ namespace SignalGo.Shared
                 }
             }, null);
         }
+
+#endif
+#if (NET45 || NETSTANDARD2_0)
+
+        public static Task<T> RunOnUI<T>(Func<Task<T>> action)
+        {
+            if (UIThread == null)
+                throw new Exception("UI thread not initialized please call AsyncActions.InitializeUIThread in your ui thread to initialize");
+            ConcurrentTaskCompletionSource<T> tcs1 = new ConcurrentTaskCompletionSource<T>();
+            UIThread.Post(async (state) =>
+            {
+                try
+                {
+                    var result = await action();
+                    tcs1.SetResult(result);
+                }
+                catch (Exception ex)
+                {
+                    AutoLogger.LogError(ex, "AsyncActions RunOnUI");
+                    tcs1.SetException(ex);
+                }
+            }, null);
+            return tcs1.Task;
+        }
+
+        public static T RunOnUI<T>(Func<T> action)
+        {
+            if (UIThread == null)
+                throw new Exception("UI thread not initialized please call AsyncActions.InitializeUIThread in your ui thread to initialize");
+            T result = default(T);
+            UIThread.Send((state) =>
+            {
+                try
+                {
+                    result = action();
+                }
+                catch (Exception ex)
+                {
+                    AutoLogger.LogError(ex, "AsyncActions RunOnUI");
+                }
+            }, null);
+            return result;
+        }
+
+        public static Task RunOnUIAsync(Func<Task> action)
+        {
+            if (UIThread == null)
+                throw new Exception("UI thread not initialized please call AsyncActions.InitializeUIThread in your ui thread to initialize");
+            return Task.Run(() =>
+            {
+                UIThread.Send(async (state) =>
+                {
+                    try
+                    {
+                        await action();
+                    }
+                    catch (Exception ex)
+                    {
+                        AutoLogger.LogError(ex, "AsyncActions RunOnUI");
+                    }
+                }, null);
+            });
+        }
 #endif
         /// <summary>
         /// if actions return exceptions
@@ -75,27 +139,39 @@ namespace SignalGo.Shared
         /// </summary>
         /// <param name="action">your action</param>
         /// <param name="onException"></param>
-#if (PORTABLE)
-        public static System.Threading.Tasks.Task Run(Action action, Action<Exception> onException = null)
-#else
-        public static Thread Run(Action action, Action<Exception> onException = null)
-#endif
+        public static void Run(Action action, Action<Exception> onException = null)
         {
-#if (PORTABLE)
-            var thread = System.Threading.Tasks.Task.Factory.StartNew(() =>
-              {
-                  try
-                  {
-                      action();
-                  }
-                  catch (Exception ex)
-                  {
-                      onException?.Invoke(ex);
-                      AutoLogger.LogError(ex, "AsyncActions Run");
-                      OnActionException?.Invoke(ex);
-                  }
-              });
+#if (NET35 || NET40)
+            ThreadPool.QueueUserWorkItem(RunAction, null);
+            void RunAction(object state)
 #else
+            System.Threading.Tasks.Task.Run(new Action(RunAction));
+            void RunAction()
+#endif
+            {
+                try
+                {
+                    action();
+                }
+                catch (Exception ex)
+                {
+                    try
+                    {
+                        onException?.Invoke(ex);
+                        AutoLogger.LogError(ex, "AsyncActions Run");
+                        OnActionException?.Invoke(ex);
+                    }
+                    catch (Exception ex2)
+                    {
+                        AutoLogger.LogError(ex2, "AsyncActions Run 2");
+
+                    }
+                }
+            }
+        }
+
+        public static Thread StartNew(Action action, Action<Exception> onException = null)
+        {
             Thread thread = new Thread(() =>
             {
                 try
@@ -116,40 +192,10 @@ namespace SignalGo.Shared
 
                     }
                 }
-            })
-            {
-                IsBackground = false
-            };
+            });
+            thread.IsBackground = true;
             thread.Start();
-#endif
             return thread;
-        }
-
-        /// <summary>
-        /// run your code with async await
-        /// </summary>
-        /// <param name="action"></param>
-        /// <returns></returns>
-        public static System.Threading.Tasks.Task RunAsync(Action action)
-        {
-            return System.Threading.Tasks.Task.Factory.StartNew(() =>
-            {
-                action();
-            });
-        }
-
-        /// <summary>
-        /// run your code with async await
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="func"></param>
-        /// <returns></returns>
-        public static System.Threading.Tasks.Task<T> RunAsync<T>(Func<T> func)
-        {
-            return System.Threading.Tasks.Task<T>.Factory.StartNew(() =>
-            {
-                return func();
-            });
         }
     }
 }
