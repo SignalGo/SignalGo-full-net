@@ -2,6 +2,7 @@
 using SignalGo.Server.ServiceManager;
 using SignalGo.Shared.DataTypes;
 using SignalGo.Shared.Helpers;
+using SignalGo.Shared.Log;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -30,6 +31,7 @@ namespace SignalGo.Server.Models
             }
         }
 
+        static AutoLogger AutoLogger { get; set; } = new AutoLogger() { FileName = "OperationContext.log" };
         /// <summary>
         /// if return null: Task.CurrentId is null or empty! Do not call this property or method inside of another thread or task you have to call this inside of server methods not another thread
         /// </summary>
@@ -42,8 +44,17 @@ namespace SignalGo.Server.Models
                 if (taskId != null && currentServer != null && currentServer.TaskOfClientInfoes.TryGetValue(taskId.GetValueOrDefault(), out string clientId))
                 {
                     if (currentServer.Clients.TryGetValue(clientId, out ClientInfo clientInfo))
+                    {
+                        if (clientInfo.DisposeReason != null)
+                            AutoLogger.LogText($"clieant is disposed and you are taking context! reason: {clientInfo.DisposeReason} {taskId} {Environment.StackTrace}");
                         return new OperationContext() { Client = clientInfo, ClientId = clientId, ServerBase = currentServer, TaskId = taskId.GetValueOrDefault() };
+                    }
+                    else
+                        AutoLogger.LogText($"taskId is not null but the clientInfo is null or empty! {taskId} {Environment.StackTrace}");
                 }
+                else
+                    AutoLogger.LogText($"taskId is null or empty! {taskId} {Environment.StackTrace}");
+
                 return null;
             }
         }

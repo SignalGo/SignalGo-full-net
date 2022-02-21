@@ -84,7 +84,7 @@ namespace SignalGo.Server.Models
         /// client id
         /// </summary>
         public string ClientId { get; set; }
-
+        public string DisposeReason { get; internal set; }
         string _IPAddress;
         /// <summary>
         /// ip address of client

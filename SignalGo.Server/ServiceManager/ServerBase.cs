@@ -17,6 +17,7 @@ using System.Linq;
 using System.Net.Sockets;
 using System.Reflection;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace SignalGo.Server.ServiceManager
 {
@@ -337,8 +338,8 @@ namespace SignalGo.Server.ServiceManager
                     }
                     return;
                 }
+                client.DisposeReason = reason;
                 client.IsDisposed = true;
-                Clients.Remove(client.ClientId);
                 try
                 {
                     if (client.TcpClient != null)
@@ -361,32 +362,35 @@ namespace SignalGo.Server.ServiceManager
                         service.Value.Remove(clientInfo.Key);
                     }
                 }
-                //ClientRemove(client);
-
-                OperationContextBase.SavedSettings.Remove(client);
 
                 client.OnDisconnected?.Invoke();
-                try
+                Task.Run(async () =>
                 {
-                    if (ClientServiceCallMethods.TryGetValue(client, out List<Guid> callbacks))
+                    try
                     {
-                        ClientServiceCallMethods.TryRemove(client, out callbacks);
-                        foreach (var guid in callbacks)
+                        await Task.Delay(TimeSpan.FromSeconds(30));
+                        Clients.Remove(client.ClientId);
+                        OperationContextBase.SavedSettings.Remove(client);
+
+                        if (ClientServiceCallMethods.TryGetValue(client, out List<Guid> callbacks))
                         {
-                            if (ClientServiceCallMethodsResult.TryGetValue(guid.ToString(), out KeyValue<Type, object> callback))
+                            ClientServiceCallMethods.TryRemove(client, out callbacks);
+                            foreach (var guid in callbacks)
                             {
-                                ClientServiceCallMethodsResult.Remove(guid.ToString());
-                                callback.Value.GetType().GetMethods(BindingFlags.Public | BindingFlags.Instance)
-                                    .FirstOrDefault(x => x.Name == "SetException" && x.GetParameters()[0].Name == "exception").Invoke(callback.Value, new object[] { new Exception("Client Disposed!") });
+                                if (ClientServiceCallMethodsResult.TryGetValue(guid.ToString(), out KeyValue<Type, object> callback))
+                                {
+                                    ClientServiceCallMethodsResult.Remove(guid.ToString());
+                                    callback.Value.GetType().GetMethods(BindingFlags.Public | BindingFlags.Instance)
+                                        .FirstOrDefault(x => x.Name == "SetException" && x.GetParameters()[0].Name == "exception").Invoke(callback.Value, new object[] { new Exception("Client Disposed!") });
+                                }
                             }
                         }
                     }
-                }
-                catch (Exception ex)
-                {
-
-
-                }
+                    catch (Exception ex)
+                    {
+                        AutoLogger.LogError(ex, "DisposeClient remove");
+                    }
+                });
             }
             catch (Exception ex)
             {
