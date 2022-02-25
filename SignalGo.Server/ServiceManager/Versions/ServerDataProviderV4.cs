@@ -3,7 +3,6 @@ using SignalGo.Server.ServiceManager.Providers;
 using SignalGo.Shared.Converters;
 using SignalGo.Shared.IO;
 using System;
-using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -19,7 +18,6 @@ namespace SignalGo.Server.ServiceManager.Versions
         private ServerBase _serverBase;
         internal bool IsWaitForClient { get; set; }
 
-        private readonly object _lockobject = new object();
         private volatile int _ConnectedCount;
         private volatile int _WaitingToReadFirstLineCount;
         /// <summary>
@@ -32,7 +30,7 @@ namespace SignalGo.Server.ServiceManager.Versions
         public void Start(ServerBase serverBase, int port)
 #endif
         {
-            Thread thread = new Thread(async() =>
+            Thread thread = new Thread(async () =>
             {
                 _serverBase = serverBase;
                 try
@@ -82,6 +80,7 @@ namespace SignalGo.Server.ServiceManager.Versions
                             _ConnectedCount++;
                             //IsWaitForClient = false;
                             InitializeClient(client);
+
                         }
                         catch (Exception ex)
                         {
@@ -126,7 +125,6 @@ namespace SignalGo.Server.ServiceManager.Versions
                     }
                     else
                     {
-                        _ConnectedCount--;
 #if (NETSTANDARD)
                         tcpClient.Dispose();
 #else
@@ -136,7 +134,6 @@ namespace SignalGo.Server.ServiceManager.Versions
                 }
                 catch (Exception)
                 {
-                    _ConnectedCount--;
 #if (NETSTANDARD)
                     tcpClient.Dispose();
 #else
@@ -180,8 +177,10 @@ namespace SignalGo.Server.ServiceManager.Versions
         {
             //File.WriteAllBytes("I:\\signalgotext.txt", reader.LastBytesReaded);
             ClientInfo client = null;
+            bool isReadFirstLine = false;
             try
             {
+                _WaitingToReadFirstLineCount++;
                 if (_serverBase.ProviderSetting.IsEnabledToUseTimeout)
                 {
                     tcpClient.GetStream().ReadTimeout = (int)_serverBase.ProviderSetting.ReceiveDataTimeout.TotalMilliseconds;
@@ -198,6 +197,8 @@ namespace SignalGo.Server.ServiceManager.Versions
                 }
 
                 string firstLineString = await reader.ReadLineAsync().ConfigureAwait(false);
+                isReadFirstLine = true;
+                _WaitingToReadFirstLineCount--;
 
                 if (firstLineString.Contains("SignalGo-Stream/4.0"))
                 {
@@ -271,7 +272,9 @@ namespace SignalGo.Server.ServiceManager.Versions
             }
             finally
             {
-                _WaitingToReadFirstLineCount--;
+                if (!isReadFirstLine)
+                    _WaitingToReadFirstLineCount--;
+                _ConnectedCount--;
             }
         }
 
@@ -289,6 +292,8 @@ namespace SignalGo.Server.ServiceManager.Versions
             stringBuilder.AppendLine("Thread Count: " + System.Diagnostics.Process.GetCurrentProcess().Threads.Count);
 #endif
             stringBuilder.AppendLine("ClientServiceCallMethodsResult Count: " + _serverBase.ClientServiceCallMethodsResult.Count);
+            stringBuilder.AppendLine("ClientServiceCallMethods Count: " + _serverBase.ClientServiceCallMethods.Count);
+
             stringBuilder.AppendLine("MultipleInstanceServices Count: " + _serverBase.MultipleInstanceServices.Count);
             stringBuilder.AppendLine("SingleInstanceServices Count: " + _serverBase.SingleInstanceServices.Count);
             stringBuilder.AppendLine("TaskOfClientInfoes Count: " + _serverBase.TaskOfClientInfoes.Count);
@@ -318,8 +323,6 @@ namespace SignalGo.Server.ServiceManager.Versions
                 stringBuilder.AppendLine($"SignalGoStream {maximumConnectionOfIp.Key} Connected Count: " + maximumConnectionOfIp.Count(x => x.ProtocolType == ClientProtocolType.SignalGoStream));
                 stringBuilder.AppendLine($"WebSocket {maximumConnectionOfIp.Key} Connected Count: " + maximumConnectionOfIp.Count(x => x.ProtocolType == ClientProtocolType.WebSocket));
                 stringBuilder.AppendLine($"None {maximumConnectionOfIp.Key} Connected Count: " + maximumConnectionOfIp.Count(x => x.ProtocolType == ClientProtocolType.None));
-
-
             }
             return stringBuilder.ToString();
         }

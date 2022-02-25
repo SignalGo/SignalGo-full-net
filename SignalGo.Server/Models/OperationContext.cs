@@ -52,8 +52,6 @@ namespace SignalGo.Server.Models
                     else
                         AutoLogger.LogText($"taskId is not null but the clientInfo is null or empty! {taskId} {Environment.StackTrace}");
                 }
-                else
-                    AutoLogger.LogText($"taskId is null or empty! {taskId} {Environment.StackTrace}");
 
                 return null;
             }
