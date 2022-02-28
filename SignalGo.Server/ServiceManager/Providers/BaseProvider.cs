@@ -895,6 +895,25 @@ namespace SignalGo.Server.ServiceManager.Providers
                         parametersKeyValues[methodParameterName] = value;
                         jsonParameters = null;
                     }
+                    else if (methodParameters.Length == 1 && parameters.Any(x => methodParameter.ParameterType.GetProperties().Any(p => x.Name.Equals(p.Name, StringComparison.OrdinalIgnoreCase))))
+                    {
+                        StringBuilder jsonBuilder = new StringBuilder();
+                        jsonBuilder.Append("{");
+                        foreach (var item in parameters)
+                        {
+                            jsonBuilder.Append(item.Name);
+                            jsonBuilder.Append(':');
+                            jsonBuilder.Append(item.Value);
+                            jsonBuilder.Append(',');
+                        }
+                        jsonBuilder.Length--;
+                        jsonBuilder.Append("}");
+                        hasNoName = false;
+                        value = DeserializeParameterValue(methodParameter, new Shared.Models.ParameterInfo() { Value = jsonBuilder.ToString() }, i, customDataExchanger, allMethods, serverBase, client, customOutputSerializerAttributes);
+                        parametersValues.Add(value);
+                        parametersKeyValues[methodParameterName] = value;
+                        jsonParameters = null;
+                    }
                     else
                     {
                         hasNoName = false;
