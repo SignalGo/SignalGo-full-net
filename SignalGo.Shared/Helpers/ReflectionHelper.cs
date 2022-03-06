@@ -436,7 +436,7 @@ namespace SignalGo.Shared.Helpers
 #if (NETSTANDARD || NETCOREAPP || PORTABLE)
                 .GetTypeInfo()
 #endif
-#if (PORTABLE || NETSTANDARD || NETCOREAPP)
+#if (PORTABLE || NETCOREAPP)
                 .DeclaredMethods;
 #else
                 .GetMethods();
@@ -451,7 +451,7 @@ namespace SignalGo.Shared.Helpers
             {
                 methods.AddRange(item.GetListOfMethods());
             }
-            return methods;
+            return methods.ToList();
         }
 
         public static List<PropertyInfo> GetListOfPropertiesWithAllOfBases(this Type type)

@@ -18,6 +18,7 @@ namespace SignalGo.Server.Helpers
     /// </summary>
     public class ServiceReferenceHelper
     {
+        public static Func<Type, MethodInfo, string> GetCustomClientSideMethodNameFunction { get; set; }
         public bool IsRenameDuplicateMethodNames { get; set; }
         public ClientServiceReferenceConfigInfo ClientServiceReferenceConfigInfo { get; set; }
         /// <summary>
@@ -267,6 +268,7 @@ namespace SignalGo.Server.Helpers
                     methods = serviceType.GetListOfDeclaredMethods().Distinct().ToList();
                 else
                     methods = serviceType.GetListOfMethodsWithAllOfBases().Distinct().Where(x => x.IsPublic && !x.IsStatic).ToList();
+                methods = methods.GroupBy(x => x.Name).Select(x => x.First()).ToList();
                 foreach (MethodInfo methodInfo in methods.Where(x => !(x.IsSpecialName && (x.Name.StartsWith("set_") || x.Name.StartsWith("get_"))) && !x.IsStatic))
                 {
                     if (!getFull)
@@ -484,8 +486,13 @@ namespace SignalGo.Server.Helpers
             if (protocolAttribute != null)
                 methodReferenceInfo.ProtocolType = protocolAttribute.Type;
             methodReferenceInfo.ReturnTypeName = returnType;
-            methodReferenceInfo.Name = methodInfo.Name;
+            if (GetCustomClientSideMethodNameFunction == null)
+                methodReferenceInfo.Name = methodInfo.Name;
+            else
+                methodReferenceInfo.Name = GetCustomClientSideMethodNameFunction(methodInfo.DeclaringType, methodInfo);
+            methodReferenceInfo.RealName = methodInfo.Name;
             methodReferenceInfo.DuplicateName = methodName;
+
             if (IsRenameDuplicateMethodNames)
                 ServiceMethods[classReferenceInfo.ServiceName].Add(methodName);
             GenerateMethodParameters(methodInfo, methodReferenceInfo);
@@ -672,7 +679,7 @@ namespace SignalGo.Server.Helpers
                                     startIndexAt++;
                                 }
                                 if (result.Length > 2)
-                                    result = result[result.Length -1] == ',' ? result.Remove(result.Length - 1, 1) : result.Remove(result.Length - 2, 2);
+                                    result = result[result.Length - 1] == ',' ? result.Remove(result.Length - 1, 1) : result.Remove(result.Length - 2, 2);
                                 result.Append(")");
                             }
                         }
