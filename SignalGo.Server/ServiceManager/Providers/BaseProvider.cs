@@ -729,29 +729,32 @@ namespace SignalGo.Server.ServiceManager.Providers
 
         static async Task<object> InvokerMethod(ClientInfo client, ServerBase serverBase, MethodInfo method, object service, List<object> parametersValues)
         {
-            int taskId = Task.CurrentId.GetValueOrDefault();
-            try
+            return await Task.Run(async () =>
             {
-                serverBase.AddTask(taskId, client.ClientId);
-                Task taskResult;
-                if (IsTask(method))
+                int taskId = Task.CurrentId.GetValueOrDefault();
+                try
                 {
-                    taskResult = (Task)method.Invoke(service, parametersValues.ToArray());
-                    await taskResult.ConfigureAwait(false);
+                    serverBase.AddTask(taskId, client.ClientId);
+                    Task taskResult;
+                    if (IsTask(method))
+                    {
+                        taskResult = (Task)method.Invoke(service, parametersValues.ToArray());
+                        await taskResult.ConfigureAwait(false);
+                    }
+                    else
+                        return method.Invoke(service, parametersValues.ToArray());
+                    if (taskResult != null)
+                    {
+                        if (taskResult.GetType() != typeof(Task))
+                            return taskResult.GetType().GetProperty("Result").GetValue(taskResult);
+                    }
                 }
-                else
-                    return method.Invoke(service, parametersValues.ToArray());
-                if (taskResult != null)
+                finally
                 {
-                    if (taskResult.GetType() != typeof(Task))
-                        return taskResult.GetType().GetProperty("Result").GetValue(taskResult);
+                    serverBase.RemoveTask(taskId);
                 }
-            }
-            finally
-            {
-                serverBase.RemoveTask(taskId);
-            }
-            return null;
+                return null;
+            });
         }
 
         /// <summary>

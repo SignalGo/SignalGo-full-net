@@ -334,7 +334,14 @@ namespace SignalGo.Client
             //                await tcpClient.ConnectAsync(uri.Host, uri.Port).ConfigureAwait(false);
             //            }, cancelSource.Token).ConfigureAwait(false);
             //#else
-            await tcpClient.ConnectAsync(uri.Host, uri.Port).ConfigureAwait(false);
+            try
+            {
+                await tcpClient.ConnectAsync(uri.Host, uri.Port).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Address to connect is {uri.Host}:{uri.Port}", ex);
+            }
             //#endif
             try
             {
