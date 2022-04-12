@@ -162,7 +162,7 @@
     <PackageReference Include="System.Threading.Thread" Version="4.3.0" />
     <PackageReference Include="System.Reflection.TypeExtensions" Version="4.7.0" />
     <PackageReference Include="System.Reflection.Emit" Version="4.7.0" />
-    <PackageReference Include="Microsoft.NETCore.App" Version="1.0.3" />
+    <PackageReference Include="Microsoft.NETCore.App" Version="2.0.3" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp2.0'">
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
@@ -171,7 +171,7 @@
     <PackageReference Include="System.Threading.Thread" Version="4.3.0" />
     <PackageReference Include="System.Reflection.TypeExtensions" Version="4.7.0" />
     <PackageReference Include="System.Reflection.Emit" Version="4.7.0" />
-    <PackageReference Include="Microsoft.NETCore.App" Version="2.0.0" />
+    <PackageReference Include="Microsoft.NETCore.App" Version="2.0.3" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'portable45-net45+win8'">
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
