@@ -904,9 +904,17 @@ namespace SignalGo.Server.ServiceManager.Providers
                         jsonBuilder.Append("{");
                         foreach (var item in parameters)
                         {
+                            if (!item.Name.StartsWith("\""))
+                                jsonBuilder.Append("\"");
                             jsonBuilder.Append(item.Name);
+                            if (!item.Name.EndsWith("\""))
+                                jsonBuilder.Append("\"");
                             jsonBuilder.Append(':');
+                            if (!item.Value.StartsWith("\""))
+                                jsonBuilder.Append("\"");
                             jsonBuilder.Append(item.Value);
+                            if (!item.Value.EndsWith("\""))
+                                jsonBuilder.Append("\"");
                             jsonBuilder.Append(',');
                         }
                         jsonBuilder.Length--;
