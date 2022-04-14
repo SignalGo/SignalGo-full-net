@@ -96,12 +96,12 @@ namespace SignalGo.Server.ServiceManager.Providers
                         serverBase.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase CallMethod 2: {methodName} serviceName: {serviceName} jsonParameters : {jsonParameters} {ServerSerializationHelper.SerializeObject(parameters)} json: {json}");
                         if (serverBase.ErrorHandlingFunction != null)
                         {
-                            callback.Data = ServerSerializationHelper.SerializeObject(HandleClientResponse(serverBase.ErrorHandlingFunction(ex, null, null, parameters, jsonParameters, client), client, serverBase, null, null));
+                            callback.Data = ServerSerializationHelper.SerializeObject(HandleClientResponse(serverBase.ErrorHandlingFunction(ex, null, null, parameters, jsonParameters, client), client, serverBase, null, null, callback.Guid));
                         }
                         else
                         {
                             callback.IsException = true;
-                            callback.Data = ServerSerializationHelper.SerializeObject(HandleClientResponse(ex, client, serverBase, null, null), serverBase);
+                            callback.Data = ServerSerializationHelper.SerializeObject(HandleClientResponse(ex, client, serverBase, null, null, callback.Guid), serverBase);
                         }
                     }
                     finally
@@ -281,7 +281,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                         else
                         {
                             result = serverBase.ValidationResultHandlingFunction(validationErrors, service, method);
-                            callback.Data = result == null ? null : ServerSerializationHelper.SerializeObject(HandleClientResponse(result, client, serverBase, serviceType, method), serverBase, customDataExchanger: customDataExchanger.ToArray(), client: client, isEnabledReferenceResolver: isEnabledReferenceResolver, isEnabledReferenceResolverForArray: isEnabledReferenceResolverForArray);
+                            callback.Data = result == null ? null : ServerSerializationHelper.SerializeObject(HandleClientResponse(result, client, serverBase, serviceType, method, callback.Guid), serverBase, customDataExchanger: customDataExchanger.ToArray(), client: client, isEnabledReferenceResolver: isEnabledReferenceResolver, isEnabledReferenceResolverForArray: isEnabledReferenceResolverForArray);
                         }
                     }
                     else
@@ -363,7 +363,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                                 {
                                     object data = null;
                                     data = attrib.GetValueWhenDenyPermission(client, service, method, parametersValues);
-                                    callback.Data = data == null ? null : ServerSerializationHelper.SerializeObject(HandleClientResponse(data, client, serverBase, serviceType, method), serverBase, customDataExchanger: customDataExchanger.ToArray(), client: client, isEnabledReferenceResolver: isEnabledReferenceResolver, isEnabledReferenceResolverForArray: isEnabledReferenceResolverForArray);
+                                    callback.Data = data == null ? null : ServerSerializationHelper.SerializeObject(HandleClientResponse(data, client, serverBase, serviceType, method, callback.Guid), serverBase, customDataExchanger: customDataExchanger.ToArray(), client: client, isEnabledReferenceResolver: isEnabledReferenceResolver, isEnabledReferenceResolverForArray: isEnabledReferenceResolverForArray);
                                 }
                                 break;
                             }
@@ -551,9 +551,9 @@ namespace SignalGo.Server.ServiceManager.Providers
                                     {
                                         var outputSerializer = customOutputSerializerAttributes.Where(x => x.LimitExchangeType == LimitExchangeType.Both || x.LimitExchangeType == LimitExchangeType.OutgoingCall).FirstOrDefault();
                                         if (outputSerializer == null)
-                                            callback.Data = ServerSerializationHelper.SerializeObject(HandleClientResponse(result, client, serverBase, serviceType, method), serverBase, customDataExchanger: customDataExchanger.ToArray(), client: client, isEnabledReferenceResolver: isEnabledReferenceResolver, isEnabledReferenceResolverForArray: isEnabledReferenceResolverForArray);
+                                            callback.Data = ServerSerializationHelper.SerializeObject(HandleClientResponse(result, client, serverBase, serviceType, method, callback.Guid), serverBase, customDataExchanger: customDataExchanger.ToArray(), client: client, isEnabledReferenceResolver: isEnabledReferenceResolver, isEnabledReferenceResolverForArray: isEnabledReferenceResolverForArray);
                                         else
-                                            callback.Data = outputSerializer.Serialize(HandleClientResponse(result, client, serverBase, serviceType, method), serverBase, client);
+                                            callback.Data = outputSerializer.Serialize(HandleClientResponse(result, client, serverBase, serviceType, method, callback.Guid), serverBase, client);
                                     }
 
                                 }
@@ -564,11 +564,11 @@ namespace SignalGo.Server.ServiceManager.Providers
                                 serverBase.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase CallMethod: {methodName}");
                                 if (serverBase.ErrorHandlingFunction != null)
                                 {
-                                    callback.Data = ServerSerializationHelper.SerializeObject(HandleClientResponse(serverBase.ErrorHandlingFunction(ex, serviceType, method, parameters, jsonParameters, client), client, serverBase, serviceType, method));
+                                    callback.Data = ServerSerializationHelper.SerializeObject(HandleClientResponse(serverBase.ErrorHandlingFunction(ex, serviceType, method, parameters, jsonParameters, client), client, serverBase, serviceType, method, callback.Guid));
                                 }
                                 else
                                 {
-                                    callback.Data = ServerSerializationHelper.SerializeObject(HandleClientResponse(ex, client, serverBase, serviceType, method), serverBase, isEnabledReferenceResolver: isEnabledReferenceResolver, isEnabledReferenceResolverForArray: isEnabledReferenceResolverForArray);
+                                    callback.Data = ServerSerializationHelper.SerializeObject(HandleClientResponse(ex, client, serverBase, serviceType, method, callback.Guid), serverBase, isEnabledReferenceResolver: isEnabledReferenceResolver, isEnabledReferenceResolverForArray: isEnabledReferenceResolverForArray);
                                     callback.IsException = true;
                                 }
                             }
@@ -586,12 +586,12 @@ namespace SignalGo.Server.ServiceManager.Providers
                     serverBase.AutoLogger.LogError(ex, $"{client.IPAddress} {client.ClientId} ServerBase CallMethod 2: {methodName} serviceName: {serviceName} jsonParameters : {jsonParameters} {ServerSerializationHelper.SerializeObject(parameters)} json: {json}");
                     if (serverBase.ErrorHandlingFunction != null)
                     {
-                        callback.Data = ServerSerializationHelper.SerializeObject(HandleClientResponse(serverBase.ErrorHandlingFunction(ex, serviceType, method, parameters, jsonParameters, client), client, serverBase, serviceType, method));
+                        callback.Data = ServerSerializationHelper.SerializeObject(HandleClientResponse(serverBase.ErrorHandlingFunction(ex, serviceType, method, parameters, jsonParameters, client), client, serverBase, serviceType, method, callback.Guid));
                     }
                     else
                     {
                         callback.IsException = true;
-                        callback.Data = ServerSerializationHelper.SerializeObject(HandleClientResponse(ex, client, serverBase, serviceType, method), serverBase);
+                        callback.Data = ServerSerializationHelper.SerializeObject(HandleClientResponse(ex, client, serverBase, serviceType, method, callback.Guid), serverBase);
                     }
                 }
                 finally
@@ -716,11 +716,11 @@ namespace SignalGo.Server.ServiceManager.Providers
             return client.ClientId;
         }
 
-        static object HandleClientResponse(object response, ClientInfo client, ServerBase serverBase, Type serviceType, MethodInfo method)
+        static object HandleClientResponse(object response, ClientInfo client, ServerBase serverBase, Type serviceType, MethodInfo method, string guid)
         {
             if (serverBase.OnSendResponseToClientFunction != null)
             {
-                return serverBase.OnSendResponseToClientFunction(response, serviceType, method, client);
+                return serverBase.OnSendResponseToClientFunction(response, serviceType, method, client, guid);
             }
             else if (response is Exception ex)
                 return ex.ToString();
