@@ -484,6 +484,7 @@ namespace SignalGo.Server.ServiceManager.Providers
             }
 
         }
+
         internal static async Task<CallMethodResultInfo<OperationContext>> CallHttpMethod(HttpClientInfo client, string address, string realMethodName, string methodName, IEnumerable<Shared.Models.ParameterInfo> values, string jsonParameters, ServerBase serverBase, MethodInfo method
             , string data, string newLine, HttpPostedFileInfo fileInfo, Func<MethodInfo, bool> canTakeMethod)
         {
@@ -494,7 +495,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     item.Value = null;
                 }
             }
-            CallMethodResultInfo<OperationContext> result = await CallMethod(address, _guid, realMethodName, methodName, values?.ToArray(), jsonParameters, client, "", serverBase, fileInfo, canTakeMethod).ConfigureAwait(false);
+            CallMethodResultInfo<OperationContext> result = await CallMethod(address, Guid.NewGuid().ToString(), realMethodName, methodName, values?.ToArray(), jsonParameters, client, "", serverBase, fileInfo, canTakeMethod).ConfigureAwait(false);
 
             method = result.Method;
 
