@@ -36,6 +36,7 @@ namespace SignalGo.Server.ServiceManager
     /// <param name="canTakeMethod"></param>
     /// <param name="result"></param>
     public delegate void OnCallMethod(string serviceName, string guid, string methodName, SignalGo.Shared.Models.ParameterInfo[] parameters, string jsonParameters, ClientInfo client, string json, ServerBase serverBase, Shared.Http.HttpPostedFileInfo fileInfo, Func<MethodInfo, bool> canTakeMethod, object result);
+    public delegate void OnInvokeMethod(ClientInfo client, ServerBase serverBase, MethodInfo method, object service, List<object> parametersValues, string guid);
     /// <summary>
     /// base of server
     /// </summary>
@@ -164,6 +165,10 @@ namespace SignalGo.Server.ServiceManager
         /// before method calls
         /// </summary>
         public OnCallMethod OnBeforeCallMethodAction { get; set; }
+        /// <summary>
+        /// before invoke service method
+        /// </summary>
+        public OnInvokeMethod OnBeforeInvokeMethodAction { get; set; }
         /// <summary>
         /// after method calls
         /// </summary>

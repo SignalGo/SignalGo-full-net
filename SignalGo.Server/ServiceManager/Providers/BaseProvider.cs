@@ -487,7 +487,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                                     try
                                     {
                                         await semaphore.WaitAsync().ConfigureAwait(false);
-                                        result = await InvokerMethod(client, serverBase, method, service, parametersValues).ConfigureAwait(false);
+                                        result = await InvokerMethod(client, serverBase, method, service, parametersValues, guid).ConfigureAwait(false);
                                     }
                                     finally
                                     {
@@ -496,7 +496,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                                 }
                                 else
                                 {
-                                    result = await InvokerMethod(client, serverBase, method, service, parametersValues).ConfigureAwait(false);
+                                    result = await InvokerMethod(client, serverBase, method, service, parametersValues, guid).ConfigureAwait(false);
                                 }
 
                                 //if (taskResult != null)
@@ -727,14 +727,39 @@ namespace SignalGo.Server.ServiceManager.Providers
             return response;
         }
 
-        static async Task<object> InvokerMethod(ClientInfo client, ServerBase serverBase, MethodInfo method, object service, List<object> parametersValues)
+        static async Task<object> InvokerMethod(ClientInfo client, ServerBase serverBase, MethodInfo method, object service, List<object> parametersValues, string guid)
         {
+            if (serverBase.OnBeforeInvokeMethodAction != null)
+            {
+                _ = Task.Run(() =>
+                {
+                    int taskId = Task.CurrentId.GetValueOrDefault();
+                    try
+                    {
+                        serverBase.AddTask(taskId, client.ClientId);
+                        serverBase.OnBeforeInvokeMethodAction.Invoke(client, serverBase, method, service, parametersValues, guid);
+                    }
+                    finally
+                    {
+                        serverBase.RemoveTask(taskId);
+                    }
+                });
+            }
+
             return await Task.Run(async () =>
             {
                 int taskId = Task.CurrentId.GetValueOrDefault();
                 try
                 {
                     serverBase.AddTask(taskId, client.ClientId);
+                    try
+                    {
+                        serverBase.OnBeforeInvokeMethodAction?.Invoke(client, serverBase, method, service, parametersValues, guid);
+                    }
+                    catch
+                    {
+
+                    }
                     Task taskResult;
                     if (IsTask(method))
                     {
