@@ -705,7 +705,7 @@ namespace SignalGo.Server.ServiceManager.Providers
         }
 
 
-        static string GetSessionKey(ClientInfo client)
+        public static string GetSessionKey(ClientInfo client)
         {
             if (client is HttpClientInfo httpClient)
             {
