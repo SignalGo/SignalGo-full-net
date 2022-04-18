@@ -44,13 +44,13 @@ namespace SignalGo.Server.ServiceManager.Firewall
             return Task.FromResult(true);
         }
 
-        public Task<bool> OnDangerDataReceived(TcpClient tcpClient, DangerDataType dangerDataType)
+        public Task<bool> OnDangerDataReceived(TcpClient tcpClient, ClientInfo clientInfo, DangerDataType dangerDataType)
         {
             if (DefaultFirewall != null)
             {
                 try
                 {
-                    return DefaultFirewall.OnDangerDataReceived(tcpClient, dangerDataType);
+                    return DefaultFirewall.OnDangerDataReceived(tcpClient, clientInfo, dangerDataType);
                 }
                 catch (Exception ex)
                 {

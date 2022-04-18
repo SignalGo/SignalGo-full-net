@@ -107,7 +107,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 {
                     reader.MaximumLineSizeReadedFunction = () =>
                     {
-                        return serverBase.Firewall.OnDangerDataReceived(tcpClient, Firewall.DangerDataType.HeaderSize);
+                        return serverBase.Firewall.OnDangerDataReceived(tcpClient, client, Firewall.DangerDataType.HeaderSize);
                     };
                 }
 
@@ -123,7 +123,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     var split = line.Split(splitChars, 2);
                     if (split.Length != 2)
                     {
-                        if (!await serverBase.Firewall.OnDangerDataReceived(tcpClient, Firewall.DangerDataType.InvalidHeader).ConfigureAwait(false))
+                        if (!await serverBase.Firewall.OnDangerDataReceived(tcpClient, client, Firewall.DangerDataType.InvalidHeader).ConfigureAwait(false))
                         {
                             serverBase.DisposeClient(client, tcpClient, "firewall dropped!");
                             return;

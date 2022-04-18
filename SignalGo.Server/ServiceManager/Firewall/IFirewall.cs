@@ -30,9 +30,10 @@ namespace SignalGo.Server.ServiceManager.Firewall
         /// or 1 MB request size
         /// </summary>
         /// <param name="tcpClient"></param>
+        /// <param name="clientInfo"></param>
         /// <param name="dangerDataType"></param>
         /// <returns></returns>
-        Task<bool> OnDangerDataReceived(TcpClient tcpClient, DangerDataType dangerDataType);
+        Task<bool> OnDangerDataReceived(TcpClient tcpClient, ClientInfo clientInfo, DangerDataType dangerDataType);
         /// <summary>
         /// when server had unhandled internal or external error
         /// </summary>

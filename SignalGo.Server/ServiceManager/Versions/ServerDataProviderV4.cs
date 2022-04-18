@@ -192,7 +192,7 @@ namespace SignalGo.Server.ServiceManager.Versions
                 {
                     reader.MaximumLineSizeReadedFunction = () =>
                     {
-                        return _serverBase.Firewall.OnDangerDataReceived(tcpClient, Firewall.DangerDataType.FirstLineSize);
+                        return _serverBase.Firewall.OnDangerDataReceived(tcpClient, client, Firewall.DangerDataType.FirstLineSize);
                     };
                 }
 

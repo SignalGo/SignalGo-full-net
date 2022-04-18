@@ -126,7 +126,7 @@ namespace SignalGo.Server.ServiceManager.Providers
 
                 if (serverBase.ProviderSetting.HttpSetting.MaximumRequestBodySize > 0 && len > serverBase.ProviderSetting.HttpSetting.MaximumRequestBodySize)
                 {
-                    if (!await serverBase.Firewall.OnDangerDataReceived(client.TcpClient, Firewall.DangerDataType.RequestBodySize).ConfigureAwait(false))
+                    if (!await serverBase.Firewall.OnDangerDataReceived(client.TcpClient, client, Firewall.DangerDataType.RequestBodySize).ConfigureAwait(false))
                     {
                         serverBase.DisposeClient(client, client.TcpClient, "firewall danger http header size!");
                         return;
@@ -250,7 +250,7 @@ namespace SignalGo.Server.ServiceManager.Providers
 
                 if (serverBase.ProviderSetting.HttpSetting.MaximumRequestBodySize > 0 && len > serverBase.ProviderSetting.HttpSetting.MaximumRequestBodySize)
                 {
-                    if (!await serverBase.Firewall.OnDangerDataReceived(client.TcpClient, Firewall.DangerDataType.RequestBodySize).ConfigureAwait(false))
+                    if (!await serverBase.Firewall.OnDangerDataReceived(client.TcpClient, client, Firewall.DangerDataType.RequestBodySize).ConfigureAwait(false))
                     {
                         serverBase.DisposeClient(client, client.TcpClient, "firewall danger http header size!");
                         return;
@@ -934,7 +934,7 @@ namespace SignalGo.Server.ServiceManager.Providers
 
                     if (serverBase.ProviderSetting.HttpSetting.MaximumRequestBodySize > 0 && length > serverBase.ProviderSetting.HttpSetting.MaximumRequestBodySize)
                     {
-                        if (!await serverBase.Firewall.OnDangerDataReceived(client.TcpClient, Firewall.DangerDataType.RequestBodySize).ConfigureAwait(false))
+                        if (!await serverBase.Firewall.OnDangerDataReceived(client.TcpClient, client, Firewall.DangerDataType.RequestBodySize).ConfigureAwait(false))
                         {
                             serverBase.DisposeClient(client, client.TcpClient, "firewall danger http header size!");
                             return;
@@ -986,7 +986,7 @@ namespace SignalGo.Server.ServiceManager.Providers
 
                 if (serverBase.ProviderSetting.HttpSetting.MaximumRequestBodySize > 0 && bytes.Count > serverBase.ProviderSetting.HttpSetting.MaximumRequestBodySize)
                 {
-                    if (!await serverBase.Firewall.OnDangerDataReceived(client.TcpClient, Firewall.DangerDataType.HeaderSize).ConfigureAwait(false))
+                    if (!await serverBase.Firewall.OnDangerDataReceived(client.TcpClient, client, Firewall.DangerDataType.HeaderSize).ConfigureAwait(false))
                     {
                         serverBase.DisposeClient(client, client.TcpClient, "firewall danger http header size!");
                         throw new Exception("dropped from firewall!");
