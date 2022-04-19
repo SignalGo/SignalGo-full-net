@@ -752,14 +752,6 @@ namespace SignalGo.Server.ServiceManager.Providers
                 try
                 {
                     serverBase.AddTask(taskId, client.ClientId);
-                    try
-                    {
-                        serverBase.OnBeforeInvokeMethodAction?.Invoke(client, serverBase, method, service, parametersValues, guid);
-                    }
-                    catch
-                    {
-
-                    }
                     Task taskResult;
                     if (IsTask(method))
                     {
