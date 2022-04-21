@@ -108,6 +108,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     {
                         serverBase.RemoveTask(taskId);
                         DataExchanger.Clear();
+                        await CloseDisposeAsyncTasks(client, taskId, methodName, serviceName);
                     }
                     return new CallMethodResultInfo<OperationContext>(callback, null, new List<HttpKeyAttribute>(), null, null, null, null, context, null);
                 }).ConfigureAwait(false);
@@ -487,7 +488,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                                     try
                                     {
                                         await semaphore.WaitAsync().ConfigureAwait(false);
-                                        result = await InvokerMethod(client, serverBase, method, service, parametersValues, guid).ConfigureAwait(false);
+                                        result = await InvokerMethod(client, serverBase, method, serviceName, service, parametersValues, guid).ConfigureAwait(false);
                                     }
                                     finally
                                     {
@@ -496,7 +497,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                                 }
                                 else
                                 {
-                                    result = await InvokerMethod(client, serverBase, method, service, parametersValues, guid).ConfigureAwait(false);
+                                    result = await InvokerMethod(client, serverBase, method, serviceName, service, parametersValues, guid).ConfigureAwait(false);
                                 }
 
                                 //if (taskResult != null)
@@ -526,18 +527,7 @@ namespace SignalGo.Server.ServiceManager.Providers
 
                                 }
 
-                                if (client.CustomAsyncDisposableItems.Count > 0 && client.CustomAsyncDisposableItems.TryGetValue(taskId, out List<ICustomAsyncDisposable> customAsyncDisposableItems))
-                                {
-                                    foreach (var item in customAsyncDisposableItems)
-                                    {
-                                        if (!item.IsDisposed)
-                                        {
-                                            if (item.IsThrowWhenNotDisposed)
-                                                throw new Exception($"You forgot to dispose object of type {item.GetType().FullName} in method {methodName} in service {serviceName}");
-                                            await item.CustomDisposeAsync().ConfigureAwait(false);
-                                        }
-                                    }
-                                }
+                                await CloseDisposeAsyncTasks(client, taskId, methodName, serviceName);
 
                                 if (result is FileActionResult fResult)
                                     fileActionResult = fResult;
@@ -610,6 +600,22 @@ namespace SignalGo.Server.ServiceManager.Providers
                 }
                 return new CallMethodResultInfo<OperationContext>(callback, streamInfo, httpKeyAttributes, serviceType, method, service, fileActionResult, context, result);
             }).ConfigureAwait(false);
+        }
+
+        static async Task CloseDisposeAsyncTasks(ClientInfo client, long taskId, string methodName, string serviceName)
+        {
+            if (client.CustomAsyncDisposableItems.Count > 0 && client.CustomAsyncDisposableItems.TryGetValue(taskId, out List<ICustomAsyncDisposable> customAsyncDisposableItems))
+            {
+                foreach (var item in customAsyncDisposableItems)
+                {
+                    if (!item.IsDisposed)
+                    {
+                        if (item.IsThrowWhenNotDisposed)
+                            throw new Exception($"You forgot to dispose object of type {item.GetType().FullName} in method {methodName} in service {serviceName}");
+                        await item.CustomDisposeAsync().ConfigureAwait(false);
+                    }
+                }
+            }
         }
 
         static object GetParameterValue(MethodInfo method, List<object> values, string path)
@@ -727,11 +733,11 @@ namespace SignalGo.Server.ServiceManager.Providers
             return response;
         }
 
-        static async Task<object> InvokerMethod(ClientInfo client, ServerBase serverBase, MethodInfo method, object service, List<object> parametersValues, string guid)
+        static async Task<object> InvokerMethod(ClientInfo client, ServerBase serverBase, MethodInfo method, string serviceName, object service, List<object> parametersValues, string guid)
         {
             if (serverBase.OnBeforeInvokeMethodAction != null)
             {
-                _ = Task.Run(() =>
+                _ = Task.Run(async () =>
                 {
                     int taskId = Task.CurrentId.GetValueOrDefault();
                     try
@@ -742,6 +748,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     finally
                     {
                         serverBase.RemoveTask(taskId);
+                        await CloseDisposeAsyncTasks(client, taskId, method.Name, serviceName);
                     }
                 });
             }
@@ -769,6 +776,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 finally
                 {
                     serverBase.RemoveTask(taskId);
+                    await CloseDisposeAsyncTasks(client, taskId, method.Name, serviceName);
                 }
                 return null;
             });
