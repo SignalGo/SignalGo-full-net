@@ -737,7 +737,7 @@ namespace SignalGo.Server.ServiceManager.Providers
         {
             if (serverBase.OnBeforeInvokeMethodAction != null)
             {
-                _ = Task.Run(async () =>
+                await Task.Run(async () =>
                 {
                     int taskId = Task.CurrentId.GetValueOrDefault();
                     try
@@ -759,6 +759,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 try
                 {
                     serverBase.AddTask(taskId, client.ClientId);
+
                     Task taskResult;
                     if (IsTask(method))
                     {
