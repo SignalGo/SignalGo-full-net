@@ -234,6 +234,8 @@ namespace SignalGo.Server.ServiceManager
                     name = service.GetServiceName(false).ToLower();
                     if (!RegisteredServiceTypes.ContainsKey(name))
                         RegisteredServiceTypes.TryAdd(name, serviceType);
+                    else
+                        throw new Exception($"service name {name} of type '{serviceType.FullName}' exist!");
                 }
             }
             else if (!string.IsNullOrEmpty(name))
@@ -241,7 +243,7 @@ namespace SignalGo.Server.ServiceManager
                 if (!RegisteredServiceTypes.ContainsKey(name))
                     RegisteredServiceTypes.TryAdd(name, serviceType);
                 else
-                    throw new Exception($"service name {name} exist!");
+                    throw new Exception($"service name {name} of type '{serviceType.FullName}' exist!");
             }
             else
                 throw new Exception("service name is null or empty!");
