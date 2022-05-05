@@ -258,10 +258,10 @@ namespace SignalGo.Client.ClientManager
                 return result.Data;
 
             }
-            catch(SocketException)
+            catch (SocketException ex)
             {
                 connector.Disconnect();
-                throw;
+                throw new Exception(ClientSerializationHelper.SerializeObject(callInfo), ex);
             }
             catch (Exception ex)
             {
@@ -270,7 +270,7 @@ namespace SignalGo.Client.ClientManager
                 {
                     connector.Disconnect();
                 }
-                throw ex;
+                throw new Exception(ClientSerializationHelper.SerializeObject(callInfo), ex);
             }
             finally
             {
@@ -329,7 +329,7 @@ namespace SignalGo.Client.ClientManager
                 {
                     connector.Disconnect();
                 }
-                throw ex;
+                throw new Exception(ClientSerializationHelper.SerializeObject(callInfo), ex);
             }
             finally
             {
