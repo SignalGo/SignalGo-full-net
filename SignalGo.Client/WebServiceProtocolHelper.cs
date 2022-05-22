@@ -145,7 +145,7 @@ namespace SignalGo.Client
             int tryCount = 0;
             logger?.BeforeCallAction?.Invoke(url, actionUrl, methodName, args, defaultData);
 
-TryAgainLabel:
+        TryAgainLabel:
             var httpRequestMessage = new System.Net.Http.HttpRequestMessage();
             var content_ = new System.Net.Http.StringContent(defaultData);
             content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse(logger.Settings.DefaultContentType);
@@ -293,15 +293,13 @@ TryAgainLabel:
             // Creates a DataSet; adds a table, column, and ten rows.
             using (var baseStream = new MemoryStream())
             {
-                using (var stream = new StreamWriter(baseStream, logger.Settings.Encoding))
+                using (XmlTextWriter writer = new XmlTextWriter(baseStream, Encoding.UTF8))
                 {
-
-                    ser.Serialize(stream, data);
+                    writer.Formatting = Formatting.Indented;
+                    ser.Serialize(writer, data);
+                    writer.Flush();
                     baseStream.Seek(0, SeekOrigin.Begin);
                     var result = logger.Settings.Encoding.GetString(baseStream.ToArray());
-                    //result = result.Replace($"<?xml version=\"1.0\" encoding=\"{logger.Settings.EncodingName}\"?>", "");
-                    //result = result.Replace($"<?xml version=\"1.0\" encoding=\"utf-8\"?>", "");
-                    //result = $"<?xml version=\"1.0\" encoding=\"{logger.Settings.EncodingName}\"?>" + result;
                     return result;
                 }
             }
