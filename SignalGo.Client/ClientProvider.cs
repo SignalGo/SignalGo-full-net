@@ -25,7 +25,7 @@ namespace SignalGo.Client
         /// <param name="isWebsocket"></param>
         public override void Connect(string url)
         {
-#if (!NETSTANDARD2_0 && !NET45)
+#if (!NETSTANDARD2_0 && !NET45 && !NET6_0)
             if (ProtocolType != ClientProtocolType.HttpDuplex)
                 throw new NotSupportedException();
 #endif
@@ -69,7 +69,7 @@ namespace SignalGo.Client
 #if (!NET40 && !NET35)
         public override async Task ConnectAsync(string url)
         {
-#if (!NETSTANDARD2_0 && !NET45)
+#if (!NETSTANDARD2_0 && !NET45 && !NET6_0)
             if (ProtocolType != ClientProtocolType.HttpDuplex)
                 throw new NotSupportedException();
 #endif
