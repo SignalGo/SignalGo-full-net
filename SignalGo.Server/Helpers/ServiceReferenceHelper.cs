@@ -595,7 +595,7 @@ namespace SignalGo.Server.Helpers
 
                 string generics = "";
                 StringBuilder genericParameterConstraintsBuilder = new StringBuilder();
-#if (NETSTANDARD2_0 || NET45)
+#if (NETSTANDARD2_0 || NET45 || NET6_0)
                 Type[] defparams = type.GetGenericTypeDefinition().GetGenericArguments();
                 foreach (Type tp in defparams)
                 {

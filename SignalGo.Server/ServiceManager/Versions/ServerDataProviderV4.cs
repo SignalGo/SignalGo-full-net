@@ -57,7 +57,7 @@ namespace SignalGo.Server.ServiceManager.Versions
 #if (NETSTANDARD1_6)
                             Debug.WriteLine("DeadLock Warning Start Server!");
                             TcpClient client = _server.AcceptTcpClientAsync().ConfigureAwait(false).GetAwaiter().GetResult();
-#elif (NETSTANDARD2_0)
+#elif (NETSTANDARD2_0 || NET6_0)
                             TcpClient client = await _server.AcceptTcpClientAsync().ConfigureAwait(false);
 #else
 
@@ -69,7 +69,7 @@ namespace SignalGo.Server.ServiceManager.Versions
                             {
 #if (NETSTANDARD1_6)
                                 client.Dispose();
-#elif (NETSTANDARD2_0)
+#elif (NETSTANDARD2_0 || NET6_0)
                                 client.Close();
                                 client.Dispose();
 #else

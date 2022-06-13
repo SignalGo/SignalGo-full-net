@@ -1,4 +1,4 @@
-﻿#if (NETSTANDARD2_0 || NET45)
+﻿#if (NETSTANDARD2_0 || NET45 || NET6_0)
 using SignalGo.Shared.IO;
 using System;
 using System.Collections.Generic;

@@ -68,7 +68,7 @@ namespace SignalGo.Shared
         }
 
 #endif
-#if (NET45 || NETSTANDARD2_0)
+#if (NET45 || NETSTANDARD2_0 || NET6_0)
 
         public static Task<T> RunOnUI<T>(Func<Task<T>> action)
         {
