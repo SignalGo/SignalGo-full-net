@@ -44,6 +44,18 @@ namespace SignalGo.Shared.Helpers
         {
             return GenerateInterfaceServiceType(type, inter, assemblyTypes, isServer);
         }
+#else
+        /// <summary>
+        /// generate a class from an interface type
+        /// </summary>
+        /// <param name="type">interafce type</param>
+        /// <param name="inter">a class or interface must inherited</param>
+        /// <param name="assemblyTypes">types of assembly</param>
+        /// <returns>return a new type genearted by code injection</returns>
+        public static Type GenerateInterfaceType(Type type, Type inter, List<Type> assemblyTypes, bool isServer)
+        {
+            throw new NotSupportedException("Not support in this dot net version!");
+        }
 #endif
         public static T InstanceServerInterface<T>(Type type, List<Type> assemblyTypes)
         {

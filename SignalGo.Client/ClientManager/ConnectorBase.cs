@@ -1172,7 +1172,7 @@ namespace SignalGo.Client.ClientManager
         //    };
         //    var callback = this.SendData<MethodCallbackInfo>(callInfo);
         //}
-#if (!NETSTANDARD1_6 && !NETSTANDARD2_0 && !NETCOREAPP1_1 && !NET35 && !PORTABLE)
+#if (!NETSTANDARD1_6 && !NETSTANDARD2_0 && !NETCOREAPP1_1 && !NET35 && !PORTABLE && !NET6_0)
         /// <summary>
         /// register a callback interface and get dynamic calls
         /// not work on ios

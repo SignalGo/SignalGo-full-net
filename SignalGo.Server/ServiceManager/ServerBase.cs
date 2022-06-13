@@ -189,6 +189,7 @@ namespace SignalGo.Server.ServiceManager
         /// MethodInfo method of service
         /// client is the calling client
         /// object is your return value
+        /// ex, type, method, parameters, jsonParameter, client
         /// </summary>
         public Func<Exception, Type, MethodInfo, SignalGo.Shared.Models.ParameterInfo[], string, ClientInfo, object> ErrorHandlingFunction { get; set; }
         /// <summary>

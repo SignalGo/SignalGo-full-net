@@ -59,7 +59,11 @@ namespace SignalGo.Shared.Helpers
         Enum = 42,
         Void = 43,
         IntPtr = 44,
-        EnumNullable = 45
+        EnumNullable = 45,
+        DateOnly = 46,
+        TimeOnly = 47,
+        DateOnlyNullable = 48,
+        TimeOnlyNullable = 49
     }
 
     /// <summary>
@@ -107,8 +111,15 @@ namespace SignalGo.Shared.Helpers
                 { typeof(string), SerializeObjectType.String },
                 { typeof(void), SerializeObjectType.Void },
                 { typeof(IntPtr), SerializeObjectType.IntPtr },
+
 #if (!NETSTANDARD && !NETCOREAPP && !PORTABLE)
                 { typeof(DBNull), SerializeObjectType.DBNull }
+#endif
+#if (NET6_0)
+                { typeof(DateOnly), SerializeObjectType.DateOnly },
+                { typeof(TimeOnly), SerializeObjectType.TimeOnly },
+                { typeof(DateOnly?), SerializeObjectType.DateOnlyNullable },
+                { typeof(TimeOnly?), SerializeObjectType.TimeOnlyNullable },
 #endif
         };
 
@@ -427,6 +438,32 @@ namespace SignalGo.Shared.Helpers
                     return result;
                 return null;
             }
+#if (NET6_0)
+            else if (targetPropertyType == SerializeObjectType.DateOnly)
+            {
+                if (DateOnly.TryParse(value.ToString(), out DateOnly result))
+                    return result;
+                return default;
+            }
+            else if (targetPropertyType == SerializeObjectType.TimeOnly)
+            {
+                if (TimeOnly.TryParse(value.ToString(), out TimeOnly result))
+                    return result;
+                return default;
+            }
+            else if (targetPropertyType == SerializeObjectType.DateOnlyNullable)
+            {
+                if (DateOnly.TryParse(value.ToString(), out DateOnly result))
+                    return (DateOnly?)result;
+                return null;
+            }
+            else if (targetPropertyType == SerializeObjectType.TimeOnlyNullable)
+            {
+                if (TimeOnly.TryParse(value.ToString(), out TimeOnly result))
+                    return (TimeOnly?)result;
+                return null;
+            }
+#endif
             else
             {
                 return null;

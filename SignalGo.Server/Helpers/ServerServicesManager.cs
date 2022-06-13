@@ -737,7 +737,7 @@ namespace SignalGo.Server.Helpers
 #if (NETSTANDARD)
             foreach (var assembly in SignalGo.Shared.Helpers.AppDomain.CurrentDomain.GetAssemblies())
 #else
-            foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
+            foreach (Assembly assembly in System.AppDomain.CurrentDomain.GetAssemblies())
 #endif
             {
                 Type type = assembly.GetType(enumName);
