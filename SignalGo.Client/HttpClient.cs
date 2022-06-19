@@ -62,12 +62,20 @@ namespace SignalGo.Client
             Encoding = encoding;
         }
 
+        public HttpClientDataResponse(string json)
+        {
+            Json = json;
+        }
+
         Encoding Encoding { get; set; }
         public byte[] Data { get; set; }
+        public string Json { get; set; }
 
         public static implicit operator string(HttpClientDataResponse httpClientDataResponse)
         {
-            return httpClientDataResponse.Encoding.GetString(httpClientDataResponse.Data);
+            if (string.IsNullOrEmpty(httpClientDataResponse.Json))
+                return httpClientDataResponse.Encoding.GetString(httpClientDataResponse.Data);
+            return httpClientDataResponse.Json;
         }
 
         public static implicit operator Exception(HttpClientDataResponse httpClientDataResponse)
@@ -142,7 +150,7 @@ namespace SignalGo.Client
         public string Cookie { get; set; }
         public HttpClientResponseBase Response { get; set; }
 
-        public HttpClientResponseBase PostHead(string url, ParameterInfo[] parameterInfoes, BaseStreamInfo streamInfo = null)
+        public virtual HttpClientResponseBase PostHead(string url, ParameterInfo[] parameterInfoes, BaseStreamInfo streamInfo = null)
         {
 #if (NETSTANDARD1_6)
             throw new NotSupportedException();
@@ -257,7 +265,7 @@ namespace SignalGo.Client
         /// <param name="parameterInfoes"></param>
         /// <param name="streamInfo"></param>
         /// <returns></returns>
-        public HttpClientResponse Post(string url, ParameterInfo[] parameterInfoes, BaseStreamInfo streamInfo = null)
+        public virtual HttpClientResponse Post(string url, ParameterInfo[] parameterInfoes, BaseStreamInfo streamInfo = null)
         {
 #if (NETSTANDARD1_6)
             throw new NotSupportedException();
@@ -313,7 +321,7 @@ namespace SignalGo.Client
         }
 
 #if (!NET35 && !NET40 && !NETSTANDARD1_6)
-        public async Task<HttpClientResponseBase> PostHeadAsync(string url, ParameterInfo[] parameterInfoes, BaseStreamInfo streamInfo = null)
+        public virtual async Task<HttpClientResponseBase> PostHeadAsync(string url, ParameterInfo[] parameterInfoes, BaseStreamInfo streamInfo = null)
         {
             string newLine = TextHelper.NewLine;
             Uri uri = new Uri(url);
@@ -455,7 +463,7 @@ namespace SignalGo.Client
         /// <param name="url"></param>
         /// <param name="parameterInfoes"></param>
         /// <returns></returns>
-        public async Task<HttpClientResponse> PostAsync(string url, ParameterInfo[] parameterInfoes, BaseStreamInfo streamInfo = null)
+        public virtual async Task<HttpClientResponse> PostAsync(string url, ParameterInfo[] parameterInfoes, BaseStreamInfo streamInfo = null)
         {
             HttpClientResponseBase response = await PostHeadAsync(url, parameterInfoes, streamInfo).ConfigureAwait(false);
             try
