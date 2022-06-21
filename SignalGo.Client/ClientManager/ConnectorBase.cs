@@ -204,7 +204,8 @@ namespace SignalGo.Client.ClientManager
         internal ConcurrentTaskCompletionSource<string> ServiceParameterDetailEventTaskResult = null;
 
         internal SecuritySettingsInfo SecuritySettings { get; set; } = null;
-
+        public Func<string, string, Shared.Models.ParameterInfo[], Task<(string Result, bool Handled)>> OnSendRequestToServer { get; set; }
+        public Func<string, string, Shared.Models.ParameterInfo[], string,Task> OnGetResponseFromServer { get; set; }
         internal string _address = "";
         internal int _port = 0;
         /// <summary>
@@ -1599,9 +1600,9 @@ namespace SignalGo.Client.ClientManager
 #if (NET40 || NET35)
                                 ;
 #else
-                      .ConfigureAwait(false);          
+                      .ConfigureAwait(false);
 #endif
-                    
+
             }
             catch
             {

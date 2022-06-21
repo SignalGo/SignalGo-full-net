@@ -68,9 +68,24 @@ namespace SignalGo.Client.ClientManager
         /// <returns></returns>
         public static async Task<T> SendDataAsync<T>(this ConnectorBase connector, string serviceName, string methodName, params Shared.Models.ParameterInfo[] args)
         {
+            if (connector.OnSendRequestToServer != null)
+            {
+                var result = await connector.OnSendRequestToServer(serviceName, methodName, args);
+                if (result.Handled)
+                {
+                    if (result.Result == null)
+                        return default(T);
+                    else
+                        ClientSerializationHelper.DeserializeObject<T>(result.Result);
+                }
+            }
             string data = await SendDataAsync(connector, serviceName, methodName, args).ConfigureAwait(false);
             if (string.IsNullOrEmpty(data))
                 return default(T);
+            if (connector.OnGetResponseFromServer != null)
+            {
+                await connector.OnGetResponseFromServer(serviceName, methodName, args, data);
+            }
             return ClientSerializationHelper.DeserializeObject<T>(data.ToString());
         }
 #endif
