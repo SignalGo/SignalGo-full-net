@@ -149,7 +149,7 @@ namespace SignalGo.Client
         public string KeyParameterValue { get; set; }
         public string Cookie { get; set; }
         public HttpClientResponseBase Response { get; set; }
-
+        public bool UseJsonPost { get; set; }
         public virtual HttpClientResponseBase PostHead(string url, ParameterInfo[] parameterInfoes, BaseStreamInfo streamInfo = null)
         {
 #if (NETSTANDARD1_6)
@@ -321,7 +321,129 @@ namespace SignalGo.Client
         }
 
 #if (!NET35 && !NET40 && !NETSTANDARD1_6)
+
         public virtual async Task<HttpClientResponseBase> PostHeadAsync(string url, ParameterInfo[] parameterInfoes, BaseStreamInfo streamInfo = null)
+        {
+            if (UseJsonPost)
+                return await PostHeadJsonAsync(url, parameterInfoes, streamInfo);
+            else
+                return await PostHeadManualAsync(url, parameterInfoes, streamInfo);
+        }
+
+        async Task<HttpClientResponseBase> PostHeadJsonAsync(string url, ParameterInfo[] parameterInfoes, BaseStreamInfo streamInfo = null)
+        {
+            string newLine = TextHelper.NewLine;
+            Uri uri = new Uri(url);
+            TcpClient tcpClient = new TcpClient();
+            try
+            {
+                await tcpClient.ConnectAsync(uri.Host, uri.Port).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Address to connect is {uri.Host}:{uri.Port}", ex);
+            }
+
+            try
+            {
+                if (streamInfo != null && (!streamInfo.Length.HasValue || streamInfo.Length <= 0))
+                    throw new Exception("Please set streamInfo.Length before upload your stream!");
+                string headData = $"POST {uri.AbsolutePath} HTTP/1.1" + newLine + $"Host: {uri.Host}" + newLine + $"Content-Type: application/json" + newLine;
+                if (RequestHeaders == null)
+                    RequestHeaders = new Shared.Http.WebHeaderCollection();
+                if (!string.IsNullOrEmpty(Cookie))
+                    RequestHeaders.Add("cookie", Cookie);
+                if (RequestHeaders.Count > 0)
+                {
+                    foreach (KeyValuePair<string, string[]> item in RequestHeaders)
+                    {
+                        if (!item.Key.Equals("host", StringComparison.OrdinalIgnoreCase) && !item.Key.Equals("content-type", StringComparison.OrdinalIgnoreCase) && !item.Key.Equals("content-length", StringComparison.OrdinalIgnoreCase))
+                        {
+                            if (item.Value == null || item.Value.Length == 0)
+                                continue;
+                            headData += item.Key + ": " + string.Join(",", item.Value) + newLine;
+                        }
+                    }
+                }
+
+                StringBuilder valueData = new StringBuilder();
+                if (parameterInfoes != null)
+                {
+                    valueData.Append('{');
+                    foreach (var parameter in parameterInfoes)
+                    {
+                        valueData.Append($"\"{parameter.Name}\":");
+                        valueData.Append($"\"{parameter.Value}\",");
+                    }
+                    if (parameterInfoes.Length > 0)
+                        valueData = valueData.Remove(valueData.Length - 1, 1);
+                    valueData.Append('}');
+                }
+                byte[] dataBytes = Encoding.GetBytes(valueData.ToString());
+                long fullLength = dataBytes.Length;
+                if (streamInfo != null)
+                    fullLength += streamInfo.Length.GetValueOrDefault();
+                headData += $"Content-Length: {fullLength}" + newLine + newLine;
+
+                byte[] headBytes = Encoding.GetBytes(headData);
+
+                Stream stream = uri.Port == 443 ? (Stream)new SslStream(tcpClient.GetStream()) : tcpClient.GetStream();
+
+                if (uri.Port == 443)
+                {
+                    SslStream sslStream = (SslStream)stream;
+                    await sslStream.AuthenticateAsClientAsync(uri.Host).ConfigureAwait(false);
+                }
+                stream.Write(headBytes, 0, headBytes.Length);
+                stream.Write(dataBytes, 0, dataBytes.Length);
+
+                if (streamInfo != null)
+                {
+                    int sentBytesCount = 0;
+                    int wantReadCount = 1024 * 512;
+                    while (streamInfo.Length > sentBytesCount)
+                    {
+                        if (wantReadCount > streamInfo.Length - sentBytesCount)
+                            wantReadCount = (int)(streamInfo.Length - sentBytesCount);
+                        byte[] result = new byte[wantReadCount];
+                        int readCount = await streamInfo.Stream.ReadAsync(result, wantReadCount).ConfigureAwait(false);
+                        await stream.WriteAsync(result, 0, readCount).ConfigureAwait(false);
+                        sentBytesCount += readCount;
+                    }
+                }
+
+                PipeNetworkStream pipelineReader = new PipeNetworkStream(new NormalStream(stream), 30000);
+
+                List<string> lines = new List<string>();
+                string line = null;
+                do
+                {
+                    if (line != null)
+                        lines.Add(line.TrimEnd());
+                    line = await pipelineReader.ReadLineAsync().ConfigureAwait(false);
+                }
+                while (line != newLine);
+                HttpClientResponseBase httpClientResponse = new HttpClientResponseBase
+                {
+                    Status = (HttpStatusCode)Enum.Parse(typeof(HttpStatusCode), lines[0].Split(' ')[1]),
+                    ResponseHeaders = SignalGo.Shared.Http.WebHeaderCollection.GetHttpHeaders(lines.Skip(1).ToArray()),
+                    Stream = pipelineReader,
+                    TcpClient = tcpClient
+                };
+                if (httpClientResponse.ResponseHeaders.TryGetValue("set-cookie", out string[] cookieHeader))
+                {
+                    Cookie = cookieHeader[0];
+                }
+                Response = httpClientResponse;
+                return httpClientResponse;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        async Task<HttpClientResponseBase> PostHeadManualAsync(string url, ParameterInfo[] parameterInfoes, BaseStreamInfo streamInfo = null)
         {
             string newLine = TextHelper.NewLine;
             Uri uri = new Uri(url);
