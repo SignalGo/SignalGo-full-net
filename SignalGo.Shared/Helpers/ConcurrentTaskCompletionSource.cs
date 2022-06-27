@@ -40,7 +40,7 @@ namespace SignalGo.Shared.Helpers
                 }
                 catch (Exception ex)
                 {
-                    AutoLogger.Default.LogError(ex, "SetException");
+                    AutoLogger.Default.LogError(ex, "ConcurrentTaskCompletionSource SetException");
                 }
             });
         }
@@ -55,7 +55,7 @@ namespace SignalGo.Shared.Helpers
                 }
                 catch (Exception ex)
                 {
-                    AutoLogger.Default.LogError(ex, "TrySetException");
+                    AutoLogger.Default.LogError(ex, "ConcurrentTaskCompletionSource TrySetException");
                 }
             });
             return true;
@@ -71,7 +71,7 @@ namespace SignalGo.Shared.Helpers
                 }
                 catch (Exception ex)
                 {
-                    AutoLogger.Default.LogError(ex, "SetResult");
+                    AutoLogger.Default.LogError(ex, "ConcurrentTaskCompletionSource SetResult");
                 }
             });
         }
@@ -83,11 +83,11 @@ namespace SignalGo.Shared.Helpers
                 try
                 {
                     if (!Value.TrySetResult(result))
-                        AutoLogger.Default.LogText($"TrySetResult is false {IsCompleted()} {Value.Task.Status} {Value.Task.Exception}");
+                        AutoLogger.Default.LogText($"ConcurrentTaskCompletionSource TrySetResult is false {IsCompleted()} {Value.Task.Status} {Value.Task.Exception}");
                 }
                 catch (Exception ex)
                 {
-                    AutoLogger.Default.LogError(ex, "TrySetResult");
+                    AutoLogger.Default.LogError(ex, "ConcurrentTaskCompletionSource TrySetResult");
                 }
             });
             return true;
@@ -103,7 +103,7 @@ namespace SignalGo.Shared.Helpers
                 }
                 catch (Exception ex)
                 {
-                    AutoLogger.Default.LogError(ex, "TrySetCanceled");
+                    AutoLogger.Default.LogError(ex, "ConcurrentTaskCompletionSource TrySetCanceled");
                 }
             });
             return true;
