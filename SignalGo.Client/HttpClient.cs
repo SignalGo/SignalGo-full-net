@@ -373,7 +373,7 @@ namespace SignalGo.Client
                     foreach (var parameter in parameterInfoes)
                     {
                         valueData.Append($"\"{parameter.Name}\":");
-                        valueData.Append($"\"{parameter.Value}\",");
+                        valueData.Append($"{parameter.Value},");
                     }
                     if (parameterInfoes.Length > 0)
                         valueData = valueData.Remove(valueData.Length - 1, 1);
