@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Net.Security;
 using System.Net.Sockets;
 using System.Text;
@@ -619,6 +620,262 @@ namespace SignalGo.Client
             {
                 response.TcpClient.Close();
             }
+        }
+#endif
+    }
+
+    /// <summary>
+    /// http clinet over tcp
+    /// </summary>
+    public class DotNetHttpClient : IHttpClient
+    {
+        public static CustomSerializerAttribute CurrentCustomOutputSerializer;
+        public DotNetHttpClient()
+        {
+            JsonSettingHelper.Initialize();
+        }
+
+        /// <summary>
+        /// default 
+        /// </summary>
+        public static JsonSettingHelper DefaultJsonSettingHelper { get; set; } = new JsonSettingHelper();
+
+        JsonSettingHelper _JsonSettingHelper;
+        public JsonSettingHelper JsonSettingHelper
+        {
+            get
+            {
+                if (_JsonSettingHelper == null)
+                    return DefaultJsonSettingHelper;
+                return _JsonSettingHelper;
+            }
+            set
+            {
+                _JsonSettingHelper = value;
+                _JsonSettingHelper.Initialize();
+            }
+        }
+        /// <summary>
+        /// encoding system
+        /// </summary>
+        public Encoding Encoding { get; set; } = Encoding.ASCII;
+        /// <summary>
+        /// request post data headers
+        /// </summary>
+        public SignalGo.Shared.Http.WebHeaderCollection RequestHeaders { get; set; } = new Shared.Http.WebHeaderCollection();
+        public string KeyParameterName { get; set; }
+        public string KeyParameterValue { get; set; }
+        public string Cookie { get; set; }
+        public HttpClientResponseBase Response { get; set; }
+        public virtual HttpClientResponseBase PostHead(string url, ParameterInfo[] parameterInfoes, BaseStreamInfo streamInfo = null)
+        {
+#if (NETSTANDARD1_6)
+            throw new NotSupportedException();
+#else
+            string newLine = TextHelper.NewLine;
+            Uri uri = new Uri(url);
+            TcpClient tcpClient = new TcpClient(uri.Host, uri.Port);
+            try
+            {
+                if (streamInfo != null && (!streamInfo.Length.HasValue || streamInfo.Length <= 0))
+                    throw new Exception("Please set streamInfo.Length before upload your stream!");
+                if (!string.IsNullOrEmpty(KeyParameterName))
+                {
+                    List<ParameterInfo> list = parameterInfoes.ToList();
+                    list.Add(new SignalGo.Shared.Models.ParameterInfo() { Name = KeyParameterName, Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(KeyParameterValue) });
+                    parameterInfoes = list.ToArray();
+                }
+                string boundary = "----------------------------" + DateTime.Now.Ticks.ToString("x");
+                string headData = $"POST {uri.AbsolutePath} HTTP/1.1" + newLine + $"Host: {uri.Host}" + newLine + $"Content-Type: multipart/form-data; boundary={boundary}" + newLine;
+                if (RequestHeaders == null)
+                    RequestHeaders = new Shared.Http.WebHeaderCollection();
+                if (!string.IsNullOrEmpty(Cookie))
+                    RequestHeaders.Add("cookie", Cookie);
+                if (RequestHeaders.Count > 0)
+                {
+                    foreach (KeyValuePair<string, string[]> item in RequestHeaders)
+                    {
+                        if (!item.Key.Equals("host", StringComparison.OrdinalIgnoreCase) && !item.Key.Equals("content-type", StringComparison.OrdinalIgnoreCase) && !item.Key.Equals("content-length", StringComparison.OrdinalIgnoreCase))
+                        {
+                            if (item.Value == null || item.Value.Length == 0)
+                                continue;
+                            headData += item.Key + ": " + string.Join(",", item.Value).TrimEnd() + newLine;
+                        }
+                    }
+                }
+                StringBuilder valueData = new StringBuilder();
+                if (parameterInfoes != null)
+                {
+                    string formdataTemplate = "Content-Disposition: form-data; name=\"{0}\"\r\n\r\n{1}";
+                    string boundaryinsert = TextHelper.NewLine + "--" + boundary + TextHelper.NewLine;
+                    foreach (ParameterInfo item in parameterInfoes)
+                    {
+                        valueData.AppendLine(boundaryinsert);
+                        valueData.Append(string.Format(formdataTemplate, item.Name, item.Value));
+                    }
+                }
+
+                byte[] dataBytes = Encoding.GetBytes(valueData.ToString());
+                headData += $"Content-Length: {dataBytes.Length}" + newLine + newLine;
+
+                byte[] headBytes = Encoding.GetBytes(headData);
+
+                Stream stream = uri.Port == 443 ? (Stream)new SslStream(tcpClient.GetStream()) : tcpClient.GetStream();
+
+                if (uri.Port == 443)
+                {
+                    SslStream sslStream = (SslStream)stream;
+                    sslStream.AuthenticateAsClient(uri.Host);
+                }
+                stream.Write(headBytes, 0, headBytes.Length);
+                stream.Write(dataBytes, 0, dataBytes.Length);
+
+                if (streamInfo != null)
+                {
+                    int sentBytesCount = 0;
+                    int wantReadCount = 1024 * 512;
+                    while (streamInfo.Length > sentBytesCount)
+                    {
+                        if (wantReadCount > streamInfo.Length - sentBytesCount)
+                            wantReadCount = (int)(streamInfo.Length - sentBytesCount);
+                        byte[] result = new byte[wantReadCount];
+                        int readCount = streamInfo.Stream.Read(result, wantReadCount);
+                        stream.Write(result, 0, readCount);
+                        sentBytesCount += readCount;
+                    }
+                }
+                PipeNetworkStream pipelineReader = new PipeNetworkStream(new NormalStream(stream), 30000);
+
+                List<string> lines = new List<string>();
+                string line = null;
+                do
+                {
+                    if (line != null)
+                        lines.Add(line.TrimEnd());
+                    line = pipelineReader.ReadLine();
+                }
+                while (line != newLine);
+                HttpClientResponseBase httpClientResponse = new HttpClientResponseBase
+                {
+                    Status = (HttpStatusCode)Enum.Parse(typeof(HttpStatusCode), lines[0].Split(' ')[1]),
+                    ResponseHeaders = SignalGo.Shared.Http.WebHeaderCollection.GetHttpHeaders(lines.Skip(1).ToArray()),
+                    Stream = pipelineReader,
+                    TcpClient = tcpClient
+                };
+                if (httpClientResponse.ResponseHeaders.TryGetValue("set-cookie", out string[] cookieHeader))
+                {
+                    Cookie = cookieHeader[0];
+                }
+                Response = httpClientResponse;
+                return httpClientResponse;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+#endif
+        }
+        static System.Net.Http.HttpClient HttpClient = new System.Net.Http.HttpClient();
+        /// <summary>
+        /// post a data to server
+        /// </summary>
+        /// <param name="url"></param>
+        /// <param name="parameterInfoes"></param>
+        /// <param name="streamInfo"></param>
+        /// <returns></returns>
+        public virtual HttpClientResponse Post(string url, ParameterInfo[] parameterInfoes, BaseStreamInfo streamInfo = null)
+        {
+#if (NETSTANDARD1_6)
+            throw new NotSupportedException();
+#else
+            HttpClientResponseBase response = PostHead(url, parameterInfoes, streamInfo);
+            try
+            {
+                HttpClientResponse httpClientResponse = new HttpClientResponse
+                {
+                    Status = response.Status,
+                    ResponseHeaders = response.ResponseHeaders,
+                    Stream = response.Stream,
+                    TcpClient = response.TcpClient,
+                };
+                int length = int.Parse(httpClientResponse.ResponseHeaders["content-length"]);
+                byte[] result = new byte[length];
+                int readCount = 0;
+                while (readCount < length)
+                {
+                    byte[] bytes = new byte[512];
+                    int readedCount = 0;
+                    readedCount = response.Stream.Read(bytes, bytes.Length);
+
+                    for (int i = 0; i < readedCount; i++)
+                    {
+                        result[i + readCount] = bytes[i];
+                    }
+                    readCount += readedCount;
+                }
+                httpClientResponse.Data = new HttpClientDataResponse(result, Encoding);
+                response = httpClientResponse;
+                return httpClientResponse;
+            }
+            finally
+            {
+                response.TcpClient.Close();
+            }
+#endif
+        }
+        public T Deserialize<T>(HttpClientDataResponse data)
+        {
+            if (typeof(T) == typeof(ActionResult))
+            {
+                return (T)(object)new ActionResult(data.Data);
+            }
+            else
+            {
+                if (CurrentCustomOutputSerializer == null)
+                    return SignalGo.Client.ClientSerializationHelper.DeserializeObject<T>(data);
+                else
+                    return (T)CurrentCustomOutputSerializer.Deserialize(typeof(T), data, null, null);
+            }
+        }
+
+#if (!NET35 && !NET40 && !NETSTANDARD1_6)
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="url"></param>
+        /// <param name="parameterInfoes"></param>
+        /// <returns></returns>
+        public virtual async Task<HttpClientResponse> PostAsync(string url, ParameterInfo[] parameterInfoes, BaseStreamInfo streamInfo = null)
+        {
+            StringBuilder valueData = new StringBuilder();
+            if (parameterInfoes != null)
+            {
+                if (parameterInfoes.Length == 1)
+                {
+                    valueData.Append($"{parameterInfoes[0].Value}");
+                }
+                else
+                {
+                    valueData.Append('{');
+                    foreach (var parameter in parameterInfoes)
+                    {
+                        valueData.Append($"\"{parameter.Name}\":");
+                        valueData.Append($"{parameter.Value},");
+                    }
+                    if (parameterInfoes.Length > 0)
+                        valueData = valueData.Remove(valueData.Length - 1, 1);
+                    valueData.Append('}');
+                }
+            }
+            var content = new StringContent(valueData.ToString(), Encoding.UTF8, "application/json");
+            var result = await HttpClient.PostAsync(url, content);
+            var bytes = await result.Content.ReadAsByteArrayAsync();
+            return new HttpClientResponse()
+            {
+                Status = result.StatusCode,
+                Data = new HttpClientDataResponse(bytes, Encoding)
+            };
         }
 #endif
     }
