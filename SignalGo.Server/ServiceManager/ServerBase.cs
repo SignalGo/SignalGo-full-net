@@ -195,7 +195,7 @@ namespace SignalGo.Server.ServiceManager
         /// <summary>
         /// when server try to send response to client you can change response or customize it
         /// </summary>
-        public Func<object, Type, MethodInfo, ClientInfo, string, object> OnSendResponseToClientFunction { get; set; }
+        public Func<object, object, Type, MethodInfo, ClientInfo, string, object> OnSendResponseToClientFunction { get; set; }
         /// <summary>
         /// if you don't want to trhow exception when method have error validation you can fill this function to customize your result for client
         /// </summary>
