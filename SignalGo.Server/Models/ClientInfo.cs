@@ -238,7 +238,10 @@ namespace SignalGo.Server.Models
                 }
                 return null;
             }
-            return ((WebHeaderCollection)RequestHeaders)[header];
+            if (RequestHeaders is WebHeaderCollection webHeaderCollection)
+                return webHeaderCollection[header];
+
+            return RequestHeaders[header].FirstOrDefault();
         }
 
         /// <summary>
@@ -249,7 +252,5 @@ namespace SignalGo.Server.Models
         {
             Status = statusCode;
         }
-
     }
-
 }

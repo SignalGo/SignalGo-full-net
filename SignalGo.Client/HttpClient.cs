@@ -869,7 +869,14 @@ namespace SignalGo.Client
                 }
             }
             var content = new StringContent(valueData.ToString(), Encoding.UTF8, "application/json");
+            if (!string.IsNullOrEmpty(Cookie))
+                content.Headers.Add("Cookie", Cookie);
             var result = await HttpClient.PostAsync(url, content);
+            var qq = result.Headers;
+            if (result.Headers.TryGetValues("Set-Cookie",out IEnumerable<string> cookies))
+            {
+                Cookie = cookies.FirstOrDefault();
+            }
             var bytes = await result.Content.ReadAsByteArrayAsync();
             return new HttpClientResponse()
             {
