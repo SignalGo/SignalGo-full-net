@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Net.Security;
 using System.Net.Sockets;
 using System.Text;
@@ -532,8 +533,8 @@ namespace SignalGo.Client
                     SslStream sslStream = (SslStream)stream;
                     await sslStream.AuthenticateAsClientAsync(uri.Host).ConfigureAwait(false);
                 }
-                stream.Write(headBytes, 0, headBytes.Length);
-                stream.Write(dataBytes, 0, dataBytes.Length);
+                await stream.WriteAsync(headBytes, 0, headBytes.Length);
+                await stream.WriteAsync(dataBytes, 0, dataBytes.Length);
 
                 if (streamInfo != null)
                 {
@@ -851,6 +852,7 @@ namespace SignalGo.Client
             StringBuilder valueData = new StringBuilder();
             if (parameterInfoes != null)
             {
+                parameterInfoes = parameterInfoes.Where(x => x.Value != "Signalgo_StreamInfo").ToArray();
                 if (parameterInfoes.Length == 1)
                 {
                     valueData.Append($"{parameterInfoes[0].Value}");
@@ -868,12 +870,54 @@ namespace SignalGo.Client
                     valueData.Append('}');
                 }
             }
-            var content = new StringContent(valueData.ToString(), Encoding.UTF8, "application/json");
-            if (!string.IsNullOrEmpty(Cookie))
-                content.Headers.Add("Cookie", Cookie);
-            var result = await HttpClient.PostAsync(url, content);
-            var qq = result.Headers;
-            if (result.Headers.TryGetValues("Set-Cookie",out IEnumerable<string> cookies))
+
+            HttpContent httpContent;
+            if (streamInfo != null)
+            {
+                var part = "--NKdKd9Yk--";
+                var formContent = new MultipartFormDataContent(part);
+                //formContent.Headers.ContentType.MediaType = "multipart/form-data";
+                var text = valueData.ToString();
+                long size = 0;
+                var content = new StringContent(text, Encoding.UTF8, "application/json");
+                content.Headers.ContentLength = Encoding.UTF8.GetByteCount(text);
+                
+                if (parameterInfoes?.Length > 0)
+                    formContent.Add(content, parameterInfoes[0].Name);
+                else
+                    formContent.Add(content);
+                
+
+                var stream = (streamInfo.Stream.GetStream() as NormalStream).GetStream();
+                var fileContent = new StreamContent(stream, (int)streamInfo.Length.Value);
+                fileContent.Headers.ContentType = new MediaTypeHeaderValue(streamInfo.ContentType);
+                fileContent.Headers.ContentLength = streamInfo.Length;
+
+                formContent.Add(fileContent, streamInfo.FileName, streamInfo.FileName);
+                if (!string.IsNullOrEmpty(Cookie))
+                    formContent.Headers.Add("Cookie", Cookie);
+
+                size += content.Headers.ContentLength.Value;
+                size += content.Headers.ToString().Length;
+                size += streamInfo.Length.Value;
+                size += fileContent.Headers.ToString().Length;
+                size += formContent.Headers.ToString().Length;
+                //size += (part.Length * ((parameterInfoes?.Count()).GetValueOrDefault() + 1));
+
+                formContent.Headers.Add("Content-Length", (size - 2).ToString());
+                httpContent = formContent;
+            }
+            else
+            {
+                var content = new StringContent(valueData.ToString(), Encoding.UTF8, "application/json");
+                if (!string.IsNullOrEmpty(Cookie))
+                    content.Headers.Add("Cookie", Cookie);
+                httpContent = content;
+            }
+
+            var result = await HttpClient.PostAsync(url, httpContent);
+
+            if (result.Headers.TryGetValues("Set-Cookie", out IEnumerable<string> cookies))
             {
                 Cookie = cookies.FirstOrDefault();
             }

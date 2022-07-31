@@ -31,6 +31,11 @@ namespace SignalGo.Shared.IO
         private ConcurrentBlockingCollection<BufferSegment> BlockBuffers { get; set; }
         private ConcurrentQueue<BufferSegment> QueueBuffers = new ConcurrentQueue<BufferSegment>();
 
+        public IStream GetStream()
+        {
+            return Stream;
+        }
+
         public void Write(byte[] data, int offset, int count)
         {
             Stream.Write(data, offset, count);

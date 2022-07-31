@@ -2,6 +2,7 @@
 using SignalGo.Shared.Converters;
 using SignalGo.Shared.DataTypes;
 using SignalGo.Shared.Helpers;
+using SignalGo.Shared.Models;
 using System;
 using System.Collections.Generic;
 
@@ -20,7 +21,9 @@ namespace SignalGo.Client
         public static bool IsEnabledReferenceResolverForArray { get; set; } = true;
         public static string SerializeObject(this object obj, NullValueHandling nullValueHandling = NullValueHandling.Ignore, CustomDataExchangerAttribute[] customDataExchanger = null)
         {
-            if (obj == null)
+            if (obj is StreamInfo)
+                return "Signalgo_StreamInfo";
+            else if (obj == null )
                 return "";
             if (!IsEnabledReferenceResolver && !IsEnabledReferenceResolverForArray)
             {

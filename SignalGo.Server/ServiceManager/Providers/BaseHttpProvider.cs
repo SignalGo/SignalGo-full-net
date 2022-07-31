@@ -721,6 +721,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 string name = "";
                 bool findFile = false;
                 string[] lineBreaks = new string[] { boundary.Replace("\"", ""), boundary.Replace("\"", "") + "--", "--" + boundary.Replace("\"", ""), "--" + boundary.Replace("\"", "") + "--" };
+                long fileSize = 0;
                 foreach (string httpData in response.Split(lineBreaks, StringSplitOptions.RemoveEmptyEntries))
                 {
                     if (httpData.ToLower().Contains("content-disposition"))
@@ -742,6 +743,10 @@ namespace SignalGo.Server.ServiceManager.Providers
                                         fileName = disp.Parameters["filename"];
                                     if (disp.Parameters.ContainsKey("name"))
                                         name = disp.Parameters["name"];
+                                }
+                                else if (header.ToLower().IndexOf("content-length:") == 0)
+                                {
+                                    long.TryParse(header.Split(':').LastOrDefault().Trim(), out fileSize);
                                 }
                                 findFile = true;
                             }
@@ -774,13 +779,16 @@ namespace SignalGo.Server.ServiceManager.Providers
                             }
                         }
                         string[] keyValue = httpData.Split(new string[] { TextHelper.NewLine }, StringSplitOptions.RemoveEmptyEntries);
-                        if (keyValue.Length == 2)
+                        if (keyValue.Length >= 2)
                         {
                             if (!string.IsNullOrEmpty(parameters))
                             {
                                 parameters += "&";
                             }
-                            CustomContentDisposition disp = new CustomContentDisposition(keyValue[0]);
+                            var findContent = keyValue.FirstOrDefault(x => x.ToLower().Contains("content-disposition"));
+                            if (string.IsNullOrEmpty(findContent))
+                                findContent = keyValue[0];
+                            CustomContentDisposition disp = new CustomContentDisposition(findContent);
                             foreach (KeyValuePair<string, string> prm in disp.Parameters)
                             {
                                 parameters += prm.Key;
@@ -793,7 +801,13 @@ namespace SignalGo.Server.ServiceManager.Providers
                 if (findFile)
                 {
                     StreamGo stream = new StreamGo(client.ClientStream);
-                    stream.SetOfStreamLength(len - content.Length - fileHeaderCount, boundary.Length + 6);// + 6 ; -6 ezafe shode
+                    if (fileSize > 0)
+                    {
+                        var boundray = boundary.Length + 6;
+                        stream.SetOfStreamLength(fileSize + boundray, boundray);
+                    }
+                    else
+                        stream.SetOfStreamLength(len - content.Length - fileHeaderCount, boundary.Length + 6);// + 6 ; -6 ezafe shode
                     fileInfo = new HttpPostedFileInfo()
                     {
                         Name = name,

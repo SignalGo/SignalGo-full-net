@@ -75,6 +75,10 @@ namespace SignalGo.Shared.IO
         }
 #endif
 
+        public Stream GetStream()
+        {
+            return _stream;
+        }
 
         public void Write(byte[] buffer, int offset, int count)
         {
