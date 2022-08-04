@@ -810,6 +810,8 @@ namespace SignalGo.Server.ServiceManager.Providers
             {
                 return outputSerializer.Deserialize(methodParameter.ParameterType, userParameterInfo.Value, serverBase, client);
             }
+            else if (methodParameter.ParameterType == typeof(Shared.Models.ParameterInfo[]))
+                return null;
             else
                 return ServerSerializationHelper.Deserialize(userParameterInfo.Value, methodParameter.ParameterType, serverBase, customDataExchanger: parameterDataExchanger.ToArray(), client: client);
         }
@@ -845,6 +847,7 @@ namespace SignalGo.Server.ServiceManager.Providers
         /// <returns></returns>
         private static List<object> FixParametersCount(int taskId, object service, MethodInfo method, List<SignalGo.Shared.Models.ParameterInfo> parameters, ServerBase serverBase, ClientInfo client, IEnumerable<MethodInfo> allMethods, List<CustomDataExchangerAttribute> customDataExchanger, string jsonParameters, out List<BaseValidationRuleInfoAttribute> validationErrors, ref string keyParameterValue, List<CustomSerializerAttribute> customOutputSerializerAttributes)
         {
+            validationErrors = null;
             List<object> parametersValues = new List<object>();
             System.Reflection.ParameterInfo[] methodParameters = method.GetParameters();
             Dictionary<string, object> parametersKeyValues = new Dictionary<string, object>();
@@ -860,6 +863,13 @@ namespace SignalGo.Server.ServiceManager.Providers
 
             if (!string.IsNullOrEmpty(jsonParameters) && methodParameters.Length == 1 && (parameters.Count == 0 || parameters.Any(x => !methodParameters.Any(y => x.Name.Equals(y.Name, StringComparison.OrdinalIgnoreCase)))))
             {
+                if (methodParameters.Length == 1 && methodParameters[0].ParameterType == typeof(Shared.Models.ParameterInfo[]))
+                    return new List<object>() { parameters.ToArray() };
+                else if (methodParameters.Length == 1 && methodParameters[0].ParameterType == typeof(List<Shared.Models.ParameterInfo>))
+                    return new List<object>() { parameters };
+                else if (methodParameters.Length == 1 && methodParameters[0].ParameterType == typeof(Shared.Models.ParameterInfo))
+                    return string.IsNullOrEmpty(jsonParameters) ? parameters.Cast<object>().ToList() : new List<object>() { new Shared.Models.ParameterInfo() { Value = jsonParameters } };
+
                 parameters.Clear();
                 parameters.Add(new Shared.Models.ParameterInfo() { Value = jsonParameters });
                 return FixParametersCount(taskId, service, method, parameters, serverBase, client, allMethods, customDataExchanger, null, out validationErrors, ref keyParameterValue, customOutputSerializerAttributes);
