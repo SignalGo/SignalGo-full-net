@@ -101,11 +101,11 @@ namespace SignalGo.Server.IO
                 //Console.WriteLine(endBuffer.Length + "&" + (endBuffer.Length - needRead) + " & " + needRead);
                 string text = Encoding.UTF8.GetString(endBuffer.ToList().GetRange(endBuffer.Length - needRead, needRead).ToArray());
                 int lineLen = 0;
-                if (!text.StartsWith(TextHelper.NewLine))
-                {
-                    lineLen = 2;
-                    //_Length -= 2;
-                }
+                //if (!text.StartsWith(TextHelper.NewLine))
+                //{
+                //    lineLen = 2;
+                //    //_Length -= 2;
+                //}
                 //Console.WriteLine("ok&" + (endBuffer.Length - needRead - lineLen));
                 List<byte> newBuffer = endBuffer.ToList().GetRange(0, endBuffer.Length - needRead - lineLen);
                 if (newBuffer.Count == 0)

@@ -613,8 +613,11 @@ namespace SignalGo.Server.ServiceManager.Providers
                         await client.ClientStream.WriteAsync(bytes, 0, bytes.Length).ConfigureAwait(false);
                     }
                     //delay to fix fast dispose before client read data
-                    await Task.Delay(TimeSpan.FromMilliseconds(100)).ConfigureAwait(false);
-                    file.FileStream.Dispose();
+                    _ = Task.Run(async () =>
+                    {
+                        await Task.Delay(TimeSpan.FromMilliseconds(1000)).ConfigureAwait(false);
+                        file.FileStream.Dispose();
+                    });
                 }
                 else
                 {
@@ -803,8 +806,9 @@ namespace SignalGo.Server.ServiceManager.Providers
                     StreamGo stream = new StreamGo(client.ClientStream);
                     if (fileSize > 0)
                     {
-                        var boundray = boundary.Length + 6;
-                        stream.SetOfStreamLength(fileSize + boundray, boundray);
+                        //var boundray = boundary.Length + 6;
+                        //stream.SetOfStreamLength(fileSize + boundray, boundray);
+                        stream.SetOfStreamLength(fileSize, 0);
                     }
                     else
                         stream.SetOfStreamLength(len - content.Length - fileHeaderCount, boundary.Length + 6);// + 6 ; -6 ezafe shode

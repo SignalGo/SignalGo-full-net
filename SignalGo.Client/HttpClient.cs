@@ -505,6 +505,8 @@ namespace SignalGo.Client
                     string boundaryinsert = TextHelper.NewLine + "--" + boundary + TextHelper.NewLine;
                     foreach (ParameterInfo item in parameterInfoes)
                     {
+                        if (item.Value == "Signalgo_StreamInfo")
+                            continue;
                         valueData.AppendLine(boundaryinsert);
                         valueData.Append(string.Format(formdataTemplate, item.Name, item.Value));
                     }
@@ -514,7 +516,7 @@ namespace SignalGo.Client
                     string boundaryinsert = TextHelper.NewLine + "--" + boundary + TextHelper.NewLine;
                     valueData.AppendLine(boundaryinsert);
                     valueData.AppendLine($"Content-Disposition: file; filename=\"{streamInfo.FileName}\"");
-                    valueData.AppendLine($"Content-Length: {streamInfo.Length}");
+                    valueData.AppendLine($"Content-Length: {(streamInfo.Length)}");
                     valueData.AppendLine($"Content-Type: {streamInfo.ContentType}");
                     valueData.AppendLine();
                 }
@@ -881,12 +883,12 @@ namespace SignalGo.Client
                 long size = 0;
                 var content = new StringContent(text, Encoding.UTF8, "application/json");
                 content.Headers.ContentLength = Encoding.UTF8.GetByteCount(text);
-                
+
                 if (parameterInfoes?.Length > 0)
                     formContent.Add(content, parameterInfoes[0].Name);
                 else
                     formContent.Add(content);
-                
+
 
                 var stream = (streamInfo.Stream.GetStream() as NormalStream).GetStream();
                 var fileContent = new StreamContent(stream, (int)streamInfo.Length.Value);
