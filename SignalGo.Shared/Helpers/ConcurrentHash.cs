@@ -35,6 +35,18 @@ namespace SignalGo.Shared.Helpers
                 return _internalList.Add(item);
         }
 
+        public bool AddRange(IEnumerable<T> items)
+        {
+            lock (this)
+            {
+                foreach (var item in items)
+                {
+                    _internalList.Add(item);
+                }
+            }
+            return true;
+        }
+
         public void Clear()
         {
             lock (this)

@@ -139,7 +139,7 @@ namespace SignalGo.Client.ClientManager
         /// </summary>
         public bool IsDisposed { get; internal set; }
 
-        internal string ServerUrl { get; set; }
+        public string ServerUrl { get; internal set; }
         public virtual void Connect(string url)
         {
 
@@ -205,7 +205,7 @@ namespace SignalGo.Client.ClientManager
 
         internal SecuritySettingsInfo SecuritySettings { get; set; } = null;
         public Func<string, string, Shared.Models.ParameterInfo[], Task<(string Result, bool Handled)>> OnSendRequestToServer { get; set; }
-        public Func<string, string, Shared.Models.ParameterInfo[], string,Task> OnGetResponseFromServer { get; set; }
+        public Func<string, string, Shared.Models.ParameterInfo[], string, Task> OnGetResponseFromServer { get; set; }
         internal string _address = "";
         internal int _port = 0;
         /// <summary>
