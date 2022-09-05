@@ -10,6 +10,7 @@ namespace SignalGo.Server.ServiceManager.Versions
         void Start(ServerBase serverBase, int port);
         ClientInfo CreateClientInfo(bool isHttp, TcpClient tcpClient, PipeNetworkStream stream);
         string GetInformation();
+        string GetClientInformation();
         int GetConnectedCount();
     }
 }

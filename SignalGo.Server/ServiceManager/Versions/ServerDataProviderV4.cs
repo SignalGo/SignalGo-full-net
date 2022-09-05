@@ -327,6 +327,29 @@ namespace SignalGo.Server.ServiceManager.Versions
             return stringBuilder.ToString();
         }
 
+        string GetClientKey(ClientInfo clientInfo)
+        {
+            return $"{clientInfo.ProtocolType}_{clientInfo.LevelFlag}_{clientInfo.IPAddress}_{clientInfo.ForwardIPAddress}";
+        }
+
+        public string GetClientInformation()
+        {
+            StringBuilder stringBuilder = new StringBuilder();
+            foreach (var item in _serverBase.Clients.Values.OrderBy(x => GetClientKey(x)).ToList())
+            {
+                stringBuilder.AppendLine("Client");
+                stringBuilder.AppendLine(GetClientKey(item));
+                stringBuilder.AppendLine(item.LevelFlag);
+                stringBuilder.AppendLine(item.ProtocolType.ToString());
+                stringBuilder.AppendLine(item.IPAddress);
+                stringBuilder.AppendLine(item.ConnectedDateTime.ToString());
+                stringBuilder.AppendLine(item.ForwardIPAddress);
+                stringBuilder.AppendLine("End");
+            }
+
+            return stringBuilder.ToString();
+        }
+
         /// <summary>
         /// count of connected
         /// </summary>

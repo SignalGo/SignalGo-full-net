@@ -172,6 +172,10 @@ namespace SignalGo.Server.Models
         /// lock for this client
         /// </summary>
         public SemaphoreSlim LockWaitToRead { get; set; } = new SemaphoreSlim(1, 1);
+        /// <summary>
+        /// where is client going
+        /// </summary>
+        public string LevelFlag { get; set; } = "Created_LF";
     }
 
     /// <summary>

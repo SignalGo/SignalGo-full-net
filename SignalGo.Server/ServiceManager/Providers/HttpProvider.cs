@@ -152,6 +152,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     client = serverBase.ServerDataProvider.CreateClientInfo(false, tcpClient, reader);
                     client.ProtocolType = ClientProtocolType.WebSocket;
                     client.IsWebSocket = true;
+                    client.LevelFlag = "WebSocket_LF";
                     if (!await serverBase.Firewall.OnClientInitialized(client).ConfigureAwait(false))
                     {
                         serverBase.DisposeClient(client, tcpClient, "firewall dropped!");
@@ -191,6 +192,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     client = serverBase.ServerDataProvider.CreateClientInfo(false, tcpClient, reader);
                     client.ProtocolType = ClientProtocolType.HttpDuplex;
                     client.StreamHelper = SignalGoStreamBase.CurrentBase;
+                    client.LevelFlag = "SGHttpDuplex_LF";
                     if (!await serverBase.Firewall.OnClientInitialized(client).ConfigureAwait(false))
                     {
                         serverBase.DisposeClient(client, tcpClient, "firewall dropped!");
@@ -204,6 +206,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     {
                         //serverBase.TaskOfClientInfoes
                         client = (HttpClientInfo)serverBase.ServerDataProvider.CreateClientInfo(true, tcpClient, reader);
+                        client.LevelFlag = "Http_LF";
                         client.ProtocolType = ClientProtocolType.Http;
                         client.StreamHelper = SignalGoStreamBase.CurrentBase;
                         if (!await serverBase.Firewall.OnClientInitialized(client).ConfigureAwait(false))

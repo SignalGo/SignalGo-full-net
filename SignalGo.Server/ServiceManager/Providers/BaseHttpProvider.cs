@@ -76,9 +76,11 @@ namespace SignalGo.Server.ServiceManager.Providers
                 }
                 else if (methodName.ToLower() == "options" && !string.IsNullOrEmpty(address) && address != "/")
                 {
+                    client.LevelFlag = "HttpOptions_LF";
                     if (serverBase.ProviderSetting.HttpSetting.HandleCrossOriginAccess)
                         AddOriginHeader(client, serverBase);
                     string message = newLine + $"Success" + newLine;
+                    client.ResponseHeaders.Add("Access-Control-Max-Age", "600");
                     client.ResponseHeaders.Add("Content-Type", "text/html; charset=utf-8");
                     client.ResponseHeaders.Add("Connection", "Close");
 
@@ -90,11 +92,13 @@ namespace SignalGo.Server.ServiceManager.Providers
                 }
                 else if (serverBase.RegisteredServiceTypes.ContainsKey("") && (string.IsNullOrEmpty(address) || address == "/"))
                 {
+                    client.LevelFlag = "HttpIndex_LF";
                     await RunIndexHttpRequest(client, serverBase).ConfigureAwait(false);
                     serverBase.DisposeClient(client, null, "Index Page call");
                 }
                 else
                 {
+                    client.LevelFlag = "HttpOk_LF";
                     client.ResponseHeaders.Add("Content-Type", "text/html");
                     client.ResponseHeaders.Add("Connection", "Close");
 
@@ -114,6 +118,7 @@ namespace SignalGo.Server.ServiceManager.Providers
 
         private static async Task GenerateServiceDetails(HttpClientInfo client, string content, ServerBase serverBase, string newLine)
         {
+            client.LevelFlag = "HGenDet_LF";
             string host = "";
             if (client.RequestHeaders.ContainsKey("host"))
                 host = client.RequestHeaders["host"].FirstOrDefault();
@@ -256,6 +261,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                         return;
                     }
                 }
+                client.LevelFlag = "HPostContent_LF";
                 if (content.Length < len)
                 {
                     List<byte> resultBytes = new List<byte>();
@@ -277,6 +283,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     string postResponse = Encoding.UTF8.GetString(resultBytes.ToArray(), 0, resultBytes.Count);
                     content = postResponse;
                 }
+                client.LevelFlag = "ExPostContent_LF";
 
                 methodName = lines.Last();
                 parameters = content;
@@ -402,6 +409,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     }
                 }
 
+                client.LevelFlag = "HCallMethod_LF";
                 CallMethodResultInfo<OperationContext> result = await CallHttpMethod(client, address, realmethodName, methodName, values, jsonParameters, serverBase, method, data, newLine, null, null).ConfigureAwait(false);
                 serviceType = result.ServiceType;
 
@@ -488,6 +496,7 @@ namespace SignalGo.Server.ServiceManager.Providers
         internal static async Task<CallMethodResultInfo<OperationContext>> CallHttpMethod(HttpClientInfo client, string address, string realMethodName, string methodName, IEnumerable<Shared.Models.ParameterInfo> values, string jsonParameters, ServerBase serverBase, MethodInfo method
             , string data, string newLine, HttpPostedFileInfo fileInfo, Func<MethodInfo, bool> canTakeMethod)
         {
+            client.LevelFlag = "CallHttpMethod_LF";
             if (values != null)
             {
                 foreach (Shared.Models.ParameterInfo item in values.Where(x => x.Value == "null"))
@@ -683,6 +692,7 @@ namespace SignalGo.Server.ServiceManager.Providers
         /// <param name="client">client</param>
         internal static async Task RunPostHttpRequestFile(string address, string httpMethod, string content, HttpClientInfo client, ServerBase serverBase)
         {
+            client.LevelFlag = "HFileReq_LF";
             string newLine = TextHelper.NewLine;
             string fullAddress = address;
             address = address.Trim('/');
@@ -713,6 +723,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                 if (!boundary.Contains("--"))
                     boundary = null;
                 int fileHeaderCount = 0;
+                client.LevelFlag = "HFileHeader_LF";
                 Tuple<int, string, string> res = await GetHttpFileFileHeader(serverBase, client, client.ClientStream, boundary, len).ConfigureAwait(false);
                 fileHeaderCount = res.Item1;
                 boundary = res.Item2;
@@ -801,6 +812,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                         }
                     }
                 }
+                client.LevelFlag = "HFileRead_LF";
                 if (findFile)
                 {
                     StreamGo stream = new StreamGo(client.ClientStream);
@@ -944,6 +956,7 @@ namespace SignalGo.Server.ServiceManager.Providers
         {
             try
             {
+                client.LevelFlag = "SGRef_LF";
                 PipeNetworkStream stream = client.ClientStream;
                 ClientServiceReferenceConfigInfo clientServiceReferenceConfigInfo = null;
                 if (client.RequestHeaders.TryGetValue("content-length", out string[] values) && values != null && values.Length > 0)

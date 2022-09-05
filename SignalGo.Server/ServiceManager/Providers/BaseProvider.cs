@@ -61,6 +61,7 @@ namespace SignalGo.Server.ServiceManager.Providers
         /// <returns></returns>
         public static async Task<CallMethodResultInfo<OperationContext>> CallMethod(string serviceName, string guid, string realMethodName, string methodName, SignalGo.Shared.Models.ParameterInfo[] parameters, string jsonParameters, ClientInfo client, string json, ServerBase serverBase, HttpPostedFileInfo fileInfo, Func<MethodInfo, bool> canTakeMethod)
         {
+            client.LevelFlag = $"CallMethod_LF_{serviceName}_{methodName}";
             if (serverBase.Firewall?.DefaultFirewall != null)
             {
                 var result = await Task.Run(async () =>
