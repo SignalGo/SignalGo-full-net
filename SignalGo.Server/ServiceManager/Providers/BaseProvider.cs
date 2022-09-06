@@ -154,7 +154,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     if (!serverBase.RegisteredServiceTypes.TryGetValue(serviceName, out serviceType))
                     {
                         if (!serverBase.RegisteredServiceTypes.TryGetValue("", out serviceType))
-                            throw new Exception($"{client.IPAddress} {client.ClientId} Service {serviceName} not found");
+                            throw new Exception($"{client.IPAddress} {client.ClientId} Service {serviceName} not found {methodName} {client.LevelFlag} ${jsonParameters}");
                         else
                         {
                             if (parameters == null || parameters.Length == 0)
