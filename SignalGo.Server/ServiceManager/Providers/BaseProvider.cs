@@ -187,14 +187,16 @@ namespace SignalGo.Server.ServiceManager.Providers
                         }
                     }
                     List<ISecurityContract> securityAttributes = new List<ISecurityContract>();
+                    List<ISecurityContractAsync> securityAsyncAttributes = new List<ISecurityContractAsync>();
                     List<CustomDataExchangerAttribute> customDataExchanger = new List<CustomDataExchangerAttribute>();
                     List<ClientLimitationAttribute> clientLimitationAttribute = new List<ClientLimitationAttribute>();
                     List<ConcurrentLockAttribute> concurrentLockAttributes = new List<ConcurrentLockAttribute>();
                     List<CustomSerializerAttribute> customOutputSerializerAttributes = new List<CustomSerializerAttribute>();
 #if (!NETSTANDARD1_6)
                     securityAttributes.AddRange(serviceType.GetCustomAttributes(typeof(ISecurityContract), true).Cast<ISecurityContract>());
+                    securityAsyncAttributes.AddRange(serviceType.GetCustomAttributes(typeof(ISecurityContractAsync), true).Cast<ISecurityContractAsync>());
 #endif
-                    IEnumerable<MethodInfo> allMethods = GetMethods(client, methodName, parameters, serviceType, customDataExchanger, customOutputSerializerAttributes, securityAttributes, clientLimitationAttribute, concurrentLockAttributes, canTakeMethod);
+                    IEnumerable<MethodInfo> allMethods = GetMethods(client, methodName, parameters, serviceType, customDataExchanger, customOutputSerializerAttributes, securityAttributes, securityAsyncAttributes, clientLimitationAttribute, concurrentLockAttributes, canTakeMethod);
                     method = allMethods.FirstOrDefault();
                     //if (method == null && !string.IsNullOrEmpty(jsonParameters))
                     //{
@@ -206,10 +208,10 @@ namespace SignalGo.Server.ServiceManager.Providers
                     if (method == null)
                     {
                         //find method with sended parameters
-                        method = GetMethods(client, methodName, null, serviceType, customDataExchanger, customOutputSerializerAttributes, securityAttributes, clientLimitationAttribute, concurrentLockAttributes, canTakeMethod).FirstOrDefault();
+                        method = GetMethods(client, methodName, null, serviceType, customDataExchanger, customOutputSerializerAttributes, securityAttributes, securityAsyncAttributes, clientLimitationAttribute, concurrentLockAttributes, canTakeMethod).FirstOrDefault();
                         if (method == null)
                         {
-                            method = GetMethods(client, "-noName-", null, serviceType, customDataExchanger, customOutputSerializerAttributes, securityAttributes, clientLimitationAttribute, concurrentLockAttributes, x =>
+                            method = GetMethods(client, "-noName-", null, serviceType, customDataExchanger, customOutputSerializerAttributes, securityAttributes, securityAsyncAttributes, clientLimitationAttribute, concurrentLockAttributes, x =>
                             {
                                 return x.GetCustomAttribute<HomePageAttribute>() != null;
                             }).FirstOrDefault();
@@ -369,6 +371,25 @@ namespace SignalGo.Server.ServiceManager.Providers
                                     callback.Data = data == null ? null : ServerSerializationHelper.SerializeObject(HandleClientResponse(parametersValues, data, client, serverBase, serviceType, method, callback.Guid), serverBase, customDataExchanger: customDataExchanger.ToArray(), client: client, isEnabledReferenceResolver: isEnabledReferenceResolver, isEnabledReferenceResolverForArray: isEnabledReferenceResolverForArray);
                                 }
                                 break;
+                            }
+                        }
+
+                        if (canCall)
+                        {
+                            foreach (ISecurityContractAsync attrib in securityAsyncAttributes)
+                            {
+                                if (!await attrib.CheckPermissionAsync(client, service, method, parametersValues))
+                                {
+                                    callback.IsAccessDenied = true;
+                                    canCall = false;
+                                    if (method.ReturnType != typeof(void))
+                                    {
+                                        object data = null;
+                                        data = await attrib.GetValueWhenDenyPermissionAsync(client, service, method, parametersValues);
+                                        callback.Data = data == null ? null : ServerSerializationHelper.SerializeObject(HandleClientResponse(parametersValues, data, client, serverBase, serviceType, method, callback.Guid), serverBase, customDataExchanger: customDataExchanger.ToArray(), client: client, isEnabledReferenceResolver: isEnabledReferenceResolver, isEnabledReferenceResolverForArray: isEnabledReferenceResolverForArray);
+                                    }
+                                    break;
+                                }
                             }
                         }
                         foreach (object item in parametersValues)
@@ -1068,7 +1089,7 @@ namespace SignalGo.Server.ServiceManager.Providers
             , Type serviceType
             , List<CustomDataExchangerAttribute> customDataExchangerAttributes
             , List<CustomSerializerAttribute> customOutputSerializerAttributes
-            , List<ISecurityContract> securityContractAttributes
+            , List<ISecurityContract> securityContractAttributes, List<ISecurityContractAsync> securityContractAsyncAttributes
             , List<ClientLimitationAttribute> clientLimitationAttributes
             , List<ConcurrentLockAttribute> concurrentLockAttributes
             , Func<MethodInfo, bool> canTakeMethod)
@@ -1082,6 +1103,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                     if (canTakeMethod != null && !canTakeMethod(method))
                         continue;
                     securityContractAttributes.AddRange(method.GetCustomAttributes(typeof(ISecurityContract), true).Cast<ISecurityContract>());
+                    securityContractAsyncAttributes.AddRange(method.GetCustomAttributes(typeof(ISecurityContractAsync), true).Cast<ISecurityContractAsync>());
                     customDataExchangerAttributes.AddRange(method.GetCustomAttributes(typeof(CustomDataExchangerAttribute), true).Cast<CustomDataExchangerAttribute>().Where(x => x.GetExchangerByUserCustomization(client)));
                     customOutputSerializerAttributes.AddRange(method.GetCustomAttributes(typeof(CustomSerializerAttribute), true).Cast<CustomSerializerAttribute>());
                     clientLimitationAttributes.AddRange(method.GetCustomAttributes(typeof(ClientLimitationAttribute), true).Cast<ClientLimitationAttribute>());
@@ -1093,6 +1115,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                         {
                             customOutputSerializerAttributes.AddRange(newMethod.GetCustomAttributes(typeof(CustomSerializerAttribute), true).Cast<CustomSerializerAttribute>());
                             securityContractAttributes.AddRange(newMethod.GetCustomAttributes(typeof(ISecurityContract), true).Cast<ISecurityContract>());
+                            securityContractAsyncAttributes.AddRange(newMethod.GetCustomAttributes(typeof(ISecurityContractAsync), true).Cast<ISecurityContractAsync>());
                             customDataExchangerAttributes.AddRange(newMethod.GetCustomAttributes(typeof(CustomDataExchangerAttribute), true).Cast<CustomDataExchangerAttribute>().Where(x => x.GetExchangerByUserCustomization(client)));
                             clientLimitationAttributes.AddRange(newMethod.GetCustomAttributes(typeof(ClientLimitationAttribute), true).Cast<ClientLimitationAttribute>());
                             concurrentLockAttributes.AddRange(newMethod.GetCustomAttributes(typeof(ConcurrentLockAttribute), true).Cast<ConcurrentLockAttribute>());
