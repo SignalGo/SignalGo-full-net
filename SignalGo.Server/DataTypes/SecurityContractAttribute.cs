@@ -44,7 +44,7 @@ namespace SignalGo.Server.DataTypes
         /// <param name="method"></param>
         /// <param name="parameters"></param>
         /// <returns>if client have permission return true else false</returns>
-        Task<bool> CheckPermissionAsync(ClientInfo client, object service, MethodInfo method, List<object> parameters);
+        Task<bool> CheckPermissionAsync(int taskId, ClientInfo client, object service, MethodInfo method, List<object> parameters);
         /// <summary>
         /// after return false when calling CheckPermission server call this method for send data to client
         /// </summary>
@@ -53,7 +53,7 @@ namespace SignalGo.Server.DataTypes
         /// <param name="method"></param>
         /// <param name="parameters"></param>
         /// <returns>if your method is not void you can return a value to client</returns>
-        Task<object> GetValueWhenDenyPermissionAsync(ClientInfo client, object service, MethodInfo method, List<object> parameters);
+        Task<object> GetValueWhenDenyPermissionAsync(int taskId, ClientInfo client, object service, MethodInfo method, List<object> parameters);
     }
 
     /// <summary>
@@ -94,7 +94,7 @@ namespace SignalGo.Server.DataTypes
         /// <param name="method"></param>
         /// <param name="parameters"></param>
         /// <returns>if client have permission return true else false</returns>
-        public abstract Task<bool> CheckPermissionAsync(ClientInfo client, object service, MethodInfo method, List<object> parameters);
+        public abstract Task<bool> CheckPermissionAsync(int taskId, ClientInfo client, object service, MethodInfo method, List<object> parameters);
         /// <summary>
         /// after return false when calling CheckPermission server call this method for send data to client
         /// </summary>
@@ -103,6 +103,6 @@ namespace SignalGo.Server.DataTypes
         /// <param name="method"></param>
         /// <param name="parameters"></param>
         /// <returns>if your method is not void you can return a value to client</returns>
-        public abstract Task<object> GetValueWhenDenyPermissionAsync(ClientInfo client, object service, MethodInfo method, List<object> parameters);
+        public abstract Task<object> GetValueWhenDenyPermissionAsync(int taskId, ClientInfo client, object service, MethodInfo method, List<object> parameters);
     }
 }

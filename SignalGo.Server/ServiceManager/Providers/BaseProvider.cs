@@ -378,14 +378,14 @@ namespace SignalGo.Server.ServiceManager.Providers
                         {
                             foreach (ISecurityContractAsync attrib in securityAsyncAttributes)
                             {
-                                if (!await attrib.CheckPermissionAsync(client, service, method, parametersValues))
+                                if (!await attrib.CheckPermissionAsync(taskId, client, service, method, parametersValues))
                                 {
                                     callback.IsAccessDenied = true;
                                     canCall = false;
                                     if (method.ReturnType != typeof(void))
                                     {
                                         object data = null;
-                                        data = await attrib.GetValueWhenDenyPermissionAsync(client, service, method, parametersValues);
+                                        data = await attrib.GetValueWhenDenyPermissionAsync(taskId, client, service, method, parametersValues);
                                         callback.Data = data == null ? null : ServerSerializationHelper.SerializeObject(HandleClientResponse(parametersValues, data, client, serverBase, serviceType, method, callback.Guid), serverBase, customDataExchanger: customDataExchanger.ToArray(), client: client, isEnabledReferenceResolver: isEnabledReferenceResolver, isEnabledReferenceResolverForArray: isEnabledReferenceResolverForArray);
                                     }
                                     break;
@@ -417,6 +417,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                                 }
                             }
                         }
+
                         //var data = (IStreamInfo)parametersValues.FirstOrDefault(x => x.GetType() == typeof(StreamInfo) || (x.GetType().GetIsGenericType() && x.GetType().GetGenericTypeDefinition() == typeof(StreamInfo<>)));
                         //var upStream = new UploadStreamGo(stream);
                         if (canCall)

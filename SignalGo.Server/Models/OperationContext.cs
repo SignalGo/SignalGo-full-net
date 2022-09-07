@@ -20,9 +20,7 @@ namespace SignalGo.Server.Models
         {
             get
             {
-                if (Task.CurrentId != null && CurrentTaskServerTasks.TryGetValue(Task.CurrentId.GetValueOrDefault(), out ServerBase serverBase))
-                    return serverBase;
-                return null;
+                return GetCurrentServerByTaskId(Task.CurrentId);
             }
             set
             {
@@ -39,22 +37,43 @@ namespace SignalGo.Server.Models
         {
             get
             {
-                ServerBase currentServer = CurrentTaskServer;
                 var taskId = Task.CurrentId;
-                if (taskId != null && currentServer != null && currentServer.TaskOfClientInfoes.TryGetValue(taskId.GetValueOrDefault(), out string clientId))
-                {
-                    if (currentServer.Clients.TryGetValue(clientId, out ClientInfo clientInfo))
-                    {
-                        if (clientInfo.DisposeReason != null)
-                            AutoLogger.LogText($"clieant is disposed and you are taking context! reason: {clientInfo.DisposeReason} {taskId} {Environment.StackTrace}");
-                        return new OperationContext() { Client = clientInfo, ClientId = clientId, ServerBase = currentServer, TaskId = taskId.GetValueOrDefault() };
-                    }
-                    else
-                        AutoLogger.LogText($"taskId is not null but the clientInfo is null or empty! {taskId} {Environment.StackTrace}");
-                }
-
-                return null;
+                return GetCurrentByTaskId(taskId);
             }
+        }
+
+        /// <summary>
+        /// get operationcontext by taskId
+        /// </summary>
+        /// <param name="taskId"></param>
+        /// <returns></returns>
+        public static OperationContext GetCurrentByTaskId(int? taskId)
+        {
+            ServerBase currentServer = GetCurrentServerByTaskId(taskId);
+            if (taskId != null && currentServer != null && currentServer.TaskOfClientInfoes.TryGetValue(taskId.GetValueOrDefault(), out string clientId))
+            {
+                if (currentServer.Clients.TryGetValue(clientId, out ClientInfo clientInfo))
+                {
+                    if (clientInfo.DisposeReason != null)
+                        AutoLogger.LogText($"clieant is disposed and you are taking context! reason: {clientInfo.DisposeReason} {taskId} {Environment.StackTrace}");
+                    return new OperationContext() { Client = clientInfo, ClientId = clientId, ServerBase = currentServer, TaskId = taskId.GetValueOrDefault() };
+                }
+                else
+                    AutoLogger.LogText($"taskId is not null but the clientInfo is null or empty! {taskId} {Environment.StackTrace}");
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// get current server by task id
+        /// </summary>
+        /// <param name="taskId"></param>
+        /// <returns></returns>
+        public static ServerBase GetCurrentServerByTaskId(int? taskId)
+        {
+            if (taskId != null && CurrentTaskServerTasks.TryGetValue(taskId.GetValueOrDefault(), out ServerBase serverBase))
+                return serverBase;
+            return null;
         }
 
         /// <summary>
