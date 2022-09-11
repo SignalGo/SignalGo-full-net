@@ -1,4 +1,5 @@
 ﻿using SignalGo.Publisher.Models.DataTransferObjects;
+using SignalGo.Shared.Models;
 using System;
 using System.Collections.Generic;
 
@@ -80,5 +81,7 @@ namespace SignalGo.Publisher.Shared.Models
                 _IgnoreFiles = value;
             }
         }
+
+        public CompressArchiveDto CompressArchive { get; set; }
     }
 }

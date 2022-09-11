@@ -1,23 +1,24 @@
-﻿using System;
+﻿using MvvmGo.ViewModels;
+using SignalGo.Publisher.Engines.Interfaces;
+using SignalGo.Publisher.Engines.Models;
+using SignalGo.Publisher.Extensions;
+using SignalGo.Publisher.Helpers;
+using SignalGo.Publisher.Models;
+using SignalGo.Publisher.Models.DataTransferObjects;
+using SignalGo.Publisher.Models.Extra;
+using SignalGo.Publisher.Services;
+using SignalGo.Shared.DataTypes;
+using SignalGo.Shared.Helpers;
+using SignalGo.Shared.Log;
+using SignalGo.Shared.Models;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Threading;
-using MvvmGo.ViewModels;
-using System.Diagnostics;
-using SignalGo.Shared.Log;
-using System.IO.Compression;
 using System.Threading.Tasks;
-using SignalGo.Publisher.Models;
-using SignalGo.Publisher.Services;
-using SignalGo.Publisher.Engines.Models;
-using SignalGo.Publisher.Engines.Interfaces;
-using SignalGo.Shared.Models;
-using SignalGo.Publisher.Shared.Models;
-using SignalGo.Publisher.Models.Extra;
-using System.Collections.Generic;
-using SignalGo.Publisher.ViewModels;
-using SignalGo.Publisher.Extensions;
-using SignalGo.Publisher.Models.DataTransferObjects;
 
 namespace SignalGo.Publisher.Engines.Commands
 {
@@ -168,9 +169,11 @@ namespace SignalGo.Publisher.Engines.Commands
                 LogModule.AddLog(caller, SectorType.Server, ServerInfo.ServerLogs[i], DateTime.Now.ToLongTimeString(), LogTypeEnum.Compiler);
             }
         }
-        public virtual Task<string> Compress(CompressionMethodType compressionMethod = CompressionMethodType.Zip, bool includeParent = false, CompressionLevel compressionLevel = CompressionLevel.Fastest)
+        public virtual async Task<List<CompressArchiveDto>> Compress(CompressionMethodType compressionMethod = CompressionMethodType.Zip, bool includeParent = false, CompressionLevel compressionLevel = CompressionLevel.Fastest, bool compressOnlyChanges = true)
         {
-            string zipFilePath = string.Empty;
+            var zipFilePath = string.Empty;
+            var result = new List<CompressArchiveDto>();
+
             try
             {
                 string[] directories = Directory.GetDirectories(AssembliesPath);
@@ -180,44 +183,75 @@ namespace SignalGo.Publisher.Engines.Commands
                     publishDir = Path.Combine(AssembliesPath, "publish");
                 }
                 Directory.CreateDirectory(publishDir);
-                zipFilePath = Path.Combine(AssembliesPath, $"{ServiceName}.zip");
-                if (File.Exists(zipFilePath))
-                    File.Delete(zipFilePath);
-                switch (compressionMethod)
-                {
-                    case CompressionMethodType.None:
-                        break;
-                    case CompressionMethodType.Zip:
-                        ZipFile.CreateFromDirectory(publishDir, zipFilePath, CompressionLevel.Optimal, includeParent);
-                        break;
-                    case CompressionMethodType.Gzip:
-                        throw new NotImplementedException("Gzip method not implemented yet.");
-                        break;
-                    case CompressionMethodType.Rar:
-                        throw new NotImplementedException("Rar method not implemented yet.");
-                        break;
-                    case CompressionMethodType.Tar:
-                        throw new NotImplementedException("Tar method not implemented yet.");
-                        break;
-                    case CompressionMethodType.bzip:
-                        throw new NotImplementedException("bzip method not implemented yet.");
-                        break;
-                    case CompressionMethodType.Zip7:
-                        throw new NotImplementedException("7Zip method not implemented yet.");
-                        break;
-                    default:
-                        break;
-                }
 
+                //
+                var originHashes = FileHelper.CalculateFileHashesInDirectory(publishDir);
+                var selectedServers = ServerSettingInfo.CurrentServer.ServerInfo.Where(x => x.IsChecked).ToList();
+
+                foreach (var server in selectedServers)
+                {
+                    zipFilePath = Path.Combine(publishDir, $"{ServiceName}_{server.ServerKey}.zip");
+                    if (File.Exists(zipFilePath))
+                        File.Delete(zipFilePath);
+
+                    originHashes.RemoveAll(x => x.FilePath.Equals(zipFilePath));
+
+                    var provider = await PublisherServiceProvider.Initialize(server, ServiceName);
+                    //if (!provider.HasValue())
+                    //    return RunStatusType.Error;
+
+                    var service = provider.FileManagerService;
+                    var destinationHashes = service.CalculateFileHashes(ServiceKey);
+                    var comparedHashes = CompareFileHashes(originHashes, destinationHashes);
+                    SettingInfo.Current.ProjectInfo.FirstOrDefault(p => p.ProjectKey == ServiceKey).ServerIgnoredFiles.ToList()
+                        .ForEach(x =>
+                        {
+                            comparedHashes.FirstOrDefault(y => y.FileName.Equals(x.FileName))?.MarkAsIgnored();
+                        });
+
+                    switch (compressionMethod)
+                    {
+                        case CompressionMethodType.None:
+                            break;
+                        case CompressionMethodType.Zip:
+                            if (compressOnlyChanges)
+                            {
+                                var excludedStates = new FileStatusType[] { FileStatusType.Ignored, FileStatusType.Deleted, FileStatusType.Unchanged };
+                                ZipHelper.CreateFromFileList(comparedHashes, zipFilePath, CompressionLevel.Optimal, excludedStates);
+                            }
+                            else
+                                ZipFile.CreateFromDirectory(publishDir, zipFilePath, CompressionLevel.Optimal, includeParent);
+
+                            result.Add(new CompressArchiveDto() { ArchivePath = zipFilePath, FileHashes = comparedHashes });
+                            break;
+                        case CompressionMethodType.Gzip:
+                            throw new NotImplementedException("Gzip method not implemented yet.");
+                            break;
+                        case CompressionMethodType.Rar:
+                            throw new NotImplementedException("Rar method not implemented yet.");
+                            break;
+                        case CompressionMethodType.Tar:
+                            throw new NotImplementedException("Tar method not implemented yet.");
+                            break;
+                        case CompressionMethodType.bzip:
+                            throw new NotImplementedException("bzip method not implemented yet.");
+                            break;
+                        case CompressionMethodType.Zip7:
+                            throw new NotImplementedException("7Zip method not implemented yet.");
+                            break;
+                        default:
+                            break;
+                    }
+                }
             }
             catch (Exception ex)
             {
                 AutoLogger.Default.LogError(ex, "Publisher Compression");
             }
-            return Task.FromResult(zipFilePath);
+            //return Task.FromResult(zipFilePath);
+            return result;
         }
-
-        public virtual async Task<RunStatusType> Upload(string dataPath, CancellationToken cancellationToken, bool forceUpdate = false)
+        public virtual async Task<RunStatusType> Upload(List<CompressArchiveDto> compressedData, CancellationToken cancellationToken, bool forceUpdate = false)
         {
             var status = RunStatusType.Error;
             if (cancellationToken.IsCancellationRequested)
@@ -230,16 +264,8 @@ namespace SignalGo.Publisher.Engines.Commands
                 ServerInfo.ServerLogs.Add($"----(Manually)Started at [{DateTime.Now}] ------");
                 LogModule.AddLog(ServiceName, SectorType.Server, $"----(Manually)Started at [{DateTime.Now}] ------", LogTypeEnum.System);
 
-                // Generate Upload Model based on
-                Size = (new FileInfo(dataPath).Length / 1024);
-                UploadInfo uploadInfo = new UploadInfo(this)
-                {
-                    FileName = "publishArchive.zip",
-                    HasProgress = true,
-                    FilePath = dataPath
-                };
                 // set recieved service contract to out contract(to customize if needed)
-                var serviceContract = new ServiceContract
+                var serviceContract = new Shared.Models.ServiceContract
                 {
                     Name = ServiceName,
                     ServiceKey = ServiceKey,
@@ -260,12 +286,24 @@ namespace SignalGo.Publisher.Engines.Commands
                 {
                     ServerInfo server = selectedServers[i];
                     var currentSrv = ServerSettingInfo.CurrentServer.ServerInfo.FirstOrDefault(x => x.ServerKey == server.ServerKey);
-
                     currentSrv.ServerStatus = ServerInfo.ServerInfoStatusEnum.Updating;
-
                     var provider = await PublisherServiceProvider.Initialize(currentSrv, serviceContract.Name);
                     if (!provider.HasValue())
                         return RunStatusType.Error;
+
+                    // Generate Upload Model based on
+                    var currentCompressed = compressedData.FirstOrDefault(x => x.ArchivePath.Contains(currentSrv.ServerKey.ToString()));
+                    if (currentCompressed == null)
+                        return RunStatusType.Error;
+
+                    Size = (new FileInfo(currentCompressed.ArchivePath).Length / 1024);
+                    UploadInfo uploadInfo = new UploadInfo(this)
+                    {
+                        FileName = "publishArchive.zip",
+                        HasProgress = true,
+                        FilePath = currentCompressed.ArchivePath
+                    };
+                    serviceContract.CompressArchive = currentCompressed;
                     var uploadResult = await StreamManagerService.UploadAsync(uploadInfo, cancellationToken, serviceContract, provider.CurrentClientProvider);
 
                     if (uploadResult.Status)
@@ -322,5 +360,45 @@ namespace SignalGo.Publisher.Engines.Commands
             return Task.CompletedTask;
         }
         public abstract bool CalculateStatus(string line);
+
+        #region Utilities
+        /// <summary>
+        /// Sets the status of each file in origin collection based on filename and filehash.
+        /// </summary>
+        /// <param name="originHashes"></param>
+        /// <param name="destinationHashes"></param>
+        /// <returns></returns>
+        private List<HashedFileDto> CompareFileHashes(List<HashedFileDto> originHashes, List<HashedFileDto> destinationHashes)
+        {
+            var result = new List<HashedFileDto>();
+            var destination = default(HashedFileDto);
+
+            foreach (var origin in originHashes)
+            {
+                destination = destinationHashes.FirstOrDefault(x => x.FileName.Equals(origin.FileName));
+                if (destination == null)
+                    origin.MarkAsAdded();
+                else
+                {
+                    if (origin.FileHash.Equals(destination.FileHash))
+                        origin.MarkAsUnchanged();
+                    else
+                        origin.MarkAsModified();
+                }
+
+                result.Add(origin);
+            }
+
+            //finding files that have to be deleted
+            destinationHashes.Where(x => !originHashes.Any(y => x.FileName.Equals(y.FileName))).ToList()
+                .ForEach(z =>
+                {
+                    z.MarkAsDeleted();
+                    result.Add(z);
+                });
+
+            return result;
+        }
+        #endregion
     }
 }

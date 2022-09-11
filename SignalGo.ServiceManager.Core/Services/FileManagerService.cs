@@ -1,5 +1,7 @@
 ﻿using SignalGo.ServiceManager.Core.Models;
 using SignalGo.Shared.DataTypes;
+using SignalGo.Shared.Helpers;
+using SignalGo.Shared.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -8,6 +10,7 @@ using System.Linq;
 namespace SignalGo.ServiceManager.Core.Services
 {
     [ServiceContract("FileManager", ServiceType.ServerService, InstanceType.SingleInstance)]
+    [ServiceContract("FileManager", ServiceType.HttpService, InstanceType.SingleInstance)]
     public class FileManagerService
     {
         /// <summary>
@@ -30,6 +33,20 @@ namespace SignalGo.ServiceManager.Core.Services
                     return true;
                 return false;
             }).ToList();
+        }
+        /// <summary>
+        /// Returns file hashes of the specified server's assembly path.
+        /// </summary>
+        /// <param name="serviceKey"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        public List<HashedFileDto> CalculateFileHashes(Guid serviceKey)
+        {
+            var server = SettingInfo.Current.ServerInfo.FirstOrDefault(x => x.ServerKey == serviceKey);
+            if (server == null)
+                throw new Exception($"Service {serviceKey} not found!");
+
+            return FileHelper.CalculateFileHashesInDirectory(server.AssemblyPath);
         }
     }
 }

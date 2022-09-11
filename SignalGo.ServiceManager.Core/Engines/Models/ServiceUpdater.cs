@@ -80,24 +80,29 @@ namespace SignalGo.ServiceManager.Core.Engines.Models
                 string zipFilePath = Path.Combine(archive);
                 if (Directory.Exists(ExtractPath))
                 {
-                    //Directory.Delete(ExtractPath, true);
-                    var allFiles = Directory.GetFiles(ExtractPath);
-                    var filesList = allFiles.ToList();
-                    var ignoredFiles = filesList.Where(f => f.Contains(".zip")).ToList();
-                    ignoredFiles.AddRange(ServiceInfo.IgnoreFiles.Where(e => e.IsEnabled).Select(x => x.FileName));
-                    foreach (var item in ignoredFiles)
-                    {
-                        filesList.RemoveAll(x => x.Contains(item));
-                    }
-                    if (Directory.Exists(Path.Combine(ExtractPath, "publish")))
-                        Directory.Delete(Path.Combine(ExtractPath, "publish"), true);
-                    if (Directory.Exists(Path.Combine(ExtractPath, "runtimes")))
-                        Directory.Delete(Path.Combine(ExtractPath, "runtimes"), true);
-                    allFiles = filesList.ToArray();
-                    foreach (var item in allFiles)
-                    {
-                        File.Delete(item);
-                    }
+                    ////Directory.Delete(ExtractPath, true);
+                    //var allFiles = Directory.GetFiles(ExtractPath).ToList();
+                    //var ignoredFiles = allFiles.Where(f => f.Contains(".zip")).ToList();
+                    //ignoredFiles.AddRange(ServiceInfo.IgnoreFiles.Where(e => e.IsEnabled).Select(x => x.FileName));
+                    //foreach (var item in ignoredFiles)
+                    //{
+                    //    allFiles.RemoveAll(x => x.Contains(item));
+                    //}
+                    //if (Directory.Exists(Path.Combine(ExtractPath, "publish")))
+                    //    Directory.Delete(Path.Combine(ExtractPath, "publish"), true);
+                    //if (Directory.Exists(Path.Combine(ExtractPath, "runtimes")))
+                    //    Directory.Delete(Path.Combine(ExtractPath, "runtimes"), true);
+                    //foreach (var item in allFiles)
+                    //{
+                    //    File.Delete(item);
+                    //}
+
+                    //deletes all files marked as FileStatus.Deleted from server's extract directory
+                    ServiceInfo.CompressArchive.FileHashes.Where(x => x.FileStatus == Shared.DataTypes.FileStatusType.Deleted).ToList()
+                        .ForEach(x =>
+                        {
+                            File.Delete(Path.Combine(ExtractPath, x.FileName));
+                        });
                 }
                 if (compressionMethod == CompressionMethodType.Zip)
                     ZipFile.ExtractToDirectory(zipFilePath, ExtractPath, true);

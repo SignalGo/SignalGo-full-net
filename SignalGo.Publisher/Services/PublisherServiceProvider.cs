@@ -45,6 +45,8 @@ namespace SignalGo.Publisher.Services
             {
                 //isAllowed = serverInfo.HasAccess();
                 isAllowed = AccessControl.AuthorizeServer(serverInfo);
+
+                return Task.CompletedTask;
             });
             if (!isAllowed)
             {

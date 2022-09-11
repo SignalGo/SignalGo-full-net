@@ -66,7 +66,14 @@ namespace SignalGo.ServiceManager.Core.Helpers
                     var serversDetail = ServerDetails.Where(x => x.Value.IsEnabled).ToList();
                     for (int i = 0; i < serversDetail.Count; i++)
                     {
-                        serversDetail[i].Value.ServiceMemoryUsage = (serversDetail[i].Key.CurrentServerBase.BaseProcess.PrivateMemorySize64 / 1000000).ToString();
+                        try
+                        {
+                            serversDetail[i].Value.ServiceMemoryUsage = (serversDetail[i].Key.CurrentServerBase.BaseProcess.PrivateMemorySize64 / 1000000).ToString();
+                        }
+                        catch (Exception ex)
+                        {
+
+                        }
                     }
                     await Task.Delay(20000);
                 }

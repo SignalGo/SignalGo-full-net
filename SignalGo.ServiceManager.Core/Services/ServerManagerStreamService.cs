@@ -25,16 +25,16 @@ namespace SignalGo.ServiceManager.Core.Services
         /// </summary>
         /// <param name="streamInfo"></param>
         /// <returns></returns>
-        public async Task<string> UploadData(StreamInfo streamInfo, ServiceContract serviceContract)
+        public async Task<string> UploadData(StreamInfo<ServiceContract> streamInfo)
         {
             // formmat output file name with current datetime
-            string outFileName = $"{serviceContract.Name}{DateTime.Now:yyyyMMdd_hhmmss}.zip";
+            string outFileName = $"{streamInfo.Data.Name}{DateTime.Now:yyyyMMdd_hhmmss}.zip";
             // set output file path for write later
             string outFilePath = Path.GetFullPath(outFileName, Environment.CurrentDirectory);
             try
             {
                 var serviceToUpdate = SettingInfo.Current.ServerInfo
-                    .SingleOrDefault(s => s.ServerKey == serviceContract.ServiceKey);
+                    .SingleOrDefault(s => s.ServerKey == streamInfo.Data.ServiceKey);
                 if (serviceToUpdate == null)
                     return "failed";
                 double? progress = 0;
@@ -63,7 +63,8 @@ namespace SignalGo.ServiceManager.Core.Services
                     Name = serviceToUpdate.Name,
                     ServiceAssembliesPath = serviceToUpdate.AssemblyPath,
                     ServiceKey = serviceToUpdate.ServerKey,
-                    IgnoreFiles = serviceContract.IgnoreFiles
+                    CompressArchive = streamInfo.Data.CompressArchive,
+                    IgnoreFiles = streamInfo.Data.IgnoreFiles
                 };
                 using (var serviceUpdater = new ServiceUpdater(service, outFilePath))
                 {

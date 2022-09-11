@@ -7,9 +7,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\MvvmGo\MvvmGo\MvvmGo.csproj" />
+    <ProjectReference Include="..\..\SignalGo-full-net\SignalGo.Server\SignalGo.Server.csproj" />
+    <ProjectReference Include="..\..\SignalGo-full-net\SignalGo.Shared\SignalGo.Shared.csproj" />
     <ProjectReference Include="..\SignalGo.Publisher.Shared\SignalGo.Publisher.Shared.csproj" />
-    <ProjectReference Include="..\SignalGo.Server\SignalGo.Server.csproj" />
-    <ProjectReference Include="..\SignalGo.Shared\SignalGo.Shared.csproj" />
   </ItemGroup>
 
   <ItemGroup>
