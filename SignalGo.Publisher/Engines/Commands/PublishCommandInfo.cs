@@ -1,6 +1,7 @@
 ﻿using SignalGo.Publisher.Engines.Models;
 using SignalGo.Publisher.Shared.Models;
 using SignalGo.Shared.Models;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO.Compression;
 using System.Threading;
@@ -60,7 +61,7 @@ namespace SignalGo.Publisher.Engines.Commands
         /// <param name="includeParent"></param>
         /// <param name="compressionLevel"></param>
         /// <returns></returns>
-        public override async Task<string> Compress(CompressionMethodType compressionMethod = CompressionMethodType.Zip, bool includeParent = false, CompressionLevel compressionLevel = CompressionLevel.Fastest)
+        public override async Task<List<CompressArchiveDto>> Compress(CompressionMethodType compressionMethod = CompressionMethodType.Zip, bool includeParent = false, CompressionLevel compressionLevel = CompressionLevel.Fastest, bool compressOnlyChanges = true)
         {
             return await base.Compress();
         }

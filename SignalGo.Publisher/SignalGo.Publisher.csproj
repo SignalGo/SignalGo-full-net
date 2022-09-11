@@ -28,16 +28,17 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\MvvmGo\MvvmGo.WindowsWPF\MvvmGo.WindowsWPF.csproj" />
     <ProjectReference Include="..\..\MvvmGo\MvvmGo\MvvmGo.csproj" />
-    <ProjectReference Include="..\SignalGo.Client\SignalGo.Client.csproj" />
+    <ProjectReference Include="..\..\SignalGo-full-net\SignalGo.Client\SignalGo.Client.csproj" />
+    <ProjectReference Include="..\..\SignalGo-full-net\SignalGo.Server\SignalGo.Server.csproj" />
+    <ProjectReference Include="..\..\SignalGo-full-net\SignalGo.Shared\SignalGo.Shared.csproj" />
+    <ProjectReference Include="..\..\SignalGo-full-net\SignalGo.Utilities\SignalGo.Utilities.csproj" />
     <ProjectReference Include="..\SignalGo.Publisher.Shared\SignalGo.Publisher.Shared.csproj" />
-    <ProjectReference Include="..\SignalGo.Shared\SignalGo.Shared.csproj" />
-    <ProjectReference Include="..\SignalGo.Utilities\SignalGo.Utilities.csproj" />
   </ItemGroup>
 
   <ItemGroup>

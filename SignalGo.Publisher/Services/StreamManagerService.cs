@@ -26,11 +26,12 @@ namespace SignalGo.Publisher.Services
             {
                 using Stream stream = new MemoryStream(File.ReadAllBytes(uploadInfo.FilePath));
                 stream.Seek(0, SeekOrigin.Begin);
-                using var streamInfo = new StreamInfo()
+                using var streamInfo = new StreamInfo<ServiceContract>()
                 {
                     FileName = uploadInfo.FileName,
                     Length = stream.Length,
                     Stream = stream,
+                    Data = serviceContract
                 };
                 streamInfo.WriteManuallyAsync = async (streamWriter) =>
                 {
@@ -58,7 +59,7 @@ namespace SignalGo.Publisher.Services
 
                 //var provider = PublisherServiceProvider.Initialize(serverInfo, serviceContract.Name);
                 var service = new ServerManagerService.StreamServices.ServerManagerStreamService(clientProvider);
-                result = await service.UploadDataAsync(streamInfo, serviceContract);
+                result = await service.UploadDataAsync(streamInfo);
                 if (result == "success")
                 {
                     uploadInfo.Status = true;
