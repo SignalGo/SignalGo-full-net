@@ -7,6 +7,7 @@ using SignalGo.Publisher.Models.DataTransferObjects;
 using SignalGo.Publisher.Models.Extra;
 using SignalGo.Publisher.Services;
 using SignalGo.Publisher.Shared.Helpers;
+using SignalGo.Publisher.Shared.Models;
 using SignalGo.Shared.DataTypes;
 using SignalGo.Shared.Log;
 using SignalGo.Shared.Models;

@@ -1,5 +1,5 @@
 ﻿using SignalGo.Publisher.Engines.Models;
-using SignalGo.Publisher.Models;
+using SignalGo.Publisher.Shared.Models;
 using SignalGo.Shared.Models;
 using System;
 using System.Collections.Generic;
