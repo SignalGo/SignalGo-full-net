@@ -8,7 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SignalGo.Publisher.Helpers
+namespace SignalGo.Publisher.Shared.Helpers
 {
     //idea from: https://stackoverflow.com/a/35416368/18026723
     public static class ZipHelper
@@ -22,12 +22,17 @@ namespace SignalGo.Publisher.Helpers
         /// <param name="excludedStates">file types that are not intended to be part of the resulted archive(zip)</param>
         public static void CreateFromFileList(List<HashedFileDto> sourceFiles, string destinationArchiveFileName, CompressionLevel compressionLevel, params FileStatusType[] excludedStates)
         {
-            using var zipFileStream = new FileStream(destinationArchiveFileName, FileMode.Create, FileAccess.ReadWrite, FileShare.ReadWrite);
-            using var archive = new ZipArchive(zipFileStream, ZipArchiveMode.Create);
-            foreach (var fileInfo in sourceFiles)
+            //using declarations does not support in c# 7
+            using (var zipFileStream = new FileStream(destinationArchiveFileName, FileMode.Create, FileAccess.ReadWrite, FileShare.ReadWrite))
             {
-                if (excludedStates != null && !excludedStates.Contains(fileInfo.FileStatus))
-                    archive.CreateEntryFromFile(fileInfo.FilePath, fileInfo.FileName, compressionLevel);
+                using (var archive = new ZipArchive(zipFileStream, ZipArchiveMode.Create))
+                {
+                    foreach (var fileInfo in sourceFiles)
+                    {
+                        if (excludedStates != null && !excludedStates.Contains(fileInfo.FileStatus))
+                            archive.CreateEntryFromFile(fileInfo.FilePath, fileInfo.FileName, compressionLevel);
+                    }
+                }
             }
         }
     }
