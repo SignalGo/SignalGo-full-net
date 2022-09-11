@@ -1,6 +1,6 @@
-﻿using SignalGo.ServiceManager.Core.Models;
+﻿using SignalGo.Publisher.Shared.Helpers;
+using SignalGo.ServiceManager.Core.Models;
 using SignalGo.Shared.DataTypes;
-using SignalGo.Shared.Helpers;
 using SignalGo.Shared.Models;
 using System;
 using System.Collections.Generic;

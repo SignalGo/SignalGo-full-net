@@ -2,13 +2,12 @@
 using SignalGo.Publisher.Engines.Interfaces;
 using SignalGo.Publisher.Engines.Models;
 using SignalGo.Publisher.Extensions;
-using SignalGo.Publisher.Helpers;
 using SignalGo.Publisher.Models;
 using SignalGo.Publisher.Models.DataTransferObjects;
 using SignalGo.Publisher.Models.Extra;
 using SignalGo.Publisher.Services;
+using SignalGo.Publisher.Shared.Helpers;
 using SignalGo.Shared.DataTypes;
-using SignalGo.Shared.Helpers;
 using SignalGo.Shared.Log;
 using SignalGo.Shared.Models;
 using System;

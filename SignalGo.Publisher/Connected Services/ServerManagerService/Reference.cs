@@ -19,20 +19,6 @@ using System;
 namespace ServerManagerService.Interfaces
 {
 
-    public partial interface IFileManagerServiceSync
-    {
-        global::System.Collections.Generic.List<string> GetTextFiles(global::System.Guid serviceKey);
-        global::System.Collections.Generic.List<global::SignalGo.Shared.Models.HashedFileDto> CalculateFileHashes(global::System.Guid serviceKey);
-    }
-    public partial interface IFileManagerServiceAsync
-    {
-        Task<global::System.Collections.Generic.List<string>> GetTextFilesAsync(global::System.Guid serviceKey);
-        Task<global::System.Collections.Generic.List<global::SignalGo.Shared.Models.HashedFileDto>> CalculateFileHashesAsync(global::System.Guid serviceKey);
-    }
-    [ServiceContract("filemanagerserverservice", ServiceType.ServerService, InstanceType.SingleInstance)]
-    public partial interface IFileManagerService: IFileManagerServiceAsync, IFileManagerServiceSync
-    {
-    }
     public partial interface IServerManagerStreamServiceSync
     {
         string UploadData(global::SignalGo.Shared.Models.StreamInfo<global::SignalGo.Publisher.Shared.Models.ServiceContract> streamInfo);
@@ -69,49 +55,24 @@ namespace ServerManagerService.Interfaces
     public partial interface IServerManagerService: IServerManagerServiceAsync, IServerManagerServiceSync
     {
     }
+    public partial interface IFileManagerServiceSync
+    {
+        global::System.Collections.Generic.List<string> GetTextFiles(global::System.Guid serviceKey);
+        global::System.Collections.Generic.List<global::SignalGo.Shared.Models.HashedFileDto> CalculateFileHashes(global::System.Guid serviceKey);
+    }
+    public partial interface IFileManagerServiceAsync
+    {
+        Task<global::System.Collections.Generic.List<string>> GetTextFilesAsync(global::System.Guid serviceKey);
+        Task<global::System.Collections.Generic.List<global::SignalGo.Shared.Models.HashedFileDto>> CalculateFileHashesAsync(global::System.Guid serviceKey);
+    }
+    [ServiceContract("filemanagerserverservice", ServiceType.ServerService, InstanceType.SingleInstance)]
+    public partial interface IFileManagerService: IFileManagerServiceAsync, IFileManagerServiceSync
+    {
+    }
 }
 
 namespace ServerManagerService.ServerServices
 {
-    [ServiceContract("filemanagerserverservice",ServiceType.ServerService, InstanceType.SingleInstance)]
-    public partial class FileManagerService : IFileManagerService
-    {
-        private SignalGo.Client.ClientProvider CurrentProvider { get; set; }
-        string ServiceName { get; set; }
-        public FileManagerService(SignalGo.Client.ClientProvider clientProvider)
-        {
-            CurrentProvider = clientProvider;
-            ServiceName = this.GetType().GetServerServiceName(true);
-        }
-        public virtual global::System.Collections.Generic.List<string> GetTextFiles(global::System.Guid serviceKey)
-        {
-                return  SignalGo.Client.ClientManager.ConnectorExtensions.SendDataSync<global::System.Collections.Generic.List<string>>(CurrentProvider, ServiceName,"GetTextFiles", new SignalGo.Shared.Models.ParameterInfo[]
-                {
-                         new  SignalGo.Shared.Models.ParameterInfo() { Name = nameof(serviceKey),Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(serviceKey) },
-                });
-        }
-        public virtual Task<global::System.Collections.Generic.List<string>> GetTextFilesAsync(global::System.Guid serviceKey)
-        {
-                return SignalGo.Client.ClientManager.ConnectorExtensions.SendDataAsync<global::System.Collections.Generic.List<string>>(CurrentProvider, ServiceName,"GetTextFiles", new SignalGo.Shared.Models.ParameterInfo[]
-                {
-                         new  SignalGo.Shared.Models.ParameterInfo() { Name = nameof(serviceKey),Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(serviceKey) },
-                });
-        }
-        public virtual global::System.Collections.Generic.List<global::SignalGo.Shared.Models.HashedFileDto> CalculateFileHashes(global::System.Guid serviceKey)
-        {
-                return  SignalGo.Client.ClientManager.ConnectorExtensions.SendDataSync<global::System.Collections.Generic.List<global::SignalGo.Shared.Models.HashedFileDto>>(CurrentProvider, ServiceName,"CalculateFileHashes", new SignalGo.Shared.Models.ParameterInfo[]
-                {
-                         new  SignalGo.Shared.Models.ParameterInfo() { Name = nameof(serviceKey),Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(serviceKey) },
-                });
-        }
-        public virtual Task<global::System.Collections.Generic.List<global::SignalGo.Shared.Models.HashedFileDto>> CalculateFileHashesAsync(global::System.Guid serviceKey)
-        {
-                return SignalGo.Client.ClientManager.ConnectorExtensions.SendDataAsync<global::System.Collections.Generic.List<global::SignalGo.Shared.Models.HashedFileDto>>(CurrentProvider, ServiceName,"CalculateFileHashes", new SignalGo.Shared.Models.ParameterInfo[]
-                {
-                         new  SignalGo.Shared.Models.ParameterInfo() { Name = nameof(serviceKey),Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(serviceKey) },
-                });
-        }
-    }
     [ServiceContract("servermanagerserverservice",ServiceType.ServerService, InstanceType.SingleInstance)]
     public partial class ServerManagerService : IServerManagerService
     {
@@ -178,6 +139,45 @@ namespace ServerManagerService.ServerServices
                 return SignalGo.Client.ClientManager.ConnectorExtensions.SendDataAsync<string>(CurrentProvider, ServiceName,"CallClientService", new SignalGo.Shared.Models.ParameterInfo[]
                 {
                          new  SignalGo.Shared.Models.ParameterInfo() { Name = nameof(message),Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(message) },
+                });
+        }
+    }
+    [ServiceContract("filemanagerserverservice",ServiceType.ServerService, InstanceType.SingleInstance)]
+    public partial class FileManagerService : IFileManagerService
+    {
+        private SignalGo.Client.ClientProvider CurrentProvider { get; set; }
+        string ServiceName { get; set; }
+        public FileManagerService(SignalGo.Client.ClientProvider clientProvider)
+        {
+            CurrentProvider = clientProvider;
+            ServiceName = this.GetType().GetServerServiceName(true);
+        }
+        public virtual global::System.Collections.Generic.List<string> GetTextFiles(global::System.Guid serviceKey)
+        {
+                return  SignalGo.Client.ClientManager.ConnectorExtensions.SendDataSync<global::System.Collections.Generic.List<string>>(CurrentProvider, ServiceName,"GetTextFiles", new SignalGo.Shared.Models.ParameterInfo[]
+                {
+                         new  SignalGo.Shared.Models.ParameterInfo() { Name = nameof(serviceKey),Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(serviceKey) },
+                });
+        }
+        public virtual Task<global::System.Collections.Generic.List<string>> GetTextFilesAsync(global::System.Guid serviceKey)
+        {
+                return SignalGo.Client.ClientManager.ConnectorExtensions.SendDataAsync<global::System.Collections.Generic.List<string>>(CurrentProvider, ServiceName,"GetTextFiles", new SignalGo.Shared.Models.ParameterInfo[]
+                {
+                         new  SignalGo.Shared.Models.ParameterInfo() { Name = nameof(serviceKey),Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(serviceKey) },
+                });
+        }
+        public virtual global::System.Collections.Generic.List<global::SignalGo.Shared.Models.HashedFileDto> CalculateFileHashes(global::System.Guid serviceKey)
+        {
+                return  SignalGo.Client.ClientManager.ConnectorExtensions.SendDataSync<global::System.Collections.Generic.List<global::SignalGo.Shared.Models.HashedFileDto>>(CurrentProvider, ServiceName,"CalculateFileHashes", new SignalGo.Shared.Models.ParameterInfo[]
+                {
+                         new  SignalGo.Shared.Models.ParameterInfo() { Name = nameof(serviceKey),Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(serviceKey) },
+                });
+        }
+        public virtual Task<global::System.Collections.Generic.List<global::SignalGo.Shared.Models.HashedFileDto>> CalculateFileHashesAsync(global::System.Guid serviceKey)
+        {
+                return SignalGo.Client.ClientManager.ConnectorExtensions.SendDataAsync<global::System.Collections.Generic.List<global::SignalGo.Shared.Models.HashedFileDto>>(CurrentProvider, ServiceName,"CalculateFileHashes", new SignalGo.Shared.Models.ParameterInfo[]
+                {
+                         new  SignalGo.Shared.Models.ParameterInfo() { Name = nameof(serviceKey),Value = SignalGo.Client.ClientSerializationHelper.SerializeObject(serviceKey) },
                 });
         }
     }
