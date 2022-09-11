@@ -187,7 +187,7 @@ namespace SignalGo.ServiceManager.Core.BaseViewModels
             try
             {
                 SelectedServerFile = filePath;
-                var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+                using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
                 var lengthWrite = 0;
                 using var memoryStream = new MemoryStream();
                 while (lengthWrite != stream.Length)
