@@ -1829,7 +1829,7 @@ namespace SignalGo.Client.ClientManager
                 {
                     if (WaitedMethodsForResponse.TryGetValue(callback.Guid, out ITaskCompletionManager<MethodCallbackInfo> keyValue))
                     {
-                        keyValue.SetException(new Exception($"SendDataAsync has error IsConnected: {IsConnected}", ex));
+                        keyValue.SetException(new Exception($"SendDataAsync has error IsConnected: {IsConnected} ServerUrl {ServerUrl} Actual: {_address}:{_port}", ex));
                     }
                 }
                 catch
