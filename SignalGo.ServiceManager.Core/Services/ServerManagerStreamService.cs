@@ -63,6 +63,7 @@ namespace SignalGo.ServiceManager.Core.Services
                     Name = serviceToUpdate.Name,
                     ServiceAssembliesPath = serviceToUpdate.AssemblyPath,
                     ServiceKey = serviceToUpdate.ServerKey,
+                    CurrentUser = streamInfo.Data.CurrentUser,
                     CompressArchive = streamInfo.Data.CompressArchive,
                     IgnoreFiles = streamInfo.Data.IgnoreFiles
                 };

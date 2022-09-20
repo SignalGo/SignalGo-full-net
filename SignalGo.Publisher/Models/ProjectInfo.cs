@@ -11,6 +11,7 @@ using SignalGo.Publisher.Engines.Interfaces;
 using SignalGo.Publisher.Shared.Models;
 using SignalGo.Publisher.ViewModels;
 using System.Collections.ObjectModel;
+using System.Collections.Generic;
 
 namespace SignalGo.Publisher.Models
 {
@@ -60,7 +61,9 @@ namespace SignalGo.Publisher.Models
 
         private string _Name;
         private string _LastUpdateDateTime;
+        private AppUserDto _appUser;
         private Guid _ProjectKey;
+        private string _targetKeys;
         private string _ProjectPath;
         private string _ProjectAssembliesPath;
 
@@ -102,6 +105,26 @@ namespace SignalGo.Publisher.Models
                 OnPropertyChanged(nameof(ProjectKey));
             }
         }
+        /// <summary>
+        /// Comma-separated list of target microservices (Guid keys). 
+        /// TODO: Should be a list in the near future
+        /// </summary>
+        public string TargetKeys
+        {
+            get
+            {
+                if (string.IsNullOrWhiteSpace(_targetKeys))
+                    _targetKeys = ProjectKey.ToString();
+
+                return _targetKeys;
+            }
+            set
+            {
+                _targetKeys = value;
+                OnPropertyChanged(nameof(TargetKeys));
+            }
+        }
+
         #region File Manager
         [JsonIgnore]
         public ObservableCollection<string> ServerFiles { get; set; } = new ObservableCollection<string>();
@@ -147,6 +170,18 @@ namespace SignalGo.Publisher.Models
             {
                 _LastUpdateDateTime = value;
                 OnPropertyChanged(nameof(LastUpdateDateTime));
+            }
+        }
+        public AppUserDto LastUpdateUser
+        {
+            get
+            {
+                return _appUser;
+            }
+            set
+            {
+                _appUser = value;
+                OnPropertyChanged(nameof(LastUpdateUser));
             }
         }
 

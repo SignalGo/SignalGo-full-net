@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace SignalGo.Shared.DataTypes
+namespace SignalGo.Publisher.Shared.DataTypes
 {
     public enum FileStatusType : byte
     {
