@@ -1,4 +1,5 @@
 ﻿using SignalGo.Publisher.Shared.Helpers;
+using SignalGo.Publisher.Shared.Models;
 using SignalGo.ServiceManager.Core.Models;
 using SignalGo.Shared.DataTypes;
 using SignalGo.Shared.Models;
@@ -10,7 +11,7 @@ using System.Linq;
 namespace SignalGo.ServiceManager.Core.Services
 {
     [ServiceContract("FileManager", ServiceType.ServerService, InstanceType.SingleInstance)]
-    [ServiceContract("FileManager", ServiceType.HttpService, InstanceType.SingleInstance)]
+    //[ServiceContract("FileManager", ServiceType.HttpService, InstanceType.SingleInstance)]
     public class FileManagerService
     {
         /// <summary>
@@ -35,7 +36,7 @@ namespace SignalGo.ServiceManager.Core.Services
             }).ToList();
         }
         /// <summary>
-        /// Returns file hashes of the specified server's assembly path.
+        /// Returns file hashes of the specified microservice's assembly path.
         /// </summary>
         /// <param name="serviceKey"></param>
         /// <returns></returns>
@@ -47,6 +48,23 @@ namespace SignalGo.ServiceManager.Core.Services
                 throw new Exception($"Service {serviceKey} not found!");
 
             return FileHelper.CalculateFileHashesInDirectory(server.AssemblyPath);
+        }
+
+        public ServiceInspectionDto InspectServerMicroservice(Guid serviceKey)
+        {
+            var result = new ServiceInspectionDto();
+
+            var microservice = SettingInfo.Current.ServerInfo.FirstOrDefault(x => x.ServerKey == serviceKey);
+            if (microservice == null)
+                return result;
+
+            //
+            result.MarkAsExist();
+            result.ServiceKey = serviceKey;
+            result.RemoteServerKey = Guid.Empty;//we don't know the server on which we are trying to update services.
+            result.FileHashes = FileHelper.CalculateFileHashesInDirectory(microservice.AssemblyPath);
+
+            return result;
         }
     }
 }

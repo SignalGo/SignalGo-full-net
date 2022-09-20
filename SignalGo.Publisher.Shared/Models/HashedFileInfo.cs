@@ -1,9 +1,9 @@
-﻿using SignalGo.Shared.DataTypes;
+﻿using SignalGo.Publisher.Shared.DataTypes;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace SignalGo.Shared.Models
+namespace SignalGo.Publisher.Shared.Models
 {
     public class HashedFileDto
     {
@@ -32,6 +32,15 @@ namespace SignalGo.Shared.Models
 
 
         #region Methods
+        public HashedFileDto Clone()
+        {
+            return new HashedFileDto()
+            {
+                FilePath = FilePath,
+                FileHash = FileHash,
+                FileStatus = FileStatus,
+            };
+        }
         public void MarkAsUnchanged()
         {
             FileStatus = FileStatusType.Unchanged;

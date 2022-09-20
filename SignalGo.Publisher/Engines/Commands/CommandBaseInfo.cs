@@ -1,14 +1,15 @@
 ﻿using MvvmGo.ViewModels;
 using SignalGo.Publisher.Engines.Interfaces;
+using SignalGo.Publisher.Engines.Interfaces.Models;
 using SignalGo.Publisher.Engines.Models;
 using SignalGo.Publisher.Extensions;
 using SignalGo.Publisher.Models;
 using SignalGo.Publisher.Models.DataTransferObjects;
 using SignalGo.Publisher.Models.Extra;
 using SignalGo.Publisher.Services;
+using SignalGo.Publisher.Shared.DataTypes;
 using SignalGo.Publisher.Shared.Helpers;
 using SignalGo.Publisher.Shared.Models;
-using SignalGo.Shared.DataTypes;
 using SignalGo.Shared.Log;
 using SignalGo.Shared.Models;
 using System;
@@ -24,6 +25,7 @@ namespace SignalGo.Publisher.Engines.Commands
 {
     public abstract class CommandBaseInfo : BaseViewModel, ICommand, IPublish
     {
+        #region Props
         private RunStatusType _Status;
         public RunStatusType Status
         {
@@ -98,6 +100,7 @@ namespace SignalGo.Publisher.Engines.Commands
         public string AssembliesPath { get; set; }
         public string ServiceName { get; set; }
         public Guid ServiceKey { get; set; }
+        #endregion
 
         /// <summary>
         /// Base Run Module for commands
@@ -173,42 +176,23 @@ namespace SignalGo.Publisher.Engines.Commands
         {
             var zipFilePath = string.Empty;
             var result = new List<CompressArchiveDto>();
+            var targetServiceKeys = ReadTargetKeys();
 
             try
             {
-                string[] directories = Directory.GetDirectories(AssembliesPath);
-                string publishDir = directories.FirstOrDefault(x => x.Contains("publish"));
-                if (string.IsNullOrEmpty(publishDir))
-                {
-                    publishDir = Path.Combine(AssembliesPath, "publish");
-                }
-                Directory.CreateDirectory(publishDir);
-
-                //
+                //creating publish directory
+                var publishDir = CreatePublishDirectory();
+                //removing old zip files
+                RemoveOldArchiveFiles(publishDir, targetServiceKeys);
+                //getting origin hashes
                 var originHashes = FileHelper.CalculateFileHashesInDirectory(publishDir);
-                var selectedServers = ServerSettingInfo.CurrentServer.ServerInfo.Where(x => x.IsChecked).ToList();
+                //inspecting remote/target microservices
+                var inspector = new ServiceInspector(ServiceKey, targetServiceKeys, ServiceName);
+                var inspections = await inspector.Inspect(publishDir, originHashes);
 
-                foreach (var server in selectedServers)
+                //creating archive files
+                foreach (var inspection in inspections.Where(x => x.IsExist).ToList())
                 {
-                    zipFilePath = Path.Combine(publishDir, $"{ServiceName}_{server.ServerKey}.zip");
-                    if (File.Exists(zipFilePath))
-                        File.Delete(zipFilePath);
-
-                    originHashes.RemoveAll(x => x.FilePath.Equals(zipFilePath));
-
-                    var provider = await PublisherServiceProvider.Initialize(server, ServiceName);
-                    //if (!provider.HasValue())
-                    //    return RunStatusType.Error;
-
-                    var service = provider.FileManagerService;
-                    var destinationHashes = service.CalculateFileHashes(ServiceKey);
-                    var comparedHashes = CompareFileHashes(originHashes, destinationHashes);
-                    SettingInfo.Current.ProjectInfo.FirstOrDefault(p => p.ProjectKey == ServiceKey).ServerIgnoredFiles.ToList()
-                        .ForEach(x =>
-                        {
-                            comparedHashes.FirstOrDefault(y => y.FileName.Equals(x.FileName))?.MarkAsIgnored();
-                        });
-
                     switch (compressionMethod)
                     {
                         case CompressionMethodType.None:
@@ -217,12 +201,12 @@ namespace SignalGo.Publisher.Engines.Commands
                             if (compressOnlyChanges)
                             {
                                 var excludedStates = new FileStatusType[] { FileStatusType.Ignored, FileStatusType.Deleted, FileStatusType.Unchanged };
-                                ZipHelper.CreateFromFileList(comparedHashes, zipFilePath, CompressionLevel.Optimal, excludedStates);
+                                ZipHelper.CreateFromFileList(inspection.ComparedHashes, inspection.ArchivePath, CompressionLevel.Optimal, excludedStates);
                             }
                             else
-                                ZipFile.CreateFromDirectory(publishDir, zipFilePath, CompressionLevel.Optimal, includeParent);
+                                ZipFile.CreateFromDirectory(publishDir, inspection.ArchivePath, CompressionLevel.Optimal, includeParent);
 
-                            result.Add(new CompressArchiveDto() { ArchivePath = zipFilePath, FileHashes = comparedHashes });
+                            result.Add(new CompressArchiveDto() { TargetServiceKey = inspection.ServiceKey, ArchivePath = inspection.ArchivePath, FileHashes = inspection.ComparedHashes });
                             break;
                         case CompressionMethodType.Gzip:
                             throw new NotImplementedException("Gzip method not implemented yet.");
@@ -251,9 +235,113 @@ namespace SignalGo.Publisher.Engines.Commands
             //return Task.FromResult(zipFilePath);
             return result;
         }
+
+        //public virtual async Task<List<CompressArchiveDto>> Compress(CompressionMethodType compressionMethod = CompressionMethodType.Zip, bool includeParent = false, CompressionLevel compressionLevel = CompressionLevel.Fastest, bool compressOnlyChanges = true)
+        //{
+        //    var zipFilePath = string.Empty;
+        //    ServiceInspectionDto inspection;
+        //    var inspections = new List<ServiceInspectionDto>();
+        //    var result = new List<CompressArchiveDto>();
+
+        //    try
+        //    {
+        //        //creating publish directory
+        //        string[] directories = Directory.GetDirectories(AssembliesPath);
+        //        string publishDir = directories.FirstOrDefault(x => x.Contains("publish"));
+        //        if (string.IsNullOrEmpty(publishDir))
+        //        {
+        //            publishDir = Path.Combine(AssembliesPath, "publish");
+        //        }
+        //        Directory.CreateDirectory(publishDir);
+
+        //        //removing old zip files
+        //        RemoveOldArchiveFiles(publishDir);
+        //        //getting origin hashes
+        //        var originHashes = FileHelper.CalculateFileHashesInDirectory(publishDir);
+
+        //        var selectedServers = ServerSettingInfo.CurrentServer.ServerInfo.Where(x => x.IsChecked).ToList();
+        //        foreach (var server in selectedServers)
+        //        {
+        //            var provider = await PublisherServiceProvider.Initialize(server, ServiceName);
+        //            //if (!provider.HasValue())
+        //            //    return RunStatusType.Error;
+
+
+        //            //foreach microservice key 
+        //            //1. ServiceInspectDto inspectedService =  server.InspectServerMicroservice(microservice.key);
+        //            //2. if (inspectedService.IsExist) { inspectedService.ComparedHashes = CompareFileHashes(originHashes, destinationHashes);  inspected.ArchivePath = zipFilePath; }
+        //            //3. (var List<ServerModerator>).Inspections.Add(inspected);
+        //            foreach (var serviceKey in ServiceKeys)
+        //            {
+        //                inspection = provider.FileManagerService.InspectServerMicroservice(serviceKey);
+        //                if (inspection.IsExist)// if microservice is exist on the server
+        //                {
+        //                    inspection.ComparedHashes = CompareFileHashes(originHashes, inspection.FileHashes);
+        //                    inspection.ArchivePath = Path.Combine(publishDir, $"{ServiceName}_{server.ServerKey}_{serviceKey}.zip");
+        //                }
+        //            }
+
+        //            //zipFilePath = Path.Combine(publishDir, $"{ServiceName}_{server.ServerKey}.zip");
+        //            //if (File.Exists(zipFilePath))
+        //            //    File.Delete(zipFilePath);
+
+
+        //            //var service = provider.FileManagerService;
+        //            var destinationHashes = provider.FileManagerService.CalculateFileHashes(ServiceKey);
+        //            var comparedHashes = CompareFileHashes(originHashes, destinationHashes);
+        //            SettingInfo.Current.ProjectInfo.FirstOrDefault(p => p.ProjectKey == ServiceKey).ServerIgnoredFiles.ToList()
+        //                .ForEach(x =>
+        //                {
+        //                    comparedHashes.FirstOrDefault(y => y.FileName.Equals(x.FileName))?.MarkAsIgnored();
+        //                });
+
+        //            switch (compressionMethod)
+        //            {
+        //                case CompressionMethodType.None:
+        //                    break;
+        //                case CompressionMethodType.Zip:
+        //                    if (compressOnlyChanges)
+        //                    {
+        //                        var excludedStates = new FileStatusType[] { FileStatusType.Ignored, FileStatusType.Deleted, FileStatusType.Unchanged };
+        //                        ZipHelper.CreateFromFileList(comparedHashes, zipFilePath, CompressionLevel.Optimal, excludedStates);
+        //                    }
+        //                    else
+        //                        ZipFile.CreateFromDirectory(publishDir, zipFilePath, CompressionLevel.Optimal, includeParent);
+
+        //                    result.Add(new CompressArchiveDto() { ArchivePath = zipFilePath, FileHashes = comparedHashes });
+        //                    break;
+        //                case CompressionMethodType.Gzip:
+        //                    throw new NotImplementedException("Gzip method not implemented yet.");
+        //                    break;
+        //                case CompressionMethodType.Rar:
+        //                    throw new NotImplementedException("Rar method not implemented yet.");
+        //                    break;
+        //                case CompressionMethodType.Tar:
+        //                    throw new NotImplementedException("Tar method not implemented yet.");
+        //                    break;
+        //                case CompressionMethodType.bzip:
+        //                    throw new NotImplementedException("bzip method not implemented yet.");
+        //                    break;
+        //                case CompressionMethodType.Zip7:
+        //                    throw new NotImplementedException("7Zip method not implemented yet.");
+        //                    break;
+        //                default:
+        //                    break;
+        //            }
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        AutoLogger.Default.LogError(ex, "Publisher Compression");
+        //    }
+        //    //return Task.FromResult(zipFilePath);
+        //    return result;
+        //}
         public virtual async Task<RunStatusType> Upload(List<CompressArchiveDto> compressedData, CancellationToken cancellationToken, bool forceUpdate = false)
         {
             var status = RunStatusType.Error;
+            var uploadResults = Array.Empty<UploadInfo>();
+
             if (cancellationToken.IsCancellationRequested)
             {
                 Debug.WriteLine("Cancellation Requested In Upload Command");
@@ -268,7 +356,8 @@ namespace SignalGo.Publisher.Engines.Commands
                 var serviceContract = new Shared.Models.ServiceContract
                 {
                     Name = ServiceName,
-                    ServiceKey = ServiceKey,
+                    //ServiceKey = ServiceKey, //set this while looping through target services
+                    CurrentUser = AppUserHelper.GetCurrentUserInfo(),
                     IgnoreFiles = SettingInfo.Current.ProjectInfo.FirstOrDefault(p => p.ProjectKey == ServiceKey).ServerIgnoredFiles.Where(e => e.IsEnabled).Select(x => new IgnoreFileDto()
                     {
                         FileName = x.FileName,
@@ -291,49 +380,63 @@ namespace SignalGo.Publisher.Engines.Commands
                     if (!provider.HasValue())
                         return RunStatusType.Error;
 
-                    // Generate Upload Model based on
-                    var currentCompressed = compressedData.FirstOrDefault(x => x.ArchivePath.Contains(currentSrv.ServerKey.ToString()));
-                    if (currentCompressed == null)
-                        return RunStatusType.Error;
-
-                    Size = (new FileInfo(currentCompressed.ArchivePath).Length / 1024);
-                    UploadInfo uploadInfo = new UploadInfo(this)
+                    //filter archived by selected server
+                    var serverArchives = compressedData.Where(x => x.ArchivePath.Contains($"_{server.ServerKey}_")).ToList(); // ArchivePath pattern: ProjectKey_ServerKey_ServiceKey
+                    if (serverArchives.Any())
                     {
-                        FileName = "publishArchive.zip",
-                        HasProgress = true,
-                        FilePath = currentCompressed.ArchivePath
-                    };
-                    serviceContract.CompressArchive = currentCompressed;
-                    var uploadResult = await StreamManagerService.UploadAsync(uploadInfo, cancellationToken, serviceContract, provider.CurrentClientProvider);
+                        foreach (var archive in serverArchives)
+                        {
+                            //// Generate Upload Model based on
+                            //var currentCompressed = compressedData.FirstOrDefault(x => x.ArchivePath.Contains(currentSrv.ServerKey.ToString()));
+                            //if (currentCompressed == null)
+                            //    return RunStatusType.Error;
 
-                    if (uploadResult.Status)
-                    {
-                        ServerInfo.ServerLogs.Add($"------ Ended at [{DateTime.Now}] ------");
-                        LogModule.AddLog(ServiceName, SectorType.Server, $"------ Ended at [{DateTime.Now}] ------", LogTypeEnum.System);
-                        server.IsUpdated = ServerInfo.ServerInfoStatusEnum.Updated;
-                        server.ServerStatus = ServerInfo.ServerInfoStatusEnum.Updated;
+                            Size = (new FileInfo(archive.ArchivePath).Length / 1024);
+                            UploadInfo uploadInfo = new UploadInfo(this)
+                            {
+                                FileName = "publishArchive.zip",
+                                HasProgress = true,
+                                FilePath = archive.ArchivePath
+                            };
+                            serviceContract.CompressArchive = archive;
+                            serviceContract.ServiceKey = archive.TargetServiceKey;
+                            var uploadResult = await StreamManagerService.UploadAsync(uploadInfo, cancellationToken, serviceContract, provider.CurrentClientProvider);
+                            _ = uploadResults.Append(uploadResult);
+                        }
 
-                        currentSrv.ServerStatus = ServerInfo.ServerInfoStatusEnum.Updated;
-                        currentSrv.IsUpdated = ServerInfo.ServerInfoStatusEnum.Updated;
-                        currentSrv.ServerLastUpdate = DateTime.Now.ToString();
-                        // save project last update status
-                        SettingInfo.Current.ProjectInfo.SingleOrDefault(k => k.ProjectKey == ServiceKey).LastUpdateDateTime = DateTime.Now.ToString();
+                        //if (uploadResult.Status)
+                        if (uploadResults.All(x => x.Status))
+                        {
+                            ServerInfo.ServerLogs.Add($"------ Ended at [{DateTime.Now}] ------");
+                            LogModule.AddLog(ServiceName, SectorType.Server, $"------ Ended at [{DateTime.Now}] ------", LogTypeEnum.System);
+                            server.IsUpdated = ServerInfo.ServerInfoStatusEnum.Updated;
+                            server.ServerStatus = ServerInfo.ServerInfoStatusEnum.Updated;
 
-                        SettingInfo.SaveSettingInfo();
-                        ServerSettingInfo.SaveServersSettingInfo();
-                        status = RunStatusType.Done;
+                            currentSrv.ServerStatus = ServerInfo.ServerInfoStatusEnum.Updated;
+                            currentSrv.IsUpdated = ServerInfo.ServerInfoStatusEnum.Updated;
+                            currentSrv.ServerLastUpdate = DateTime.Now.ToString();
+                            // save project last update status
+                            SettingInfo.Current.ProjectInfo.SingleOrDefault(k => k.ProjectKey == ServiceKey).LastUpdateDateTime = DateTime.Now.ToString();
+                            SettingInfo.Current.ProjectInfo.SingleOrDefault(k => k.ProjectKey == ServiceKey).LastUpdateUser = AppUserHelper.GetCurrentUserInfo();
 
-                    } // end server collection for
-                    else
-                    {
-                        server.IsUpdated = ServerInfo.ServerInfoStatusEnum.UpdateError;
-                        server.ServerStatus = ServerInfo.ServerInfoStatusEnum.UpdateError;
-                        selectedServers.FirstOrDefault(s => s.ServerKey == server.ServerKey).ServerStatus = ServerInfo.ServerInfoStatusEnum.UpdateError;
-                        selectedServers.FirstOrDefault(s => s.ServerKey == server.ServerKey).IsUpdated = ServerInfo.ServerInfoStatusEnum.UpdateError;
-                        currentSrv.ServerStatus = ServerInfo.ServerInfoStatusEnum.UpdateError;
-                        currentSrv.IsUpdated = ServerInfo.ServerInfoStatusEnum.UpdateError;
-                        currentSrv.ServerLastUpdate = "Couldn't Update";
+                            SettingInfo.SaveSettingInfo();
+                            ServerSettingInfo.SaveServersSettingInfo();
+                            status = RunStatusType.Done;
+
+                        } // end server collection for
+                        else
+                        {
+                            server.IsUpdated = ServerInfo.ServerInfoStatusEnum.UpdateError;
+                            server.ServerStatus = ServerInfo.ServerInfoStatusEnum.UpdateError;
+                            selectedServers.FirstOrDefault(s => s.ServerKey == ServiceKey).ServerStatus = ServerInfo.ServerInfoStatusEnum.UpdateError;
+                            selectedServers.FirstOrDefault(s => s.ServerKey == ServiceKey).IsUpdated = ServerInfo.ServerInfoStatusEnum.UpdateError;
+                            currentSrv.ServerStatus = ServerInfo.ServerInfoStatusEnum.UpdateError;
+                            currentSrv.IsUpdated = ServerInfo.ServerInfoStatusEnum.UpdateError;
+                            currentSrv.ServerLastUpdate = "Couldn't Update";
+                        }
                     }
+
+                    //TODO:remove old archive files
                 }
             }
             catch (Exception ex)
@@ -362,42 +465,54 @@ namespace SignalGo.Publisher.Engines.Commands
         public abstract bool CalculateStatus(string line);
 
         #region Utilities
-        /// <summary>
-        /// Sets the status of each file in origin collection based on filename and filehash.
-        /// </summary>
-        /// <param name="originHashes"></param>
-        /// <param name="destinationHashes"></param>
-        /// <returns></returns>
-        private List<HashedFileDto> CompareFileHashes(List<HashedFileDto> originHashes, List<HashedFileDto> destinationHashes)
+        private string CreatePublishDirectory()
         {
-            var result = new List<HashedFileDto>();
-            var destination = default(HashedFileDto);
-
-            foreach (var origin in originHashes)
+            var directories = Directory.GetDirectories(AssembliesPath);
+            var publishDir = directories.FirstOrDefault(x => x.Contains("publish"));
+            if (string.IsNullOrEmpty(publishDir))
             {
-                destination = destinationHashes.FirstOrDefault(x => x.FileName.Equals(origin.FileName));
-                if (destination == null)
-                    origin.MarkAsAdded();
-                else
-                {
-                    if (origin.FileHash.Equals(destination.FileHash))
-                        origin.MarkAsUnchanged();
-                    else
-                        origin.MarkAsModified();
-                }
-
-                result.Add(origin);
+                publishDir = Path.Combine(AssembliesPath, "publish");
             }
-
-            //finding files that have to be deleted
-            destinationHashes.Where(x => !originHashes.Any(y => x.FileName.Equals(y.FileName))).ToList()
-                .ForEach(z =>
+            Directory.CreateDirectory(publishDir);
+            return publishDir;
+        }
+        /// <summary>
+        /// Returns a list of Guid by parsing the TargetKeys string field.
+        /// This field should be a List<Guid> in the near future.
+        /// So, this method will be depricated consequently.
+        /// </summary>
+        /// <returns></returns>
+        private List<Guid> ReadTargetKeys()
+        {
+            var gu = Guid.Empty;
+            var targetKeys = new List<Guid>();
+            SettingInfo.Current.ProjectInfo.FirstOrDefault(p => p.ProjectKey == ServiceKey).TargetKeys
+                .Replace(" ", "").Split(',').ToList()
+                .ForEach(x =>
                 {
-                    z.MarkAsDeleted();
-                    result.Add(z);
+                    if (Guid.TryParse(x, out gu))
+                        targetKeys.Add(gu);
                 });
 
-            return result;
+            return targetKeys;
+        }
+        /// <summary>
+        /// Loops through the selected servers and removes all previously created zip files in the publish folder
+        /// </summary>
+        /// <param name="publishDir"></param>
+        private void RemoveOldArchiveFiles(string publishDir, List<Guid> targetServiceKeys)
+        {
+            var zipFilePath = string.Empty;
+            var selectedServers = ServerSettingInfo.CurrentServer.ServerInfo.Where(x => x.IsChecked).ToList();
+            foreach (var server in selectedServers)
+            {
+                foreach (var serviceKey in targetServiceKeys)
+                {
+                    zipFilePath = Path.Combine(publishDir, $"{ServiceName}_{server.ServerKey}_{serviceKey}.zip");
+                    if (File.Exists(zipFilePath))
+                        File.Delete(zipFilePath);
+                }
+            }
         }
         #endregion
     }

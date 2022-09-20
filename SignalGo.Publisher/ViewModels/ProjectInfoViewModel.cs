@@ -113,8 +113,31 @@ namespace SignalGo.Publisher.ViewModels
         private void SaveChanges()
         {
             var gu = Guid.Empty;
+            var hasError = false;
+
             if (Guid.TryParse(ProjectInfo.ProjectKey.ToString(), out gu))
                 ProjectInfo.ProjectKey = gu;
+
+            if (string.IsNullOrWhiteSpace(ProjectInfo.TargetKeys))
+            {
+                MessageBox.Show("Define at least one target microservice key.", "Edit Project", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            ProjectInfo.TargetKeys.Replace(" ", "").Split(',').ToList()
+                .ForEach(x =>
+                {
+                    if (!Guid.TryParse(x, out gu))
+                    {
+                        hasError = true;
+                        return;
+                    }
+                });
+            if (hasError)
+            {
+                MessageBox.Show("One of your target keys are not a valid guid.", "Edit Project", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
             SettingInfo.SaveSettingInfo();
             MessageBox.Show("Change's Saved Successfully!", "Edit Project", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
@@ -519,11 +542,19 @@ namespace SignalGo.Publisher.ViewModels
         /// </summary>
         private async Task RunCommands()
         {
+            var gu = Guid.Empty;
+
             if (!ProjectInfo.Commands.HasValue())
             {
                 MessageBox.Show("No Command Available To Run!");
                 return;
             }
+            if (string.IsNullOrWhiteSpace(ProjectInfo.TargetKeys))
+            {
+                MessageBox.Show("Define at least one target microservice key.", "Edit Project", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
             bool locked = false;
             ServerInfo.Servers.Clear();
             try
@@ -998,7 +1029,5 @@ namespace SignalGo.Publisher.ViewModels
                 OnPropertyChanged(nameof(IgnoreServerFileName));
             }
         }
-
-
     }
 }

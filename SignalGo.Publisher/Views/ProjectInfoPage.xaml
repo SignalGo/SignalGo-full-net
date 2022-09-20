@@ -557,6 +557,8 @@
                     <Button Margin="5,5" Command="{Binding OpenProjectFolderCommand}" Content="🔍 Open Project Folder" Width="auto" Padding="5" FontWeight="Normal"/>
                     <Button Margin="5,5" Command="{Binding SaveChangeCommand}" Content="Save" Width="80" Padding="5" FontWeight="Normal"/>
                 </StackPanel>
+                <TextBox Text="{Binding ProjectInfo.TargetKeys}" Grid.Column="1" Grid.Row="6" Grid.ColumnSpan="2" Margin="16,69,119,95" Height="70" />
+                <TextBlock Grid.Row="6" Text="Target Microservices (Keys):" HorizontalAlignment="Left" Grid.Column="1" Margin="16,48,0,0" VerticalAlignment="Top"/>
                 <!--#endregion-->
 
             </Grid>

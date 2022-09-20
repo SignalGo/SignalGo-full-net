@@ -83,5 +83,7 @@ namespace SignalGo.Publisher.Shared.Models
         }
 
         public CompressArchiveDto CompressArchive { get; set; }
+
+        public AppUserDto CurrentUser { get; set; }
     }
 }

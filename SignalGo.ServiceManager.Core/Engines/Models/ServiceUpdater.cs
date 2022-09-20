@@ -1,7 +1,7 @@
 ﻿using SignalGo.Publisher.Shared.Models;
 using SignalGo.ServiceManager.Core.Models;
 using SignalGo.Shared.Log;
-using SignalGo.Shared.Models;
+using SignalGo.Publisher.Shared.DataTypes;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -9,6 +9,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Threading.Tasks;
+using SignalGo.Publisher.Shared.Helpers;
 
 namespace SignalGo.ServiceManager.Core.Engines.Models
 {
@@ -75,6 +76,9 @@ namespace SignalGo.ServiceManager.Core.Engines.Models
         {
             IsSuccess = false;
             string ExtractPath = Path.Combine(Directory.GetParent(ServiceInfo.ServiceAssembliesPath).FullName);
+            var successUpdateMessage = $"Service {ServiceInfo.Name} updated successfuly at {DateTime.Now} by {ServiceInfo.CurrentUser.Ip}/{ServiceInfo.CurrentUser.DomainName}/{ServiceInfo.CurrentUser.Name}";
+            var failedUpdateMessage = $"Service {ServiceInfo.Name} failed to update at {DateTime.Now} by {ServiceInfo.CurrentUser.Ip}/{ServiceInfo.CurrentUser.DomainName}/{ServiceInfo.CurrentUser.Name}";
+
             try
             {
                 string zipFilePath = Path.Combine(archive);
@@ -98,7 +102,7 @@ namespace SignalGo.ServiceManager.Core.Engines.Models
                     //}
 
                     //deletes all files marked as FileStatus.Deleted from server's extract directory
-                    ServiceInfo.CompressArchive.FileHashes.Where(x => x.FileStatus == Shared.DataTypes.FileStatusType.Deleted).ToList()
+                    ServiceInfo.CompressArchive.FileHashes.Where(x => x.FileStatus == Publisher.Shared.DataTypes.FileStatusType.Deleted).ToList()
                         .ForEach(x =>
                         {
                             File.Delete(Path.Combine(ExtractPath, x.FileName));
@@ -108,11 +112,14 @@ namespace SignalGo.ServiceManager.Core.Engines.Models
                     ZipFile.ExtractToDirectory(zipFilePath, ExtractPath, true);
                 //Debug.WriteLine("archive extracted successfully");
                 Console.WriteLine("archive extracted successfully");
+                Console.WriteLine(successUpdateMessage);
+                AutoLoggerHelper.ServiceUpdateLogger.LogText(successUpdateMessage);
                 IsSuccess = true;
             }
             catch (Exception ex)
             {
                 AutoLogger.Default.LogError(ex, "ServiceUpdater DeCompression Failed");
+                AutoLoggerHelper.ServiceUpdateLogger.LogText(failedUpdateMessage);
                 Console.WriteLine("archive extraction failed");
             }
             return IsSuccess;
