@@ -307,7 +307,7 @@ namespace SignalGo.Client
             }
 #endif
         }
-        public T Deserialize<T>(HttpClientDataResponse data)
+        public virtual T Deserialize<T>(HttpClientDataResponse data)
         {
             if (typeof(T) == typeof(ActionResult))
             {
