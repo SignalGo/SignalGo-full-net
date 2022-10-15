@@ -330,7 +330,10 @@ namespace SignalGo.Server.Models
             if (string.IsNullOrEmpty(customClientId))
                 throw new Exception("customClientId is null or empty! please fill all parameters on headers or etc");
             else if (!CustomClientSavedSettings.TryAdd(customClientId, new HashSet<object>() { setting }) && CustomClientSavedSettings.TryGetValue(customClientId, out HashSet<object> result) && !result.Contains(setting))
+            {
+                result.RemoveWhere(x => x != null && x.GetType() == setting.GetType());
                 result.Add(setting);
+            }
             List<string> httpKeys = setting.GetType().GetListOfProperties().SelectMany(x => x.GetCustomAttributes(typeof(HttpKeyAttribute), true).Cast<HttpKeyAttribute>()).Where(x => x.KeyType == HttpKeyType.ParameterName).Select(x => x.KeyParameterName).ToList();
             foreach (string item in httpKeys)
             {
@@ -363,7 +366,7 @@ namespace SignalGo.Server.Models
                 SavedSettings.TryAdd(context.Client, new ConcurrentHash<object>() { setting });
             else if (SavedSettings.TryGetValue(context.Client, out ConcurrentHash<object> result) && !result.Contains(setting))
             {
-                result.RemoveWhere(x => x.GetType() == setting.GetType());
+                result.RemoveWhere(x => x != null && x.GetType() == setting.GetType());
                 result.Add(setting);
             }
         }
