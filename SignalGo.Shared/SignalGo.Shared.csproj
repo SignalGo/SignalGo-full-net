@@ -7,15 +7,15 @@
   </PropertyGroup>
   <PropertyGroup>
     <!--netstandard2.0;-->
-    <TargetFrameworks>netstandard2.0;net6.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;net6.0;net45</TargetFrameworks>
     <!--<TargetFramework>netstandard2.0</TargetFramework>-->
     <MinimumVisualStudioVersion>10.0</MinimumVisualStudioVersion>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <AssemblyVersion>5.7.1.0</AssemblyVersion>
-    <FileVersion>5.7.1.0</FileVersion>
+    <AssemblyVersion>5.7.1.1</AssemblyVersion>
+    <FileVersion>5.7.1.1</FileVersion>
     <!--<VersionPrefix>4.0</VersionPrefix>-->
-    <Version>5.7.1.0</Version>
+    <Version>5.7.1.1</Version>
     <!--<VersionSuffix>beta1</VersionSuffix>-->
     <Authors>Ali Yousefi</Authors>
     <Company></Company>
