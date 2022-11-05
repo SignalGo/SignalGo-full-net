@@ -19,6 +19,7 @@ namespace SignalGo.ServiceManager.Core.Engines
                     List<Task> tasks = new List<Task>();
                     foreach (var server in SettingInfo.Current.ServerInfo.ToList())
                     {
+                        await Task.Delay(100);
                         foreach (var healthCheck in UserSettingInfo.Current.HealthChecks.ToList())
                         {
                             tasks.Add(Task.Run(async () =>

@@ -340,7 +340,7 @@ namespace SignalGo.Publisher.Engines.Commands
         public virtual async Task<RunStatusType> Upload(List<CompressArchiveDto> compressedData, CancellationToken cancellationToken, bool forceUpdate = false)
         {
             var status = RunStatusType.Error;
-            var uploadResults = Array.Empty<UploadInfo>();
+            var uploadResults = new List<UploadInfo>();
 
             if (cancellationToken.IsCancellationRequested)
             {
@@ -401,7 +401,7 @@ namespace SignalGo.Publisher.Engines.Commands
                             serviceContract.CompressArchive = archive;
                             serviceContract.ServiceKey = archive.TargetServiceKey;
                             var uploadResult = await StreamManagerService.UploadAsync(uploadInfo, cancellationToken, serviceContract, provider.CurrentClientProvider);
-                            _ = uploadResults.Append(uploadResult);
+                            uploadResults.Add(uploadResult);
                         }
 
                         //if (uploadResult.Status)
@@ -428,8 +428,6 @@ namespace SignalGo.Publisher.Engines.Commands
                         {
                             server.IsUpdated = ServerInfo.ServerInfoStatusEnum.UpdateError;
                             server.ServerStatus = ServerInfo.ServerInfoStatusEnum.UpdateError;
-                            selectedServers.FirstOrDefault(s => s.ServerKey == ServiceKey).ServerStatus = ServerInfo.ServerInfoStatusEnum.UpdateError;
-                            selectedServers.FirstOrDefault(s => s.ServerKey == ServiceKey).IsUpdated = ServerInfo.ServerInfoStatusEnum.UpdateError;
                             currentSrv.ServerStatus = ServerInfo.ServerInfoStatusEnum.UpdateError;
                             currentSrv.IsUpdated = ServerInfo.ServerInfoStatusEnum.UpdateError;
                             currentSrv.ServerLastUpdate = "Couldn't Update";

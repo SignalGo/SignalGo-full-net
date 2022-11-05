@@ -30,6 +30,7 @@ namespace SignalGo.ServiceManager.BaseViewModels.Core
                 serverProvider.RegisterServerService<ServerManagerStreamService>();
                 serverProvider.RegisterServerService<FileManagerService>();
                 serverProvider.AddAssemblyToSkipServiceReferences(typeof(IgnoreFileInfo).Assembly);
+                serverProvider.ProviderSetting.MaximumReceiveStreamHeaderBlock = 1024 * 1024 * 10;
                 //serverProvider.ProviderSetting.HttpSetting.HandleCrossOriginAccess = true;
                 // show server manager information
                 Console.WriteLine($"Listening {UserSettingInfo.Current.UserSettings.ListeningAddress} on port {UserSettingInfo.Current.UserSettings.ListeningPort}");
@@ -79,7 +80,7 @@ namespace SignalGo.ServiceManager.BaseViewModels.Core
                 {
                     Console.WriteLine($"Your {server.Name} service key is : {server.ServerKey}", Console.ForegroundColor = ConsoleColor.Yellow);
                     Console.ResetColor();
-                    _ = Task.Run(async() =>
+                    _ = Task.Factory.StartNew(async() =>
                     {
                         try
                         {
@@ -91,7 +92,7 @@ namespace SignalGo.ServiceManager.BaseViewModels.Core
                                 foreach (var name in server.DependServerNames.Split(',', StringSplitOptions.RemoveEmptyEntries))
                                 {
                                     var server = SettingInfo.Current.ServerInfo.FirstOrDefault(x => x.Name == name);
-                                    while(true)
+                                    while (true)
                                     {
                                         bool isHealthy = true;
                                         foreach (var healthCheck in UserSettingInfo.Current.HealthChecks.ToList())
@@ -104,6 +105,7 @@ namespace SignalGo.ServiceManager.BaseViewModels.Core
                                         }
                                         if (isHealthy)
                                             break;
+                                        await Task.Delay(500);
                                     }
                                 }
                                 ServerInfoBaseViewModel.StartServer(server);
