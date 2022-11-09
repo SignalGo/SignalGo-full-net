@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 
 namespace SignalGo.Server.ServiceManager
 {
@@ -18,7 +19,24 @@ namespace SignalGo.Server.ServiceManager
         /// <param name="url">url of services</param>
         public void Start(string url)
         {
-            if (!Uri.TryCreate(url, UriKind.Absolute, out Uri uri))
+            ValidateUrl(url, out Uri uri);
+            ServerDataProvider.Start(this, uri.Port);
+        }
+        /// <summary>
+        /// start the server async
+        /// when it has exception it will throw
+        /// </summary>
+        /// <param name="url"></param>
+        /// <returns></returns>
+        public Task StartAsync(string url)
+        {
+            ValidateUrl(url, out Uri uri);
+            return ServerDataProvider.StartAsync(this, uri.Port);
+        }
+
+        void ValidateUrl(string url, out Uri uri)
+        {
+            if (!Uri.TryCreate(url, UriKind.Absolute, out uri))
             {
                 throw new Exception("url is not valid");
             }
@@ -28,8 +46,6 @@ namespace SignalGo.Server.ServiceManager
             }
             if (string.IsNullOrEmpty(uri.AbsolutePath))
                 throw new Exception("this path is not support,please set full path example: http://localhost:5050/SignalGo");
-
-            ServerDataProvider.Start(this, uri.Port);
         }
 
         /// <summary>

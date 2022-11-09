@@ -24,81 +24,11 @@ namespace SignalGo.Server.ServiceManager.Versions
         /// if you set this to false server will reject and discounnect the new client until to set it true
         /// </summary>
         public bool CanAcceptClient { get; set; } = true;
-#if (NET35 || NET40)
         public void Start(ServerBase serverBase, int port)
-#else
-        public void Start(ServerBase serverBase, int port)
-#endif
         {
             Thread thread = new Thread(async () =>
             {
-                _serverBase = serverBase;
-                try
-                {
-                    _server = new TcpListener(IPAddress.IPv6Any, port);
-#if (NET35)
-#else
-                    _server.Server.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
-#endif
-                    _server.Server.NoDelay = true;
-
-                    _server.Start();
-                    if (serverBase.ProviderSetting.IsEnabledToUseTimeout)
-                    {
-                        _server.Server.SendTimeout = (int)serverBase.ProviderSetting.SendDataTimeout.TotalMilliseconds;
-                        _server.Server.ReceiveTimeout = (int)serverBase.ProviderSetting.ReceiveDataTimeout.TotalMilliseconds;
-                    }
-                    serverBase.IsStarted = true;
-                    while (true)
-                    {
-                        try
-                        {
-                            //IsWaitForClient = true;
-#if (NETSTANDARD1_6)
-                            Debug.WriteLine("DeadLock Warning Start Server!");
-                            TcpClient client = _server.AcceptTcpClientAsync().ConfigureAwait(false).GetAwaiter().GetResult();
-#elif (NETSTANDARD2_0 || NET6_0)
-                            TcpClient client = await _server.AcceptTcpClientAsync().ConfigureAwait(false);
-#else
-
-                            TcpClient client = _server.AcceptTcpClient();
-
-#endif
-
-                            if (!CanAcceptClient)
-                            {
-#if (NETSTANDARD1_6)
-                                client.Dispose();
-#elif (NETSTANDARD2_0 || NET6_0)
-                                client.Close();
-                                client.Dispose();
-#else
-                                client.Close();
-#endif
-                                continue;
-                            }
-                            _ConnectedCount++;
-                            //IsWaitForClient = false;
-                            InitializeClient(client);
-
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine(ex);
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine("Server Disposed! : " + ex);
-                    serverBase.OnServerInternalExceptionAction?.Invoke(ex);
-                    serverBase.AutoLogger.LogError(ex, "Connect Server");
-                }
-                finally
-                {
-                    Console.WriteLine("server finished");
-                    serverBase.Stop();
-                }
+                await StartInternal(serverBase, port);
             })
             {
                 IsBackground = false
@@ -106,6 +36,96 @@ namespace SignalGo.Server.ServiceManager.Versions
             thread.Start();
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="serverBase"></param>
+        /// <param name="port"></param>
+        /// <returns></returns>
+        public async Task StartAsync(ServerBase serverBase, int port)
+        {
+            TaskCompletionSource<bool> taskCompletionSource = new TaskCompletionSource<bool>();
+            _ = Task.Factory.StartNew(async () =>
+            {
+                await StartInternal(serverBase, port, taskCompletionSource);
+            });
+            await taskCompletionSource.Task;
+        }
+
+        protected async Task StartInternal(ServerBase serverBase, int port, TaskCompletionSource<bool> taskCompletionSource = null)
+        {
+            _serverBase = serverBase;
+            try
+            {
+                _server = new TcpListener(IPAddress.IPv6Any, port);
+#if (NET35)
+#else
+                _server.Server.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
+#endif
+                _server.Server.NoDelay = true;
+
+                _server.Start();
+                if (taskCompletionSource != null)
+                    taskCompletionSource.SetResult(true);
+                if (serverBase.ProviderSetting.IsEnabledToUseTimeout)
+                {
+                    _server.Server.SendTimeout = (int)serverBase.ProviderSetting.SendDataTimeout.TotalMilliseconds;
+                    _server.Server.ReceiveTimeout = (int)serverBase.ProviderSetting.ReceiveDataTimeout.TotalMilliseconds;
+                }
+                serverBase.IsStarted = true;
+                while (true)
+                {
+                    try
+                    {
+                        //IsWaitForClient = true;
+#if (NETSTANDARD1_6)
+                            Debug.WriteLine("DeadLock Warning Start Server!");
+                            TcpClient client = _server.AcceptTcpClientAsync().ConfigureAwait(false).GetAwaiter().GetResult();
+#elif (NETSTANDARD2_0 || NET6_0)
+                        TcpClient client = await _server.AcceptTcpClientAsync().ConfigureAwait(false);
+#else
+
+                            TcpClient client = _server.AcceptTcpClient();
+
+#endif
+
+                        if (!CanAcceptClient)
+                        {
+#if (NETSTANDARD1_6)
+                                client.Dispose();
+#elif (NETSTANDARD2_0 || NET6_0)
+                            client.Close();
+                            client.Dispose();
+#else
+                                client.Close();
+#endif
+                            continue;
+                        }
+                        _ConnectedCount++;
+                        //IsWaitForClient = false;
+                        InitializeClient(client);
+
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                if (taskCompletionSource != null)
+                    taskCompletionSource.TrySetException(ex);
+                Console.WriteLine("Server Disposed! : " + ex);
+                serverBase.OnServerInternalExceptionAction?.Invoke(ex);
+                serverBase.AutoLogger.LogError(ex, "Connect Server");
+            }
+            finally
+            {
+                Console.WriteLine("server finished");
+                serverBase.Stop();
+            }
+        }
         /// <summary>
         /// initialzie and read client
         /// </summary>
