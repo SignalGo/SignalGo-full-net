@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SignalGo.Shared.Extensions;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
@@ -39,6 +40,10 @@ namespace SignalGo.Shared.Log
                 return _SavePath;
             }
         }
+        private int _chunkFileSizeInMb = 100;
+        public int ChunkFileSizeInMb { get { return _chunkFileSizeInMb; } }
+
+
 #if (NET35 || NET40)
         public void GenerateSavePath()
 #else
@@ -52,6 +57,8 @@ namespace SignalGo.Shared.Log
 #else
                 await lockWaitToRead.WaitAsync().ConfigureAwait(false);
 #endif
+
+                CheckLogFileSize(_SavePath);
 
                 if (string.IsNullOrEmpty(DirectoryName))
                     _SavePath = DirectoryLocation;
@@ -75,6 +82,7 @@ namespace SignalGo.Shared.Log
                 lockWaitToRead.Release();
             }
         }
+
         /// <summary>
         /// 
         /// </summary>
@@ -103,8 +111,8 @@ namespace SignalGo.Shared.Log
             FileName = "SignalGo Logs.log";
 #endif
         }
-#if (!PORTABLE)
 
+#if (!PORTABLE)
         private void GetOneStackTraceText(StackTrace stackTrace, StringBuilder builder)
         {
             builder.AppendLine("<------------------------------StackTrace One Begin------------------------------>");
@@ -138,7 +146,9 @@ namespace SignalGo.Shared.Log
             builder.AppendLine("<------------------------------StackTrace One End------------------------------>");
         }
 #endif
+
         static readonly SemaphoreSlim lockWaitToRead = new SemaphoreSlim(1);
+
         /// <summary>
         /// log text message
         /// </summary>
@@ -161,6 +171,7 @@ namespace SignalGo.Shared.Log
             {
                 str.AppendLine("<StackTrace>");
                 StringBuilder builder = new StringBuilder();
+
 #if (NETSTANDARD || NETCOREAPP)
                 GetOneStackTraceText(new StackTrace(new Exception(text), true), builder);
 #else
@@ -171,6 +182,7 @@ namespace SignalGo.Shared.Log
                 str.AppendLine("</StackTrace>");
             }
             str.AppendLine("<Text Log End>");
+
 #if (NET35 || NET40)
             GenerateSavePath();
 #else
@@ -184,7 +196,9 @@ namespace SignalGo.Shared.Log
 #else
                 await lockWaitToRead.WaitAsync().ConfigureAwait(false);
 #endif
+
                 string fileName = SavePath;
+
                 using (FileStream stream = new FileStream(fileName, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite))
                 {
                     stream.Seek(0, SeekOrigin.End);
@@ -205,7 +219,6 @@ namespace SignalGo.Shared.Log
                 lockWaitToRead.Release();
             }
         }
-
 
         /// <summary>
         /// log an exception to file
@@ -267,6 +280,27 @@ namespace SignalGo.Shared.Log
             {
                 Console.WriteLine(ex);
             }
+        }
+
+        private void CheckLogFileSize(string fileName)
+        {
+            try
+            {
+                var fileIfo = new FileInfo(fileName);
+                var fileLength = (fileIfo.Exists ? fileIfo.Length : 0).ToSize(FileExtensions.SizeUnits.MB);
+                if (fileLength > _chunkFileSizeInMb)
+                {
+                    var nameSection = System.IO.Path.GetFileNameWithoutExtension(fileName);
+                    var newFileName = fileName.Replace(nameSection, $"{nameSection}_{DateTime.Now:yyyy-MM-dd}T{DateTime.Now:HH-mm-ss}");
+                    if (File.Exists(newFileName))
+                    {
+                        nameSection = Path.GetFileNameWithoutExtension(newFileName);
+                        newFileName = newFileName.Replace(nameSection, $"{nameSection}_{Guid.NewGuid()}");
+                    }
+                    File.Move(fileName, newFileName);
+                }
+            }
+            catch { }
         }
     }
 }
