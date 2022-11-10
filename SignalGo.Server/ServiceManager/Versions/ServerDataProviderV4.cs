@@ -28,7 +28,22 @@ namespace SignalGo.Server.ServiceManager.Versions
         {
             Thread thread = new Thread(async () =>
             {
-                await StartInternal(serverBase, port);
+                try
+                {
+                    await StartInternal(serverBase, port);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Server Disposed! : " + ex);
+                    serverBase.OnServerInternalExceptionAction?.Invoke(ex);
+                    serverBase.AutoLogger.LogError(ex, "Connect Server");
+                }
+                finally
+                {
+                    Console.WriteLine("server finished");
+                    serverBase.Stop();
+                }
+                await AcceptServerClients(serverBase, port);
             })
             {
                 IsBackground = false
@@ -44,29 +59,30 @@ namespace SignalGo.Server.ServiceManager.Versions
         /// <returns></returns>
         public async Task StartAsync(ServerBase serverBase, int port)
         {
-            TaskCompletionSource<bool> taskCompletionSource = new TaskCompletionSource<bool>();
+            await StartInternal(serverBase, port);
             _ = Task.Factory.StartNew(async () =>
             {
-                await StartInternal(serverBase, port, taskCompletionSource);
+                await AcceptServerClients(serverBase, port);
             });
-            await taskCompletionSource.Task;
         }
 
-        protected async Task StartInternal(ServerBase serverBase, int port, TaskCompletionSource<bool> taskCompletionSource = null)
+        private async Task StartInternal(ServerBase serverBase, int port)
         {
             _serverBase = serverBase;
-            try
-            {
-                _server = new TcpListener(IPAddress.IPv6Any, port);
+            _server = new TcpListener(IPAddress.IPv6Any, port);
 #if (NET35)
 #else
-                _server.Server.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
+            _server.Server.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
 #endif
-                _server.Server.NoDelay = true;
+            _server.Server.NoDelay = true;
 
-                _server.Start();
-                if (taskCompletionSource != null)
-                    taskCompletionSource.SetResult(true);
+            _server.Start();
+        }
+
+        private async Task AcceptServerClients(ServerBase serverBase, int port)
+        {
+            try
+            {
                 if (serverBase.ProviderSetting.IsEnabledToUseTimeout)
                 {
                     _server.Server.SendTimeout = (int)serverBase.ProviderSetting.SendDataTimeout.TotalMilliseconds;
@@ -79,25 +95,25 @@ namespace SignalGo.Server.ServiceManager.Versions
                     {
                         //IsWaitForClient = true;
 #if (NETSTANDARD1_6)
-                            Debug.WriteLine("DeadLock Warning Start Server!");
-                            TcpClient client = _server.AcceptTcpClientAsync().ConfigureAwait(false).GetAwaiter().GetResult();
+                        Debug.WriteLine("DeadLock Warning Start Server!");
+                        TcpClient client = _server.AcceptTcpClientAsync().ConfigureAwait(false).GetAwaiter().GetResult();
 #elif (NETSTANDARD2_0 || NET6_0)
                         TcpClient client = await _server.AcceptTcpClientAsync().ConfigureAwait(false);
 #else
 
-                            TcpClient client = _server.AcceptTcpClient();
+                        TcpClient client = _server.AcceptTcpClient();
 
 #endif
 
                         if (!CanAcceptClient)
                         {
 #if (NETSTANDARD1_6)
-                                client.Dispose();
+                            client.Dispose();
 #elif (NETSTANDARD2_0 || NET6_0)
                             client.Close();
                             client.Dispose();
 #else
-                                client.Close();
+                            client.Close();
 #endif
                             continue;
                         }
@@ -114,8 +130,6 @@ namespace SignalGo.Server.ServiceManager.Versions
             }
             catch (Exception ex)
             {
-                if (taskCompletionSource != null)
-                    taskCompletionSource.TrySetException(ex);
                 Console.WriteLine("Server Disposed! : " + ex);
                 serverBase.OnServerInternalExceptionAction?.Invoke(ex);
                 serverBase.AutoLogger.LogError(ex, "Connect Server");
