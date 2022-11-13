@@ -40,8 +40,18 @@ namespace SignalGo.Shared.Log
                 return _SavePath;
             }
         }
-        private int _chunkFileSizeInMb = 100;
-        public int ChunkFileSizeInMb { get { return _chunkFileSizeInMb; } }
+        private int _chunkFileSizeInMb = 10;
+        public int ChunkFileSizeInMb
+        {
+            get 
+            { 
+                return _chunkFileSizeInMb;
+            }
+            set
+            {
+                _chunkFileSizeInMb = value;
+            }
+        }
 
 
 #if (NET35 || NET40)

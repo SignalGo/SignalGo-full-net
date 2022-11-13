@@ -271,6 +271,13 @@ namespace SignalGo.Server.ServiceManager
             }
         }
 
+        public object GetSingleInstanceService(string route)
+        {
+            if (SingleInstanceServices.TryGetValue(route, out object value))
+                return value;
+            throw new Exception($"service {route} not registred!");
+        }
+
         /// <summary>
         /// get service route name by service type
         /// </summary>
