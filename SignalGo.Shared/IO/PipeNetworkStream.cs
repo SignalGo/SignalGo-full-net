@@ -193,7 +193,27 @@ namespace SignalGo.Shared.IO
                 return readCount;
             }
         }
+
+        public async Task<MemoryStream> ReadAllAsync(long length)
+        {
+            var dataStream = new MemoryStream();
+            int readLength = 0;
+            if (length > 0)
+            {
+                while (true)
+                {
+                    byte[] data = new byte[length];
+                    var readCount = await ReadAsync(data, data.Length);
+                    readLength += readCount;
+                    await dataStream.WriteAsync(data, 0, readCount);
+                    if (readLength == length)
+                        break;
+                }
+            }
+            return dataStream;
+        }
 #endif
+
         public int Read(byte[] bytes, int count)
         {
             if (IsClosed && QueueBuffers.IsEmpty && BlockBuffers.Count == 0)
