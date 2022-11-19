@@ -202,8 +202,8 @@ namespace SignalGo.Shared.IO
             {
                 while (true)
                 {
-                    byte[] data = new byte[length];
-                    var readCount = await ReadAsync(data, data.Length);
+                    byte[] data = new byte[1024 * 1024];
+                    var readCount = await Stream.ReadAsync(data, 0, data.Length);
                     readLength += readCount;
                     await dataStream.WriteAsync(data, 0, readCount);
                     if (readLength == length)
