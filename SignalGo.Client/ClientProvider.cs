@@ -40,6 +40,7 @@ namespace SignalGo.Client
 
             if (uri.Scheme.Equals("wss", StringComparison.OrdinalIgnoreCase) || uri.Scheme.Equals("ws", StringComparison.OrdinalIgnoreCase))
                 ProtocolType = ClientProtocolType.WebSocket;
+            InitializeSettings();
             ServerUrl = url;
             string hostName = uri.Host;
             base.Connect(hostName, uri.Port);
@@ -84,6 +85,7 @@ namespace SignalGo.Client
             }
             if (uri.Scheme.Equals("wss", StringComparison.OrdinalIgnoreCase) || uri.Scheme.Equals("ws", StringComparison.OrdinalIgnoreCase))
                 ProtocolType = ClientProtocolType.WebSocket;
+            InitializeSettings();
             ServerUrl = url;
             string hostName = uri.Host;
             await base.ConnectAsync(hostName, uri.Port).ConfigureAwait(false);
@@ -99,6 +101,11 @@ namespace SignalGo.Client
                 OnConnectionChanged?.Invoke(ConnectionStatus.Connected);
         }
 #endif
+
+        void InitializeSettings()
+        {
+            JsonSettingHelper.Initialize();
+        }
 
         private readonly bool _oneTimeConnectedAsyncCalledWithAutoReconnect = false;
 

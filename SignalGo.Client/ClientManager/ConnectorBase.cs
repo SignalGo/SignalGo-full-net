@@ -103,7 +103,6 @@ namespace SignalGo.Client.ClientManager
         public CompressMode CurrentCompressionMode { get; set; } = CompressMode.None;
         public ConnectorBase()
         {
-            JsonSettingHelper.Initialize();
         }
 
         /// <summary>

@@ -194,6 +194,7 @@ namespace SignalGo.Shared.Helpers
                 ReferenceLoopHandling = ReferenceLoopHandling.Ignore
             };
 
+            GlobalJsonSetting.Converters.Clear();
             GlobalJsonSetting.Converters.Add(CurrentDateTimeSetting);
         }
 
