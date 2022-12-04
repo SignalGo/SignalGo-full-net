@@ -174,69 +174,18 @@ namespace SignalGo.Server.Models
 
             if (context.Client is HttpClientInfo httpClient)
             {
-                bool isFindSessionProperty = false;
-                List<string> keys = new List<string>();
-                var properties = type.GetListOfProperties().Select(x => new { Info = x, Attribute = x.GetCustomAttributes<HttpKeyAttribute>().GroupBy(y => y.KeyType) });
-                bool hasExpireField = false;
-                foreach (var property in properties)
+                var sessions = GetSessionDetails(type, httpClient);
+                foreach (var property in sessions.Properties)
                 {
-                    foreach (IGrouping<HttpKeyType, HttpKeyAttribute> group in property.Attribute)
+                    foreach (IGrouping<HttpKeyType, HttpKeyAttribute> group in property.Attributes)
                     {
-                        if (group.Key == HttpKeyType.Cookie)
-                        {
-                            if (property.Info.PropertyType != typeof(string))
-                                throw new Exception("type of your HttpKeyAttribute must be as string because this will used for headers of http calls and you must made it custom");
-                            foreach (HttpKeyAttribute httpKey in group.ToList())
-                            {
-                                isFindSessionProperty = true;
-                                if (httpClient.RequestHeaders == null)
-                                    continue;
-                                var session = httpClient.GetRequestCookieHeaderValue(httpKey.RequestHeaderName);
-                                if (session == null)
-                                    continue;
-                                var key = ExtractValue(session, httpKey.KeyName, httpKey.HeaderValueSeparate, httpKey.HeaderKeyValueSeparate);
-
-                                object setting = null;
-                                if (!string.IsNullOrEmpty(key))
-                                    setting = GetSetting(key, type);
-
-                                if (setting == null)
-                                    keys.Add(key);
-                                else
-                                    keys.Add(GetKeyFromSetting(type, setting));
-                            }
-                        }
-                        else if (group.Key == HttpKeyType.ParameterName)
-                        {
-                            if (property.Info.PropertyType != typeof(string))
-                                throw new Exception("type of your HttpKeyAttribute must be as string because this will used for headers of http calls and you must made it custom");
-                            foreach (HttpKeyAttribute httpKey in group.ToList())
-                            {
-                                isFindSessionProperty = true;
-                                if (httpClient.HttpKeyParameterValue != null)
-                                {
-                                    keys.Add(httpClient.HttpKeyParameterValue);
-                                }
-
-                            }
-                        }
-                        else if (group.Key == HttpKeyType.ExpireField)
-                        {
-                            hasExpireField = true;
-                        }
-                    }
-                }
-                foreach (var property in properties)
-                {
-                    foreach (IGrouping<HttpKeyType, HttpKeyAttribute> group in property.Attribute)
-                    {
-                        if (hasExpireField)
+                        if (sessions.HasExpireField)
                         {
                             if (group.Key == HttpKeyType.ExpireField)
                             {
                                 foreach (HttpKeyAttribute httpKey in group.ToList())
                                 {
-                                    foreach (string key in keys)
+                                    foreach (string key in sessions.Keys)
                                     {
                                         if (CustomClientSavedSettings.TryGetValue(key, out HashSet<object> result))
                                         {
@@ -260,7 +209,7 @@ namespace SignalGo.Server.Models
                         {
                             foreach (HttpKeyAttribute httpKey in group.ToList())
                             {
-                                foreach (string key in keys)
+                                foreach (string key in sessions.Keys)
                                 {
                                     if (CustomClientSavedSettings.TryGetValue(key, out HashSet<object> result))
                                     {
@@ -274,7 +223,7 @@ namespace SignalGo.Server.Models
                         }
                     }
                 }
-                if (!isFindSessionProperty)
+                if (!sessions.IsFindSessionProperty)
                     throw new Exception("HttpKeyAttribute on your one properties on class not found please made your string property that have HttpKeyAttribute on the top!");
                 else
                     return null;
@@ -286,7 +235,69 @@ namespace SignalGo.Server.Models
             return null;
         }
 
+        /// <summary>
+        /// Get session details by type and http client
+        /// </summary>
+        /// <param name="userSettingType"></param>
+        /// <param name="httpClient"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        public static (List<(PropertyInfo Info, IEnumerable<IGrouping<HttpKeyType, HttpKeyAttribute>> Attributes)> Properties, List<string> Keys, bool IsFindSessionProperty, bool HasExpireField) GetSessionDetails(Type userSettingType, HttpClientInfo httpClient)
+        {
+            bool isFindSessionProperty = false;
+            List<string> keys = new List<string>();
+            var properties = userSettingType.GetListOfProperties().Select(x => new { Info = x, Attribute = x.GetCustomAttributes<HttpKeyAttribute>().GroupBy(y => y.KeyType) });
+            bool hasExpireField = false;
+            foreach (var property in properties)
+            {
+                foreach (IGrouping<HttpKeyType, HttpKeyAttribute> group in property.Attribute)
+                {
+                    if (group.Key == HttpKeyType.Cookie)
+                    {
+                        if (property.Info.PropertyType != typeof(string))
+                            throw new Exception("type of your HttpKeyAttribute must be as string because this will used for headers of http calls and you must made it custom");
+                        foreach (HttpKeyAttribute httpKey in group.ToList())
+                        {
+                            isFindSessionProperty = true;
+                            if (httpClient.RequestHeaders == null)
+                                continue;
+                            var session = httpClient.GetRequestCookieHeaderValue(httpKey.RequestHeaderName);
+                            if (session == null)
+                                continue;
+                            var key = ExtractValue(session, httpKey.KeyName, httpKey.HeaderValueSeparate, httpKey.HeaderKeyValueSeparate);
 
+                            object setting = null;
+                            if (!string.IsNullOrEmpty(key))
+                                setting = GetSetting(key, userSettingType);
+
+                            if (setting == null)
+                                keys.Add(key);
+                            else
+                                keys.Add(GetKeyFromSetting(userSettingType, setting));
+                        }
+                    }
+                    else if (group.Key == HttpKeyType.ParameterName)
+                    {
+                        if (property.Info.PropertyType != typeof(string))
+                            throw new Exception("type of your HttpKeyAttribute must be as string because this will used for headers of http calls and you must made it custom");
+                        foreach (HttpKeyAttribute httpKey in group.ToList())
+                        {
+                            isFindSessionProperty = true;
+                            if (httpClient.HttpKeyParameterValue != null)
+                            {
+                                keys.Add(httpClient.HttpKeyParameterValue);
+                            }
+
+                        }
+                    }
+                    else if (group.Key == HttpKeyType.ExpireField)
+                    {
+                        hasExpireField = true;
+                    }
+                }
+            }
+            return (properties.Select(x => (x.Info, x.Attribute)).ToList(), keys, isFindSessionProperty, hasExpireField);
+        }
 
         /// <summary>
         /// get all settings of client
