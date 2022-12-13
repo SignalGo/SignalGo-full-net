@@ -20,6 +20,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
 
 namespace SignalGo.Publisher.Engines.Commands
 {
@@ -500,17 +501,25 @@ namespace SignalGo.Publisher.Engines.Commands
         /// <param name="publishDir"></param>
         private void RemoveOldArchiveFiles(string publishDir, List<Guid> targetServiceKeys)
         {
-            var zipFilePath = string.Empty;
-            var selectedServers = ServerSettingInfo.CurrentServer.ServerInfo.Where(x => x.IsChecked).ToList();
-            foreach (var server in selectedServers)
+            var oldZipFiles = Directory.GetFiles(publishDir)
+                .Where(x => x.Contains(ServiceName) && x.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+                .ToList();
+            foreach (var zipFile in oldZipFiles)
             {
-                foreach (var serviceKey in targetServiceKeys)
-                {
-                    zipFilePath = Path.Combine(publishDir, $"{ServiceName}_{server.ServerKey}_{serviceKey}.zip");
-                    if (File.Exists(zipFilePath))
-                        File.Delete(zipFilePath);
-                }
+                if (File.Exists(zipFile))
+                    File.Delete(zipFile);
             }
+
+            //var selectedServers = ServerSettingInfo.CurrentServer.ServerInfo.Where(x => x.IsChecked).ToList();
+            //foreach (var server in selectedServers)
+            //{
+            //    foreach (var serviceKey in targetServiceKeys)
+            //    {
+            //        zipFilePath = Path.Combine(publishDir, $"{ServiceName}_{server.ServerKey}_{serviceKey}.zip");
+            //        if (File.Exists(zipFilePath))
+            //            File.Delete(zipFilePath);
+            //    }
+            //}
         }
         #endregion
     }
