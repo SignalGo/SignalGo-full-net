@@ -1084,7 +1084,7 @@ namespace SignalGo.Server.ServiceManager.Providers
             }
         }
 
-        private static IEnumerable<MethodInfo> GetMethods(ClientInfo client
+        private static IList<MethodInfo> GetMethods(ClientInfo client
             , string methodName
             , Shared.Models.ParameterInfo[] parameters
             , Type serviceType
@@ -1095,6 +1095,8 @@ namespace SignalGo.Server.ServiceManager.Providers
             , List<ConcurrentLockAttribute> concurrentLockAttributes
             , Func<MethodInfo, bool> canTakeMethod)
         {
+            List<MethodInfo> resultMethods = new List<MethodInfo>();
+
             List<Type> list = serviceType.GetTypesByAttribute<ServiceContractAttribute>(x => true).ToList();
             foreach (Type item in list)
             {
@@ -1122,9 +1124,10 @@ namespace SignalGo.Server.ServiceManager.Providers
                             concurrentLockAttributes.AddRange(newMethod.GetCustomAttributes(typeof(ConcurrentLockAttribute), true).Cast<ConcurrentLockAttribute>());
                         }
                     }
-                    yield return method;
+                    resultMethods.Add(method);
                 }
             }
+            return resultMethods;
         }
 
         private static bool IsTask(MethodInfo methodInfo)
