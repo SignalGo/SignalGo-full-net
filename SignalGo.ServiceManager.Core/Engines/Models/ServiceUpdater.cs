@@ -37,7 +37,7 @@ namespace SignalGo.ServiceManager.Core.Engines.Models
             try
             {
                 var serviceToUpdate = SettingInfo.Current.ServerInfo.SingleOrDefault(s => s.ServerKey == ServiceInfo.ServiceKey);
-                serviceToUpdate.Stop();
+                await serviceToUpdate.Stop();
                 if (await BackupService())
                 {
                     await DeCompressUpdates(UpdateDataPath);

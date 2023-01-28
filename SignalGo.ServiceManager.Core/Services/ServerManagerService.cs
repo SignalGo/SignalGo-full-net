@@ -23,7 +23,7 @@ namespace SignalGo.ServiceManager.Core.Services
         //    find.Stop();
         //    return true;
         //}
-        public bool StopService(Guid serviceKey)
+        public async Task<bool> StopService(Guid serviceKey)
         {
             // Current.ServerKey not set yet!
             //if (serverKey != SettingInfo.Current.ServerKey)
@@ -31,7 +31,7 @@ namespace SignalGo.ServiceManager.Core.Services
             var find = SettingInfo.Current.ServerInfo.FirstOrDefault(x => x.ServerKey == serviceKey);
             if (find == null)
                 return false;
-            find.Stop();
+            await find.Stop();
             return true;
         }
         //public bool StartServer(Guid serverKey, string name)
@@ -61,7 +61,7 @@ namespace SignalGo.ServiceManager.Core.Services
         /// <param name="serverKey">key of service</param>
         /// <param name="force">force restart</param>
         /// <returns></returns>
-        public bool RestartService(Guid serviceKey, bool force = false)
+        public async Task<bool> RestartService(Guid serviceKey, bool force = false)
         {
             // find server
             try
@@ -70,7 +70,7 @@ namespace SignalGo.ServiceManager.Core.Services
                 if (find == null)
                     return false;
                 // stop 
-                find.Stop();
+                await find.Stop();
 
                 // start 
                 find.Start();

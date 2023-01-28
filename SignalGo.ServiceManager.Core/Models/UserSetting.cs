@@ -16,6 +16,8 @@ namespace SignalGo.ServiceManager.Core.Models
         private string _LoggerPath;
         private string _ListeningPort;
         private string _ListeningAddress;
+        private string _UpdateServiceAddress;
+        private string _GetCallingCountRegex;
         private string _StartPriority;
         private string _ServiceUpdaterLogFilePath;
 
@@ -62,6 +64,25 @@ namespace SignalGo.ServiceManager.Core.Models
             {
                 _ListeningPort = value;
                 OnPropertyChanged(nameof(ListeningPort));
+            }
+        }
+
+        public string UpdateServiceAddress
+        {
+            get { return _UpdateServiceAddress; }
+            set
+            {
+                _UpdateServiceAddress = value;
+                OnPropertyChanged(nameof(UpdateServiceAddress));
+            }
+        }
+        public string GetCallingCountRegex
+        {
+            get { return _GetCallingCountRegex; }
+            set
+            {
+                _GetCallingCountRegex = value;
+                OnPropertyChanged(nameof(GetCallingCountRegex));
             }
         }
 

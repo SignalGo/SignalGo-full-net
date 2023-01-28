@@ -6,6 +6,9 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace SignalGo.ServiceManager.Core.Models
 {
@@ -98,17 +101,22 @@ namespace SignalGo.ServiceManager.Core.Models
             }
         }
 
+        bool _isStoping = false;
         /// <summary>
         /// stop the service and process
         /// </summary>
-        public void Stop()
+        public async Task Stop()
         {
             if (Status == ServerInfoStatus.Started)
             {
+                if (_isStoping)
+                    return;
+                _isStoping = true;
                 while (true)
                 {
                     try
                     {
+                        await HealthCheckWaitToStop();
                         // release resources
                         CurrentServerBase.Dispose();
                         // null current server base process info
@@ -135,8 +143,39 @@ namespace SignalGo.ServiceManager.Core.Models
                         GC.Collect();
                     }
                 }
+                _isStoping = false;
             }
         }
+        static HttpClient HttpClient = new HttpClient();
+        async Task HealthCheckWaitToStop()
+        {
+            if (string.IsNullOrEmpty(UserSettingInfo.Current.UserSettings.UpdateServiceAddress)
+                || string.IsNullOrEmpty(UserSettingInfo.Current.UserSettings.GetCallingCountRegex))
+                return;
+            try
+            {
+                string address = HealthCheckUrl.Trim('/');
+                string serviceAddress = UserSettingInfo.Current.UserSettings.UpdateServiceAddress.Trim('/');
+                while (true)
+                {
+                    var response = await HttpClient.GetAsync($"{address}/{serviceAddress}");
+                    var responseJson = await response.Content.ReadAsStringAsync();
+                    var result = Regex.Match(responseJson, UserSettingInfo.Current.UserSettings.GetCallingCountRegex, RegexOptions.Multiline);
+                    var value = result.Groups.Last().Value;
+                    if (!string.IsNullOrEmpty(value) && int.TryParse(value, out int count))
+                    {
+                        if (count <= 0)
+                            break;
+                    }
+                    await Task.Delay(1000);
+                }
+            }
+            catch (Exception ex)
+            {
+
+            }
+        }
+
 
         public static Action<Process> SendToMainHostForHidden { get; set; }
         /// <summary>

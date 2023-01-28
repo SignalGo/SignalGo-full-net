@@ -50,7 +50,10 @@ namespace SignalGo.ServiceManager.Core.Models
                         }
                     };
                 }
-                return JsonConvert.DeserializeObject<UserSettingInfo>(File.ReadAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, UserSettingsDbName), Encoding.UTF8));
+                var result = JsonConvert.DeserializeObject<UserSettingInfo>(File.ReadAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, UserSettingsDbName), Encoding.UTF8));
+                if (result == null)
+                    throw new NullReferenceException();
+                return result;
             }
             catch (Exception ex)
             {

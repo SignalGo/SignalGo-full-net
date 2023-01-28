@@ -30,6 +30,7 @@
                     <RowDefinition Height="auto"/>
                     <RowDefinition Height="auto"/>
                     <RowDefinition Height="auto"/>
+                    <RowDefinition Height="auto"/>
                     <RowDefinition/>
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
@@ -54,8 +55,17 @@
                     <Label Grid.Row="2" Content="Listening Port:" VerticalContentAlignment="Center" Grid.Column="2" Grid.ColumnSpan="1" HorizontalAlignment="Stretch"/>
                     <TextBox Margin="5" Text="{Binding CurrentUserSettingInfo.UserSettings.ListeningPort}" VerticalAlignment="Center" Height="27" HorizontalAlignment="Stretch"/>
                 </DockPanel>
-                <Button Command="{Binding SaveCommand}" Grid.Row="4" Grid.Column="4" VerticalAlignment="Bottom" Content="Save" Width="100" Height="30" Margin="10,0,0,0" HorizontalAlignment="Right"/>
-                <Button Command="{Binding BackCommand}" Grid.Row="4" Grid.Column="0" VerticalAlignment="Bottom" Content="Back" Width="100" Height="30" Margin="10,0,0,0" HorizontalAlignment="Left"/>
+                
+                <Label Grid.Column="0" Grid.Row="3" Content="Stop for updating Address:" VerticalContentAlignment="Center"/>
+                <TextBox Grid.Row="3" Margin="5" Text="{Binding CurrentUserSettingInfo.UserSettings.UpdateServiceAddress}" Grid.Column="1" VerticalAlignment="Stretch" Height="27"/>
+
+                <DockPanel Grid.Row="3" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Grid.ColumnSpan="2" Grid.Column="2" Margin="5,5,0,5" >
+                    <Label Content="Get calling service count (Regex):" VerticalContentAlignment="Center"/>
+                    <TextBox Margin="5" Text="{Binding CurrentUserSettingInfo.UserSettings.GetCallingCountRegex}" VerticalAlignment="Stretch" Height="27"/>
+                </DockPanel>
+                
+                <Button Command="{Binding SaveCommand}" Grid.Row="5" Grid.Column="4" VerticalAlignment="Bottom" Content="Save" Width="100" Height="30" Margin="10,0,0,0" HorizontalAlignment="Right"/>
+                <Button Command="{Binding BackCommand}" Grid.Row="5" Grid.Column="0" VerticalAlignment="Bottom" Content="Back" Width="100" Height="30" Margin="10,0,0,0" HorizontalAlignment="Left"/>
             </Grid>
         </TabItem>
         <TabItem Header="Health Check">
