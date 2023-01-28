@@ -36,7 +36,7 @@ namespace SignalGo.Server.ServiceManager
     /// <param name="canTakeMethod"></param>
     /// <param name="result"></param>
     public delegate void OnCallMethod(string serviceName, string guid, string methodName, SignalGo.Shared.Models.ParameterInfo[] parameters, string jsonParameters, ClientInfo client, string json, ServerBase serverBase, Shared.Http.HttpPostedFileInfo fileInfo, Func<MethodInfo, bool> canTakeMethod, object result);
-    public delegate void OnInvokeMethod(ClientInfo client, ServerBase serverBase, MethodInfo method, object service, List<object> parametersValues, string guid);
+    public delegate Task OnInvokeMethod(ClientInfo client, ServerBase serverBase, MethodInfo method, object service, List<object> parametersValues, string guid);
     /// <summary>
     /// base of server
     /// </summary>
@@ -195,7 +195,7 @@ namespace SignalGo.Server.ServiceManager
         /// <summary>
         /// when server try to send response to client you can change response or customize it
         /// </summary>
-        public Func<object, object, Type, MethodInfo, ClientInfo, string, object> OnSendResponseToClientFunction { get; set; }
+        public Func<object, object, Type, MethodInfo, ClientInfo, string, Task<object>> OnSendResponseToClientFunction { get; set; }
         /// <summary>
         /// if you don't want to trhow exception when method have error validation you can fill this function to customize your result for client
         /// </summary>
