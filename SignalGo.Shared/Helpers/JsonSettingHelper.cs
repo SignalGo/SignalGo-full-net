@@ -216,7 +216,7 @@ namespace SignalGo.Shared.Helpers
         {
             if (errorArgs != null && errorArgs.ErrorContext != null && errorArgs.ErrorContext.Error != null && errorArgs.ErrorContext.Error.GetType() == typeof(JsonSerializationException))
             {
-                AutoLogger.LogError(errorArgs.ErrorContext.Error, $"HandleDeserializationError :{(errorArgs.ErrorContext.OriginalObject == null ? "null" : errorArgs.ErrorContext.OriginalObject.GetType().FullName)} member: {errorArgs.ErrorContext.Member} path: {errorArgs.ErrorContext.Path}");
+                AutoLogger.LogError(errorArgs.ErrorContext.Error, $"HandleDeserializationError :{(errorArgs.ErrorContext.OriginalObject == null ? "null" : errorArgs.ErrorContext.OriginalObject.GetType().FullName)} member: {errorArgs.ErrorContext.Member} path: {errorArgs.ErrorContext.Path} trace : {Environment.StackTrace}");
             }
             else
             {
@@ -226,7 +226,7 @@ namespace SignalGo.Shared.Helpers
                     {
                         if (errorArgs.ErrorContext.Error != null)
                         {
-                            AutoLogger.LogError(errorArgs.ErrorContext.Error, $"HandleDeserializationError2 :{(errorArgs.ErrorContext.OriginalObject == null ? "null" : errorArgs.ErrorContext.OriginalObject.GetType().FullName)} member: {errorArgs.ErrorContext.Member} path: {errorArgs.ErrorContext.Path}");
+                            AutoLogger.LogError(errorArgs.ErrorContext.Error, $"HandleDeserializationError2 :{(errorArgs.ErrorContext.OriginalObject == null ? "null" : errorArgs.ErrorContext.OriginalObject.GetType().FullName)} member: {errorArgs.ErrorContext.Member} path: {errorArgs.ErrorContext.Path} trace : {Environment.StackTrace}");
                         }
                         else
                         {
