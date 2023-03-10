@@ -240,8 +240,8 @@ namespace SignalGo.Shared.Helpers
                     if (DateTime.TryParse(value.ToString(), out DateTime parsedValue))
                         value = parsedValue;
                 }
-                if (DateTime.TryParse(Format(value, "o"), out DateTime result))
-                    return (DateTime?)result;
+                if (DateTime.TryParse(Format(value, "o"), out _))
+                    return (DateTime?)value;
                 return null;
             }
             else if (targetPropertyType == SerializeObjectType.DateTimeOffset)
