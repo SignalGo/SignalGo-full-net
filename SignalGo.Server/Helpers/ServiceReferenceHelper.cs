@@ -141,7 +141,7 @@ namespace SignalGo.Server.Helpers
                         //if serviceMethodName != any urls of GenerationServiceAttribute that service will ignore to generate in service generation
                         var serviceServiceGenerationAttributes = serviceInfo.Value.GetCustomAttributes<GenerationServiceAttribute>(true).ToList();
 
-                        var hasMethodServiceGenerationAttribute = serviceInfo.Value.GetListOfMethods().Any(m => m.GetCustomAttributes<GenerationServiceAttribute>(true).Length == 0 || m.GetCustomAttributes<GenerationServiceAttribute>(true).Any(x => x.Urls.Any(url => url.Equals(httpServiceName, StringComparison.OrdinalIgnoreCase))));
+                        var hasMethodServiceGenerationAttribute = serviceInfo.Value.GetListOfMethods().Count() == 0 || serviceInfo.Value.GetListOfMethods().Any(m => m.GetCustomAttributes<GenerationServiceAttribute>(true).Length == 0 || m.GetCustomAttributes<GenerationServiceAttribute>(true).Any(x => x.Urls.Any(url => url.Equals(httpServiceName, StringComparison.OrdinalIgnoreCase))));
 
                         if (serviceServiceGenerationAttributes.Count > 0 && !serviceServiceGenerationAttributes.Any(x => x.Urls.Any(url => url.Equals(httpServiceName, StringComparison.OrdinalIgnoreCase))) || !hasMethodServiceGenerationAttribute)
                         {
