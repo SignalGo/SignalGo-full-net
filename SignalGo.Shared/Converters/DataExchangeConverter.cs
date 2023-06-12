@@ -1820,7 +1820,14 @@ namespace SignalGo.Shared.Converters
 
                                 }
                                 //if (value != instance)//loop handling
+#if (NET6_0)
+                                if (value is DateOnly || value is TimeOnly)
+                                    serializer.Serialize(writer, value.ToString());
+                                else
+                                    serializer.Serialize(writer, value);
+#else
                                 serializer.Serialize(writer, value);
+#endif
                             }
                             catch (Exception ex)
                             {
