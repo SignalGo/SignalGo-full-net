@@ -393,7 +393,7 @@ namespace SignalGo.Server.ServiceManager.Providers
                                         object data = null;
                                         await RunInServerTaskId(async (tid) =>
                                         {
-                                            data = await attrib.GetValueWhenDenyPermissionAsync(taskId, client, service, method, parametersValues);
+                                            data = await attrib.GetValueWhenDenyPermissionAsync(tid, client, service, method, parametersValues);
                                         }, client, serverBase);
                                         
                                         callback.Data = data == null ? null : ServerSerializationHelper.SerializeObject(await HandleClientResponse(parametersValues, data, client, serverBase, serviceType, method, callback.Guid), serverBase, customDataExchanger: customDataExchanger.ToArray(), client: client, isEnabledReferenceResolver: isEnabledReferenceResolver, isEnabledReferenceResolverForArray: isEnabledReferenceResolverForArray);
