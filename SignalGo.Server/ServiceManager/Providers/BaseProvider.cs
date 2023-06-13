@@ -378,14 +378,24 @@ namespace SignalGo.Server.ServiceManager.Providers
                         {
                             foreach (ISecurityContractAsync attrib in securityAsyncAttributes)
                             {
-                                if (!await attrib.CheckPermissionAsync(taskId, client, service, method, parametersValues))
+                                bool hasNoPermission = false;
+                                await RunInServerTaskId(async (tid) =>
+                                {
+                                    hasNoPermission = !await attrib.CheckPermissionAsync(tid, client, service, method, parametersValues);
+                                }, client, serverBase);
+
+                                if (hasNoPermission)
                                 {
                                     callback.IsAccessDenied = true;
                                     canCall = false;
                                     if (method.ReturnType != typeof(void))
                                     {
                                         object data = null;
-                                        data = await attrib.GetValueWhenDenyPermissionAsync(taskId, client, service, method, parametersValues);
+                                        await RunInServerTaskId(async (tid) =>
+                                        {
+                                            data = await attrib.GetValueWhenDenyPermissionAsync(taskId, client, service, method, parametersValues);
+                                        }, client, serverBase);
+                                        
                                         callback.Data = data == null ? null : ServerSerializationHelper.SerializeObject(await HandleClientResponse(parametersValues, data, client, serverBase, serviceType, method, callback.Guid), serverBase, customDataExchanger: customDataExchanger.ToArray(), client: client, isEnabledReferenceResolver: isEnabledReferenceResolver, isEnabledReferenceResolverForArray: isEnabledReferenceResolverForArray);
                                     }
                                     break;
@@ -755,6 +765,23 @@ namespace SignalGo.Server.ServiceManager.Providers
             else if (response is Exception ex)
                 return Task.FromResult((object)ex.ToString());
             return Task.FromResult(response);
+        }
+
+        static async Task RunInServerTaskId(Func<int, Task> func, ClientInfo client, ServerBase serverBase)
+        {
+            await Task.Run(async () =>
+            {
+                int taskId = Task.CurrentId.GetValueOrDefault();
+                try
+                {
+                    serverBase.AddTask(taskId, client.ClientId);
+                    await func(taskId);
+                }
+                finally
+                {
+                    serverBase.RemoveTask(taskId);
+                }
+            });
         }
 
         static async Task<object> InvokerMethod(ClientInfo client, ServerBase serverBase, MethodInfo method, string serviceName, object service, List<object> parametersValues, string guid)
