@@ -4,6 +4,7 @@ using SignalGo.Shared.Models;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO.Compression;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -73,8 +74,11 @@ namespace SignalGo.Publisher.Engines.Commands
             processStartInfo.CreateNoWindow = true;
             processStartInfo.WorkingDirectory = WorkingPath;
             var solutionFile = GetSolutionFileName(WorkingPath, ServerDefaultSolutionShortName);
+            var netVersion = AssembliesPath.Split('\\').LastOrDefault();
+            if (!string.IsNullOrEmpty(netVersion))
+                netVersion = $"--framework {netVersion}";
             // args to send to command
-            Arguments = $"publish {solutionFile} --no-build -nologo";
+            Arguments = $"publish {solutionFile} --no-build -nologo {netVersion}";
             processStartInfo.Arguments = $" {Arguments}";
         }
         public override bool CalculateStatus(string line)
