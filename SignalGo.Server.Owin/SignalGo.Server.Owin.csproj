@@ -3,9 +3,9 @@
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;</TargetFrameworks>
     <!--<TargetFramework>netstandard2.0</TargetFramework>-->
-    <AssemblyVersion>5.6.1</AssemblyVersion>
-    <FileVersion>5.6.1</FileVersion>
-    <Version>5.6.1</Version>
+    <AssemblyVersion>5.6.2</AssemblyVersion>
+    <FileVersion>5.6.2</FileVersion>
+    <Version>5.6.2</Version>
     <Authors>Ali Yousefi</Authors>
     <Company></Company>
     <DebugType>full</DebugType>
