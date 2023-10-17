@@ -10,6 +10,6 @@ namespace SignalGo.ServiceManager.Core.Models
 
         public abstract void Dispose();
 
-        public abstract void Start(string command, string assemblyPath, string shell = "/bin/bash");
+        public abstract void Start(string command, string assemblyPath, string arguments = null, string shell = "/bin/bash");
     }
 }

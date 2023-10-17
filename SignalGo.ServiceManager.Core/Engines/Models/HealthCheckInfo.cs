@@ -34,13 +34,14 @@ namespace SignalGo.ServiceManager.Core.Engines.Models
         DateTime? LastWasHealthy { get; set; }
         DateTime LastPostHealthy { get; set; } = DateTime.MinValue;
 
-        public async Task Check(ServerInfo serverInfo)
+        public async Task<bool> Check(ServerInfo serverInfo)
         {
-            serverInfo.IsHealthy = await CheckIsHealthy(serverInfo);
-            if (!serverInfo.IsHealthy)
+            var result = await CheckIsHealthy(serverInfo);
+            if (!result)
             {
                 await PostWhenHealthyIsInvalid(serverInfo);
             }
+            return result;
         }
 
         string CombineUrls(params string[] urls)

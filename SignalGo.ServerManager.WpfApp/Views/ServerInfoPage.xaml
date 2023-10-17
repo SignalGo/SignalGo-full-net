@@ -33,6 +33,7 @@
                     <RowDefinition Height="auto"/>
                     <RowDefinition Height="auto"/>
                     <RowDefinition Height="auto"/>
+                    <RowDefinition Height="auto"/>
                     <RowDefinition/>
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
@@ -57,7 +58,10 @@
                 <Label Grid.Row="4" Content="Health Check Url:" VerticalContentAlignment="Center"/>
                 <TextBox Grid.Row="4"  Margin="5" Text="{Binding ServerInfo.HealthCheckUrl}" Grid.Column="1" VerticalAlignment="Stretch" Height="25"/>
 
-                <StackPanel Margin="5" Grid.Row="5" Grid.Column="0" Orientation="Horizontal"
+                <Label Grid.Row="5" Content="Run argument:" VerticalContentAlignment="Center"/>
+                <TextBox Grid.Row="5"  Margin="5" Text="{Binding ServerInfo.RunArguments}" Grid.Column="1" VerticalAlignment="Stretch" Height="25"/>
+
+                <StackPanel Margin="5" Grid.Row="6" Grid.Column="0" Orientation="Horizontal"
                             Grid.ColumnSpan="2" VerticalAlignment="Top"
                             HorizontalAlignment="Stretch">
                     <TextBlock Text="Auto Start:"/>
@@ -66,7 +70,7 @@
                     <TextBox Margin="0" MaxWidth="100" MinWidth="50" Text="{Binding ServerInfo.StartDelay}" />
                 </StackPanel>
 
-                <StackPanel Grid.Row="5" Grid.ColumnSpan="3" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <StackPanel Grid.Row="6" Grid.ColumnSpan="3" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <StackPanel Orientation="Horizontal"  HorizontalAlignment="Center">
                         <TextBlock Text="Status: " Margin="10"/>
                         <TextBlock Text="{Binding ServerInfo.Status}" Margin="10"/>
@@ -76,12 +80,12 @@
                         <Button Command="{Binding StopCommand}" Content="Stop" Width="100" Height="30" Margin="10,0,0,0"/>
                     </StackPanel>
                 </StackPanel>
-                <StackPanel Orientation="Horizontal" Grid.Row="5" Grid.Column="2" VerticalAlignment="Bottom" >
+                <StackPanel Orientation="Horizontal" Grid.Row="6" Grid.Column="2" VerticalAlignment="Bottom" >
 
                     <Button Command="{Binding ChangeCommand}" VerticalAlignment="Bottom" Content="Save" Width="100" Height="30" Margin="5"/>
                     <Button Command="{Binding DeleteCommand}" VerticalAlignment="Bottom" Content="Delete!" Width="100" Height="30" Margin="5"/>
                 </StackPanel>
-                <StatusBar Grid.Row="5" VerticalAlignment="Bottom" Grid.ColumnSpan="2" Background="Transparent">
+                <StatusBar Grid.Row="6" VerticalAlignment="Bottom" Grid.ColumnSpan="2" Background="Transparent">
                     <StatusBarItem>
                         <Grid>
                             <StackPanel Orientation="Horizontal">

@@ -3,7 +3,6 @@ using SignalGo.Shared.Log;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace SignalGo.ServiceManager.Core.Engines
@@ -12,31 +11,28 @@ namespace SignalGo.ServiceManager.Core.Engines
     {
         public static async void Start()
         {
-            while(true)
+            while (true)
             {
                 try
                 {
-                    List<Task> tasks = new List<Task>();
                     foreach (var server in SettingInfo.Current.ServerInfo.ToList())
                     {
                         await Task.Delay(100);
+                        List<bool> all = new List<bool>();
                         foreach (var healthCheck in UserSettingInfo.Current.HealthChecks.ToList())
                         {
-                            tasks.Add(Task.Run(async () =>
+                            try
                             {
-                                try
-                                {
-                                    await healthCheck.Check(server);
-                                }
-                                catch (Exception ex)
-                                {
-                                    AutoLogger.Default.LogError(ex, $"HealthCheckEngine Run server {server.Name}");
-                                }
-                            }));
+                                all.Add(await healthCheck.Check(server));
+                            }
+                            catch (Exception ex)
+                            {
+                                AutoLogger.Default.LogError(ex, $"HealthCheckEngine Run server {server.Name}");
+                                all.Add(false);
+                            }
                         }
+                        server.IsHealthy = all.Count == 0 || all.Any(x => x);
                     }
-
-                    await Task.WhenAll(tasks);
                 }
                 catch (Exception ex)
                 {

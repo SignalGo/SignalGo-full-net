@@ -30,7 +30,7 @@ namespace SignalGo.ServerManager.WpfApp.Helpers
         /// </summary>
         /// <param name="paramUID">Unique ID of the named pipe</param>
         /// <returns></returns>
-        public override void Start(string paramUID, string fileName, string shell = "cmd")
+        public override void Start(string paramUID, string fileName, string arguments = null, string shell = "cmd")
         {
             if (!File.Exists(fileName))
                 throw new FileNotFoundException("we can't find service executable file. please verify the service path");
@@ -42,6 +42,10 @@ namespace SignalGo.ServerManager.WpfApp.Helpers
             m_PipeMessagingThread.Start();
 
             ProcessStartInfo processInfo = new ProcessStartInfo(fileName, this.m_PipeID);
+            processInfo.WorkingDirectory = Path.GetDirectoryName(fileName);
+            AutoLogger.Default.LogText($"WorkingDirectory:{processInfo.WorkingDirectory}");
+            if (!string.IsNullOrEmpty(arguments))
+                processInfo.Arguments = arguments;
             //processInfo.CreateNoWindow = false;
             //processInfo.UseShellExecute = true;
             BaseProcess = Process.Start(processInfo);

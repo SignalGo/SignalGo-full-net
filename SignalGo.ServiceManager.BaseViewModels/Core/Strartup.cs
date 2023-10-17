@@ -1,12 +1,12 @@
 ﻿using SignalGo.Publisher.Models;
 using SignalGo.Server.ServiceManager;
 using SignalGo.ServiceManager.Core.BaseViewModels;
-using SignalGo.ServiceManager.Core.Engines.Models;
 using SignalGo.ServiceManager.Core.Models;
 using SignalGo.ServiceManager.Core.Services;
 using SignalGo.Shared;
 using SignalGo.Shared.Log;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
@@ -80,7 +80,7 @@ namespace SignalGo.ServiceManager.BaseViewModels.Core
                 {
                     Console.WriteLine($"Your {server.Name} service key is : {server.ServerKey}", Console.ForegroundColor = ConsoleColor.Yellow);
                     Console.ResetColor();
-                    _ = Task.Factory.StartNew(async() =>
+                    _ = Task.Factory.StartNew(async () =>
                     {
                         try
                         {
@@ -95,14 +95,12 @@ namespace SignalGo.ServiceManager.BaseViewModels.Core
                                     while (true)
                                     {
                                         bool isHealthy = true;
+                                        List<bool> all = new List<bool>();
                                         foreach (var healthCheck in UserSettingInfo.Current.HealthChecks.ToList())
                                         {
-                                            if (!await healthCheck.CheckIsHealthy(server))
-                                            {
-                                                isHealthy = false;
-                                                break;
-                                            }
+                                            all.Add(await healthCheck.CheckIsHealthy(server));
                                         }
+                                        isHealthy = all.Count == 0 || all.Any(x => x);
                                         if (isHealthy)
                                             break;
                                         await Task.Delay(500);

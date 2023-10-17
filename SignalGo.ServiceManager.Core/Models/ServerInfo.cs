@@ -16,6 +16,7 @@ namespace SignalGo.ServiceManager.Core.Models
     {
         public string DependServerNames { get; set; }
         public string HealthCheckUrl { get; set; }
+        public string RunArguments { get; set; }
         [JsonIgnore]
         public ServerProcessBaseInfo CurrentServerBase { get; set; }
         [JsonIgnore]
@@ -226,8 +227,9 @@ namespace SignalGo.ServiceManager.Core.Models
                         // set server status to Started
                         Status = ServerInfoStatus.Started;
                         CurrentServerBase = ServerProcessBaseInfo.Instance();
+
                         // start the server from the path
-                        CurrentServerBase.Start("App_" + Name, AssemblyPath);
+                        CurrentServerBase.Start("App_" + Name, AssemblyPath, RunArguments);
                         var process = CurrentServerBase.BaseProcess;
                         // Insert/Merge Servers Console Window to Server manager Windows Tab
                         SendToMainHostForHidden?.Invoke(process);
