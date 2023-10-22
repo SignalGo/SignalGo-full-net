@@ -62,18 +62,24 @@ namespace SignalGo.ServiceManager.Core.Engines.Models
                 return true;
             try
             {
+                var split = serverInfo.HealthCheckUrl.Split('#');
+                if (split.Length > 1)
+                {
+                    if (!split[1].Equals(Name, StringComparison.OrdinalIgnoreCase))
+                        return false;
+                }
                 HttpResponseMessage responseMessage = null;
                 if (string.IsNullOrEmpty(DataToPostForGetResult))
                 {
                     using var client = new HttpClient();
-                    responseMessage = await client.GetAsync(CombineUrls(serverInfo.HealthCheckUrl, CheckUrl));
+                    responseMessage = await client.GetAsync(CombineUrls(split[0], CheckUrl));
                 }
                 else
                 {
                     var postData = DataToPostForGetResult.Replace("$ProjectName", serverInfo.Name);
                     var content = new StringContent(postData, Encoding.UTF8, "application/json");
                     using var client = new HttpClient();
-                    responseMessage = await client.PostAsync(CombineUrls(serverInfo.HealthCheckUrl, CheckUrl), content);
+                    responseMessage = await client.PostAsync(CombineUrls(split[0], CheckUrl), content);
                 }
                 var responseText = await responseMessage.Content.ReadAsStringAsync();
                 var result = responseText.Contains(ConditionResultHasValue);
